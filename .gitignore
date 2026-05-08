@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+output/
+output_run_*/
+roboflow_test/
+roboflow_test2/
+Netlist Generator/
