@@ -20,9 +20,10 @@ from wire_detection.api.cache import ImageCache
 def _ensure_synthetic_data():
     registry = DatasetRegistry()
     cfg = registry.get("synthetic")
-    if cfg is None or not cfg.path.exists():
+    if cfg is None:
         return
-    existing = list(cfg.path.glob("images/*.jpg"))
+    cfg.path.mkdir(parents=True, exist_ok=True)
+    existing = list(cfg.path.glob(cfg.image_glob))
     if len(existing) >= 50:
         return
     from wire_detection.sdg.generator import SDG, SDGConfig
