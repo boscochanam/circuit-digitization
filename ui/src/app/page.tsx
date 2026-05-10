@@ -220,48 +220,46 @@ export default function Home() {
       {/* ── Image Picker Dialog ── */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
         <DialogContent
-          className="bg-zinc-950 border-zinc-800 p-6"
-          style={{ maxWidth: "calc(100vw - 2rem)", maxHeight: "calc(100vh - 2rem)", width: "100%", height: "100%" }}
+          className="bg-zinc-950 border-zinc-800 p-0 flex flex-col overflow-hidden"
+          style={{ width: "calc(100vw - 2rem)", height: "calc(100vh - 2rem)" }}
         >
-          <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-3 shrink-0">
-              <span className="text-sm text-zinc-400">
-                {imageList.length} images in "{dataset}"
-              </span>
-              {listError && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-red-400">{listError}</span>
-                  <Button size="sm" variant="outline" onClick={() => loadImages(dataset)}>
-                    Retry
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div className="overflow-y-auto flex-1 min-h-0">
-              <div className="grid grid-cols-5 gap-4 content-start">
-                {imageList.map((name, i) => (
-                  <button
-                    key={name}
-                    className={`border-2 rounded overflow-hidden ${i === imageIdx ? "border-blue-500" : "border-transparent hover:border-zinc-500"}`}
-                    onClick={() => {
-                      setImageIdx(i);
-                      setPickerOpen(false);
-                    }}
-                  >
-                    <div className="aspect-square overflow-hidden">
-                      <img
-                        src={`${API_URL}/api/thumb?idx=${i}&ds=${dataset}`}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  </button>
-                ))}
+          <div className="flex items-center justify-between p-4 shrink-0">
+            <span className="text-sm text-zinc-400">
+              {imageList.length} images in "{dataset}"
+            </span>
+            {listError && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-400">{listError}</span>
+                <Button size="sm" variant="outline" onClick={() => loadImages(dataset)}>
+                  Retry
+                </Button>
               </div>
+            )}
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 px-4 pb-4">
+            <div className="grid grid-cols-5 gap-4 content-start">
+              {imageList.map((name, i) => (
+                <button
+                  key={name}
+                  className={`border-2 rounded overflow-hidden ${i === imageIdx ? "border-blue-500" : "border-transparent hover:border-zinc-500"}`}
+                  onClick={() => {
+                    setImageIdx(i);
+                    setPickerOpen(false);
+                  }}
+                >
+                  <div className="aspect-square overflow-hidden">
+                    <img
+                      src={`${API_URL}/api/thumb?idx=${i}&ds=${dataset}`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </button>
+              ))}
             </div>
             {imageList.length === 0 && !listLoading && (
-              <div className="text-center text-zinc-500 py-10 shrink-0">
+              <div className="text-center text-zinc-500 py-10">
                 No images found.
                 <br />
                 <span className="text-xs">
