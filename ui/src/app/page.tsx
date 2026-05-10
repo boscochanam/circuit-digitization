@@ -237,26 +237,28 @@ export default function Home() {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-5 gap-4 overflow-y-auto flex-1 min-h-0 content-start">
-              {imageList.map((name, i) => (
-                <button
-                  key={name}
-                  className={`border-2 rounded overflow-hidden min-h-0 ${i === imageIdx ? "border-blue-500" : "border-transparent hover:border-zinc-500"}`}
-                  onClick={() => {
-                    setImageIdx(i);
-                    setPickerOpen(false);
-                  }}
-                >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={`${API_URL}/api/thumb?idx=${i}&ds=${dataset}`}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                </button>
-              ))}
+            <div className="overflow-y-auto flex-1 min-h-0">
+              <div className="grid grid-cols-5 gap-4 content-start">
+                {imageList.map((name, i) => (
+                  <button
+                    key={name}
+                    className={`border-2 rounded overflow-hidden ${i === imageIdx ? "border-blue-500" : "border-transparent hover:border-zinc-500"}`}
+                    onClick={() => {
+                      setImageIdx(i);
+                      setPickerOpen(false);
+                    }}
+                  >
+                    <div className="aspect-square overflow-hidden">
+                      <img
+                        src={`${API_URL}/api/thumb?idx=${i}&ds=${dataset}`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
             {imageList.length === 0 && !listLoading && (
               <div className="text-center text-zinc-500 py-10 shrink-0">
