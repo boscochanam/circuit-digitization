@@ -221,7 +221,7 @@ export default function Home() {
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
         <DialogContent
           className="bg-zinc-950 border-zinc-800 p-0 flex flex-col overflow-hidden"
-          style={{ width: "calc(100vw - 2rem)", height: "calc(100vh - 2rem)" }}
+          style={{ width: "calc(100vw - 2rem)", maxWidth: "calc(100vw - 2rem)", height: "calc(100vh - 2rem)" }}
         >
           <div className="flex items-center justify-between p-4 shrink-0">
             <span className="text-sm text-zinc-400">
