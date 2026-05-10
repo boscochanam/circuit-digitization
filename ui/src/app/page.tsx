@@ -223,47 +223,51 @@ export default function Home() {
           className="bg-zinc-950 border-zinc-800 p-6"
           style={{ maxWidth: "calc(100vw - 2rem)", maxHeight: "calc(100vh - 2rem)", width: "100%", height: "100%" }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-zinc-400">
-              {imageList.length} images in "{dataset}"
-            </span>
-            {listError && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-red-400">{listError}</span>
-                <Button size="sm" variant="outline" onClick={() => loadImages(dataset)}>
-                  Retry
-                </Button>
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between mb-3 shrink-0">
+              <span className="text-sm text-zinc-400">
+                {imageList.length} images in "{dataset}"
+              </span>
+              {listError && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-red-400">{listError}</span>
+                  <Button size="sm" variant="outline" onClick={() => loadImages(dataset)}>
+                    Retry
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-5 gap-4 overflow-y-auto flex-1 min-h-0 content-start">
+              {imageList.map((name, i) => (
+                <button
+                  key={name}
+                  className={`border-2 rounded overflow-hidden min-h-0 ${i === imageIdx ? "border-blue-500" : "border-transparent hover:border-zinc-500"}`}
+                  onClick={() => {
+                    setImageIdx(i);
+                    setPickerOpen(false);
+                  }}
+                >
+                  <div className="aspect-square overflow-hidden">
+                    <img
+                      src={`${API_URL}/api/thumb?idx=${i}&ds=${dataset}`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </button>
+              ))}
+            </div>
+            {imageList.length === 0 && !listLoading && (
+              <div className="text-center text-zinc-500 py-10 shrink-0">
+                No images found.
+                <br />
+                <span className="text-xs">
+                  Check that the backend is running and datasets are mounted.
+                </span>
               </div>
             )}
           </div>
-          <div className="grid grid-cols-5 gap-4 overflow-y-auto max-h-[85vh]">
-            {imageList.map((name, i) => (
-              <button
-                key={name}
-                className={`border-2 rounded overflow-hidden aspect-square ${i === imageIdx ? "border-blue-500" : "border-transparent hover:border-zinc-500"}`}
-                onClick={() => {
-                  setImageIdx(i);
-                  setPickerOpen(false);
-                }}
-              >
-                <img
-                  src={`${API_URL}/api/thumb?idx=${i}&ds=${dataset}`}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </button>
-            ))}
-          </div>
-          {imageList.length === 0 && !listLoading && (
-            <div className="text-center text-zinc-500 py-10">
-              No images found.
-              <br />
-              <span className="text-xs">
-                Check that the backend is running and datasets are mounted.
-              </span>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>
