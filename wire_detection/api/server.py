@@ -75,7 +75,7 @@ def get_thumb(idx: int = 0, ds: str = Query("hand_drawn")):
         return JSONResponse({"error": f"index {idx} out of range (0-{len(images)-1})"}, status_code=404)
     try:
         path = str(images[idx])
-        img = cache.load_image(path, resize=80)
+        img = cache.load_image(path, resize=300)
         _, buffer = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 85])
         return StreamingResponse(BytesIO(buffer.tobytes()), media_type="image/jpeg")
     except FileNotFoundError:

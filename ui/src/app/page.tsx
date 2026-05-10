@@ -219,7 +219,10 @@ export default function Home() {
 
       {/* ── Image Picker Dialog ── */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-zinc-950 border-zinc-800 p-6">
+        <DialogContent
+          className="bg-zinc-950 border-zinc-800 p-6"
+          style={{ maxWidth: "calc(100vw - 2rem)", maxHeight: "calc(100vh - 2rem)", width: "100%", height: "100%" }}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-zinc-400">
               {imageList.length} images in "{dataset}"
@@ -233,7 +236,7 @@ export default function Home() {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-8 gap-2 overflow-y-auto max-h-[85vh]">
+          <div className="grid grid-cols-5 gap-4 overflow-y-auto max-h-[85vh]">
             {imageList.map((name, i) => (
               <button
                 key={name}
