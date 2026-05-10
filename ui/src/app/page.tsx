@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { listImages, runPipeline } from "@/lib/api";
+import { listImages, runPipeline, fetchDatasets } from "@/lib/api";
 
 const DATASETS = ["hand_drawn", "synthetic", "database"] as const;
 type Dataset = (typeof DATASETS)[number];
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function Home() {
   const [dataset, setDataset] = useState<Dataset>("hand_drawn");
@@ -18,11 +19,13 @@ export default function Home() {
   const [imageList, setImageList] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
+  const [datasetInfo, setDatasetInfo] = useState<Record<string, { path: string; images: number }>>({});
   const [result, setResult] = useState<{
     line_count: number; blob_count: number; elapsed_ms: number;
     overlay: string; threshold: string; dilated: string;
   } | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
 
   const [params, setParams] = useState({
     thresh_mode: "otsu" as "otsu" | "manual" | "adaptive",
@@ -35,35 +38,50 @@ export default function Home() {
     min_line_length: 20,
   });
 
-  useEffect(() => {
-    listImages(dataset).then((list) => {
+  const loadImages = useCallback(async (ds: Dataset) => {
+    setListLoading(true);
+    setListError(null);
+    try {
+      const list = await listImages(ds);
+      console.log(`[WireDetection] Loaded ${list.length} images for dataset "${ds}"`);
       setImageList(list);
       setImageIdx(0);
-    });
-  }, [dataset]);
+    } catch (err: any) {
+      console.error("[WireDetection] Failed to load images:", err);
+      setListError(err.message || "Failed to load images");
+      setImageList([]);
+    } finally {
+      setListLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadImages(dataset);
+  }, [dataset, loadImages]);
+
+  useEffect(() => {
+    fetchDatasets()
+      .then((info) => {
+        const simplified: Record<string, { path: string; images: number }> = {};
+        for (const [k, v] of Object.entries(info)) {
+          simplified[k] = { path: v.path, images: v.images };
+        }
+        setDatasetInfo(simplified);
+      })
+      .catch((err) => console.error("[WireDetection] fetchDatasets error:", err));
+  }, []);
 
   const doRun = useCallback(
     (idx: number, p: typeof params) => {
-      if (abortRef.current) abortRef.current.abort();
-      const ctrl = new AbortController();
-      abortRef.current = ctrl;
-
       setLoading(true);
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/process`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ img_idx: idx, ds: dataset, params: p }),
-        signal: ctrl.signal,
-      })
-        .then((r) => r.json())
+      runPipeline(idx, dataset, p)
         .then((data) => {
-          if (!ctrl.signal.aborted) {
-            setResult(data);
-            setLoading(false);
-          }
+          setResult(data);
+          setLoading(false);
         })
-        .catch(() => {
-          if (!ctrl.signal.aborted) setLoading(false);
+        .catch((err) => {
+          console.error("[WireDetection] Pipeline error:", err);
+          setLoading(false);
         });
     },
     [dataset],
@@ -74,7 +92,7 @@ export default function Home() {
   }, [imageIdx, params, dataset, imageList, doRun]);
 
   const setParam = (key: string, value: number | string) =>
-    setParams((p) => ({ ...p, [key]: value }));
+    setParams((prev) => ({ ...prev, [key]: value }));
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100">
@@ -82,37 +100,59 @@ export default function Home() {
       <aside className="w-80 flex flex-col border-r border-zinc-800 bg-zinc-900 p-4 gap-3 overflow-y-auto">
         <h1 className="text-lg font-bold tracking-tight">Wire Detection Tuner</h1>
 
+        {/* Dataset selector */}
         <div>
           <label className="text-xs text-zinc-400 mb-1 block">Dataset</label>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {DATASETS.map((d) => (
               <Button
                 key={d}
                 variant={dataset === d ? "default" : "outline"}
                 size="sm"
-                className="flex-1"
+                className="flex-1 min-w-[80px]"
                 onClick={() => setDataset(d)}
               >
-                {d === "hand_drawn" ? "Hand Drawn" : "Database"}
+                {d === "hand_drawn" ? "Hand Drawn" : d === "synthetic" ? "Synthetic" : "Database"}
               </Button>
             ))}
           </div>
         </div>
 
-        <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)} className="h-20 p-1">
+        {/* Image picker button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPickerOpen(true)}
+          className="h-20 p-1 relative"
+          disabled={listLoading || imageList.length === 0}
+        >
           {imageList[imageIdx] ? (
             <img
-              src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/thumb?idx=${imageIdx}&ds=${dataset}`}
+              src={`${API_URL}/api/thumb?idx=${imageIdx}&ds=${dataset}`}
               alt=""
               className="w-full h-full object-contain rounded"
             />
+          ) : listLoading ? (
+            <span className="text-zinc-400 text-xs">Loading...</span>
           ) : (
-            "Select Image"
+            <span className="text-zinc-400 text-xs">No images</span>
           )}
         </Button>
 
+        {/* Diagnostics */}
+        <div className="text-[10px] text-zinc-500 font-mono space-y-0.5 bg-zinc-950/50 p-2 rounded border border-zinc-800">
+          <div>API: {API_URL}</div>
+          <div>Dataset: {dataset}</div>
+          <div>Images: {imageList.length}</div>
+          {datasetInfo[dataset] && (
+            <div>Backend: {datasetInfo[dataset].images} imgs @ {datasetInfo[dataset].path}</div>
+          )}
+          {listError && <div className="text-red-400">Error: {listError}</div>}
+        </div>
+
         <Separator />
 
+        {/* Threshold mode */}
         <div className="flex items-center gap-2">
           <Button
             variant={params.thresh_mode === "otsu" ? "default" : "outline"}
@@ -129,6 +169,14 @@ export default function Home() {
             onClick={() => setParam("thresh_mode", "manual")}
           >
             Manual
+          </Button>
+          <Button
+            variant={params.thresh_mode === "adaptive" ? "default" : "outline"}
+            size="sm"
+            className="flex-1"
+            onClick={() => setParam("thresh_mode", "adaptive")}
+          >
+            Adaptive
           </Button>
         </div>
 
@@ -166,12 +214,25 @@ export default function Home() {
         <Panel title="Detected Lines" image={result?.overlay} loading={loading} />
         <Panel title="Threshold" image={result?.threshold} loading={loading} />
         <Panel title="Dilated" image={result?.dilated} loading={loading} />
-        <Panel title="Source" image={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/thumb?idx=${imageIdx}&ds=${dataset}`} loading={false} isThumb />
+        <Panel title="Source" image={`${API_URL}/api/thumb?idx=${imageIdx}&ds=${dataset}`} loading={false} isThumb />
       </main>
 
       {/* ── Image Picker Dialog ── */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-zinc-950 border-zinc-800 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-zinc-400">
+              {imageList.length} images in "{dataset}"
+            </span>
+            {listError && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-400">{listError}</span>
+                <Button size="sm" variant="outline" onClick={() => loadImages(dataset)}>
+                  Retry
+                </Button>
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-8 gap-2 overflow-y-auto max-h-[85vh]">
             {imageList.map((name, i) => (
               <button
@@ -183,7 +244,7 @@ export default function Home() {
                 }}
               >
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/thumb?idx=${i}&ds=${dataset}`}
+                  src={`${API_URL}/api/thumb?idx=${i}&ds=${dataset}`}
                   alt=""
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -191,6 +252,15 @@ export default function Home() {
               </button>
             ))}
           </div>
+          {imageList.length === 0 && !listLoading && (
+            <div className="text-center text-zinc-500 py-10">
+              No images found.
+              <br />
+              <span className="text-xs">
+                Check that the backend is running and datasets are mounted.
+              </span>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

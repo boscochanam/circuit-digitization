@@ -245,9 +245,7 @@ class TestAPI:
     def test_thumb_endpoint(self, api_client):
         resp = api_client.get("/api/thumb?idx=0&ds=hand_drawn")
         assert resp.status_code == 200
-        data = resp.json()
-        assert "image" in data
-        assert data["index"] == 0
+        assert resp.headers["content-type"] == "image/jpeg"
 
     def test_thumb_out_of_range(self, api_client):
         resp = api_client.get("/api/thumb?idx=9999&ds=hand_drawn")

@@ -6,9 +6,10 @@ import cv2
 import numpy as np
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Query
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from io import BytesIO
 
 from wire_detection.pipeline.factory import PipelineFactory
 from wire_detection.pipeline.registry import STAGES
@@ -75,8 +76,8 @@ def get_thumb(idx: int = 0, ds: str = Query("hand_drawn")):
     try:
         path = str(images[idx])
         img = cache.load_image(path, resize=80)
-        b64 = _img_to_base64(img)
-        return JSONResponse({"image": b64, "index": idx})
+        _, buffer = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        return StreamingResponse(BytesIO(buffer.tobytes()), media_type="image/jpeg")
     except FileNotFoundError:
         return JSONResponse({"error": "image not found"}, status_code=404)
 
