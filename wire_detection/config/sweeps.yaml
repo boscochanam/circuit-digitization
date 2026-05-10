@@ -1,0 +1,48 @@
+sweeps:
+  baseline:
+    name: "Baseline Sweep"
+    dataset: "hand_drawn"
+    max_images: 140
+    method: "grid"
+    metric: "f1"
+    base_config:
+      dilate:
+        kernel_size: 5
+        iterations: 1
+      ccl:
+        min_area: 30
+        backend: opencv
+      contour_extract:
+        backend: farthest_pair
+      dedup:
+        angle_thresh: 10
+        dist_thresh: 12
+    pipeline_params:
+      threshold:
+        - {mode: otsu}
+        - {mode: manual, value: 100}
+        - {mode: manual, value: 140}
+        - {mode: adaptive, block_size: 31, c: 2}
+
+  dedup_sweep:
+    name: "Dedup Parameter Sweep"
+    dataset: "hand_drawn"
+    max_images: 140
+    method: "grid"
+    metric: "f1"
+    base_config:
+      threshold:
+        mode: otsu
+      dilate:
+        kernel_size: 5
+        iterations: 1
+      ccl:
+        min_area: 30
+    pipeline_params:
+      dedup_angle:
+        - 0
+        - 5
+        - 10
+        - 15
+        - 20
+        - 30

@@ -1,0 +1,35 @@
+stages:
+  - crop
+  - mask
+  - threshold
+  - invert
+  - dilate
+  - ccl
+  - contour_extract
+  - dedup
+  - length_filter
+
+stage_params:
+  crop:
+    padding: 10
+  mask:
+    fill_value: 255
+  threshold:
+    mode: otsu
+    value: 127
+    block_size: 31
+    c: 2
+  dilate:
+    kernel_size: 5
+    iterations: 1
+    shape: rect
+  ccl:
+    min_area: 30
+    connectivity: 8
+    backend: opencv
+  dedup:
+    angle_thresh: 10
+    dist_thresh: 12
+  length_filter:
+    min_length: 20
+    max_length: 0

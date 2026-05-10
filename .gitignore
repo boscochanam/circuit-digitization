@@ -1,7 +1,18 @@
 __pycache__/
 *.pyc
+*.egg-info/
 output/
 output_run_*/
 roboflow_test/
 roboflow_test2/
 Netlist Generator/
+Database/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# UI
+ui/node_modules/
+ui/.next/
+ui/out/

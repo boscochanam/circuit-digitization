@@ -1,0 +1,35 @@
+[project]
+name = "wire-detection"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.13"
+dependencies = [
+    "albumentations>=2.0.8",
+    "fastapi>=0.136.1",
+    "numpy>=2.4.4",
+    "opencv-python>=4.13.0.92",
+    "pydantic>=2.13.4",
+    "pyyaml>=6.0.3",
+    "scikit-image>=0.26.0",
+    "scipy>=1.17.1",
+    "uvicorn>=0.46.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["wire_detection*"]
+
+[project.scripts]
+wire-sdg = "wire_detection.sdg.cli:main"
+wire-eval = "wire_detection.evaluate.cli:main"
+wire-sweep = "wire_detection.experiment.cli:main"
+wire-tune = "wire_detection.api.server:main"
+wire-pipeline = "wire_detection.pipeline.cli:main"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=2.0.0",
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.12",
+]

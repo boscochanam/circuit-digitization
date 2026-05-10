@@ -1,0 +1,32 @@
+datasets:
+  hand_drawn:
+    path: /data/hand_drawn
+    image_glob: "**/images/*.jpg"
+    label_format: yolo_obb
+    label_glob: "**/labels/*.txt"
+    component_labels: false
+    description: "Hand-drawn circuit wires, 140 images"
+
+  hdc:
+    path: /data/hdc
+    image_glob: "**/images/*.jpg"
+    label_format: yolo_obb
+    label_glob: "**/labels/*.txt"
+    component_labels: true
+    description: "HDC-Recognition PCB schematics"
+
+  synthetic:
+    path: /data/synthetic
+    image_glob: "images/*.jpg"
+    label_format: lines
+    label_glob: "labels/*.txt"
+    component_labels: false
+    crop_to_components: false
+    description: "Synthetic bezier-curve wires on varied backgrounds, auto-generated"
+
+  database:
+    path: /data/database
+    image_glob: "*/*.jpg"
+    label_format: null
+    label_glob: null
+    description: "Raw schematic images for visual inspection"

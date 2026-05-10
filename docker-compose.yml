@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    ports:
+      - "8000:8000"
+    volumes:
+      - /home/bosco/Projects/Misc-Projects/LineDetection/roboflow_test2:/data/hdc
+      - /home/bosco/Projects/Misc-Projects/LineDetection/roboflow_test:/data/hand_drawn
+      - /home/bosco/Projects/Misc-Projects/LineDetection/Database:/data/database
+    environment:
+      - DATASETS_YAML=/app/wire_detection/config/datasets.docker.yaml
+
+  frontend:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
