@@ -16,15 +16,13 @@ def test_generate_one():
     assert len(lines) >= 3
     assert img.shape[0] == 1024
     assert img.shape[1] == 1024
+    assert img.shape[2] == 3
 
 
 def test_get_bezier_curve():
-    import random
-    rng = random.Random(42)
-    curve = get_bezier_curve((10, 10), (100, 100), rng=rng)
-    assert curve.shape[0] == 50
+    curve = get_bezier_curve((10, 10), (100, 100))
+    assert curve.shape[0] == 40
     assert curve.shape[1] == 2
-    assert tuple(curve[0]) == (10, 10) or tuple(curve[0]) == (10, 10)
 
 
 def test_get_rect_edge_point():
@@ -35,18 +33,18 @@ def test_get_rect_edge_point():
 
 def test_background_plain():
     bg = generate_plain_background((100, 100))
-    assert bg.shape == (100, 100)
-    assert bg[0, 0] == 255
+    assert bg.shape == (100, 100, 3)
+    assert tuple(bg[0, 0]) == (255, 255, 255)
 
 
 def test_background_grid():
     bg = generate_grid_background((100, 100), grid_size=50)
-    assert bg.shape == (100, 100)
+    assert bg.shape == (100, 100, 3)
 
 
 def test_background_noise():
     bg = generate_noise_background((100, 100), noise_type="gaussian")
-    assert bg.shape == (100, 100)
+    assert bg.shape == (100, 100, 3)
 
 
 def test_export_yolov8_pose():

@@ -38,10 +38,11 @@ def _ensure_synthetic_data():
     sdg = SDG(SDGConfig(
         num_images=50,
         seed=42,
-        image_size=(256, 256),
+        image_size=(640, 640),
         output_dir=output_dir,
         label_format=cfg.label_format or "lines",
-        wires_per_image=(3, 8),
+        components_count=(4, 8),
+        components_size=(50, 130),
     ))
     sdg.generate()
     print("Synthetic dataset generated.")
