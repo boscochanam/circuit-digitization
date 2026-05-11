@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { listImages, runPipeline, fetchDatasets } from "@/lib/api";
@@ -319,9 +319,9 @@ function Panel({
   isThumb?: boolean;
 }) {
   return (
-    <Card className="bg-zinc-900 border-zinc-800 overflow-hidden flex flex-col">
-      <div className="px-3 py-2 text-xs font-medium text-zinc-400 border-b border-zinc-800">{title}</div>
-      <CardContent className="flex-1 p-0 flex items-center justify-center relative">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col">
+      <div className="px-3 py-2 text-xs font-medium text-zinc-400 border-b border-zinc-800 shrink-0">{title}</div>
+      <div className="flex-1 flex items-center justify-center relative min-h-0 overflow-hidden">
         {loading && (
           <div className="absolute inset-0 bg-zinc-900/80 flex items-center justify-center z-10">
             <div className="w-5 h-5 border-2 border-zinc-600 border-t-blue-500 rounded-full animate-spin" />
@@ -336,7 +336,7 @@ function Panel({
         ) : (
           <span className="text-zinc-600 text-xs">No data</span>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
