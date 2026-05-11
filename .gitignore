@@ -16,3 +16,13 @@ Database/
 ui/node_modules/
 ui/.next/
 ui/out/
+
+# mkdocs build output
+site/
+
+# Misc
+visualize_results.py
+datasets/
+line_detection/
+output_run_24_morph_thin/
+output_run_26_hybrid2/
