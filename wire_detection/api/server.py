@@ -23,17 +23,24 @@ def _ensure_synthetic_data():
     if cfg is None:
         return
     cfg.path.mkdir(parents=True, exist_ok=True)
-    existing = list(cfg.path.glob(cfg.image_glob))
+    existing = registry.list_images("synthetic")
     if len(existing) >= 50:
         return
     from wire_detection.sdg.generator import SDG, SDGConfig
-    print(f"Generating synthetic dataset at {cfg.path}...")
+    parts = cfg.image_glob.split("/")
+    try:
+        img_idx = parts.index("images")
+        subdir = "/".join(parts[:img_idx])
+        output_dir = cfg.path / subdir if subdir else cfg.path
+    except ValueError:
+        output_dir = cfg.path
+    print(f"Generating synthetic dataset at {output_dir}...")
     sdg = SDG(SDGConfig(
         num_images=50,
         seed=42,
         image_size=(256, 256),
-        output_dir=cfg.path,
-        label_format="lines",
+        output_dir=output_dir,
+        label_format=cfg.label_format or "lines",
         wires_per_image=(3, 8),
     ))
     sdg.generate()
