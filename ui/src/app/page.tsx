@@ -27,6 +27,7 @@ export default function Home() {
     overlay: string; threshold: string; dilated: string;
   } | null>(null);
 
+  const [preview, setPreview] = useState<{ title: string; image: string } | null>(null);
   const [params, setParams] = useState({
     thresh_mode: "otsu" as "otsu" | "manual" | "adaptive",
     thresh_val: 127,
@@ -211,10 +212,31 @@ export default function Home() {
 
       {/* ── Image Grid ── */}
       <main className="flex-1 p-4 grid grid-cols-2 grid-rows-2 gap-3">
-        <Panel title="Detected Lines" image={result?.overlay} loading={loading} />
-        <Panel title="Threshold" image={result?.threshold} loading={loading} />
-        <Panel title="Dilated" image={result?.dilated} loading={loading} />
-        <Panel title="Source" image={`${API_URL}/api/thumb?idx=${imageIdx}&ds=${dataset}`} loading={false} isThumb />
+        <Panel
+          title="Detected Lines"
+          image={result?.overlay}
+          loading={loading}
+          onClick={result?.overlay ? () => setPreview({ title: "Detected Lines", image: `data:image/jpeg;base64,${result!.overlay}` }) : undefined}
+        />
+        <Panel
+          title="Threshold"
+          image={result?.threshold}
+          loading={loading}
+          onClick={result?.threshold ? () => setPreview({ title: "Threshold", image: `data:image/jpeg;base64,${result!.threshold}` }) : undefined}
+        />
+        <Panel
+          title="Dilated"
+          image={result?.dilated}
+          loading={loading}
+          onClick={result?.dilated ? () => setPreview({ title: "Dilated", image: `data:image/jpeg;base64,${result!.dilated}` }) : undefined}
+        />
+        <Panel
+          title="Source"
+          image={`${API_URL}/api/thumb?idx=${imageIdx}&ds=${dataset}`}
+          loading={false}
+          isThumb
+          onClick={() => setPreview({ title: "Source", image: `${API_URL}/api/thumb?idx=${imageIdx}&ds=${dataset}` })}
+        />
       </main>
 
       {/* ── Image Picker Dialog ── */}
@@ -270,6 +292,29 @@ export default function Home() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Image Preview Dialog ── */}
+      <Dialog open={preview !== null} onOpenChange={(open) => { if (!open) setPreview(null); }}>
+        <DialogContent
+          className="p-0 overflow-hidden"
+          style={{ width: "calc(100vw - 2rem)", maxWidth: "calc(100vw - 2rem)", height: "calc(100vh - 2rem)" }}
+        >
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between p-3 shrink-0 border-b border-zinc-800">
+              <span className="text-sm text-zinc-400">{preview?.title}</span>
+            </div>
+            <div className="flex-1 flex items-center justify-center min-h-0 bg-black">
+              {preview && (
+                <img
+                  src={preview.image}
+                  alt={preview.title}
+                  className="max-w-full max-h-full object-contain"
+                />
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -312,16 +357,21 @@ function Panel({
   image,
   loading,
   isThumb,
+  onClick,
 }: {
   title: string;
   image?: string;
   loading: boolean;
   isThumb?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col">
       <div className="px-3 py-2 text-xs font-medium text-zinc-400 border-b border-zinc-800 shrink-0">{title}</div>
-      <div className="flex-1 flex items-center justify-center relative min-h-0 overflow-hidden">
+      <div
+        className={`flex-1 flex items-center justify-center relative min-h-0 overflow-hidden ${onClick ? "cursor-pointer" : ""}`}
+        onClick={onClick}
+      >
         {loading && (
           <div className="absolute inset-0 bg-zinc-900/80 flex items-center justify-center z-10">
             <div className="w-5 h-5 border-2 border-zinc-600 border-t-blue-500 rounded-full animate-spin" />
