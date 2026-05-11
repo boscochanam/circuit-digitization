@@ -125,16 +125,17 @@ class SDG:
         canvas = add_paper_imperfections(canvas)
 
         components = self._generate_components()
-        for x, y, w, h in components:
-            c = py_rng.randint(200, 240)
-            cv2.rectangle(canvas, (x, y), (x + w, y + h), (c, c, c), -1)
-
         edges = self._generate_connections(components)
+
         lines = []
         for edge in edges:
             result = self._draw_line(canvas, edge, components)
             if result:
                 lines.append(result)
+
+        for x, y, w, h in components:
+            c = py_rng.randint(200, 240)
+            cv2.rectangle(canvas, (x, y), (x + w, y + h), (c, c, c), -1)
 
         return canvas, lines
 
