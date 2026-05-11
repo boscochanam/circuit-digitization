@@ -15,6 +15,7 @@ theme:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Dataset Setup: datasets.md
   - Architecture: architecture.md
   - Pipeline:
     - Overview: pipeline/overview.md

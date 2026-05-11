@@ -1,6 +1,9 @@
+# Dataset Configuration
+# Paths are relative to the project root (where this config is loaded from).
+# See docs/datasets.md for setup instructions.
 datasets:
   hdc:
-    path: /home/bosco/Projects/Misc-Projects/LineDetection/roboflow_test2
+    path: ./roboflow_test2
     image_glob: "**/images/*.jpg"
     label_format: yolo_obb
     label_glob: "**/labels/*.txt"
@@ -8,7 +11,7 @@ datasets:
     description: "HDC-Recognition PCB schematics, 1993 images, 57 component classes"
 
   hand_drawn:
-    path: /home/bosco/Projects/Misc-Projects/LineDetection/roboflow_test
+    path: ./roboflow_test
     image_glob: "**/images/*.jpg"
     label_format: yolo_obb
     label_glob: "**/labels/*.txt"
@@ -16,15 +19,15 @@ datasets:
     description: "Hand-drawn circuit wires, 140 images, 7094 GT wires"
 
   synthetic:
-    path: /home/bosco/Projects/wire-testing/dataset_pose
-    image_glob: "train/images/*.jpg"
-    label_format: yolov8_pose
-    label_glob: "train/labels/*.txt"
+    path: ./data/synthetic
+    image_glob: "images/*.jpg"
+    label_format: lines
+    label_glob: "labels/*.txt"
     component_labels: false
-    description: "Synthetic bezier-curve wires on varied backgrounds, 2000 images"
+    description: "Synthetic bezier-curve wires on varied backgrounds, auto-generated"
 
   database:
-    path: /home/bosco/Projects/Misc-Projects/LineDetection/Database
+    path: ./Database
     image_glob: "*/*.jpg"
     label_format: null
     label_glob: null

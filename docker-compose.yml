@@ -6,9 +6,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - /home/bosco/Projects/Misc-Projects/LineDetection/roboflow_test2:/data/hdc
-      - /home/bosco/Projects/Misc-Projects/LineDetection/roboflow_test:/data/hand_drawn
-      - /home/bosco/Projects/Misc-Projects/LineDetection/Database:/data/database
+      - ./roboflow_test2:/data/hdc
+      - ./roboflow_test:/data/hand_drawn
+      - ./Database:/data/database
     environment:
       - DATASETS_YAML=/app/wire_detection/config/datasets.docker.yaml
 

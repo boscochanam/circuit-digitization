@@ -6,6 +6,10 @@
 - [uv](https://docs.astral.sh/uv/) (package manager)
 - Node.js 20+ and pnpm (for the frontend)
 
+## Datasets
+
+Before running the framework, you need datasets. See [Dataset Setup](datasets.md) for download and configuration instructions.
+
 ## Backend Setup
 
 ```bash
