@@ -1,0 +1,44 @@
+site_name: Wire Detection Framework
+site_description: A modular Python pipeline for detecting wires in circuit schematics
+repo_url: https://github.com/boscochanam/circuit-digitization
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: indigo
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.expand
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Architecture: architecture.md
+  - Pipeline:
+    - Overview: pipeline/overview.md
+    - Stages: pipeline/stages.md
+    - Backends: pipeline/backends.md
+  - API Reference:
+    - Endpoints: api/endpoints.md
+    - Configuration: api/configuration.md
+  - Synthetic Data Generation: sdg.md
+  - Evaluation: evaluate.md
+  - Experiment Engine: experiment.md
+  - CLI Reference: cli.md
+  - Deployment: deployment.md
+  - Development: development.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - tables
+  - toc:
+      permalink: true

@@ -28,6 +28,8 @@ wire-pipeline = "wire_detection.pipeline.cli:main"
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.6",
     "mypy>=2.0.0",
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
