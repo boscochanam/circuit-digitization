@@ -83,13 +83,19 @@ class DatasetRegistry:
                          for i in range(0, 8, 2)],
                         dtype=np.int32,
                     )
-                    p1, p2, p3, p4 = poly
-                    d13 = np.linalg.norm(p1 - p3)
-                    d24 = np.linalg.norm(p2 - p4)
-                    if d13 >= d24:
-                        lines.append(WireLine(p1=tuple(p1), p2=tuple(p3)))
-                    else:
-                        lines.append(WireLine(p1=tuple(p2), p2=tuple(p4)))
+                    # Short-edge midpoint method: find the two shortest edges of the OBB,
+                    # take their midpoints — this gives the true centerline for thin wires.
+                    n_ = len(poly)
+                    edges = [(i, (i + 1) % n_) for i in range(n_)]
+                    el = [(np.linalg.norm(poly[a] - poly[b]), a, b) for a, b in edges]
+                    el.sort(key=lambda x: x[0])
+                    s1, s2 = el[0], el[1]
+                    mid1 = (poly[s1[1]] + poly[s1[2]]) / 2
+                    mid2 = (poly[s2[1]] + poly[s2[2]]) / 2
+                    lines.append(WireLine(
+                        p1=(int(mid1[0]), int(mid1[1])),
+                        p2=(int(mid2[0]), int(mid2[1])),
+                    ))
                 except (ValueError, IndexError):
                     continue
         return lines

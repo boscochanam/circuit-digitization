@@ -73,6 +73,50 @@ Pre-defined configs for common scenarios:
 | `no_dedup` | Pipeline without dedup stage |
 | `heavy_dilate` | Large kernel, multiple iterations |
 
+## Final Results (May 2026)
+
+Benchmark on 23 circuit schematic images (704×704) with 300 ground-truth wire segments. Evaluation: point-based F1 (endpoint distance ≤20px).
+
+### Best Pipeline: Sauvola+CCL+Merge (Occluded)
+
+```
+occlude components → Sauvola k=0.3 (w=51) → close(ellipse 3×3) → CCL(min_area=20) → dedup(10°,18px) → length_filter(10px) → collinear_merge(10°,30px gap)
+```
+
+- **Global F1: 0.627** | **Avg F1: 0.576**
+- Precision: **0.627** | Recall: **0.627**
+- TP=188 FP=112 FN=112
+- **+8% over previous best** (0.593), **+68% over original** (0.370)
+
+### Strategy Comparison
+
+| Strategy | Global F1 | TP | FP | FN | P | R |
+|---|---|---|---|---|---|---|
+| | **Sauvola+CCL+Merge (occluded)** | **0.627** | 188 | 112 | 112 | **0.627** | **0.627** |
+| Sauvola+CCL (no merge, old params) | 0.508 | 134 | 94 | 166 | 0.588 | 0.447 |
+| HoughLinesP + Canny | 0.415 | 156 | 295 | 144 | 0.346 | 0.520 |
+| Old (strategy+close+ct+merge) | 0.370 | 86 | 79 | 214 | 0.521 | 0.287 |
+
+### Key Insight
+
+Three changes drove improvement:
+1. **Collinear merge** — redundant fragments on the same GT line were counted as FPs (29%). Merge eliminates them.
+2. **Sauvola k=0.3** (was 0.5) — more sensitive, catches thin traces.
+3. **Relaxed close(3)/CCL(20)/len(10)** — captures thin wires previously filtered out.
+
+### Best Config
+
+```json
+{"sauvola_k": 0.3, "sauvola_window": 51, "close_kernel": 3, "ccl_min_area": 20,
+ "dedup_angle": 10, "dedup_dist": 18, "merge_angle": 10, "merge_gap": 30, "min_length": 10}
+```
+
+### Files
+
+- Best config: `~/workspace/experiment_v7/best_config.json`
+- Full sweep: `~/workspace/iterative_benchmark.py`
+- Obsidian docs: `Knowledge_Base/01_Projects/Circuit Digitization/`
+
 ## Features
 
 - **Checkpointing** — save partial results to resume interrupted sweeps

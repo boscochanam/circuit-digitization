@@ -23,10 +23,10 @@ def main():
             config = yaml.safe_load(f)
     else:
         config = {
-            "stages": ["threshold", "invert", "dilate", "ccl", "contour_extract", "dedup", "length_filter"],
+            "stages": ["threshold", "invert", "close", "ccl", "contour_extract", "dedup", "length_filter"],
             "stage_params": {
-                "threshold": {"mode": "otsu"},
-                "dilate": {"kernel_size": 5, "iterations": 1},
+                "threshold": {"mode": "sauvola", "k": 0.5, "window": 51},
+                "close": {"kernel_size": 5, "shape": "ellipse"},
                 "ccl": {"min_area": 30},
                 "dedup": {"angle_thresh": 10, "dist_thresh": 12},
                 "length_filter": {"min_length": 20},

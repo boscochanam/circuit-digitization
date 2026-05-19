@@ -3,15 +3,23 @@
 # See docs/datasets.md for setup instructions.
 datasets:
   hdc:
-    path: ./roboflow_test2
-    image_glob: "**/images/*.jpg"
+    path: /home/claw/circuit-digitization/roboflow_test2
+    image_glob: "train/images/*.jpg"
     label_format: yolo_obb
-    label_glob: "**/labels/*.txt"
+    label_glob: "train/labels/*.txt"
     component_labels: true
     description: "HDC-Recognition PCB schematics, 1993 images, 57 component classes"
 
+  gt_labels:
+    path: /home/claw/workspace/ground_truth/labels_few_annot
+    image_glob: "images/*.jpg"
+    label_format: yolo_obb
+    label_glob: "labels/train/manually_verified_no_background_data/images/*.txt"
+    component_labels: true
+    description: "Labelled ground truth (23 images, Chris)"
+
   hand_drawn:
-    path: ./roboflow_test
+    path: /home/claw/circuit-digitization/roboflow_test
     image_glob: "**/images/*.jpg"
     label_format: yolo_obb
     label_glob: "**/labels/*.txt"
@@ -19,7 +27,7 @@ datasets:
     description: "Hand-drawn circuit wires, 140 images, 7094 GT wires"
 
   synthetic:
-    path: ./data/synthetic
+    path: /home/claw/workspace/circuit-digitization-repo/data/synthetic
     image_glob: "images/*.jpg"
     label_format: lines
     label_glob: "labels/*.txt"
@@ -27,7 +35,7 @@ datasets:
     description: "Synthetic bezier-curve wires on varied backgrounds, auto-generated"
 
   database:
-    path: ./Database
+    path: /home/claw/workspace/circuit-digitization-repo/Database
     image_glob: "*/*.jpg"
     label_format: null
     label_glob: null
