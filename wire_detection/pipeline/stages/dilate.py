@@ -10,6 +10,10 @@ class DilateStage(PipelineStage):
     def run(self, image: np.ndarray, params: dict[str, Any]) -> StageOutput:
         kernel_size = int(params.get("kernel_size", 5))
         iterations = int(params.get("iterations", 1))
+        
+        if kernel_size < 1 or iterations < 1:
+            return StageOutput(image)
+        
         shape_name = params.get("shape", "rect")
 
         shape_map = {

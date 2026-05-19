@@ -18,3 +18,8 @@ register_stage("ccl", CCLStage)
 register_stage("contour_extract", ContourExtractStage)
 register_stage("dedup", DedupStage)
 register_stage("length_filter", LengthFilterStage)
+from wire_detection.pipeline.stages.normalize import NormalizeStage
+register_stage("normalize", NormalizeStage)
+from wire_detection.pipeline.stages.close_merge import CloseStage, MergeStage
+register_stage("close", CloseStage)
+register_stage("merge", MergeStage)

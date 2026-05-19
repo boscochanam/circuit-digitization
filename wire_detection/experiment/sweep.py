@@ -24,23 +24,58 @@ class ConfigResult:
 
 
 @dataclass
+class PerImageResult:
+    stem: str
+    gt_count: int
+    f1: float
+    precision: float
+    recall: float
+    tp: int
+    fp: int
+    fn: int
+    redundant: int
+    params: dict[str, Any]
+
+
+@dataclass
 class SweepConfig:
     name: str = "sweep"
     pipeline_params: dict[str, list | tuple] = field(default_factory=dict)
+    architectures: list[list[str]] | None = None
     base_config: dict[str, Any] = field(default_factory=dict)
-    dataset: str = "hand_drawn"
+    dataset: str = "gt_labels"
     max_images: int = 200
     metric: Literal["f1", "precision", "recall"] = "f1"
     method: Literal["grid", "random"] = "grid"
-    n_random: int = 50
+    n_random: int = 2000
     parallel: int = 4
+    per_image: bool = False
+    gt_dist_thresh: int = 20
 
 
 @dataclass
 class SweepResult:
     configs: list[ConfigResult] = field(default_factory=list)
     best: ConfigResult | None = None
+    per_image: list[PerImageResult] = field(default_factory=list)
     ranking_table: str = ""
+
+
+ALL_STAGES = [
+    "crop", "mask", "normalize", "threshold", "invert",
+    "close", "dilate", "ccl", "contour_extract", "dedup",
+    "merge", "length_filter",
+]
+
+ARCHITECTURES: dict[str, list[str]] = {
+    "close": ["normalize", "threshold", "invert", "close", "ccl", "contour_extract", "dedup", "length_filter"],
+    "no_close": ["normalize", "threshold", "invert", "ccl", "contour_extract", "dedup", "length_filter"],
+    "dilate": ["normalize", "threshold", "invert", "dilate", "ccl", "contour_extract", "dedup", "length_filter"],
+    "merge": ["normalize", "threshold", "invert", "close", "ccl", "contour_extract", "merge", "length_filter"],
+    "no_dedup": ["normalize", "threshold", "invert", "close", "ccl", "contour_extract", "length_filter"],
+    "close_merge": ["normalize", "threshold", "invert", "close", "ccl", "contour_extract", "dedup", "merge", "length_filter"],
+    "bare": ["normalize", "threshold", "invert", "ccl", "contour_extract", "length_filter"],
+}
 
 
 def _generate_param_combinations(cfg: SweepConfig) -> list[dict[str, Any]]:
@@ -80,7 +115,13 @@ def _generate_param_combinations(cfg: SweepConfig) -> list[dict[str, Any]]:
     return combos
 
 
-def _run_single(params: dict, base_config: dict, dataset_key: str, max_images: int, registry: DatasetRegistry) -> dict:
+def _run_single(
+    params: dict,
+    base_config: dict,
+    dataset_key: str,
+    max_images: int,
+    registry: DatasetRegistry,
+) -> dict:
     import cv2
     import yaml
 
@@ -91,8 +132,15 @@ def _run_single(params: dict, base_config: dict, dataset_key: str, max_images: i
         else:
             merged[stage_name] = stage_params
 
-    STAGE_ORDER = ["crop", "mask", "threshold", "invert", "dilate", "ccl", "contour_extract", "dedup", "length_filter"]
-    active_stages = [s for s in STAGE_ORDER if s in merged]
+    # Determine stage order based on what's in params
+    arch = params.get("_architecture", None)
+    if arch and arch in ARCHITECTURES:
+        active_stages = ARCHITECTURES[arch]
+    else:
+        # Build active stages from param keys and base_config
+        all_configured_stages = set(list(merged.keys()) + list(base_config.keys()))
+        active_stages = [s for s in ALL_STAGES if s in all_configured_stages]
+
     config = {
         "stages": active_stages,
         "stage_params": merged,
@@ -135,13 +183,74 @@ def _run_single(params: dict, base_config: dict, dataset_key: str, max_images: i
     return {"f1": 0, "precision": 0, "recall": 0, "tp": 0, "fp": 0, "fn": 0, "redundant": 0}
 
 
+def _run_per_image(
+    params: dict,
+    base_config: dict,
+    dataset_key: str,
+    registry: DatasetRegistry,
+) -> list[PerImageResult]:
+    import cv2
+    import os
+
+    merged = dict(base_config)
+    for stage_name, stage_params in params.items():
+        if stage_name in merged:
+            merged[stage_name].update(stage_params)
+        else:
+            merged[stage_name] = stage_params
+
+    arch = params.get("_architecture", None)
+    if arch and arch in ARCHITECTURES:
+        active_stages = ARCHITECTURES[arch]
+    else:
+        all_configured_stages = set(list(merged.keys()) + list(base_config.keys()))
+        active_stages = [s for s in ALL_STAGES if s in all_configured_stages]
+
+    config = {
+        "stages": active_stages,
+        "stage_params": merged,
+    }
+
+    pipeline = PipelineFactory.from_config(config)
+    images = registry.list_images(dataset_key)
+    results = []
+
+    for img_path in images:
+        image = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
+        if image is None:
+            continue
+        gt_lines = registry.load_labels(img_path)
+        gt = [(l.p1, l.p2) for l in gt_lines]
+
+        result = pipeline.run(image)
+        eval_result = evaluate(result.lines, gt)
+
+        results.append(PerImageResult(
+            stem=img_path.stem,
+            gt_count=len(gt),
+            f1=eval_result.f1,
+            precision=eval_result.precision,
+            recall=eval_result.recall,
+            tp=eval_result.tp,
+            fp=eval_result.fp,
+            fn=eval_result.fn,
+            redundant=eval_result.redundant,
+            params=merged,
+        ))
+
+    return results
+
+
 def run_sweep(cfg: SweepConfig) -> SweepResult:
     registry = DatasetRegistry()
     param_combos = _generate_param_combinations(cfg)
     results = []
 
     for combo in param_combos:
-        metrics = _run_single(combo, cfg.base_config, cfg.dataset, cfg.max_images, registry)
+        metrics = _run_single(
+            combo, cfg.base_config, cfg.dataset,
+            cfg.max_images, registry
+        )
         config_result = ConfigResult(
             params=combo,
             f1=metrics["f1"],
