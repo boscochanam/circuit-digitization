@@ -42,11 +42,11 @@ occlude components → crop to ROI (10px pad) → Sauvola k=0.3 (w=51) → close
 
 | Metric | Value |
 |--------|-------|
-| **Global F1** | **0.627** |
+| **Global F1** | **0.647** |
 | **Avg F1** | **0.576** |
-| Precision | **0.627** |
-| Recall | **0.627** |
-| TP / FP / FN | **188 / 112 / 112** |
+| Precision | **0.684** |
+| Recall | **0.613** |
+| TP / FP / FN | **184 / 85 / 116** |
 
 ### Strategy Comparison
 
