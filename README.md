@@ -1,8 +1,12 @@
 # Wire Detection Framework
 
-A modular Python framework for detecting wires in circuit schematics — classical CV pipeline, synthetic data generator, evaluation toolkit, FastAPI backend, and Next.js tuner UI.
+A modular Python framework for detecting interconnect wires in circuit schematics — classical CV pipeline, synthetic data generator, evaluation toolkit, FastAPI backend, and Next.js tuner UI.
 
-> **Full documentation at [https://boscochanam.github.io/circuit-digitization](https://boscochanam.github.io/circuit-digitization)** — or build locally with `uv run mkdocs serve`.
+> **Full documentation**: [https://boscochanam.github.io/circuit-digitization](https://boscochanam.github.io/circuit-digitization) — or build locally with `uv run mkdocs serve`.
+> **Status**: **Global F1: 0.707** (Sauvola+CCL+Dedup, 23 images, all occluded, no merge)
+> **Dataset**: 23 circuit schematic images (704×704), 300 ground-truth wire segments
+
+---
 
 ## Quickstart
 
@@ -14,13 +18,90 @@ docker compose up --build   # Or: uv run wire-tune + pnpm dev
 
 ## CLI
 
+| Command | Description |
+|---------|-------------|
+| `wire-tune` | Start the tuner API server |
+| `wire-pipeline` | Run pipeline on a single image |
+| `wire-sdg` | Generate synthetic dataset |
+| `wire-eval` | Evaluate detections against ground truth |
+| `wire-sweep` | Run a parameter sweep |
+
+---
+
+## Final Results (May 2026)
+
+### Best Pipeline: Sauvola+CCL+Dedup
+
 ```
-wire-tune      Start the tuner API server
-wire-pipeline  Run pipeline on a single image
-wire-sdg       Generate synthetic dataset
-wire-eval      Evaluate detections against ground truth
-wire-sweep     Run a parameter sweep
+occlude components → crop to ROI (10px pad) → Sauvola k=0.3 (w=51) → 
+close(ellipse 3×3) → CCL(min_area=20) → dedup(10°,18px) → Output Lines
 ```
+
+| Metric | Value |
+|--------|-------|
+| **Global F1** | **0.707** |
+| Precision | **0.617** |
+| Recall | **0.827** |
+| TP / FP / FN | **248 / 70 / 52** |
+
+### Best Config
+
+```json
+{
+  "sauvola_k": 0.3, "sauvola_window": 51, "close_kernel": 3,
+  "ccl_min_area": 20, "dedup_angle": 10, "dedup_dist": 18,
+  "merge_angle": 10, "merge_gap": 30, "min_length": 10,
+  "fallback_k": 0.25, "min_trace_pct": 0.5
+}
+```
+
+### Strategy Comparison
+
+| Strategy | Global F1 | TP | FP | FN | P | R |
+|----------|-----------|----|----|----|----|----|
+| **Sauvola+CCL+Dedup (current)** | **0.707** | 248 | 70 | 52 | 0.617 | 0.827 |
+| Sauvola+CCL+Merge (old) | 0.647 | 184 | 85 | 116 | 0.684 | 0.613 |
+| Sauvola+CCL (no merge, old params) | 0.508 | 134 | 94 | 166 | 0.588 | 0.447 |
+| HoughLinesP + Canny (per-image best avg) | 0.682* | — | — | — | — | — |
+| Original (strategy+close+ct+merge) | 0.370 | 86 | 79 | 214 | 0.521 | 0.287 |
+
+*\*Per-image avg F1 — upper bound from per-image optimal Canny/Hough params, not a single deployable config.*
+
+### Key Improvements (Experiment Progression)
+
+| # | Change | F1 | Δ |
+|---|--------|----|---|
+| 1 | Original pipeline (baseline) | 0.370 | — |
+| 2 | Sauvola k=0.5 + occlusion | 0.508 | +0.138 |
+| 3 | + Collinear merge | 0.526 | +0.018 |
+| 4 | Sweep: k=0.3, close=3, CCL=20, dedup=18 | 0.587 | +0.061 |
+| 5 | + Adaptive k fallback | 0.593 | +0.006 |
+| 6 | + Crop to ROI (10px pad) | 0.627 | +0.034 |
+| 7 | + Occlusion on all 23 images | 0.647 | +0.020 |
+| **8** | **Remove merge (dedup only)** | **0.707** | **+0.060** |
+
+### Synthetic Validation
+
+- **50 synthetic images, 452 GT lines**: Sauvola+CCL+Merge achieves **F1=0.941**
+- Proves method works near-perfectly on clean schematics
+- Real-world gap (0.941→0.647) is scanner artifacts, paper grain, and severed wire boundaries
+
+---
+
+## Publication
+
+Target venues:
+
+| Venue | Deadline | Odds |
+|-------|----------|------|
+| **MethodsX (Elsevier)** | Rolling (submit ~Jul 2026) | 70-80% |
+| **NeurIPS 2026 Workshop** | Aug 29, 2026 | 40-55% |
+
+Strategy: submit MethodsX first (Jul 2026), then NeurIPS Workshop (Aug 29) — MethodsX under review ≠ published — no prior-pub conflict. Two publications from one pipeline.
+
+See `~/workspace/README.md` for full experiment history and publishing timeline.
+
+---
 
 ## Project Structure
 
@@ -29,56 +110,6 @@ wire_detection/     Python backend (pipeline, API, SDG, evaluation, experiments)
 ui/                 Next.js frontend (tuner UI)
 docs/               MkDocs documentation
 ```
-
-## Final Results (May 2026)
-
-Benchmark on 23 circuit schematic images (704×704) with 300 ground-truth wire segments. Evaluation: point-based F1 (endpoint distance ≤20px).
-
-### Best Pipeline: Sauvola+CCL+Merge (Occluded)
-
-```
-occlude components → crop to ROI (10px pad) → Sauvola k=0.3 (w=51) → close(ellipse 3×3) → CCL(min_area=20) → dedup(10°,18px) → length_filter(10px) → collinear_merge(10°,30px gap) → retry with k=0.25 if 0 lines detected
-```
-
-| Metric | Value |
-|--------|-------|
-| **Global F1** | **0.647** |
-| **Avg F1** | **0.576** |
-| Precision | **0.684** |
-| Recall | **0.613** |
-| TP / FP / FN | **184 / 85 / 116** |
-
-### Strategy Comparison
-
-| Strategy | Global F1 | TP | FP | FN | P | R |
-|---|---|---|---|---|---|---|
-| **Sauvola+CCL+Merge (occluded)** | **0.587** | 188 | 153 | 112 | 0.551 | **0.627** |
-| Old (strategy+close+ct+merge) | 0.370 | 86 | 79 | 214 | 0.521 | 0.287 |
-| HoughLinesP + Canny | 0.415 | 156 | 295 | 144 | 0.346 | 0.520 |
-| Sauvola+CCL (no merge, old params) | 0.508 | 134 | 94 | 166 | 0.588 | 0.447 |
-
-### Key Insight
-
-Three changes drove most of the improvement:
-1. **Collinear merge** — redundant fragments on the same GT line were counted as FPs (29% of all FPs). Merge eliminates them.
-2. **Sauvola k=0.3** — more sensitive than k=0.5, catches thin/low-contrast traces.
-3. **Relaxed filtering** — close(3), CCL(20), min_len(10) capture thin wires that tighter params filtered out.
-
-### Best Config (Adaptive k Fallback)
-
-```json
-{"sauvola_k": 0.3, "sauvola_window": 51, "close_kernel": 3, "ccl_min_area": 20,
- "dedup_angle": 10, "dedup_dist": 18, "merge_angle": 10, "merge_gap": 30, "min_length": 10,
- "fallback_k": 0.25, "min_trace_pct": 0.5}
-```
-
-The pipeline tries k=0.3 first. If the binary has <0.5% trace coverage (near-black), it falls back to k=0.25. This fixes the 3 failing images where Sauvola wipes out thin traces.
-
-### Files
-
-- Best config: `~/workspace/experiment_v7/best_config.json`
-- Full sweep: `~/workspace/iterative_benchmark.py`
-- Adaptive k test: `~/workspace/test_adaptive_k.py`
 
 ## Development
 
@@ -91,3 +122,9 @@ uv run ruff check wire_detection/        # Lint
 ## License
 
 See [LICENSE.txt](LICENSE.txt).
+
+## Contact
+
+- **Chris Dcosta**: chrisdcosta777@gmail.com / chris.dcosta.btech2021@sitpune.edu.in
+- **Repository**: github.com/boscochanam/circuit-digitization
+- **Bosco**: GitHub @boscochanam
