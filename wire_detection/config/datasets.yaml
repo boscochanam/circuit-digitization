@@ -1,6 +1,4 @@
 # Dataset Configuration
-# Paths are relative to the project root (where this config is loaded from).
-# See docs/datasets.md for setup instructions.
 datasets:
   hdc:
     path: /home/claw/circuit-digitization/roboflow_test2
@@ -18,14 +16,6 @@ datasets:
     component_labels: true
     description: "Labelled ground truth (23 images, Chris)"
 
-  hand_drawn:
-    path: /home/claw/circuit-digitization/roboflow_test
-    image_glob: "**/images/*.jpg"
-    label_format: yolo_obb
-    label_glob: "**/labels/*.txt"
-    component_labels: false
-    description: "Hand-drawn circuit wires, 140 images, 7094 GT wires"
-
   synthetic:
     path: /home/claw/workspace/circuit-digitization-repo/data/synthetic
     image_glob: "images/*.jpg"
@@ -33,10 +23,3 @@ datasets:
     label_glob: "labels/*.txt"
     component_labels: false
     description: "Synthetic bezier-curve wires on varied backgrounds, auto-generated"
-
-  database:
-    path: /home/claw/workspace/circuit-digitization-repo/Database
-    image_glob: "*/*.jpg"
-    label_format: null
-    label_glob: null
-    description: "Raw schematic images for visual inspection (no labels)"

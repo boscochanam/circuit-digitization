@@ -3,33 +3,34 @@ stages:
   - mask
   - threshold
   - invert
-  - dilate
+  - close
   - ccl
   - contour_extract
   - dedup
-  - length_filter
 
 stage_params:
   crop:
     padding: 10
   mask:
     fill_value: 255
+    occlusion_margin: 0.15
   threshold:
-    mode: otsu
-    value: 127
-    block_size: 31
-    c: 2
-  dilate:
-    kernel_size: 5
+    mode: sauvola
+    k: 0.30
+    r: 128
+    window: 51
+    fallback_k: 0.25
+    min_trace: 0.5
+  close:
+    kernel_size: 3
     iterations: 1
-    shape: rect
+    shape: ellipse
   ccl:
-    min_area: 30
+    min_area: 20
     connectivity: 8
     backend: opencv
+  contour_extract:
+    method: farthest_pair
   dedup:
     angle_thresh: 10
-    dist_thresh: 12
-  length_filter:
-    min_length: 20
-    max_length: 0
+    dist_thresh: 18

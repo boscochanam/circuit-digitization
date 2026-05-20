@@ -8,13 +8,13 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { listImages, runPipeline, fetchDatasets } from "@/lib/api";
 
-const DATASETS = ["hand_drawn", "synthetic", "database"] as const;
+const DATASETS = ["gt_labels", "synthetic"] as const;
 type Dataset = (typeof DATASETS)[number];
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function Home() {
-  const [dataset, setDataset] = useState<Dataset>("hand_drawn");
+  const [dataset, setDataset] = useState<Dataset>("gt_labels");
   const [imageIdx, setImageIdx] = useState(0);
   const [imageList, setImageList] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -113,7 +113,7 @@ export default function Home() {
                 className="flex-1 min-w-[80px]"
                 onClick={() => setDataset(d)}
               >
-                {d === "hand_drawn" ? "Hand Drawn" : d === "synthetic" ? "Synthetic" : "Database"}
+                {d === "gt_labels" ? "GT Labels" : d === "synthetic" ? "Synthetic" : d}
               </Button>
             ))}
           </div>
