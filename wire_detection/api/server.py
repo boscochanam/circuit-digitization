@@ -10,11 +10,33 @@ from fastapi.responses import JSONResponse, HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from io import BytesIO
+import yaml
 
 from wire_detection.pipeline.factory import PipelineFactory
 from wire_detection.pipeline.registry import STAGES
 from wire_detection.data.dataset import DatasetRegistry
 from wire_detection.api.cache import ImageCache
+
+
+def _load_default_config():
+    """Load pipeline config from defaults.yaml."""
+    pkg_dir = Path(__file__).resolve().parent.parent
+    defaults_path = pkg_dir / "config" / "defaults.yaml"
+    if defaults_path.exists():
+        with open(defaults_path) as f:
+            return yaml.safe_load(f)
+    # Fallback
+    return {
+        "stages": ["crop", "mask", "threshold", "invert", "close", "ccl", "contour_extract", "dedup"],
+        "stage_params": {
+            "crop": {"padding": 10},
+            "mask": {"fill_value": 255, "occlusion_margin": 0.15},
+            "threshold": {"mode": "sauvola", "k": 0.30, "window": 51},
+            "close": {"kernel_size": 3, "shape": "ellipse"},
+            "ccl": {"min_area": 20},
+            "dedup": {"angle_thresh": 10, "dist_thresh": 18},
+        },
+    }
 
 
 def _ensure_synthetic_data():
@@ -72,13 +94,13 @@ def _img_to_base64(image: np.ndarray) -> str:
 
 
 @app.get("/api/list")
-def list_images(ds: str = Query("hand_drawn")):
+def list_images(ds: str = Query("gt_labels")):
     images = registry.list_images(ds)
     return JSONResponse([str(p.name) for p in images])
 
 
 @app.get("/api/thumb")
-def get_thumb(idx: int = 0, ds: str = Query("hand_drawn")):
+def get_thumb(idx: int = 0, ds: str = Query("gt_labels")):
     images = registry.list_images(ds)
     if idx < 0 or idx >= len(images):
         return JSONResponse({"error": f"index {idx} out of range (0-{len(images)-1})"}, status_code=404)
@@ -108,7 +130,7 @@ def list_datasets():
 @app.post("/api/process")
 def process_image(data: dict[str, Any]):
     img_idx = data.get("img_idx", 0)
-    ds = data.get("ds", "hand_drawn")
+    ds = data.get("ds", "gt_labels")
     params = data.get("params", {})
 
     images = registry.list_images(ds)
@@ -120,31 +142,21 @@ def process_image(data: dict[str, Any]):
     except FileNotFoundError:
         return JSONResponse({"error": "image not found"}, status_code=404)
 
-    config = {
-        "stages": ["threshold", "invert", "dilate", "ccl", "contour_extract", "dedup", "length_filter"],
-        "stage_params": {
-            "threshold": {
-                "mode": params.get("thresh_mode", "otsu"),
-                "value": int(params.get("thresh_val", 127)),
-                "block_size": int(params.get("block_size", 31)),
-                "c": int(params.get("c", 2)),
-            },
-            "dilate": {
-                "kernel_size": int(params.get("dil_ksize", 5)),
-                "iterations": int(params.get("dil_iters", 1)),
-            },
-            "ccl": {
-                "min_area": int(params.get("min_area", 30)),
-            },
-            "dedup": {
-                "angle_thresh": int(params.get("dedup_angle", 10)),
-                "dist_thresh": int(params.get("dedup_dist", 12)),
-            },
-            "length_filter": {
-                "min_length": int(params.get("min_line_length", 0)),
-            },
-        },
-    }
+    # Load default config and apply UI param overrides
+    config = _load_default_config()
+    stage_params = config.get("stage_params", {})
+
+    # Apply UI overrides
+    if "k" in params:
+        stage_params["threshold"]["k"] = float(params["k"])
+    if "min_area" in params:
+        stage_params["ccl"]["min_area"] = int(params["min_area"])
+    if "dedup_angle" in params:
+        stage_params["dedup"]["angle_thresh"] = int(params["dedup_angle"])
+    if "dedup_dist" in params:
+        stage_params["dedup"]["dist_thresh"] = int(params["dedup_dist"])
+    if "close_ks" in params:
+        stage_params["close"]["kernel_size"] = int(params["close_ks"])
 
     pipeline = PipelineFactory.from_config(config)
     result = pipeline.run(image)
@@ -157,7 +169,7 @@ def process_image(data: dict[str, Any]):
         "elapsed_ms": result.elapsed_ms,
         "overlay": _img_to_base64(overlay),
         "threshold": _img_to_base64(result.stage_outputs.get("threshold", image)),
-        "dilated": _img_to_base64(result.stage_outputs.get("dilated", image)),
+        "close": _img_to_base64(result.stage_outputs.get("close", image)),
     })
 
 

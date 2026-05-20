@@ -18,20 +18,27 @@ def main():
         return
 
     import yaml
+    from pathlib import Path
     if args.config:
         with open(args.config) as f:
             config = yaml.safe_load(f)
     else:
-        config = {
-            "stages": ["threshold", "invert", "close", "ccl", "contour_extract", "dedup", "length_filter"],
-            "stage_params": {
-                "threshold": {"mode": "sauvola", "k": 0.5, "window": 51},
-                "close": {"kernel_size": 5, "shape": "ellipse"},
-                "ccl": {"min_area": 30},
-                "dedup": {"angle_thresh": 10, "dist_thresh": 12},
-                "length_filter": {"min_length": 20},
-            },
-        }
+        defaults_path = Path(__file__).parent.parent / "config" / "defaults.yaml"
+        if defaults_path.exists():
+            with open(defaults_path) as f:
+                config = yaml.safe_load(f)
+        else:
+            config = {
+                "stages": ["crop", "mask", "threshold", "invert", "close", "ccl", "contour_extract", "dedup"],
+                "stage_params": {
+                    "crop": {"padding": 10},
+                    "mask": {"fill_value": 255, "occlusion_margin": 0.15},
+                    "threshold": {"mode": "sauvola", "k": 0.30, "window": 51},
+                    "close": {"kernel_size": 3, "shape": "ellipse"},
+                    "ccl": {"min_area": 20},
+                    "dedup": {"angle_thresh": 10, "dist_thresh": 18},
+                },
+            }
 
     image = cv2.imread(args.image, cv2.IMREAD_GRAYSCALE)
     if image is None:
