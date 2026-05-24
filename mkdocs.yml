@@ -16,6 +16,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Dataset Setup: datasets.md
+  - Data Quality: data-quality.md
   - Architecture: architecture.md
   - Pipeline:
     - Overview: pipeline/overview.md
