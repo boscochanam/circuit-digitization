@@ -23,6 +23,7 @@ site/
 # Misc
 visualize_results.py
 datasets/
+data/
 line_detection/
 output_run_24_morph_thin/
 output_run_26_hybrid2/
