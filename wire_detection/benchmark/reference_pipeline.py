@@ -27,16 +27,34 @@ DEPENDENCIES:
 - HDC labels: /home/claw/circuit-digitization/roboflow_test2/{train,valid,test}/labels/
 """
 
-import math, time
+import math
+import os
+import time
 from pathlib import Path
 import numpy as np
 import cv2
 
 # ── Paths ────────────────────────────────────────────────────
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-GT_LABELS = Path("/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images")
-HDC_BASE  = Path("/home/claw/circuit-digitization/roboflow_test2")
-HDC_SPLITS = ["train", "valid", "test"]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+GT_IMAGES = Path(
+    os.environ.get(
+        "WIRE_GT_IMAGES",
+        REPO_ROOT / "labels_few_annot" / "images",
+    )
+)
+GT_LABELS = Path(
+    os.environ.get(
+        "WIRE_GT_LABELS",
+        REPO_ROOT
+        / "labels_few_annot"
+        / "labels"
+        / "train"
+        / "manually_verified_no_background_data"
+        / "images",
+    )
+)
+HDC_BASE = Path(os.environ.get("WIRE_HDC_BASE", REPO_ROOT / "roboflow_test2"))
+HDC_SPLITS = [split.strip() for split in os.environ.get("WIRE_HDC_SPLITS", "train,valid,test").split(",") if split.strip()]
 
 # ── Pipeline Parameters (DO NOT CHANGE — these produce F1=0.707) ──
 SAUVOLA_K         = 0.30
@@ -465,14 +483,14 @@ def main():
     print(f"GLOBAL  | F1={gf1:.4f}  TP={tp_t}  FP={fp_t}  FN={fn_t}  Red={red_t}")
     print(f"        | P={p:.4f}  R={r_:.4f}")
     print(f"Expected | F1=0.7066  TP=248  FP=70  FN=52  Red=84")
-    match = "✅ MATCH" if abs(gf1 - 0.7066) < 0.01 else f"⚠️  OFF BY {abs(gf1 - 0.7066):.4f}"
+    match = "MATCH" if abs(gf1 - 0.7066) < 0.01 else f"OFF BY {abs(gf1 - 0.7066):.4f}"
     print(f"        | {match}")
     print(f"{'=' * 90}")
 
     # Print missing HDC images
     missing_hdc = [r for r in results if not r["has_hdc"]]
     if missing_hdc:
-        print(f"\n⚠️  {len(missing_hdc)} images have NO HDC labels (no occlusion):")
+        print(f"\nWARNING: {len(missing_hdc)} images have NO HDC labels (no occlusion):")
         for r in missing_hdc:
             print(f"    {r['image']}")
 
