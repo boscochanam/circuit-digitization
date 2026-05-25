@@ -3,7 +3,7 @@
 A modular Python framework for detecting interconnect wires in circuit schematics — classical CV pipeline, synthetic data generator, evaluation toolkit, FastAPI backend, and Next.js tuner UI.
 
 > **Full documentation**: [https://boscochanam.github.io/circuit-digitization](https://boscochanam.github.io/circuit-digitization) — or build locally with `uv run mkdocs serve`.
-> **Status**: **Global F1: 0.707** (Sauvola+CCL+Dedup, 23 images, all occluded, no merge)
+> **Status**: **Global F1: 0.749** (Anchor Filter + PCA endpoints + Overlap Dedup, 23 images)
 > **Dataset**: 23 circuit schematic images (704×704), 300 ground-truth wire segments
 
 ---
@@ -25,24 +25,27 @@ docker compose up --build   # Or: uv run wire-tune + pnpm dev
 | `wire-sdg` | Generate synthetic dataset |
 | `wire-eval` | Evaluate detections against ground truth |
 | `wire-sweep` | Run a parameter sweep |
+| `wire-vlm` | VLM quality assessment (classify, sweep, audit) |
+| `wire-benchmark-exp` | Run experiment harness (wave1/wave2) |
 
 ---
 
 ## Final Results (May 2026)
 
-### Best Pipeline: Sauvola+CCL+Dedup
+### Best Pipeline: Anchor Filter + PCA Endpoints + Overlap Dedup
 
 ```
-occlude components → crop to ROI (10px pad) → Sauvola k=0.3 (w=51) → 
-close(ellipse 3×3) → CCL(min_area=20) → dedup(10°,18px) → Output Lines
+occlude components → crop to ROI (10px pad) → Sauvola k=0.285 (w=67) → 
+close(ellipse 3×3) → CCL(min_area=28) → PCA endpoints → overlap dedup(12°,8px) → 
+anchor filter(endpoint_dist=12, link_dist=8) → Output Lines
 ```
 
 | Metric | Value |
 |--------|-------|
-| **Global F1** | **0.707** |
-| Precision | **0.617** |
-| Recall | **0.827** |
-| TP / FP / FN | **248 / 70 / 52** |
+| **Global F1** | **0.749** |
+| Precision | **0.724** |
+| Recall | **0.777** |
+| TP / FP / FN | **233 / 43 / 67** |
 
 ### ⚠️ MANDATORY PREPROCESSING — Must Run BEFORE Detection
 
@@ -89,8 +92,10 @@ cropped = occluded_image[ry1:ry2, rx1:rx2]
 
 ```json
 {
-  "sauvola_k": 0.30, "sauvola_window": 51, "close_kernel": 3,
-  "ccl_min_area": 20, "dedup_angle": 10, "dedup_dist": 18
+  "sauvola_k": 0.285, "sauvola_window": 67, "close_kernel": 3,
+  "ccl_min_area": 28, "endpoint_mode": "pca", "dedup_mode": "overlap",
+  "dedup_angle": 12, "dedup_dist": 8,
+  "anchor_filter_enabled": true, "anchor_endpoint_dist": 12, "anchor_link_dist": 8
 }
 ```
 **Do NOT use merge or length filter — both are proven harmful (destroy 64 TPs).**
@@ -98,13 +103,15 @@ cropped = occluded_image[ry1:ry2, rx1:rx2]
 ### Reference Implementation
 
 See `wire_detection/benchmark/reference_pipeline.py` for the complete, verified implementation.
-Run: `uv run python wire_detection/benchmark/reference_pipeline.py` → produces F1=0.7066.
+Run: `uv run python wire_detection/benchmark/reference_pipeline.py` → produces F1=0.7066 (baseline).
+Run: `uv run python -m wire_detection.benchmark.experiment_harness --preset wave2` → best config achieves F1=0.749.
 
 ### Strategy Comparison
 
 | Strategy | Global F1 | TP | FP | FN | P | R |
 |----------|-----------|----|----|----|----|----|
-| **Sauvola+CCL+Dedup (current)** | **0.707** | 248 | 70 | 52 | 0.617 | 0.827 |
+| **best_candidate_v4 (current best)** | **0.749** | 233 | 43 | 67 | 0.724 | 0.777 |
+| Sauvola+CCL+Dedup (baseline) | 0.707 | 248 | 70 | 52 | 0.617 | 0.827 |
 | Sauvola+CCL+Merge (old) | 0.647 | 184 | 85 | 116 | 0.684 | 0.613 |
 | Sauvola+CCL (no merge, old params) | 0.508 | 134 | 94 | 166 | 0.588 | 0.447 |
 | HoughLinesP + Canny (per-image best avg) | 0.682* | — | — | — | — | — |
@@ -124,6 +131,7 @@ Run: `uv run python wire_detection/benchmark/reference_pipeline.py` → produces
 | 6 | + Crop to ROI (10px pad) | 0.627 | +0.034 |
 | 7 | + Occlusion on all 23 images | 0.647 | +0.020 |
 | **8** | **Remove merge (dedup only)** | **0.707** | **+0.060** |
+| **9** | **Anchor filter + PCA + overlap dedup** | **0.749** | **+0.042** |
 
 ### Synthetic Validation
 

@@ -15,8 +15,15 @@ dependencies = [
     "uvicorn>=0.46.0",
 ]
 
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
 [tool.setuptools.packages.find]
 include = ["wire_detection*"]
+
+[tool.uv]
+package = true
 
 [project.scripts]
 wire-sdg = "wire_detection.sdg.cli:main"
@@ -25,6 +32,7 @@ wire-sweep = "wire_detection.experiment.cli:main"
 wire-tune = "wire_detection.api.server:main"
 wire-pipeline = "wire_detection.pipeline.cli:main"
 wire-benchmark-exp = "wire_detection.benchmark.experiment_harness:main"
+wire-vlm = "wire_detection.vlm.cli:main"
 
 [dependency-groups]
 dev = [
