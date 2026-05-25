@@ -1,0 +1,1143 @@
+[
+  {
+    "path": "drafter_-1/images/C-10_D1_P5.jpg",
+    "drafter": "drafter_-1",
+    "filename": "C-10_D1_P5.jpg",
+    "stratum": "bottom",
+    "composite": 0.4501
+  },
+  {
+    "path": "drafter_1/images/C4_D2_P2.jpg",
+    "drafter": "drafter_1",
+    "filename": "C4_D2_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.5504
+  },
+  {
+    "path": "drafter_1/images/C12_D1_P2.jpg",
+    "drafter": "drafter_1",
+    "filename": "C12_D1_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.5857
+  },
+  {
+    "path": "drafter_1/images/C7_D2_P4.jpg",
+    "drafter": "drafter_1",
+    "filename": "C7_D2_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.5943
+  },
+  {
+    "path": "drafter_13/images/C145_D1_P2.jpg",
+    "drafter": "drafter_13",
+    "filename": "C145_D1_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.5732
+  },
+  {
+    "path": "drafter_13/images/C155_D1_P4.jpg",
+    "drafter": "drafter_13",
+    "filename": "C155_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.4658
+  },
+  {
+    "path": "drafter_13/images/C152_D2_P4.jpg",
+    "drafter": "drafter_13",
+    "filename": "C152_D2_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.5241
+  },
+  {
+    "path": "drafter_13/images/C151_D1_P4.jpg",
+    "drafter": "drafter_13",
+    "filename": "C151_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.468
+  },
+  {
+    "path": "drafter_14/images/C165_D2_P2.jpg",
+    "drafter": "drafter_14",
+    "filename": "C165_D2_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.4575
+  },
+  {
+    "path": "drafter_14/images/C161_D1_P3.jpg",
+    "drafter": "drafter_14",
+    "filename": "C161_D1_P3.jpg",
+    "stratum": "middle",
+    "composite": 0.5703
+  },
+  {
+    "path": "drafter_14/images/C167_D1_P4.jpg",
+    "drafter": "drafter_14",
+    "filename": "C167_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.4405
+  },
+  {
+    "path": "drafter_14/images/C161_D2_P4.jpg",
+    "drafter": "drafter_14",
+    "filename": "C161_D2_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.6595
+  },
+  {
+    "path": "drafter_14/images/C159_D2_P4.jpg",
+    "drafter": "drafter_14",
+    "filename": "C159_D2_P4.jpg",
+    "stratum": "top",
+    "composite": 0.6655
+  },
+  {
+    "path": "drafter_14/images/C166_D1_P2.jpg",
+    "drafter": "drafter_14",
+    "filename": "C166_D1_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.4648
+  },
+  {
+    "path": "drafter_14/images/C159_D1_P4.jpg",
+    "drafter": "drafter_14",
+    "filename": "C159_D1_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.6079
+  },
+  {
+    "path": "drafter_15/images/C175_D1_P2.jpeg",
+    "drafter": "drafter_15",
+    "filename": "C175_D1_P2.jpeg",
+    "stratum": "top",
+    "composite": 0.8489
+  },
+  {
+    "path": "drafter_15/images/C178_D1_P1.jpeg",
+    "drafter": "drafter_15",
+    "filename": "C178_D1_P1.jpeg",
+    "stratum": "middle",
+    "composite": 0.8175
+  },
+  {
+    "path": "drafter_15/images/C173_D1_P1.jpeg",
+    "drafter": "drafter_15",
+    "filename": "C173_D1_P1.jpeg",
+    "stratum": "top",
+    "composite": 0.8236
+  },
+  {
+    "path": "drafter_15/images/C179_D1_P2.jpeg",
+    "drafter": "drafter_15",
+    "filename": "C179_D1_P2.jpeg",
+    "stratum": "middle",
+    "composite": 0.7159
+  },
+  {
+    "path": "drafter_15/images/C171_D2_P4.jpeg",
+    "drafter": "drafter_15",
+    "filename": "C171_D2_P4.jpeg",
+    "stratum": "bottom",
+    "composite": 0.573
+  },
+  {
+    "path": "drafter_15/images/C175_D1_P1.jpeg",
+    "drafter": "drafter_15",
+    "filename": "C175_D1_P1.jpeg",
+    "stratum": "middle",
+    "composite": 0.6578
+  },
+  {
+    "path": "drafter_15/images/C173_D1_P4.jpeg",
+    "drafter": "drafter_15",
+    "filename": "C173_D1_P4.jpeg",
+    "stratum": "top",
+    "composite": 0.8227
+  },
+  {
+    "path": "drafter_15/images/C179_D2_P2.jpeg",
+    "drafter": "drafter_15",
+    "filename": "C179_D2_P2.jpeg",
+    "stratum": "bottom",
+    "composite": 0.5562
+  },
+  {
+    "path": "drafter_15/images/C180_D1_P4.jpeg",
+    "drafter": "drafter_15",
+    "filename": "C180_D1_P4.jpeg",
+    "stratum": "bottom",
+    "composite": 0.5694
+  },
+  {
+    "path": "drafter_16/images/C189_D2_P2.jpg",
+    "drafter": "drafter_16",
+    "filename": "C189_D2_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.7243
+  },
+  {
+    "path": "drafter_16/images/C184_D1_P1.jpg",
+    "drafter": "drafter_16",
+    "filename": "C184_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.7993
+  },
+  {
+    "path": "drafter_16/images/C188_D1_P1.jpg",
+    "drafter": "drafter_16",
+    "filename": "C188_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.8115
+  },
+  {
+    "path": "drafter_16/images/C192_D1_P1.jpg",
+    "drafter": "drafter_16",
+    "filename": "C192_D1_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.7886
+  },
+  {
+    "path": "drafter_16/images/C185_D2_P3.jpg",
+    "drafter": "drafter_16",
+    "filename": "C185_D2_P3.jpg",
+    "stratum": "top",
+    "composite": 0.8166
+  },
+  {
+    "path": "drafter_16/images/C191_D2_P4.jpg",
+    "drafter": "drafter_16",
+    "filename": "C191_D2_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.6731
+  },
+  {
+    "path": "drafter_17/images/C198_D1_P4.jpg",
+    "drafter": "drafter_17",
+    "filename": "C198_D1_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.7507
+  },
+  {
+    "path": "drafter_17/images/C199_D1_P2.jpg",
+    "drafter": "drafter_17",
+    "filename": "C199_D1_P2.jpg",
+    "stratum": "top",
+    "composite": 0.7562
+  },
+  {
+    "path": "drafter_17/images/C195_D1_P2.jpg",
+    "drafter": "drafter_17",
+    "filename": "C195_D1_P2.jpg",
+    "stratum": "top",
+    "composite": 0.8254
+  },
+  {
+    "path": "drafter_16/images/C187_D2_P2.jpg",
+    "drafter": "drafter_16",
+    "filename": "C187_D2_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.6174
+  },
+  {
+    "path": "drafter_16/images/C190_D1_P4.jpg",
+    "drafter": "drafter_16",
+    "filename": "C190_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.5204
+  },
+  {
+    "path": "drafter_16/images/C190_D2_P3.jpg",
+    "drafter": "drafter_16",
+    "filename": "C190_D2_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.5355
+  },
+  {
+    "path": "drafter_18/images/C209_D1_P4.jpg",
+    "drafter": "drafter_18",
+    "filename": "C209_D1_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8601
+  },
+  {
+    "path": "drafter_18/images/C207_D1_P1.jpg",
+    "drafter": "drafter_18",
+    "filename": "C207_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.8724
+  },
+  {
+    "path": "drafter_17/images/C199_D2_P2.JPG",
+    "drafter": "drafter_17",
+    "filename": "C199_D2_P2.JPG",
+    "stratum": "middle",
+    "composite": 0.595
+  },
+  {
+    "path": "drafter_2/images/C24_D1_P4.jpg",
+    "drafter": "drafter_2",
+    "filename": "C24_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.5533
+  },
+  {
+    "path": "drafter_22/images/C258_D1_P4.jpeg",
+    "drafter": "drafter_22",
+    "filename": "C258_D1_P4.jpeg",
+    "stratum": "middle",
+    "composite": 0.6674
+  },
+  {
+    "path": "drafter_22/images/C263_D1_P2.jpeg",
+    "drafter": "drafter_22",
+    "filename": "C263_D1_P2.jpeg",
+    "stratum": "bottom",
+    "composite": 0.5955
+  },
+  {
+    "path": "drafter_23/images/C266_D1_P1.jpg",
+    "drafter": "drafter_23",
+    "filename": "C266_D1_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.8049
+  },
+  {
+    "path": "drafter_23/images/C266_D1_P4.jpg",
+    "drafter": "drafter_23",
+    "filename": "C266_D1_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8433
+  },
+  {
+    "path": "drafter_23/images/C266_D2_P1.jpg",
+    "drafter": "drafter_23",
+    "filename": "C266_D2_P1.jpg",
+    "stratum": "top",
+    "composite": 0.8715
+  },
+  {
+    "path": "drafter_23/images/C266_D2_P4.jpg",
+    "drafter": "drafter_23",
+    "filename": "C266_D2_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8337
+  },
+  {
+    "path": "drafter_22/images/C260_D2_P3.jpeg",
+    "drafter": "drafter_22",
+    "filename": "C260_D2_P3.jpeg",
+    "stratum": "bottom",
+    "composite": 0.5877
+  },
+  {
+    "path": "drafter_22/images/C264_D2_P3.jpeg",
+    "drafter": "drafter_22",
+    "filename": "C264_D2_P3.jpeg",
+    "stratum": "bottom",
+    "composite": 0.5955
+  },
+  {
+    "path": "drafter_23/images/C267_D2_P1.jpeg",
+    "drafter": "drafter_23",
+    "filename": "C267_D2_P1.jpeg",
+    "stratum": "middle",
+    "composite": 0.6451
+  },
+  {
+    "path": "drafter_23/images/C267_D2_P4.jpeg",
+    "drafter": "drafter_23",
+    "filename": "C267_D2_P4.jpeg",
+    "stratum": "middle",
+    "composite": 0.6675
+  },
+  {
+    "path": "drafter_24/images/C287_D1_P1.jpg",
+    "drafter": "drafter_24",
+    "filename": "C287_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.8428
+  },
+  {
+    "path": "drafter_24/images/C286_D1_P2.jpg",
+    "drafter": "drafter_24",
+    "filename": "C286_D1_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.7595
+  },
+  {
+    "path": "drafter_24/images/C281_D2_P1.jpg",
+    "drafter": "drafter_24",
+    "filename": "C281_D2_P1.jpg",
+    "stratum": "top",
+    "composite": 0.8189
+  },
+  {
+    "path": "drafter_23/images/C268_D2_P2.jpeg",
+    "drafter": "drafter_23",
+    "filename": "C268_D2_P2.jpeg",
+    "stratum": "middle",
+    "composite": 0.6344
+  },
+  {
+    "path": "drafter_23/images/C269_D1_P3.jpeg",
+    "drafter": "drafter_23",
+    "filename": "C269_D1_P3.jpeg",
+    "stratum": "bottom",
+    "composite": 0.5847
+  },
+  {
+    "path": "drafter_25/images/C298_D2_P2.jpeg",
+    "drafter": "drafter_25",
+    "filename": "C298_D2_P2.jpeg",
+    "stratum": "top",
+    "composite": 0.8689
+  },
+  {
+    "path": "drafter_24/images/C280_D1_P4.jpg",
+    "drafter": "drafter_24",
+    "filename": "C280_D1_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.6066
+  },
+  {
+    "path": "drafter_24/images/C283_D2_P1.jpg",
+    "drafter": "drafter_24",
+    "filename": "C283_D2_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.6642
+  },
+  {
+    "path": "drafter_24/images/C277_D2_P4.jpg",
+    "drafter": "drafter_24",
+    "filename": "C277_D2_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.5396
+  },
+  {
+    "path": "drafter_24/images/C279_D2_P3.jpg",
+    "drafter": "drafter_24",
+    "filename": "C279_D2_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.5344
+  },
+  {
+    "path": "drafter_24/images/C277_D1_P4.jpg",
+    "drafter": "drafter_24",
+    "filename": "C277_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.5308
+  },
+  {
+    "path": "drafter_24/images/C283_D1_P3.jpg",
+    "drafter": "drafter_24",
+    "filename": "C283_D1_P3.jpg",
+    "stratum": "middle",
+    "composite": 0.6293
+  },
+  {
+    "path": "drafter_25/images/C297_D1_P4.jpg",
+    "drafter": "drafter_25",
+    "filename": "C297_D1_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.723
+  },
+  {
+    "path": "drafter_25/images/C300_D1_P3.jpg",
+    "drafter": "drafter_25",
+    "filename": "C300_D1_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.5862
+  },
+  {
+    "path": "drafter_25/images/C291_D2_P4.jpeg",
+    "drafter": "drafter_25",
+    "filename": "C291_D2_P4.jpeg",
+    "stratum": "middle",
+    "composite": 0.8206
+  },
+  {
+    "path": "drafter_25/images/C300_D1_P4.jpg",
+    "drafter": "drafter_25",
+    "filename": "C300_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.5793
+  },
+  {
+    "path": "drafter_25/images/C300_D2_P4.jpeg",
+    "drafter": "drafter_25",
+    "filename": "C300_D2_P4.jpeg",
+    "stratum": "bottom",
+    "composite": 0.5868
+  },
+  {
+    "path": "drafter_26/images/C307_D1_P4.jpg",
+    "drafter": "drafter_26",
+    "filename": "C307_D1_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8046
+  },
+  {
+    "path": "drafter_26/images/C303_D2_P2.jpg",
+    "drafter": "drafter_26",
+    "filename": "C303_D2_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.6133
+  },
+  {
+    "path": "drafter_26/images/C311_D1_P2.jpg",
+    "drafter": "drafter_26",
+    "filename": "C311_D1_P2.jpg",
+    "stratum": "top",
+    "composite": 0.7946
+  },
+  {
+    "path": "drafter_26/images/C301_D2_P2.jpg",
+    "drafter": "drafter_26",
+    "filename": "C301_D2_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.6415
+  },
+  {
+    "path": "drafter_26/images/C311_D2_P4.jpg",
+    "drafter": "drafter_26",
+    "filename": "C311_D2_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8087
+  },
+  {
+    "path": "drafter_26/images/C301_D2_P3.jpg",
+    "drafter": "drafter_26",
+    "filename": "C301_D2_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.5692
+  },
+  {
+    "path": "drafter_26/images/C304_D1_P2.jpg",
+    "drafter": "drafter_26",
+    "filename": "C304_D1_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.5387
+  },
+  {
+    "path": "drafter_26/images/C312_D1_P2.jpg",
+    "drafter": "drafter_26",
+    "filename": "C312_D1_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.5528
+  },
+  {
+    "path": "drafter_27/images/C314_D2_P1.jpg",
+    "drafter": "drafter_27",
+    "filename": "C314_D2_P1.jpg",
+    "stratum": "top",
+    "composite": 0.6789
+  },
+  {
+    "path": "drafter_27/images/C323_D1_P1.jpg",
+    "drafter": "drafter_27",
+    "filename": "C323_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.6776
+  },
+  {
+    "path": "drafter_27/images/C318_D1_P4.jpg",
+    "drafter": "drafter_27",
+    "filename": "C318_D1_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.6678
+  },
+  {
+    "path": "drafter_27/images/C316_D1_P4.jpg",
+    "drafter": "drafter_27",
+    "filename": "C316_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.3414
+  },
+  {
+    "path": "drafter_27/images/C317_D1_P4.jpg",
+    "drafter": "drafter_27",
+    "filename": "C317_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.2889
+  },
+  {
+    "path": "drafter_27/images/C320_D1_P2.jpg",
+    "drafter": "drafter_27",
+    "filename": "C320_D1_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.3504
+  },
+  {
+    "path": "drafter_27/images/C320_D1_P4.jpg",
+    "drafter": "drafter_27",
+    "filename": "C320_D1_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.5122
+  },
+  {
+    "path": "drafter_28/images/C329_D1_P4.JPG",
+    "drafter": "drafter_28",
+    "filename": "C329_D1_P4.JPG",
+    "stratum": "top",
+    "composite": 0.7196
+  },
+  {
+    "path": "drafter_28/images/C327_D1_P1.JPG",
+    "drafter": "drafter_28",
+    "filename": "C327_D1_P1.JPG",
+    "stratum": "top",
+    "composite": 0.6678
+  },
+  {
+    "path": "drafter_28/images/C330_D2_P1.JPG",
+    "drafter": "drafter_28",
+    "filename": "C330_D2_P1.JPG",
+    "stratum": "top",
+    "composite": 0.6741
+  },
+  {
+    "path": "drafter_28/images/C334_D1_P3.JPG",
+    "drafter": "drafter_28",
+    "filename": "C334_D1_P3.JPG",
+    "stratum": "middle",
+    "composite": 0.6596
+  },
+  {
+    "path": "drafter_3/images/C35_D1_P2.jpg",
+    "drafter": "drafter_3",
+    "filename": "C35_D1_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.6749
+  },
+  {
+    "path": "drafter_3/images/C30_D2_P3.jpg",
+    "drafter": "drafter_3",
+    "filename": "C30_D2_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.5747
+  },
+  {
+    "path": "drafter_30/images/C357_D1_P3.jpg",
+    "drafter": "drafter_30",
+    "filename": "C357_D1_P3.jpg",
+    "stratum": "top",
+    "composite": 0.8496
+  },
+  {
+    "path": "drafter_30/images/C353_D1_P1.jpg",
+    "drafter": "drafter_30",
+    "filename": "C353_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.8482
+  },
+  {
+    "path": "drafter_30/images/C351_D1_P4.jpg",
+    "drafter": "drafter_30",
+    "filename": "C351_D1_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.7813
+  },
+  {
+    "path": "drafter_30/images/C353_D1_P3.jpg",
+    "drafter": "drafter_30",
+    "filename": "C353_D1_P3.jpg",
+    "stratum": "middle",
+    "composite": 0.846
+  },
+  {
+    "path": "drafter_3/images/C30_D1_P4.jpg",
+    "drafter": "drafter_3",
+    "filename": "C30_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.5935
+  },
+  {
+    "path": "drafter_30/images/C355_D2_P3.jpg",
+    "drafter": "drafter_30",
+    "filename": "C355_D2_P3.jpg",
+    "stratum": "middle",
+    "composite": 0.7464
+  },
+  {
+    "path": "drafter_30/images/C357_D1_P4.jpg",
+    "drafter": "drafter_30",
+    "filename": "C357_D1_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8657
+  },
+  {
+    "path": "drafter_30/images/C359_D1_P2.jpg",
+    "drafter": "drafter_30",
+    "filename": "C359_D1_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.6759
+  },
+  {
+    "path": "drafter_30/images/C359_D2_P1.jpg",
+    "drafter": "drafter_30",
+    "filename": "C359_D2_P1.jpg",
+    "stratum": "bottom",
+    "composite": 0.5717
+  },
+  {
+    "path": "drafter_30/images/C359_D2_P3.jpg",
+    "drafter": "drafter_30",
+    "filename": "C359_D2_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.5693
+  },
+  {
+    "path": "drafter_31/images/C364_D1_P4.png",
+    "drafter": "drafter_31",
+    "filename": "C364_D1_P4.png",
+    "stratum": "top",
+    "composite": 0.6709
+  },
+  {
+    "path": "drafter_31/images/C371_D1_P4.png",
+    "drafter": "drafter_31",
+    "filename": "C371_D1_P4.png",
+    "stratum": "top",
+    "composite": 0.673
+  },
+  {
+    "path": "drafter_31/images/C361_D1_P3.png",
+    "drafter": "drafter_31",
+    "filename": "C361_D1_P3.png",
+    "stratum": "middle",
+    "composite": 0.6678
+  },
+  {
+    "path": "drafter_30/images/C349_D2_P3.jpg",
+    "drafter": "drafter_30",
+    "filename": "C349_D2_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.5858
+  },
+  {
+    "path": "drafter_31/images/C365_D1_P2.png",
+    "drafter": "drafter_31",
+    "filename": "C365_D1_P2.png",
+    "stratum": "top",
+    "composite": 0.7031
+  },
+  {
+    "path": "drafter_4/images/C46_D1_P1.jpg",
+    "drafter": "drafter_4",
+    "filename": "C46_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.778
+  },
+  {
+    "path": "drafter_4/images/C47_D1_P4.jpg",
+    "drafter": "drafter_4",
+    "filename": "C47_D1_P4.jpg",
+    "stratum": "top",
+    "composite": 0.7844
+  },
+  {
+    "path": "drafter_31/images/C363_D1_P2.jpeg",
+    "drafter": "drafter_31",
+    "filename": "C363_D1_P2.jpeg",
+    "stratum": "middle",
+    "composite": 0.6294
+  },
+  {
+    "path": "drafter_31/images/C368_D2_P4.jpg",
+    "drafter": "drafter_31",
+    "filename": "C368_D2_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.5014
+  },
+  {
+    "path": "drafter_31/images/C372_D2_P4.jpg",
+    "drafter": "drafter_31",
+    "filename": "C372_D2_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.5009
+  },
+  {
+    "path": "drafter_31/images/C369_D2_P3.png",
+    "drafter": "drafter_31",
+    "filename": "C369_D2_P3.png",
+    "stratum": "middle",
+    "composite": 0.6432
+  },
+  {
+    "path": "drafter_31/images/C369_D1_P3.png",
+    "drafter": "drafter_31",
+    "filename": "C369_D1_P3.png",
+    "stratum": "middle",
+    "composite": 0.6189
+  },
+  {
+    "path": "drafter_4/images/C42_D1_P4.jpg",
+    "drafter": "drafter_4",
+    "filename": "C42_D1_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.7724
+  },
+  {
+    "path": "drafter_4/images/C45_D2_P3.jpg",
+    "drafter": "drafter_4",
+    "filename": "C45_D2_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.5601
+  },
+  {
+    "path": "drafter_4/images/C41_D2_P4.jpg",
+    "drafter": "drafter_4",
+    "filename": "C41_D2_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.6264
+  },
+  {
+    "path": "drafter_4/images/C37_D2_P3.jpg",
+    "drafter": "drafter_4",
+    "filename": "C37_D2_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.55
+  },
+  {
+    "path": "drafter_4/images/C46_D1_P3.jpg",
+    "drafter": "drafter_4",
+    "filename": "C46_D1_P3.jpg",
+    "stratum": "top",
+    "composite": 0.7732
+  },
+  {
+    "path": "drafter_4/images/C45_D2_P2.jpg",
+    "drafter": "drafter_4",
+    "filename": "C45_D2_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.5428
+  },
+  {
+    "path": "drafter_4/images/C40_D1_P1.jpg",
+    "drafter": "drafter_4",
+    "filename": "C40_D1_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.6568
+  },
+  {
+    "path": "drafter_4/images/C48_D2_P1.jpg",
+    "drafter": "drafter_4",
+    "filename": "C48_D2_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.6106
+  },
+  {
+    "path": "drafter_5/images/C51_D2_P4.jpg",
+    "drafter": "drafter_5",
+    "filename": "C51_D2_P4.jpg",
+    "stratum": "top",
+    "composite": 0.768
+  },
+  {
+    "path": "drafter_5/images/C52_D2_P3.jpg",
+    "drafter": "drafter_5",
+    "filename": "C52_D2_P3.jpg",
+    "stratum": "middle",
+    "composite": 0.7579
+  },
+  {
+    "path": "drafter_5/images/C55_D2_P4.jpg",
+    "drafter": "drafter_5",
+    "filename": "C55_D2_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.6574
+  },
+  {
+    "path": "drafter_5/images/C51_D1_P1.jpg",
+    "drafter": "drafter_5",
+    "filename": "C51_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.7607
+  },
+  {
+    "path": "drafter_5/images/C60_D1_P4.jpg",
+    "drafter": "drafter_5",
+    "filename": "C60_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.5358
+  },
+  {
+    "path": "drafter_5/images/C59_D1_P2.jpg",
+    "drafter": "drafter_5",
+    "filename": "C59_D1_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.6302
+  },
+  {
+    "path": "drafter_5/images/C58_D2_P3.jpg",
+    "drafter": "drafter_5",
+    "filename": "C58_D2_P3.jpg",
+    "stratum": "middle",
+    "composite": 0.708
+  },
+  {
+    "path": "drafter_6/images/C68_D1_P1.jpg",
+    "drafter": "drafter_6",
+    "filename": "C68_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.7874
+  },
+  {
+    "path": "drafter_6/images/C65_D2_P1.jpg",
+    "drafter": "drafter_6",
+    "filename": "C65_D2_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.7765
+  },
+  {
+    "path": "drafter_5/images/C58_D2_P2.jpg",
+    "drafter": "drafter_5",
+    "filename": "C58_D2_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.4053
+  },
+  {
+    "path": "drafter_6/images/C67_D1_P1.jpg",
+    "drafter": "drafter_6",
+    "filename": "C67_D1_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.7051
+  },
+  {
+    "path": "drafter_6/images/C61_D2_P1.jpg",
+    "drafter": "drafter_6",
+    "filename": "C61_D2_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.6522
+  },
+  {
+    "path": "drafter_6/images/C66_D1_P3.jpg",
+    "drafter": "drafter_6",
+    "filename": "C66_D1_P3.jpg",
+    "stratum": "top",
+    "composite": 0.7856
+  },
+  {
+    "path": "drafter_5/images/C60_D1_P1.jpg",
+    "drafter": "drafter_5",
+    "filename": "C60_D1_P1.jpg",
+    "stratum": "bottom",
+    "composite": 0.5193
+  },
+  {
+    "path": "drafter_6/images/C71_D2_P3.jpg",
+    "drafter": "drafter_6",
+    "filename": "C71_D2_P3.jpg",
+    "stratum": "middle",
+    "composite": 0.6143
+  },
+  {
+    "path": "drafter_7/images/C75_D2_P4.jpg",
+    "drafter": "drafter_7",
+    "filename": "C75_D2_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8157
+  },
+  {
+    "path": "drafter_7/images/C79_D1_P3.jpg",
+    "drafter": "drafter_7",
+    "filename": "C79_D1_P3.jpg",
+    "stratum": "middle",
+    "composite": 0.8081
+  },
+  {
+    "path": "drafter_7/images/C77_D2_P2.jpg",
+    "drafter": "drafter_7",
+    "filename": "C77_D2_P2.jpg",
+    "stratum": "top",
+    "composite": 0.8196
+  },
+  {
+    "path": "drafter_6/images/C67_D1_P3.jpg",
+    "drafter": "drafter_6",
+    "filename": "C67_D1_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.4657
+  },
+  {
+    "path": "drafter_6/images/C68_D2_P3.jpg",
+    "drafter": "drafter_6",
+    "filename": "C68_D2_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.5085
+  },
+  {
+    "path": "drafter_6/images/C65_D1_P4.jpg",
+    "drafter": "drafter_6",
+    "filename": "C65_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.4462
+  },
+  {
+    "path": "drafter_7/images/C73_D1_P2.jpg",
+    "drafter": "drafter_7",
+    "filename": "C73_D1_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.5773
+  },
+  {
+    "path": "drafter_7/images/C77_D1_P2.jpg",
+    "drafter": "drafter_7",
+    "filename": "C77_D1_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.7265
+  },
+  {
+    "path": "drafter_8/images/C86_D2_P2.jpg",
+    "drafter": "drafter_8",
+    "filename": "C86_D2_P2.jpg",
+    "stratum": "top",
+    "composite": 0.8324
+  },
+  {
+    "path": "drafter_7/images/C75_D2_P2.jpg",
+    "drafter": "drafter_7",
+    "filename": "C75_D2_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.5865
+  },
+  {
+    "path": "drafter_7/images/C82_D1_P1.jpg",
+    "drafter": "drafter_7",
+    "filename": "C82_D1_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.6625
+  },
+  {
+    "path": "drafter_7/images/C84_D2_P2.jpg",
+    "drafter": "drafter_7",
+    "filename": "C84_D2_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.5855
+  },
+  {
+    "path": "drafter_7/images/C81_D1_P1.jpg",
+    "drafter": "drafter_7",
+    "filename": "C81_D1_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.6395
+  },
+  {
+    "path": "drafter_8/images/C93_D1_P4.jpg",
+    "drafter": "drafter_8",
+    "filename": "C93_D1_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8419
+  },
+  {
+    "path": "drafter_8/images/C94_D2_P4.jpg",
+    "drafter": "drafter_8",
+    "filename": "C94_D2_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8299
+  },
+  {
+    "path": "drafter_8/images/C89_D2_P2.jpg",
+    "drafter": "drafter_8",
+    "filename": "C89_D2_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.8224
+  },
+  {
+    "path": "drafter_8/images/C87_D2_P2.jpg",
+    "drafter": "drafter_8",
+    "filename": "C87_D2_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.5786
+  },
+  {
+    "path": "drafter_8/images/C93_D1_P3.jpg",
+    "drafter": "drafter_8",
+    "filename": "C93_D1_P3.jpg",
+    "stratum": "bottom",
+    "composite": 0.4848
+  },
+  {
+    "path": "drafter_8/images/C94_D1_P2.jpg",
+    "drafter": "drafter_8",
+    "filename": "C94_D1_P2.jpg",
+    "stratum": "middle",
+    "composite": 0.7179
+  },
+  {
+    "path": "drafter_8/images/C93_D2_P2.jpg",
+    "drafter": "drafter_8",
+    "filename": "C93_D2_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.5576
+  },
+  {
+    "path": "drafter_8/images/C91_D2_P4.jpg",
+    "drafter": "drafter_8",
+    "filename": "C91_D2_P4.jpg",
+    "stratum": "middle",
+    "composite": 0.6702
+  },
+  {
+    "path": "drafter_9/images/C103_D2_P4.jpg",
+    "drafter": "drafter_9",
+    "filename": "C103_D2_P4.jpg",
+    "stratum": "top",
+    "composite": 0.8587
+  },
+  {
+    "path": "drafter_9/images/C100_D1_P1.jpg",
+    "drafter": "drafter_9",
+    "filename": "C100_D1_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.7316
+  },
+  {
+    "path": "drafter_9/images/C104_D1_P1.jpg",
+    "drafter": "drafter_9",
+    "filename": "C104_D1_P1.jpg",
+    "stratum": "top",
+    "composite": 0.8192
+  },
+  {
+    "path": "drafter_9/images/C97_D1_P2.jpg",
+    "drafter": "drafter_9",
+    "filename": "C97_D1_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.4927
+  },
+  {
+    "path": "drafter_9/images/C106_D1_P1.jpg",
+    "drafter": "drafter_9",
+    "filename": "C106_D1_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.6764
+  },
+  {
+    "path": "drafter_9/images/C97_D2_P1.jpg",
+    "drafter": "drafter_9",
+    "filename": "C97_D2_P1.jpg",
+    "stratum": "middle",
+    "composite": 0.6082
+  },
+  {
+    "path": "drafter_9/images/C102_D1_P3.jpg",
+    "drafter": "drafter_9",
+    "filename": "C102_D1_P3.jpg",
+    "stratum": "middle",
+    "composite": 0.802
+  },
+  {
+    "path": "drafter_9/images/C97_D2_P2.jpg",
+    "drafter": "drafter_9",
+    "filename": "C97_D2_P2.jpg",
+    "stratum": "bottom",
+    "composite": 0.4869
+  },
+  {
+    "path": "drafter_9/images/C97_D1_P4.jpg",
+    "drafter": "drafter_9",
+    "filename": "C97_D1_P4.jpg",
+    "stratum": "bottom",
+    "composite": 0.4867
+  }
+]
