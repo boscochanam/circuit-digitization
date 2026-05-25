@@ -65,14 +65,32 @@ When nemotron returned an error (zip bomb, truncation, coordinate output), the s
 
 | File | Description |
 |------|-------------|
-| `cghd_vlm_results.json` | Raw nemotron responses, 330 entries |
-| `cghd_vlm_retry.json` | Retried entries for failed responses |
-| `cghd_quality_sweep.json` | Programmatic quality scores per image |
-| `cghd_reclassified.json` | Final classified output (paper type + verdict) |
-| `reclassify_images.py` | Classification script with VLM + programmatic fallback |
+| `data/cghd_vlm_results.json` | Raw nemotron responses, 330 entries |
+| `data/cghd_vlm_retry.json` | Retried entries for failed responses |
+| `data/cghd_quality_sweep.json` | Programmatic quality scores per image |
+| `data/cghd_reclassified.json` | Final classified output (paper type + verdict) |
+| `data/cghd_final_audit.json` | Drafter-level quality audit |
+| `reclassify_images.py` | Original classification script with VLM + programmatic fallback |
+| `generate_audit.py` | Original drafter-level audit script |
+| `generate_audit_pdf.py` | PDF report generator |
 | `send_pranavesh_audit.py` | Email script sending the full audit report |
 
-*Note: All JSON files are in `~/workspace/`. The nemotron API key and OpenRouter configuration were managed via the Hermes config and never hardcoded in scripts.*
+*Note: All files above are inside the `docs/experiments/` directory. The same logic is also available as a reusable Python module at `wire_detection/vlm/vlm_classifier.py` with a `wire-vlm` CLI.*
+
+## Reusable Module
+
+The classification logic has been refactored into `wire_detection.vlm` for use in the pipeline:
+
+```bash
+# Classify a single image (VLM + programmatic)
+wire-vlm classify image.jpg
+
+# Sweep a directory (programmatic only, no API calls)
+wire-vlm sweep ./images/ --output sweep.json
+
+# Full audit pipeline from saved VLM results
+wire-vlm audit-pipeline --results-dir docs/experiments/data/
+```
 
 ## Verdict
 
