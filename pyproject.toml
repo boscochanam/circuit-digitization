@@ -24,6 +24,7 @@ wire-eval = "wire_detection.evaluate.cli:main"
 wire-sweep = "wire_detection.experiment.cli:main"
 wire-tune = "wire_detection.api.server:main"
 wire-pipeline = "wire_detection.pipeline.cli:main"
+wire-benchmark-exp = "wire_detection.benchmark.experiment_harness:main"
 
 [dependency-groups]
 dev = [
