@@ -44,16 +44,61 @@ close(ellipse 3×3) → CCL(min_area=20) → dedup(10°,18px) → Output Lines
 | Recall | **0.827** |
 | TP / FP / FN | **248 / 70 / 52** |
 
+### ⚠️ MANDATORY PREPROCESSING — Must Run BEFORE Detection
+
+**Skipping any of these steps will break reproducibility. The pipeline produces garbage without them.**
+
+#### 1. HDC Label Matching
+Each circuit image needs its corresponding YOLO-OBB component labels from roboflow_test2. Match by pixel-difference comparison across train/valid/test splits.
+
+```python
+# Find matching HDC label for each image
+for split in ["train", "valid", "test"]:
+    label_dir = HDC_BASE / split / "labels"
+    for label_path in label_dir.glob(f"{image_name}_jpg*"):
+        # Compare pixel content to find exact match
+        diff = cv2.absdiff(gray_image, hdc_image).mean()
+```
+
+#### 2. Component Occlusion
+Fill every HDC component polygon with the **local median pixel color**. This prevents component edges/text from producing false wire detections. Margin: 15% of bbox size, min 5px.
+
+```python
+for cls_id, polygon, (x1, y1, x2, y2) in components:
+    margin_x = max(int((x2 - x1) * 0.15), 5)
+    margin_y = max(int((y2 - y1) * 0.15), 5)
+    local_region = gray[y1-margin_y:y2+margin_y, x1-margin_x:x2+margin_x]
+    fill_color = int(np.median(local_region))
+    cv2.fillPoly(occluded_image, [polygon], fill_color)
+```
+
+#### 3. ROI Crop + Padding
+Crop to the tight bounding box of ALL components plus **10px padding**. This eliminates scanner border artifacts and paper edges.
+
+```python
+rx1 = max(0, min(all_bbox_x1) - 10)
+ry1 = max(0, min(all_bbox_y1) - 10)
+rx2 = min(w, max(all_bbox_x2) + 10)
+ry2 = min(h, max(all_bbox_y2) + 10)
+cropped = occluded_image[ry1:ry2, rx1:rx2]
+```
+
+**After detection, convert local coordinates back to global** by adding (rx1, ry1) to all endpoints.
+
 ### Best Config
 
 ```json
 {
-  "sauvola_k": 0.3, "sauvola_window": 51, "close_kernel": 3,
-  "ccl_min_area": 20, "dedup_angle": 10, "dedup_dist": 18,
-  "merge_angle": 10, "merge_gap": 30, "min_length": 10,
-  "fallback_k": 0.25, "min_trace_pct": 0.5
+  "sauvola_k": 0.30, "sauvola_window": 51, "close_kernel": 3,
+  "ccl_min_area": 20, "dedup_angle": 10, "dedup_dist": 18
 }
 ```
+**Do NOT use merge or length filter — both are proven harmful (destroy 64 TPs).**
+
+### Reference Implementation
+
+See `wire_detection/benchmark/reference_pipeline.py` for the complete, verified implementation.
+Run: `uv run python wire_detection/benchmark/reference_pipeline.py` → produces F1=0.7066.
 
 ### Strategy Comparison
 
