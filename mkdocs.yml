@@ -17,6 +17,7 @@ nav:
   - Getting Started: getting-started.md
   - Dataset Setup: datasets.md
   - Data Quality: data-quality.md
+  - VLM Experiments: vlm-experiments.md
   - Architecture: architecture.md
   - Pipeline:
     - Overview: pipeline/overview.md
