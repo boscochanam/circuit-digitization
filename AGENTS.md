@@ -20,15 +20,27 @@ Crop to union of all component bounding boxes + 10px padding in all directions.
 - Remember to add the offset (rx1, ry1) back to all detected line endpoints
 
 ## Pipeline Params (DO NOT CHANGE)
-- Sauvola: k=0.30, window=51
+- Sauvola: k=0.285, window=67
 - Close: ellipse 3×3
-- CCL: min_area=20
-- Dedup: angle=10°, dist=18px  
+- CCL: min_area=28
+- PCA endpoints (not extremal)
+- Overlap dedup: angle=12°, dist=8px  
+- Anchor filter: endpoint_dist=12, link_dist=8
 - **NO merge, NO length filter** — both destroy TPs
 
 ## Reference Implementation
 Run: `uv run python wire_detection/benchmark/reference_pipeline.py`
 Expected output: F1=0.7066, TP=248, FP=70, FN=52
+
+## Best Config (May 2026)
+Run: `uv run python -m wire_detection.benchmark.experiment_harness --preset wave2`
+Best: **best_candidate_v4** → F1=0.749, TP=233, FP=43, FN=67
+
+## VLM Quality Assessment
+- Module: `wire_detection.vlm` — classify images by paper type via VLM or programmatic scores
+- CLI: `wire-vlm classify`, `wire-vlm sweep`, `wire-vlm audit-pipeline`
+- Doc: `docs/vlm-experiments.md` — full Nemotron experiment methodology
+- Data: `docs/experiments/data/` — saved VLM results (330 CGHD1152 images)
 
 ## Common Errors Agents Make
 1. ✗ Skipping occlusion entirely → FP count explodes

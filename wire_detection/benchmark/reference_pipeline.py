@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """
-REFERENCE PIPELINE — Reproducible F1=0.707
+REFERENCE PIPELINE — Reproducible F1=0.707 (baseline)
 
-This is the canonical implementation. Every preprocessing step is documented.
+This is the canonical baseline implementation. Every preprocessing step is documented.
 Run: uv run python wire_detection/benchmark/reference_pipeline.py
 
 Produces F1=0.707 on the 23-image ground-truth dataset.
+
+For the current best config (F1=0.749), run:
+  uv run python -m wire_detection.benchmark.experiment_harness --preset wave2
+(see best_candidate_v4 experiment)
 
 PREPROCESSING (MANDATORY — skipping any step degrades results):
 1. HDC Label Matching: find matching YOLO-OBB labels from roboflow_test2
 2. Component Occlusion: fill each HDC component polygon with local median color
 3. ROI Crop: tight crop around all components + 10px padding
 
-DETECTION:
+DETECTION (baseline params):
 4. Sauvola threshold (k=0.30, window=51)
 5. Binary invert
 6. Morphological close (ellipse 3×3)
