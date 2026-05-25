@@ -148,6 +148,12 @@ See `~/workspace/README.md` for full experiment history and publishing timeline.
 
 ---
 
+## VLM Experiments
+
+[VLM-based parameter selection](docs/vlm-experiments.md) was tested (Qwen2.5-VL 72B, GPT-4o-mini, Gemma 3 27B) for predicting optimal Sauvola k. **Verdict**: unreliable vs the trace% heuristic. Full details in the linked doc.
+
+---
+
 ## Project Structure
 
 ```
