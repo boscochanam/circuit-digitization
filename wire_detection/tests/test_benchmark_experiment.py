@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from wire_detection.benchmark.experiment_harness import ExperimentConfig, run_experiment
+import numpy as np
+
+from wire_detection.benchmark.experiment_harness import (
+    ExperimentConfig,
+    build_binary_masks,
+    candidate_component_ports,
+    run_experiment,
+)
 
 
 def test_baseline_harness_matches_reference():
@@ -11,3 +18,29 @@ def test_baseline_harness_matches_reference():
     assert summary.fp == 70
     assert summary.fn == 52
     assert summary.red == 84
+
+
+def test_alternative_threshold_methods_build_masks():
+    image = np.full((64, 64), 255, dtype=np.uint8)
+    image[20:44, 30:34] = 0
+
+    for method in ("otsu", "triangle", "adaptive_mean", "adaptive_gaussian"):
+        masks = build_binary_masks(
+            image,
+            ExperimentConfig(
+                name=f"mask_{method}",
+                threshold_method=method,
+                fallback_ks=(),
+            ),
+        )
+        assert masks
+        assert masks[0].shape == image.shape
+
+
+def test_class_aware_ports_reduce_non_connective_anchors():
+    cfg = ExperimentConfig(name="port_test", class_port_gating_enabled=True)
+    text_ports = candidate_component_ports(0, [(0, 0), (10, 0), (10, 8), (0, 8)], (0, 0, 10, 8), cfg)
+    resistor_ports = candidate_component_ports(9, [(0, 0), (20, 0), (20, 8), (0, 8)], (0, 0, 20, 8), cfg)
+
+    assert text_ports == []
+    assert len(resistor_ports) == 2
