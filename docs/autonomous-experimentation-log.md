@@ -128,6 +128,15 @@
 
 ---
 
+## 2026-05-31 23:55: Parameter Tuning Experiments
+- Tested CCL min_area: 10-50, best at 28 (F1=0.7852)
+- Tested dedup angle: 5-20°, no significant difference
+- Tested dedup distance: 5-25px, best at 18 (F1=0.7852)
+- Tested anchor distance: 8-20px, best at 10 (F1=0.7884, marginal)
+- Verdict: **PARAMETERS ALREADY OPTIMIZED**
+
+---
+
 ## Notes
 - All experiments use proper train/test split by image (80/20)
 - Cross-validation used for hyperparameter tuning
