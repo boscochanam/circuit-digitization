@@ -3,8 +3,8 @@
 A modular Python framework for detecting interconnect wires in circuit schematics — classical CV pipeline, synthetic data generator, evaluation toolkit, FastAPI backend, and Next.js tuner UI.
 
 > **Full documentation**: [https://boscochanam.github.io/circuit-digitization](https://boscochanam.github.io/circuit-digitization) — or build locally with `uv run mkdocs serve`.
-> **Status**: **Global F1: 0.749** (Anchor Filter + PCA endpoints + Overlap Dedup, 23 images)
-> **Dataset**: 23 circuit schematic images (704×704), 300 ground-truth wire segments
+> **Status**: **Global F1: 0.831** (Anchor Filter + PCA endpoints + Overlap Dedup, 134 images)
+> **Dataset**: 134 circuit schematic images (predominantly 704×704), 3,524 ground-truth wire segments
 
 ---
 
@@ -30,7 +30,7 @@ docker compose up --build   # Or: uv run wire-tune + pnpm dev
 
 ---
 
-## Final Results (May 2026)
+## Final Results (Jun 2026)
 
 ### Best Pipeline: Anchor Filter + PCA Endpoints + Overlap Dedup
 
@@ -40,27 +40,31 @@ close(ellipse 3×3) → CCL(min_area=28) → PCA endpoints → overlap dedup(12�
 anchor filter(endpoint_dist=12, link_dist=8) → Output Lines
 ```
 
+**Benchmarked on 134 images (3,524 ground-truth wire annotations) across 20 config variants.**
+
 | Metric | Value |
 |--------|-------|
-| **Global F1** | **0.749** |
-| Precision | **0.724** |
-| Recall | **0.777** |
-| TP / FP / FN | **233 / 43 / 67** |
+| **Global F1** | **0.831** |
+| Precision | **0.876** |
+| Recall | **0.791** |
+| TP / FP / FN / Red | **2,788 / 322 / 736 / 73** |
+| Images with F1=1.0 | **68 of 134 (51%)** |
+| Median F1 | **1.000** |
 
 ### ⚠️ MANDATORY PREPROCESSING — Must Run BEFORE Detection
 
 **Skipping any of these steps will break reproducibility. The pipeline produces garbage without them.**
 
 #### 1. HDC Label Matching
-Each circuit image needs its corresponding YOLO-OBB component labels from roboflow_test2. Match by pixel-difference comparison across train/valid/test splits.
+Each circuit image needs its corresponding YOLO-OBB component labels from roboflow_test2. **Use filename prefix matching** (not pixel-difference) — HDC files have `.rf.XXXX` suffixes from Roboflow augmentation. Pixel-diff comparison only finds 23 of 134 images.
 
 ```python
-# Find matching HDC label for each image
+# Find matching HDC label by filename prefix
 for split in ["train", "valid", "test"]:
     label_dir = HDC_BASE / split / "labels"
-    for label_path in label_dir.glob(f"{image_name}_jpg*"):
-        # Compare pixel content to find exact match
-        diff = cv2.absdiff(gray_image, hdc_image).mean()
+    matches = sorted(label_dir.glob(f"{image_name}_jpg.rf.*.txt"))
+    if matches:
+        return matches[0]  # Labels are identical across augments
 ```
 
 #### 2. Component Occlusion
@@ -102,24 +106,27 @@ cropped = occluded_image[ry1:ry2, rx1:rx2]
 
 ### Reference Implementation
 
-See `wire_detection/benchmark/reference_pipeline.py` for the complete, verified implementation.
-Run: `uv run python wire_detection/benchmark/reference_pipeline.py` → produces F1=0.7066 (baseline).
-Run: `uv run python -m wire_detection.benchmark.experiment_harness --preset wave2` → best config achieves F1=0.749.
+See `wire_detection/benchmark/expanded_benchmark.py` for the full 134-image benchmark.
+Run: `uv run python wire_detection/benchmark/expanded_benchmark.py` → ranks all 20 configs.
 
-### Strategy Comparison
+The reference pipeline (`reference_pipeline.py`) is archived — it used pixel-diff HDC matching and only found 23 images. The expanded benchmark uses filename prefix matching, finding all 134.
 
-| Strategy | Global F1 | TP | FP | FN | P | R |
-|----------|-----------|----|----|----|----|----|
-| **best_candidate_v4 (current best)** | **0.749** | 233 | 43 | 67 | 0.724 | 0.777 |
-| Sauvola+CCL+Dedup (baseline) | 0.707 | 248 | 70 | 52 | 0.617 | 0.827 |
-| Sauvola+CCL+Merge (old) | 0.647 | 184 | 85 | 116 | 0.684 | 0.613 |
-| Sauvola+CCL (no merge, old params) | 0.508 | 134 | 94 | 166 | 0.588 | 0.447 |
-| HoughLinesP + Canny (per-image best avg) | 0.682* | — | — | — | — | — |
-| Original (strategy+close+ct+merge) | 0.370 | 86 | 79 | 214 | 0.521 | 0.287 |
+### Top Configs (134 images)
 
-*\*Per-image avg F1 — upper bound from per-image optimal Canny/Hough params, not a single deployable config.*
+| Rank | Config | Global F1 | TP | FP | FN | Red | P | R |
+|------|--------|-----------|----|----|----|----|----|----|
+| **1** | **best_candidate_v4** | **0.831** | 2,788 | 322 | 736 | 73 | 0.876 | 0.791 |
+| 2 | best_candidate_v2 | 0.824 | 2,808 | 358 | 716 | 125 | 0.853 | 0.797 |
+| 3 | best_candidate_v3 | 0.817 | 2,819 | 398 | 705 | 160 | 0.835 | 0.800 |
+| 4 | best_candidate_v1 | 0.814 | 2,822 | 418 | 702 | 167 | 0.828 | 0.801 |
+| 5 | k0285_anchor_filter | 0.807 | 2,821 | 462 | 703 | 181 | 0.814 | 0.801 |
+| 6 | k0285_anchor_reconnect | 0.805 | 2,821 | 476 | 703 | 186 | 0.810 | 0.801 |
+| 7 | pca_overlap | 0.800 | 2,856 | 560 | 668 | 200 | 0.790 | 0.810 |
+| 8 | pca_endpoints | 0.798 | 2,857 | 564 | 667 | 212 | 0.786 | 0.811 |
+| 9 | overlap_dedup | 0.798 | 2,843 | 566 | 681 | 197 | 0.788 | 0.807 |
+| 10 | baseline_control | 0.795 | 2,844 | 575 | 680 | 212 | 0.783 | 0.807 |
 
-### Key Improvements (Experiment Progression)
+### Key Improvements (Experiment Progression) — measured on 23-image subset
 
 | # | Change | F1 | Δ |
 |---|--------|----|---|
@@ -132,6 +139,7 @@ Run: `uv run python -m wire_detection.benchmark.experiment_harness --preset wave
 | 7 | + Occlusion on all 23 images | 0.647 | +0.020 |
 | **8** | **Remove merge (dedup only)** | **0.707** | **+0.060** |
 | **9** | **Anchor filter + PCA + overlap dedup** | **0.749** | **+0.042** |
+| **10** | **Expanded to 134 images (prefix matching)** | **0.831** | **+0.082** |
 
 ### Synthetic Validation
 
