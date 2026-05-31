@@ -1,0 +1,11 @@
+Several limitations should still be acknowledged.
+
+First, the method remains dependent on accurate component priors. Incorrect component labels or mismatched augmentation variants can degrade both occlusion and region of interest selection. The revised benchmark scripts now reproduce the intended pairing procedure, but this dependency remains part of the method.
+
+Second, the hardest remaining failures are still recall driven. Very faint strokes and fragmented traces near crowded components are not always preserved, even after threshold fusion and graph selection. This behavior was observed in images such as C101\_D1\_P1 and C10\_D2\_P3.
+
+Third, redundant alternatives can still be produced in dense local structure. The topology aware selection stage reduced this effect substantially, but dense cases such as C105\_D2\_P4 and C102\_D1\_P2 still produced extra segments.
+
+Fourth, the benchmark is small. Although the 23 image set is carefully annotated and was sufficient for controlled method comparison, broader generalization across additional drawing styles and acquisition conditions should still be validated.
+
+Finally, the present synthetic generator remained useful for sanity checking, but it was less decisive for the later component guided hybrids because the generated images were not paired with external component priors in the same manner as the real benchmark. A quick learned wire branch was also explored during the present revision, but it did not surpass the deterministic graph based method under the available training setup. The current manuscript is therefore focused on the strongest validated hybrid method rather than on a partially trained learned alternative.

@@ -32,6 +32,8 @@ wire-sweep = "wire_detection.experiment.cli:main"
 wire-tune = "wire_detection.api.server:main"
 wire-pipeline = "wire_detection.pipeline.cli:main"
 wire-benchmark-exp = "wire_detection.benchmark.experiment_harness:main"
+wire-benchmark-quality = "wire_detection.benchmark.quality_analysis:main"
+wire-benchmark-learned = "wire_detection.benchmark.learned_branch:main"
 wire-vlm = "wire_detection.vlm.cli:main"
 
 [dependency-groups]

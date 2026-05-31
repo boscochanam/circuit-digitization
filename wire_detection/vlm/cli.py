@@ -418,7 +418,7 @@ def cmd_audit_pipeline(args: argparse.Namespace) -> None:
 
     # Print summary
     print(f"\n=== Audit Pipeline Complete ===")
-    print(f"Reclassified: {len(output)} images → {reclassified_path}")
+    print(f"Reclassified: {len(output)} images -> {reclassified_path}")
     if audit_args.output:
         print(f"Audit: {audit_args.output}")
     print(f"Recommended KEEP: {', '.join(audit.get('recommended_keep', []))}")
