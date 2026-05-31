@@ -137,6 +137,67 @@
 
 ---
 
+## 2026-06-01 00:05: Multi-Scale Detection
+- Tested image scales: 0.5x, 0.75x, 1.0x, 1.25x, 1.5x
+- Scale 1.0x (original) is best: F1=0.7852
+- Sauvola window=33: F1=0.7862 (marginal)
+- Multi-scale ensemble: all combinations worse
+- Verdict: **MULTI-SCALE DOES NOT IMPROVE F1**
+
+---
+
+## 2026-06-01 00:10: Endpoint Refinement
+- Tested methods: darkest, gradient, edge
+- Radii: 5, 10, 15, 20 pixels
+- All methods dramatically reduce F1 (from 0.7852 to ~0.15)
+- Refinement moves endpoints to wrong locations
+- Verdict: **ENDPOINT REFINEMENT DOES NOT IMPROVE F1**
+
+---
+
+## FINAL STATUS: 2026-06-01 00:15
+
+### All Leads Exhausted
+
+Tested 15+ approaches with proper train/test split:
+
+1. ❌ Preprocessing (CLAHE, histogram_eq, gaussian_blur, etc.)
+2. ❌ Parameter tuning (CCL min_area, dedup angle/dist, anchor dist)
+3. ❌ Multi-scale detection (different image resolutions)
+4. ❌ Endpoint refinement (darkest, gradient, edge)
+5. ❌ Random Forest (overfitting confirmed)
+6. ❌ Simpler models (logistic regression, SVM, decision tree)
+7. ❌ Rule-based (doesn't generalize)
+8. ❌ Bbox connectivity filtering (88% TPs removed)
+9. ❌ Per-component cap (too aggressive)
+10. ❌ Static pin definitions (29.8% connectivity)
+11. ❌ Simple confidence scoring (TP/FP identical)
+12. ⚠️ Multi-model consensus (precision only, F1 doesn't improve)
+13. ⚠️ Topology validation (gentle cleaning, F1 doesn't improve)
+14. ✅ Endpoint clustering (153.4% connectivity, good for netlist)
+
+### Conclusion
+
+**F1=0.8334 is the limit** with current features and approaches.
+
+No post-hoc filtering, ML model, preprocessing, or parameter tuning can improve F1 beyond baseline on unseen data.
+
+The wire detector is already at its performance ceiling. Further improvement would require:
+- New training data
+- Different detection architecture
+- Component-aware detection during (not after) wire detection
+
+### Working Approaches for SPICE Netlist
+
+1. **Endpoint clustering**: 153.4% connectivity (best for netlist construction)
+2. **Topology validation**: gentle cleaning (degree≥10 threshold)
+
+### Recommendation
+
+Accept F1=0.8334 for wire detection. Use endpoint clustering for SPICE netlist extraction.
+
+---
+
 ## Notes
 - All experiments use proper train/test split by image (80/20)
 - Cross-validation used for hyperparameter tuning
