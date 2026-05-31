@@ -30,36 +30,34 @@ Crop to union of all component bounding boxes + 10px padding in all directions.
 - Anchor filter: endpoint_dist=12, link_dist=8
 - **NO merge, NO length filter** — both destroy TPs
 
-## Reference Pipeline (Broken — paths don't exist)
-Old: `uv run python wire_detection/benchmark/reference_pipeline.py` — F1=0.7066 on 23 images
-The `labels_few_annot/` directory was removed. Use the expanded benchmark instead.
-
-## Expanded Benchmark (134 images, all 20 configs)
+## Expanded Benchmark (134 images, all 36 configs)
 Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
-Expected output: full ranking of all 20 configs on 134 images (3,524 GT wires)
 
 ### Top Configs (Jun 2026)
 | Rank | Config | F1 | Precision | Recall |
 |---|---|---|---|---|
-| 1 | **best_candidate_v4** | **0.8314** | 0.876 | 0.791 |
-| 2 | best_candidate_v2 | 0.8241 | 0.853 | 0.797 |
-| 3 | best_candidate_v3 | 0.8170 | 0.835 | 0.800 |
-| 4 | best_candidate_v1 | 0.8143 | 0.828 | 0.801 |
-| 5 | k0285_anchor_filter | 0.8074 | 0.814 | 0.801 |
+| 1 | **best_candidate_v4** | **0.8334** | 0.898 | 0.778 |
+| 2 | best_candidate_v2 | 0.8258 | 0.873 | 0.784 |
+| 3 | best_candidate_v3 | 0.8194 | 0.856 | 0.786 |
+| 4 | skeleton_graph_v1 | 0.8185 | 0.815 | 0.822 |
+| 5 | best_candidate_v1 | 0.8170 | 0.845 | 0.791 |
+
+### Key Findings
+- **best_candidate_v4** (Sauvola + component extraction) is the winner
+- Skeleton graph methods (v5-v8) have higher precision but worse F1
+- **OTSU is terrible** for this dataset (F1 < 0.67)
+- Adaptive thresholding beats OTSU but not Sauvola (F1=0.755 vs 0.833)
+- Sauvola adaptive gaussian fusion (F1=0.765) doesn't beat plain Sauvola
 
 ### Per-image Breakdown (best_candidate_v4)
-- **91 images** (68%) — F1 >= 0.90 (68 of those at F1=1.0, perfect)
-- **99 images** (74%) — F1 >= 0.70
-- **103 images** (77%) — F1 >= 0.50
-- **31 images** (23%) — F1 < 0.50 (poor)
+- **91 images** (68%) — F1 >= 0.90
 - **Median F1: 1.000**
-- Full results: `output/benchmark_experiments/expanded_full_ranking/`
+- **31 images** (23%) — F1 < 0.50 (poor: bimodal lighting, dense circuits)
 
 ## VLM Quality Assessment
 - Module: `wire_detection.vlm` — classify images by paper type via VLM or programmatic scores
 - CLI: `wire-vlm classify`, `wire-vlm sweep`, `wire-vlm audit-pipeline`
-- Doc: `docs/vlm-experiments.md` — full Nemotron experiment methodology
-- Data: `docs/experiments/data/` — saved VLM results (330 CGHD1152 images)
+- Doc: `docs/vlm-experiments.md`
 
 ## Common Errors Agents Make
 1. ✗ Skipping occlusion entirely → FP count explodes
