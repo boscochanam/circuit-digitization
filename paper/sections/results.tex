@@ -1,0 +1,47 @@
+The reproduced reference implementation yielded an F1 score of 0.7066 on the 23 image benchmark. When the strongest refined classical pipeline was used, the F1 score increased to 0.7492. The topology guided skeleton graph method increased the benchmark score further to 0.7830. The final hybrid recovery method increased the score again to 0.8215 by supplementing the conservative Sauvola branch with a tightly gated adaptive Gaussian recovery branch and class aware anchor cues.
+
+\begin{table}[H]
+\centering
+\caption{Benchmark comparison on 23 hand drawn circuit schematic images with 300 annotated wire segments.}
+\input{tables/main_comparison}
+\label{tab:mainresults}
+\end{table}
+
+The main improvement was not obtained through a single threshold change. Instead, the increase was produced by a sequence of architectural changes. Once connected component fitting was replaced by skeleton graph extraction, and once topology aware selection was introduced, redundant alternatives were removed more effectively while the strongest supported paths were preserved. The final hybrid recovery method then recovered additional weak paths while constraining false positives through component aware gating, explicit anchor requirements, unresolved endpoint linkage, class aware port surrogates, and parallel duplicate rejection. Relative to the reproduced baseline, true positives increased from 248 to 283, false positives decreased from 70 to 63, and the final F1 score rose from 0.7066 to 0.8215.
+
+The contrast between the topology guided and hybrid variants was also informative. The topology guided skeleton graph method retained the highest precision among the leading methods, whereas the hybrid recovery method produced a much larger recall gain. The best overall F1 score was obtained only after the adaptive Gaussian branch was constrained tightly enough to behave as a selective recovery mechanism rather than as a global replacement. In the final variant, recovery candidates were filtered with class aware port cues that removed several structurally implausible attachments, which reduced false positives from 71 to 63 while maintaining most of the recall gain from the earlier hybrid stage.
+
+An additional endpoint driven recovery experiment was then performed in which permissive candidates were seeded only from unresolved endpoints in the conservative topology graph and were accepted only when they repaired short component aware gaps. This modification reduced false positives further relative to the permissive hybrid family, but the best such variant reached an F1 score of 0.7957 because too much recall was surrendered. The result suggested that the conservative topology graph is an effective precision prior, but that a stricter repair only formulation is not sufficient on its own to replace the final hybrid gate.
+
+\subsection*{Thresholding comparison}
+
+Thresholding was then varied while the same benchmark harness, preprocessing, extraction, and evaluation logic were preserved. The objective was to determine whether a different binarization family could improve the present method or reveal a more favorable precision recall tradeoff.
+
+\begin{table}[H]
+\centering
+\caption{Thresholding comparison on the 23 image wire benchmark.}
+\input{tables/threshold_comparison}
+\label{tab:thresholdcomparison}
+\end{table}
+
+The comparison showed that global Otsu thresholding was not competitive for this dataset. Both the pure Otsu skeleton method and the Sauvola and Otsu fusion setting produced large false positive counts and substantially lower F1 scores than the final method. Adaptive mean and adaptive Gaussian thresholding were more promising because much higher recall was obtained. The strongest tuned adaptive Gaussian setting reached an F1 score of 0.7576 with recall 0.9533, but this gain in recall was offset by a large increase in false positives. The thresholding study therefore supported two conclusions. First, the strongest global result still depended on Sauvola based local thresholding as the conservative primary branch. Second, adaptive Gaussian thresholding became useful only when it was constrained as a selective recovery branch inside the final hybrid method.
+
+The same late stage variants were also checked on synthetic images from the repository generator. Those synthetic runs did not separate the leading component guided variants in a meaningful way because the generated images were evaluated without external component priors. Synthetic data were therefore retained as a secondary stability check, while the real 23 image benchmark remained the decisive model selection setting.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/benchmark_comparison.png}
+\caption{Aggregate benchmark comparison for the reproduced reference baseline, the strongest earlier classical branch, the topology guided skeleton graph method, and the final hybrid recovery method. The hybrid formulation was found to provide the highest F1 score through a large recall gain while preserving substantially better precision than an unconstrained permissive threshold branch.}
+\label{fig:benchmarkcomparison}
+\end{figure}
+
+Qualitative behavior is shown in Fig.~\ref{fig:qualitative}. A perfect recovery case is included to demonstrate the expected output on clean circuit structure. A difficult recall case is included to show that weak or fragmented traces are still the dominant failure mode. A redundancy heavy case is also included because densely connected layouts still induce extra line hypotheses even after topology filtering. For each example, intermediate stages are shown so that the effect of occlusion, conservative thresholding, permissive recovery, and final selection can be inspected directly.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/qualitative_cases.png}
+\caption{Representative pipeline stages from the final hybrid recovery method. For each example, the input image, cropped region after component and text suppression, conservative Sauvola mask, adaptive Gaussian recovery mask, and final prediction overlay are shown. Green segments denote ground truth and red segments denote predicted wire segments.}
+\label{fig:qualitative}
+\end{figure}
+
+The present benchmark was also used to compare two conclusions from the earlier draft. First, the old merge based result of 0.647 was no longer supported once the corrected repository benchmark was reproduced. Second, the best current method no longer depends on collinear merging or length filtering. The strongest reproducible result was instead obtained when topology aware pruning was combined with a tightly gated recovery branch after graph extraction.

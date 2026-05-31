@@ -1,0 +1,26 @@
+\begin{frontmatter}
+
+\title{Component Guided Wire Extraction From Hand Drawn Circuit Schematics Using Adaptive Threshold Fusion and Topology Aware Skeleton Graphs}
+
+\author[scaai]{Bosco Chanam\corref{cor1}}
+\ead{bosco.chanam.btech2021@sitpune.edu.in}
+
+\author[scaai]{Chris Dcosta}
+
+\author[usc]{Pranavesh Kumar Talupuri}
+\ead{talupuri@usc.edu}
+
+\cortext[cor1]{Corresponding author}
+
+\address[scaai]{Symbiosis Centre for Applied Artificial Intelligence, Department of Computer Science and Engineering, Symbiosis Institute of Technology, Pune, India}
+\address[usc]{Thomas Lord Department of Computer Science, University of Southern California, Los Angeles, California, United States}
+
+\begin{abstract}
+Digitization of hand drawn circuit schematics remains difficult because thin wire traces are easily corrupted by paper texture, scanner artifacts, uneven lighting, and component overlap. A component guided hybrid method is presented in which oriented component detections are used for occlusion and region of interest definition, while wire extraction is performed with a deterministic computer vision pipeline. In the revised method, adaptive threshold masks are converted into skeleton graphs, a conservative Sauvola branch is supplemented by a gated adaptive Gaussian recovery branch, candidate paths are scored by geometric support and component proximity, and a topology aware selection stage is used to suppress redundant alternatives. In the final variant, recovery candidates are further constrained by anchor requirements, class aware port cues, and parallel duplicate rejection. No wire specific training is required for the main method. On a benchmark of 23 hand drawn circuit images with 300 annotated wire segments, the reproduced reference pipeline achieved a global F1 score of 0.7066. The earlier topology guided skeleton graph method achieved an F1 score of 0.7830. The final hybrid recovery method achieved an F1 score of 0.8215, with precision 0.7275 and recall 0.9433. The method is therefore shown to improve both reproducibility and wire extraction accuracy while preserving a transparent pipeline that can be inspected stage by stage.
+\end{abstract}
+
+\begin{keyword}
+Circuit diagram digitization \sep Wire extraction \sep Skeleton graph \sep Adaptive thresholding \sep Document image analysis \sep Hybrid computer vision
+\end{keyword}
+
+\end{frontmatter}

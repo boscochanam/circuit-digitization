@@ -1,0 +1,100 @@
+The method is organized as a component guided wire extraction pipeline. Oriented component labels are used to suppress non wire structures before thresholding, while the final wire decision is made by a deterministic graph based postprocessing stage. The benchmark implementation is available in the repository and was validated against the reproduced reference pipeline.
+
+\subsection*{Datasets and benchmark definition}
+
+Two data sources were used. Component priors were obtained from the CGHD1152 handwritten circuit corpus and its HDC recognition subset, which provide oriented component annotations across 58 classes \cite{Thoma2021}. Wire extraction was evaluated on 23 hand drawn schematic images at 704 by 704 px resolution with 300 manually annotated wire segments in YOLO OBB format. Each quadrilateral annotation was converted into a centerline segment through the short edge midpoint procedure used by the benchmark evaluator.
+
+Evaluation was performed with the repository metric in which a detected segment is counted as a true positive when its endpoints lie within a mean 20 px tolerance of the nearest ground truth segment. Precision, recall, F1 score, and redundant detections were reported. During the later hybrid development stage, a secondary synthetic sanity check was also maintained by running each candidate configuration on procedurally generated wire images from the repository synthetic data generator. Because these synthetic images do not provide external component priors, they were used as a stability check rather than as the primary model selection signal.
+
+\subsection*{Component guided preprocessing}
+
+For each benchmark image, the corresponding HDC component label file was matched by pixel comparison across augmentation variants. This step was required because multiple transformed copies of the same base image were present in the component dataset. Once the correct label file had been identified, component polygons and text polygons were parsed and used in two preprocessing operations.
+
+First, each polygon was occluded with the local median intensity estimated from a margin around the polygon. This operation suppressed symbol strokes and printed text that would otherwise be converted into false wire evidence. Second, the image was cropped to the union of all component boxes with 10 px padding. This operation reduced border clutter and focused subsequent processing on the circuit region.
+
+\subsection*{Adaptive threshold mask generation}
+
+Wire evidence was generated from Sauvola thresholding \cite{Sauvola2000}. This choice was retained because local adaptive thresholding has repeatedly been found to outperform global thresholding on degraded document content and thin foreground strokes \cite{Otsu1979,Niblack1986,Gatos2006,Shafait2008,Su2013}. The local threshold was computed in a 67 by 67 window with primary parameter $k = 0.285$. A secondary Sauvola mask at $k = 0.25$ was also generated. In the final hybrid method, these masks were treated as conservative evidence sources, while a gated adaptive Gaussian recovery branch was introduced to recover weak traces that were missed by the primary branch.
+
+This stage was designed to preserve faint traces while avoiding excessive sensitivity to low frequency paper intensity variation. In contrast with the earlier merge based pipeline, no global line merging stage was introduced at this point. Instead, the permissive branch was allowed to contribute only when candidate paths were supported by component proximity and graph consistency tests.
+
+Additional threshold families were also evaluated within the same benchmark harness. Global Otsu thresholding, triangle thresholding, adaptive mean thresholding, adaptive Gaussian thresholding, and simple fusion variants were substituted into the same downstream extraction and evaluation procedure. This comparison was introduced to test whether the strongest result depended specifically on Sauvola thresholding or on later graph based reasoning stages.
+
+\subsection*{Skeleton graph extraction}
+
+The fused binary foreground mask was converted into a one pixel skeleton. Pixels with degree other than two were treated as graph nodes, and skeleton chains between such nodes were traced as candidate paths. Each path was converted into a line hypothesis through its terminal coordinates. Very short paths were removed through a minimum graph path length threshold. This formulation was informed by classic thinning and skeletonization work, in which centerline preservation and topological stability are treated as the key requirements \cite{ZhangSuen1984,Lam1992}.
+
+This representation was preferred over direct connected component line fitting because it retained local topology for a longer portion of the pipeline. Junctions, branch terminations, and elongated traces were therefore represented more faithfully than in the earlier contour extremum formulation. It also avoided premature commitment to a single contour extremum pair, which is a known weakness when line evidence is fragmented or when several near collinear alternatives coexist.
+
+\subsection*{Candidate scoring and selection}
+
+Each candidate path was assigned a score from four sources of evidence:
+\begin{enumerate}
+    \item geometric length,
+    \item average support across threshold masks,
+    \item proximity of endpoints to component boundaries,
+    \item proximity of endpoints to plausible component side midpoints that act as coarse port surrogates.
+\end{enumerate}
+
+The scored candidates were then filtered by a topology aware selection stage. A sparse set of non overlapping paths was retained, while weak alternatives that did not add new structural support were removed. This step differed from the earlier deduplication strategy in two important ways. First, candidates were ranked rather than treated symmetrically. Second, acceptance was conditioned on how well a candidate extended the current graph explanation of the circuit.
+
+After topology selection, score cluster deduplication was applied to suppress near collinear duplicates. The role of this step was similar in spirit to line selection methods based on Hough style voting or direct line segment detection, but selection was performed over graph paths rather than over edge pixels alone \cite{DudaHart1972,Gioi2010}. In the final hybrid configuration, a secondary adaptive Gaussian branch was executed after the primary topology guided Sauvola pass. Its candidates were admitted only when they remained near components, satisfied explicit anchor requirements, linked coherently to unresolved graph endpoints, and did not create near parallel duplicates around accepted paths. In the last revision stage, the anchor test itself was tightened by using class aware port surrogates derived from oriented component polygons rather than from generic bounding box edges. Two terminal components were therefore encouraged to connect along their short side midpoints, whereas non connective classes such as text and crossover labels were removed from the anchor pool. An additional endpoint driven repair variant was also examined in which recovery candidates were seeded only from dangling endpoints of the conservative topology graph. That variant reduced false positives more aggressively than the permissive hybrid branch, but a larger recall loss was incurred and the overall benchmark score was not improved. The final main method is therefore referred to in this paper as the hybrid recovery method.
+
+\subsection*{Method summary}
+
+The full revised architecture is shown in Fig.~\ref{fig:architecture}. The original connected component branch remained useful as a control, but the strongest performance was obtained when graph extraction and topology aware selection were introduced.
+
+\begin{figure}[H]
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={rounded corners=4pt, very thick, minimum width=3.2cm, minimum height=1.2cm, align=center, inner sep=5pt},
+    io/.style={box, draw=orange!85!black, fill=orange!10},
+    prior/.style={box, draw=blue!70!black, fill=blue!8},
+    pre/.style={box, draw=purple!70!black, fill=purple!8},
+    thr/.style={box, draw=green!50!black, fill=green!10},
+    graph/.style={box, draw=teal!70!black, fill=teal!9},
+    arrow/.style={-{Latex[length=3mm,width=2mm]}, line width=1pt, draw=gray!75!black},
+    dashedarrow/.style={-{Latex[length=2.6mm,width=1.8mm]}, dashed, line width=0.9pt, draw=gray!65!black},
+    group/.style={rounded corners=8pt, draw=#1!40, fill=#1!4, line width=0.8pt, inner sep=8pt},
+    group/.default=blue
+]
+\node[io] (input) at (0,0) {\textbf{Input schematic}\\704 $\times$ 704 image};
+\node[prior] (match) at (4.1,0) {\textbf{Prior alignment}\\match benchmark image\\to HDC labels};
+\node[pre] (occlusion) at (8.2,0) {\textbf{Symbol and text suppression}\\local median occlusion};
+\node[pre] (crop) at (12.3,0) {\textbf{ROI crop}\\component union\\with 10 px padding};
+
+\node[thr] (maska) at (4.1,-2.75) {\textbf{Primary mask}\\Sauvola\\$k = 0.285$};
+\node[thr] (maskb) at (8.2,-2.75) {\textbf{Secondary mask}\\Sauvola\\$k = 0.25$};
+\node[thr] (fusion) at (12.3,-2.75) {\textbf{Conservative evidence fusion}\\shared support evidence};
+
+\node[graph] (skeleton) at (4.1,-5.5) {\textbf{Skeleton graph}\\nodes, chains,\\path hypotheses};
+\node[graph] (scoring) at (8.2,-5.5) {\textbf{Path scoring}\\length, mask support,\\boundary and port cues};
+\node[graph] (selection) at (12.3,-5.5) {\textbf{Hybrid recovery and selection}\\adaptive Gaussian recovery\\plus topology pruning};
+\node[io] (output) at (16.4,-5.5) {\textbf{Output}\\wire segments};
+
+\draw[arrow] (input) -- (match);
+\draw[arrow] (match) -- (occlusion);
+\draw[arrow] (occlusion) -- (crop);
+\draw[arrow] (crop.south) |- (maska.north);
+\draw[arrow] (crop.south) -- ++(0,-0.6) -| (maskb.north);
+\draw[arrow] (maska) -- (maskb);
+\draw[dashedarrow] (maska.east) -- (fusion.west);
+\draw[arrow] (maskb) -- (fusion);
+\draw[arrow] (fusion.south) |- (skeleton.north);
+\draw[arrow] (skeleton) -- (scoring);
+\draw[arrow] (scoring) -- (selection);
+\draw[arrow] (selection) -- (output);
+
+\begin{scope}[on background layer]
+\node[group=blue, fit=(input) (match), label={[font=\bfseries\footnotesize, text=blue!60!black]north:Input and prior retrieval}] {};
+\node[group=purple, fit=(occlusion) (crop), label={[font=\bfseries\footnotesize, text=purple!60!black]north:Component guided preprocessing}] {};
+\node[group=green!60!black, fit=(maska) (maskb) (fusion), label={[font=\bfseries\footnotesize, text=green!40!black]north:Adaptive threshold evidence}] {};
+\node[group=teal, fit=(skeleton) (scoring) (selection) (output), label={[font=\bfseries\footnotesize, text=teal!60!black]north:Graph reasoning and final decision}] {};
+\end{scope}
+\end{tikzpicture}
+}
+\caption{Revised wire extraction architecture. Component priors are first aligned to each benchmark image and used to suppress symbols, text, and border clutter. Conservative Sauvola evidence is fused into a shared support representation, from which a skeleton graph is extracted. Adaptive Gaussian recovery is then used selectively for weak paths before final topology aware selection is applied.}
+\label{fig:architecture}
+\end{figure}
