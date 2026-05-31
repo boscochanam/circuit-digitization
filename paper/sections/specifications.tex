@@ -1,0 +1,14 @@
+\begin{table}[H]
+\centering
+\caption{Specifications table}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.34\textwidth}X}
+\toprule
+Subject area & Computer Science \\
+More specific subject area & Computer vision, document analysis, circuit diagram digitization \\
+Name of the method & Component Guided Wire Extraction With Adaptive Threshold Fusion and Topology Aware Skeleton Graphs \\
+Name and reference of original method & Sauvola adaptive document image binarization \cite{Sauvola2000} and a reproduced repository baseline for circuit wire extraction \\
+Resource availability & Pipeline repository: \url{https://github.com/boscochanam/circuit-digitization}. Component dataset: CGHD1152 and HDC subset documented in the repository. Wire benchmark: 23 annotated images with 300 wire segments, provided by the authors. \\
+Main validation metric & Point based wire segment F1 score with a 20 px endpoint distance tolerance; best result 0.8215 on the 23 image benchmark \\
+\bottomrule
+\end{tabularx}
+\end{table}
