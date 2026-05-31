@@ -14,7 +14,7 @@ datasets:
     label_format: yolo_obb
     label_glob: "labels/train/manually_verified_no_background_data/images/*.txt"
     component_labels: true
-    description: "Labelled ground truth (23 images, Chris)"
+    description: "Manually verified wire labels (134 images, 3,524 wires, Chris 2 batches)"
 
   synthetic:
     path: /home/claw/workspace/circuit-digitization-repo/data/synthetic
