@@ -74,4 +74,77 @@ A lead is BLOCKED if:
 - Ensemble scoring: removes 92% FPs, keeps 28% TPs
 - Verdict: LEAD FOUND → try ML classifier
 
-### NEXT: Random Forest Classifier
+### 2026-05-31: Random Forest v1
+- Basic RF with 3 features (pixel_density, length, wire_width)
+- Cross-validation F1: 0.9049
+- Image-level F1: 0.8332 (Δ=-0.0002)
+- Precision: 0.9872, Recall: 0.7208
+- Verdict: REMOVES 90% FPs but also removes 7% TPs
+
+### 2026-05-31: Random Forest v2 (OVERFITTING - INVALID)
+- Extended RF with 7 features
+- Cross-validation F1: 0.9483
+- Image-level F1: 0.8750 (Δ=+0.0416)
+- Precision: 1.0000, Recall: 0.7778
+- TP: 2741 (unchanged), FP: 0 (all removed!)
+- **INVALID: trained and tested on same data (overfitting)**
+
+### 2026-05-31: Random Forest v3 (PROPER SPLIT)
+- Train/test split by IMAGE (80/20)
+- Cross-validation F1: 0.9500 (train set)
+- Test set F1: 0.7845 (vs baseline 0.8334)
+- Gap: 0.1655 (severe overfitting)
+- Verdict: **DOES NOT IMPROVE F1 on unseen data**
+
+### NEXT: All leads exhausted. Accept baseline F1=0.8334.
+
+### 2026-05-31: Simpler Models
+- Logistic Regression: F1=0.5995 (worse)
+- Decision Tree: F1=0.8512 (depth=10, may overfit)
+- SVM: F1=0.6038 (worse)
+- Rule 'length > 20': F1=0.8979 on one test set (appeared good)
+
+### 2026-05-31: Rule Validation
+- Tested "length > 20" across 10 random splits
+- Average delta: -0.0542 ± 0.0122
+- Positive: 0/10 splits
+- Rule DOES NOT GENERALIZE (was split-specific artifact)
+- All length thresholds reduce F1 on full dataset
+
+### 2026-06-01 00:05: Multi-Scale Detection
+- Tested image scales: 0.5x, 0.75x, 1.0x, 1.25x, 1.5x
+- Scale 1.0x (original) is best: F1=0.7852
+- Sauvola window=33: F1=0.7862 (marginal)
+- Multi-scale ensemble: all combinations worse
+- Verdict: **MULTI-SCALE DOES NOT IMPROVE F1**
+
+### 2026-06-01 00:10: Endpoint Refinement
+- Tested methods: darkest, gradient, edge
+- Radii: 5, 10, 15, 20 pixels
+- All methods dramatically reduce F1 (from 0.7852 to ~0.15)
+- Refinement moves endpoints to wrong locations
+- Verdict: **ENDPOINT REFINEMENT DOES NOT IMPROVE F1**
+
+### FINAL CONCLUSION
+All leads definitively exhausted. No approach improves F1 beyond baseline 0.8334 on unseen data.
+
+Dead ends:
+- Bbox connectivity filtering
+- Per-component cap
+- Static pin definitions
+- Simple confidence scoring
+- Multi-model consensus (precision only)
+- Topology validation (gentle cleaning only)
+- Random Forest (overfitting)
+- Simpler models (logistic regression, SVM, decision tree)
+- Rule-based length filtering (doesn't generalize)
+- Preprocessing (CLAHE, histogram_eq, gaussian_blur, etc.)
+- Parameter tuning (CCL min_area, dedup angle/dist, anchor dist)
+- Multi-scale detection (different image resolutions)
+- Endpoint refinement (darkest, gradient, edge)
+
+Working approaches for netlist:
+- Endpoint clustering: 153.4% connectivity (best for netlist construction)
+- Topology validation: gentle cleaning (degree≥10 threshold)
+
+Accept F1=0.8334 for wire detection. Use endpoint clustering for SPICE netlist.
