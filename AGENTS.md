@@ -5,9 +5,11 @@ The wire detection pipeline **WILL NOT WORK** without these three preprocessing 
 ## MANDATORY Preprocessing (in order)
 
 ### 1. HDC Label Matching
-Each image needs YOLO-OBB component labels from roboflow_test2. Match by pixel-difference.
+Each image needs YOLO-OBB component labels from roboflow_test2. **Use filename prefix matching** (not pixel-difference) — HDC files have `.rf.XXXX` suffixes from Roboflow augmentation.
 - Paths: `/home/claw/circuit-digitization/roboflow_test2/{train,valid,test}/labels/`
 - Images: `/home/claw/workspace/ground_truth/labels_few_annot/images/`
+- Labels: `/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images/`
+- Matches: **134 images** with both GT wire labels and HDC component labels (3,524 total wire annotations)
 
 ### 2. Component Occlusion  
 Fill each component polygon with **local median color** (NOT white, NOT black — use `np.median()` of local region).
@@ -28,13 +30,30 @@ Crop to union of all component bounding boxes + 10px padding in all directions.
 - Anchor filter: endpoint_dist=12, link_dist=8
 - **NO merge, NO length filter** — both destroy TPs
 
-## Reference Implementation
-Run: `uv run python wire_detection/benchmark/reference_pipeline.py`
-Expected output: F1=0.7066, TP=248, FP=70, FN=52
+## Reference Pipeline (Broken — paths don't exist)
+Old: `uv run python wire_detection/benchmark/reference_pipeline.py` — F1=0.7066 on 23 images
+The `labels_few_annot/` directory was removed. Use the expanded benchmark instead.
 
-## Best Config (May 2026)
-Run: `uv run python -m wire_detection.benchmark.experiment_harness --preset wave2`
-Best: **best_candidate_v4** → F1=0.749, TP=233, FP=43, FN=67
+## Expanded Benchmark (134 images, all 20 configs)
+Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
+Expected output: full ranking of all 20 configs on 134 images (3,524 GT wires)
+
+### Top Configs (Jun 2026)
+| Rank | Config | F1 | Precision | Recall |
+|---|---|---|---|---|
+| 1 | **best_candidate_v4** | **0.8314** | 0.876 | 0.791 |
+| 2 | best_candidate_v2 | 0.8241 | 0.853 | 0.797 |
+| 3 | best_candidate_v3 | 0.8170 | 0.835 | 0.800 |
+| 4 | best_candidate_v1 | 0.8143 | 0.828 | 0.801 |
+| 5 | k0285_anchor_filter | 0.8074 | 0.814 | 0.801 |
+
+### Per-image Breakdown (best_candidate_v4)
+- **91 images** (68%) — F1 >= 0.90 (68 of those at F1=1.0, perfect)
+- **99 images** (74%) — F1 >= 0.70
+- **103 images** (77%) — F1 >= 0.50
+- **31 images** (23%) — F1 < 0.50 (poor)
+- **Median F1: 1.000**
+- Full results: `output/benchmark_experiments/expanded_full_ranking/`
 
 ## VLM Quality Assessment
 - Module: `wire_detection.vlm` — classify images by paper type via VLM or programmatic scores
@@ -50,3 +69,4 @@ Best: **best_candidate_v4** → F1=0.749, TP=233, FP=43, FN=67
 5. ✗ Using merge or length filter → 64 TPs destroyed
 6. ✗ Using old params (otsu, dilate=5, min_area=30, dedup_dist=12) → wrong pipeline
 7. ✗ Not matching HDC labels → no occlusion at all
+8. ✗ Using pixel-diff matching instead of prefix matching → only finds 23/134 images
