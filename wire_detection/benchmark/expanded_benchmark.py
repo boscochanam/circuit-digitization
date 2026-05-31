@@ -21,7 +21,7 @@ from wire_detection.benchmark.experiment_harness import (
     dedup_lines, filter_component_connected_lines,
     add_secondary_recovery_lines, reconnect_lines,
     detect_wires_experiment, run_experiment,
-    wave1_configs, wave2_configs,
+    wave1_configs, wave2_configs, wave3_configs, wave4_configs,
 )
 
 # ── Override data paths ──
@@ -149,8 +149,8 @@ def run_config(cfg: ExperimentConfig) -> RunSummary:
 
 
 if __name__ == "__main__":
-    # Gather all unique configs
-    all_configs = wave1_configs() + wave2_configs()
+    # Gather all unique configs (wave1-4)
+    all_configs = wave1_configs() + wave2_configs() + wave3_configs() + wave4_configs()
     # Remove duplicates by name
     seen: set[str] = set()
     unique_configs = []
