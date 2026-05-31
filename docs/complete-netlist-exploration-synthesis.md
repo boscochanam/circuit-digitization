@@ -8,6 +8,8 @@
 
 **Dead ends:** Bbox filtering (88% removed are TPs), per-component cap, static pins (29.8% connectivity), confidence scoring (TP/FP identical).
 
+**New lead:** 3 separable features found — pixel_density (TP=0.14, FP=0.01), length (TP=65, FP=41), wire_width (TP=2.7, FP=0.3). Ensemble scoring removes 92% FPs but keeps only 28% TPs. Need ML classifier (random forest) to improve.
+
 ---
 
 ## Executive Summary
