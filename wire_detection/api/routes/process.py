@@ -125,6 +125,7 @@ def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, i
         "threshold": _img_to_base64(bw),
         "dilated": _img_to_base64(closed),
         "preset": preset_name,
+        "lines": lines_global,
         "params": {
             "sauvola_k": cfg.sauvola_k,
             "sauvola_window": cfg.sauvola_window,
