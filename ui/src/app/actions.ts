@@ -1,0 +1,59 @@
+"use server";
+
+import { fetchBackend } from "@/lib/api";
+import type { PipelineResult, NetlistResult } from "@/lib/types";
+
+export async function listImagesAction(ds: string): Promise<string[]> {
+  const data = await fetchBackend<string[]>(`/api/list?ds=${encodeURIComponent(ds)}`);
+  if (!Array.isArray(data)) throw new Error("listImages: expected array");
+  return data;
+}
+
+export async function fetchDatasetsAction(): Promise<Record<string, { path: string; images: number; sample: string | null }>> {
+  return fetchBackend("/api/datasets");
+}
+
+export async function fetchPresetsAction(): Promise<Record<string, { label: string; description: string; params?: Record<string, number> }>> {
+  return fetchBackend("/api/presets");
+}
+
+export async function fetchNetlistAction(
+  imgIdx: number,
+  ds: string,
+  preset: string,
+  params: Record<string, string | number> = {},
+): Promise<NetlistResult> {
+  return fetchBackend("/api/netlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ img_idx: imgIdx, ds, preset, params }),
+  });
+}
+
+export async function runSimulationAction(
+  spiceText: string,
+): Promise<{
+  success: boolean;
+  node_voltages: Array<{ node: string; voltage: number }>;
+  branch_currents: Array<{ source: string; current: number }>;
+  error?: string;
+}> {
+  return fetchBackend("/api/simulate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ spice_text: spiceText }),
+  });
+}
+
+export async function runPipelineAction(
+  imgIdx: number,
+  ds: string,
+  params: Record<string, string | number>,
+  preset: string,
+): Promise<PipelineResult> {
+  return fetchBackend("/api/process", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ img_idx: imgIdx, ds, params, preset }),
+  });
+}

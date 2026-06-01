@@ -68,3 +68,29 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 6. ✗ Using old params (otsu, dilate=5, min_area=30, dedup_dist=12) → wrong pipeline
 7. ✗ Not matching HDC labels → no occlusion at all
 8. ✗ Using pixel-diff matching instead of prefix matching → only finds 23/134 images
+
+## Netlist / SPICE / Topology Pipeline
+
+The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netlist` POST).
+
+**Pin discovery** (`wire_detection/core/netlist.py`):
+- `derive_pins_from_obb()` — static pins for ALL component types (junctions, terminals, R, C, L, etc.) via OBB geometry
+- `discover_pins()` — DBSCAN clustering of wire endpoints near SPICE-active components (R, C, L, D, Q, V only)
+- **Combined in `_build_netlist_data()`**: OBB pins from ALL components + override positions from `discover_pins` where available → `build_netlist()` with 30px max_pin_dist
+
+**Params flow**: Tuner params (`sauvola_k`, `ccl_min_area`, `dedup_angle`, etc.) are forwarded through `NetlistRequest.params` → `_build_netlist_data(params_overrides)` → `_run_preset_pipeline()`. Changing tuner sliders now affects netlist output.
+
+**SPICE generation** (`wire_detection/core/spice.py`):
+- `SpiceGenerator.generate(components, Netlist)` — produces `.end`-delimited SPICE
+- Junctions and terminals produce SPICE lines but aren't valid simulation elements
+- Auto-injects 5V source when no VSRC detected
+
+**UI entry point**: `ui/src/app/HomeClient.tsx` — desktop layout shows 4-panel image grid + 3 tabs (Netlist, Simulation, Topology)
+- Topology tab (`CircuitGraph.tsx`) renders components at actual image-coordinate positions, not force-directed
+- Supports zoom (scroll wheel) and pan (drag)
+- All netlist-dependent components receive `currentParams` from the pipeline hook
+
+**Key architecture rules:**
+1. `api/main.py` does NOT exist — entry point is `api/server.py` (uvicorn `api.server:app`)
+2. Backend runs on port 8000, UI on port 4200 (proxied via Next.js rewrites)
+3. All `localhost:8000` calls happen server-side in Next.js server actions, never from the browser
