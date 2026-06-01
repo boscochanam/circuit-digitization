@@ -1,8 +1,23 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  ReactFlowProvider,
+  applyNodeChanges,
+  applyEdgeChanges,
+  type Node,
+  type Edge,
+  type NodeChange,
+  type EdgeChange,
+  type FitViewOptions,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import { fetchNetlistAction } from "@/app/actions";
 import type { NetlistResult } from "@/lib/types";
+import CircuitNode from "./CircuitNode";
 
 interface Props {
   imageIdx: number;
@@ -10,20 +25,6 @@ interface Props {
   preset: string;
   params?: Record<string, string | number>;
   className?: string;
-}
-
-interface GraphNode {
-  id: string;
-  label: string;
-  type: string;
-  color: string;
-  x: number;
-  y: number;
-}
-
-interface GraphEdge {
-  source: string;
-  target: string;
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -36,7 +37,7 @@ const TYPE_COLORS: Record<string, string> = {
   diode: "#fb923c", "diode-zener": "#fb923c", "diode-light_emitting": "#fb923c",
   "diode-thyrector": "#fb923c", diac: "#fb923c",
   transistor: "#a78bfa", "transistor-pnp": "#a78bfa",
-  "voltage_source": "#f87171",
+  voltage_source: "#f87171",
   junction: "#2dd4bf",
   terminal: "#e879f9",
   gnd: "#f87171",
@@ -60,7 +61,6 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 function getColor(type: string): string {
-  // Try exact match, then normalize
   const normalized = type.toLowerCase().replace(/_/g, "-").replace(/\s+/g, "-");
   return TYPE_COLORS[normalized] || TYPE_COLORS[type] || "#94a3b8";
 }
@@ -70,114 +70,84 @@ function typeLabel(type: string): string {
     resistor: "Resistor", "capacitor-unpolarized": "Capacitor",
     "capacitor-polarized": "Capacitor", inductor: "Inductor",
     diode: "Diode", transistor: "Transistor", junction: "Junction",
-    terminal: "Terminal", "voltage_source": "VSource",
+    terminal: "Terminal", voltage_source: "VSource",
     transformer: "Transformer", fuse: "Fuse", switch: "Switch",
     gnd: "GND", crystal: "Crystal",
   };
   return map[type] || type;
 }
 
-/** Position components by their actual image coordinates, scaled to viewport. */
-function layoutFromData(
-  elements: GraphNode[],
-  width: number,
-  height: number,
+/** Normalize image coords to a sensible coordinate space (0–800) */
+function computeLayout(
+  components: Array<{ name: string; position?: { x: number; y: number } }>,
 ): Map<string, { x: number; y: number }> {
-  const result = new Map<string, { x: number; y: number }>();
-
-  const positioned = elements.filter(el => el.x !== 0 || el.y !== 0);
-  const unpositioned = elements.filter(el => el.x === 0 && el.y === 0);
-
-  if (positioned.length === 0) {
-    return circleLayout(elements, width, height);
-  }
+  const layout = new Map<string, { x: number; y: number }>();
+  const SPACE = 800;
+  const positioned = components.filter((c) => c.position);
+  const unpositioned = components.filter((c) => !c.position);
+  if (positioned.length === 0) return layout;
 
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const el of positioned) {
-    minX = Math.min(minX, el.x);
-    minY = Math.min(minY, el.y);
-    maxX = Math.max(maxX, el.x);
-    maxY = Math.max(maxY, el.y);
+  for (const c of positioned) {
+    minX = Math.min(minX, c.position!.x);
+    minY = Math.min(minY, c.position!.y);
+    maxX = Math.max(maxX, c.position!.x);
+    maxY = Math.max(maxY, c.position!.y);
+  }
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+  const pad = 60;
+  const avail = SPACE - 2 * pad;
+  for (const c of positioned) {
+    const nx = (c.position!.x - minX) / rangeX;
+    const ny = (c.position!.y - minY) / rangeY;
+    layout.set(c.name, { x: pad + nx * avail, y: pad + ny * avail });
   }
 
-  const pad = 80;
-  const availW = width - 2 * pad;
-  const availH = height - 2 * pad;
-  const bboxW = maxX - minX || 1;
-  const bboxH = maxY - minY || 1;
-  const scale = Math.min(availW / bboxW, availH / bboxH) * 0.85;
-
-  const cx = width / 2;
-  const cy = height / 2;
-  const dataCx = (minX + maxX) / 2;
-  const dataCy = (minY + maxY) / 2;
-
-  for (const el of positioned) {
-    result.set(el.id, {
-      x: cx + (el.x - dataCx) * scale,
-      y: cy + (el.y - dataCy) * scale,
-    });
-  }
-
-  // Place unpositioned (e.g. auto-injected VSRC) in bottom-right
   if (unpositioned.length > 0) {
     const margin = 60;
-    const startX = width - margin - unpositioned.length * 50;
-    unpositioned.forEach((el, i) => {
-      result.set(el.id, {
-        x: Math.max(pad, startX + i * 50),
-        y: height - margin,
+    unpositioned.forEach((c, i) => {
+      layout.set(c.name, {
+        x: SPACE - margin - (unpositioned.length - 1 - i) * 50,
+        y: SPACE - margin,
       });
     });
   }
-
-  return result;
+  return layout;
 }
 
-function circleLayout(elements: GraphNode[], width: number, height: number): Map<string, { x: number; y: number }> {
-  const positions = new Map<string, { x: number; y: number }>();
-  const cx = width / 2, cy = height / 2;
-  const radius = Math.min(width, height) * 0.35;
-  elements.forEach((el, i) => {
-    const angle = (2 * Math.PI * i) / elements.length - Math.PI / 2;
-    positions.set(el.id, { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) });
-  });
-  return positions;
-}
+const fitViewOpts: FitViewOptions = { padding: 0.25, duration: 200 };
+const nodeTypes = { circuitNode: CircuitNode } as any;
 
-export default function CircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [dim, setDim] = useState({ w: 600, h: 400 });
-  const [selected, setSelected] = useState<string | null>(null);
-  const [nodes, setNodes] = useState<GraphNode[]>([]);
-  const [edges, setEdges] = useState<GraphEdge[]>([]);
+function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
+  const rfWrapper = useRef<HTMLDivElement>(null);
+  const [rfInstance, setRfInstance] = useState<any>(null);
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [componentScale, setComponentScale] = useState(1.0);
+  const fetchRef = useRef(0);
 
-  // Zoom & pan
-  const [scale, setScale] = useState(1);
-  const [panX, setPanX] = useState(0);
-  const [panY, setPanY] = useState(0);
-  const dragRef = useRef<{ active: boolean; startX: number; startY: number; panX: number; panY: number }>({ active: false, startX: 0, startY: 0, panX: 0, panY: 0 });
-
-  useEffect(() => {
-    const resize = () => {
-      if (svgRef.current?.parentElement) {
-        const rect = svgRef.current.parentElement.getBoundingClientRect();
-        setDim({ w: rect.width, h: Math.max(400, rect.height) });
-      }
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
+  // Managed node/edge change handlers
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    setNodes((nds) => applyNodeChanges(changes, nds));
+  }, []);
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    setEdges((eds) => applyEdgeChanges(changes, eds));
   }, []);
 
+  // Fetch and build nodes/edges
   useEffect(() => {
+    const id = ++fetchRef.current;
     setLoading(true);
     setError(null);
+    setSelectedId(null);
+
     fetchNetlistAction(imageIdx, dataset, preset, params)
       .then((data: NetlistResult) => {
+        if (id !== fetchRef.current) return; // stale fetch
         if (!data.components || data.components.length === 0) {
           setNodes([]);
           setEdges([]);
@@ -185,78 +155,143 @@ export default function CircuitGraph({ imageIdx, dataset, preset, params = {} }:
           return;
         }
 
-        // Build graph nodes from components
-        const graphNodes: GraphNode[] = data.components.map(c => ({
-          id: c.name,
-          label: c.name,
-          type: c.type,
-          color: getColor(c.type),
-          x: c.position?.x ?? 0,
-          y: c.position?.y ?? 0,
-        }));
+        const layout = computeLayout(data.components);
 
-        // Build edges from shared nodes in the netlist
-        const graphEdges: GraphEdge[] = [];
-        const compNameToIdx = new Map<string, number>();
-        data.components.forEach((c, i) => compNameToIdx.set(c.name, i));
+        // Build React Flow nodes (24px circle in 40×40 box)
+        const rfNodes: Node[] = data.components.map((c) => {
+          const pos = layout.get(c.name) || { x: 400, y: 400 };
+          return {
+            id: c.name,
+            type: "circuitNode",
+            position: { x: pos.x, y: pos.y },
+            width: 40,
+            height: 40,
+            data: {
+              label: c.name,
+              typeLabel: typeLabel(c.type),
+              color: getColor(c.type),
+            },
+          };
+        });
 
-        if (data.nodes && data.nodes.length > 0) {
-          // For each netlist node, connect all components whose pins land on it
-          const seen = new Set<string>();
+        // Build edges from shared netlist nodes
+        const rfEdges: Edge[] = [];
+        const seen = new Set<string>();
+        if (data.nodes) {
           for (const netNode of data.nodes) {
-            const compsOnNode = [...new Set(netNode.pins.map(p => p.component))];
+            const compsOnNode = [...new Set(netNode.pins.map((p: any) => p.component))];
             for (let i = 0; i < compsOnNode.length; i++) {
               for (let j = i + 1; j < compsOnNode.length; j++) {
                 const key = [compsOnNode[i], compsOnNode[j]].sort().join("|");
                 if (!seen.has(key)) {
                   seen.add(key);
-                  graphEdges.push({ source: compsOnNode[i], target: compsOnNode[j] });
+                  rfEdges.push({
+                    id: key,
+                    source: compsOnNode[i],
+                    target: compsOnNode[j],
+                    type: "straight",
+                    style: { stroke: "#27272a", strokeWidth: 1.5, opacity: 0.6 },
+                  });
                 }
               }
             }
           }
         }
 
-        setNodes(graphNodes);
-        setEdges(graphEdges);
+        setNodes(rfNodes);
+        setEdges(rfEdges);
         setLoading(false);
       })
       .catch((err) => {
+        if (id !== fetchRef.current) return;
         setError(err instanceof Error ? err.message : "Failed to load netlist");
         setLoading(false);
       });
   }, [imageIdx, dataset, preset, params]);
 
-  // Zoom with mouse wheel
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const factor = e.deltaY > 0 ? 0.9 : 1.1;
-    setScale(s => Math.max(0.2, Math.min(5, s * factor)));
-  };
+  // Fit view on first load and when scale resets near 1.0
+  const hasFitRef = useRef(false);
+  useEffect(() => {
+    if (rfInstance && nodes.length > 0) {
+      requestAnimationFrame(() => {
+        rfInstance.fitView(fitViewOpts);
+      });
+    }
+  }, [rfInstance, nodes.length, componentScale]);
 
-  // Pan with mouse drag
-  const handleMouseDown = (e: React.MouseEvent) => {
-    dragRef.current.active = true;
-    dragRef.current.startX = e.clientX;
-    dragRef.current.startY = e.clientY;
-    dragRef.current.panX = panX;
-    dragRef.current.panY = panY;
-  };
+  const onInit = useCallback((instance: any) => {
+    setRfInstance(instance);
+  }, []);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!dragRef.current.active) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    setPanX(dragRef.current.panX + dx);
-    setPanY(dragRef.current.panY + dy);
-  };
+  // Handle node click — toggle selection
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setSelectedId((prev) => (prev === node.id ? null : node.id));
+  }, []);
 
-  const handleMouseUp = () => {
-    dragRef.current.active = false;
-  };
+  // Click on background to deselect
+  const onPaneClick = useCallback(() => {
+    setSelectedId(null);
+  }, []);
 
-  const resetZoom = () => { setScale(1); setPanX(0); setPanY(0); };
+  // Highlight connected edges & connected nodes on selection
+  const nodeHighlight = useMemo(() => {
+    const edgeIds = new Set<string>();
+    const nodeIds = new Set<string>();
+    if (!selectedId) return { edgeIds, nodeIds };
+    nodeIds.add(selectedId);
+    for (const edge of edges) {
+      if (edge.source === selectedId || edge.target === selectedId) {
+        edgeIds.add(edge.id);
+        nodeIds.add(edge.source);
+        nodeIds.add(edge.target);
+      }
+    }
+    return { edgeIds, nodeIds };
+  }, [selectedId, edges]);
 
+  // Apply highlight styles to edges
+  const styledEdges = useMemo(() =>
+    edges.map((e) => {
+      if (!selectedId) {
+        return { ...e, style: { stroke: "#52525b", strokeWidth: 2, opacity: 0.85 } };
+      }
+      const isHighlighted = nodeHighlight.edgeIds.has(e.id);
+      return {
+        ...e,
+        style: isHighlighted
+          ? { stroke: "#60a5fa", strokeWidth: 3, opacity: 1 }
+          : { stroke: "#3f3f46", strokeWidth: 1, opacity: 0.2 },
+      };
+    }),
+    [edges, selectedId, nodeHighlight],
+  );
+
+  // Apply scale to nodes
+  const scaledNodes = useMemo(
+    () =>
+      nodes.map((n) => ({
+        ...n,
+        width: 40 * componentScale,
+        height: 40 * componentScale,
+        data: { ...n.data, scale: componentScale },
+      })),
+    [nodes, componentScale],
+  );
+
+  // Apply dimming to nodes (after scaling)
+  const styledNodes = useMemo(
+    () =>
+      scaledNodes.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          dimmed: selectedId !== null && !nodeHighlight.nodeIds.has(n.id),
+        },
+      })),
+    [scaledNodes, selectedId, nodeHighlight],
+  );
+
+  // Loading state
   if (loading) {
     return (
       <div className="panel-content">
@@ -268,6 +303,7 @@ export default function CircuitGraph({ imageIdx, dataset, preset, params = {} }:
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="panel-content">
@@ -278,6 +314,7 @@ export default function CircuitGraph({ imageIdx, dataset, preset, params = {} }:
     );
   }
 
+  // Empty state
   if (nodes.length === 0) {
     return (
       <div className="panel-content">
@@ -288,158 +325,62 @@ export default function CircuitGraph({ imageIdx, dataset, preset, params = {} }:
     );
   }
 
-  const hasRealPositions = nodes.some(n => n.x !== 0 || n.y !== 0);
-  const positions = layoutFromData(nodes, dim.w, dim.h - 20);
-
   return (
     <div className="panel-content">
       <div className="panel-content-inner" style={{ padding: 0, position: "relative" }}>
-        {hasRealPositions && (
-          <div style={{
-            padding: "4px 12px", fontSize: 10, color: "#71717a",
-            borderBottom: "1px solid #27272a", textAlign: "center",
-          }}>
-            Components positioned by actual image coordinates
-          </div>
-        )}
-        <svg
-          ref={svgRef}
-          width={dim.w}
-          height={dim.h - 20}
-          style={{ background: "var(--bg, #09090b)", cursor: dragRef.current.active ? "grabbing" : "grab" }}
-          onWheel={handleWheel}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
-          {/* Zoom / pan transform */}
-          <g transform={`translate(${panX}, ${panY}) scale(${scale})`}
-             style={{ transformOrigin: "0 0" }}>
-          {/* Edges */}
-          {edges.map((e, i) => {
-            const a = positions.get(e.source);
-            const b = positions.get(e.target);
-            if (!a || !b) return null;
-            const isHighlighted = selected === e.source || selected === e.target;
-            const isHovered = hoveredEdge === `${e.source}|${e.target}`;
-            return (
-              <line
-                key={`e${i}`}
-                x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                stroke={isHighlighted || isHovered ? "#60a5fa" : "#27272a"}
-                strokeWidth={isHighlighted ? 2.5 : isHovered ? 2 : 1.5}
-                strokeOpacity={isHighlighted ? 1 : 0.6}
-                onMouseEnter={() => setHoveredEdge(`${e.source}|${e.target}`)}
-                onMouseLeave={() => setHoveredEdge(null)}
-                style={{ transition: "stroke 0.15s, stroke-width 0.15s" }}
-              />
-            );
-          })}
-
-          {/* Nodes */}
-          {nodes.map((el) => {
-            const pos = positions.get(el.id);
-            if (!pos) return null;
-            const isSelected = selected === el.id;
-            const r = isSelected ? 28 : 22;
-            return (
-              <g
-                key={el.id}
-                onClick={() => setSelected(isSelected ? null : el.id)}
-                style={{ cursor: "pointer" }}
-              >
-                {/* Glow when selected */}
-                {isSelected && (
-                  <circle cx={pos.x} cy={pos.y} r={r + 8} fill="none" stroke={el.color} strokeWidth={2} opacity={0.3}>
-                    <animate attributeName="r" values={`${r + 6};${r + 12};${r + 6}`} dur="2s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
-                  </circle>
-                )}
-                <circle
-                  cx={pos.x} cy={pos.y} r={r}
-                  fill={el.color} fillOpacity={isSelected ? 0.9 : 0.6}
-                  stroke={el.color} strokeWidth={isSelected ? 2.5 : 1}
-                />
-                <text
-                  x={pos.x} y={pos.y + 4} textAnchor="middle"
-                  fill="#fff" fontSize={isSelected ? 13 : 11}
-                  fontWeight={isSelected ? "bold" : "normal"} fontFamily="monospace"
-                >
-                  {el.id}
-                </text>
-                {/* Net connections on selected */}
-                {isSelected && (() => {
-                  const connectedNets = edges
-                    .filter(e => e.source === el.id || e.target === el.id)
-                    .flatMap(e => {
-                      const other = e.source === el.id ? e.target : e.source;
-                      const otherPos = positions.get(other);
-                      return otherPos ? [{ name: other, x: otherPos.x, y: otherPos.y }] : [];
-                    });
-                  return connectedNets.map((conn, ni) => {
-                    const dx = conn.x - pos.x;
-                    const dy = conn.y - pos.y;
-                    const dist = Math.hypot(dx, dy);
-                    const nx = pos.x + (dx / dist) * 40;
-                    const ny = pos.y + (dy / dist) * 40;
-                    return (
-                      <g key={conn.name}>
-                        <circle cx={nx} cy={ny} r={3} fill="#fbbf24" />
-                        <text x={nx} y={ny + 12} textAnchor="middle" fill="#a1a1aa" fontSize={8} fontFamily="monospace">
-                          {conn.name}
-                        </text>
-                      </g>
-                    );
-                  });
-                })()}
-                {/* Type label */}
-                <text
-                  x={pos.x} y={pos.y + r + 14} textAnchor="middle"
-                  fill={isSelected ? "#f4f4f5" : "#71717a"}
-                  fontSize={9} fontFamily="sans-serif"
-                >
-                  {typeLabel(el.type)}
-                </text>
-              </g>
-            );
-          })}
-          </g>
-        </svg>
-
-        {/* Zoom controls */}
         <div style={{
-          position: "absolute", bottom: 48, right: 12, display: "flex",
-          flexDirection: "column", gap: 2, zIndex: 10,
+          padding: "4px 12px", fontSize: 10, color: "#71717a",
+          borderBottom: "1px solid #27272a", textAlign: "center",
         }}>
-          <button
-            onClick={() => setScale(s => Math.min(5, s * 1.2))}
+          Components positioned by actual image coordinates
+        </div>
+
+        <div ref={rfWrapper} style={{ width: "100%", height: 400 }}>
+          <ReactFlow
+            nodes={styledNodes}
+            edges={styledEdges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onInit={onInit}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
+            nodeTypes={nodeTypes}
+            fitView={false}
+            minZoom={0.1}
+            maxZoom={4}
+            panOnDrag={true}
+            selectionOnDrag={false}
+            selectNodesOnDrag={false}
+            nodeOrigin={[0.5, 0.5]}
+            style={{ background: "#09090b" }}
+            colorMode="dark"
+          >
+            <Background color="#18181b" gap={20} size={1} />
+            <Controls showInteractive={false} position="bottom-right" />
+          </ReactFlow>
+        </div>
+
+        {/* Scale slider */}
+        <div style={{
+          padding: "4px 12px", display: "flex", alignItems: "center", gap: 8,
+          borderTop: "1px solid #27272a", fontSize: 11, color: "#a1a1aa",
+        }}>
+          <span>Scale</span>
+          <input
+            type="range"
+            min={0.3}
+            max={3.0}
+            step={0.1}
+            value={componentScale}
+            onChange={(e) => setComponentScale(parseFloat(e.target.value))}
             style={{
-              width: 28, height: 28, border: "1px solid #3f3f46", borderRadius: 4,
-              background: "#18181b", color: "#a1a1aa", cursor: "pointer",
-              fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center",
+              flex: 1, maxWidth: 160, height: 4, accentColor: "#60a5fa",
+              cursor: "pointer", background: "#27272a", borderRadius: 2,
             }}
-            title="Zoom in"
-          >+</button>
-          <button
-            onClick={resetZoom}
-            style={{
-              width: 28, height: 28, border: "1px solid #3f3f46", borderRadius: 4,
-              background: "#18181b", color: "#a1a1aa", cursor: "pointer",
-              fontSize: 10, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "monospace",
-            }}
-            title="Reset zoom"
-          >{Math.round(scale * 100)}%</button>
-          <button
-            onClick={() => setScale(s => Math.max(0.2, s / 1.2))}
-            style={{
-              width: 28, height: 28, border: "1px solid #3f3f46", borderRadius: 4,
-              background: "#18181b", color: "#a1a1aa", cursor: "pointer",
-              fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-            title="Zoom out"
-          >−</button>
+          />
+          <span style={{ fontFamily: "monospace", width: 32, textAlign: "right" }}>
+            {componentScale.toFixed(1)}×
+          </span>
         </div>
 
         {/* Legend + Stats */}
@@ -447,21 +388,29 @@ export default function CircuitGraph({ imageIdx, dataset, preset, params = {} }:
           padding: "8px 12px", display: "flex", gap: 16, flexWrap: "wrap",
           borderTop: "1px solid #27272a", fontSize: 11, color: "#a1a1aa",
         }}>
-          {/* Unique colors in use */}
-          {[...new Set(nodes.map(n => n.color))].map(color => {
-            const example = nodes.find(n => n.color === color);
+          {[...new Set(nodes.map((n) => n.data.color as string))].map((color) => {
+            const example = nodes.find((n) => n.data.color === color);
             return (
               <span key={color} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ width: 10, height: 10, borderRadius: "50%", background: color, display: "inline-block" }} />
-                {example ? typeLabel(example.type) : "?"}
+                {example ? typeLabel(example.data.typeLabel as string) : "?"}
               </span>
             );
           })}
           <span style={{ marginLeft: "auto" }}>
             {nodes.length} components · {edges.length} connections
+            {selectedId && ` · selected: ${selectedId}`}
           </span>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CircuitGraph(props: Props) {
+  return (
+    <ReactFlowProvider>
+      <InnerCircuitGraph {...props} />
+    </ReactFlowProvider>
   );
 }
