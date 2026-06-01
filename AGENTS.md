@@ -86,9 +86,32 @@ The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netl
 - Auto-injects 5V source when no VSRC detected
 
 **UI entry point**: `ui/src/app/HomeClient.tsx` — desktop layout shows 4-panel image grid + 3 tabs (Netlist, Simulation, Topology)
-- Topology tab (`CircuitGraph.tsx`) renders components at actual image-coordinate positions, not force-directed
-- Supports zoom (scroll wheel) and pan (drag)
-- All netlist-dependent components receive `currentParams` from the pipeline hook
+
+**Topology tab** (`ui/src/components/CircuitGraph.tsx`):
+- Built with **React Flow v12** (`@xyflow/react`) — replaces the old custom SVG implementation
+- Renders components at actual image-coordinate positions, scaled to a 0-800 coordinate space
+- **Compact 24px colored circles** (halved from 44px) reduce overlap in dense layouts
+- **Component scale slider** (0.3×–3.0×) in the info bar adjusts node size on the fly
+- 134+ connection lines (edges) rendered via React Flow's `straight` edge type
+- Built-in zoom (mouse wheel) and pan (click-drag)
+- `fitView` on load auto-scales to show all components
+- Click a node to select — highlights connected edges in blue, dims unconnected nodes
+- Click the background to deselect
+- React Flow `Controls` component for +/- zoom buttons (bottom-right)
+- Legend bar shows color swatches by component type + component/connection count
+
+**Custom node** (`ui/src/components/CircuitNode.tsx`):
+- Colored circle with `border-radius: 50%`, type-specific colors
+- Component name label inside (7-9px font, adjusts with scale)
+- Pulsing glow on selection, type label shown below on selection
+- `Handle` components (invisible) required for edge rendering
+- Accepts `scale` and `dimmed` data props for dynamic sizing and selection dimming
+
+**CRITICAL — React Flow v12 pitfalls:**
+- Do **NOT** use `useNodesState()` or `useEdgesState()` from `@xyflow/react` — in React 19 StrictMode these silently drop edges and duplicate nodes. Use plain `useState<Node[]>` + `applyNodeChanges` / `useState<Edge[]>` + `applyEdgeChanges` instead.
+- Use `type: "straight"` for edges (not `"default"`) — cleaner look, fewer rendering edge cases.
+- `<Handle>` components on custom nodes are REQUIRED for edges to render (even if invisible).
+- Use `as unknown as YourDataType` cast for node `data` from `NodeProps` (React Flow v12 typing quirk).
 
 **Key architecture rules:**
 1. `api/main.py` does NOT exist — entry point is `api/server.py` (uvicorn `api.server:app`)
