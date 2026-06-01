@@ -1,7 +1,7 @@
 "use server";
 
 import { fetchBackend } from "@/lib/api";
-import type { PipelineResult, PresetMap, DatasetMap } from "@/lib/types";
+import type { PipelineResult, PresetMap, DatasetMap, NetlistResult } from "@/lib/types";
 
 export type { PresetMap, DatasetMap };
 
@@ -17,6 +17,18 @@ export async function fetchDatasetsAction(): Promise<DatasetMap> {
 
 export async function fetchPresetsAction(): Promise<PresetMap> {
   return fetchBackend<PresetMap>("/api/presets");
+}
+
+export async function fetchNetlistAction(
+  imgIdx: number,
+  ds: string,
+  preset: string,
+): Promise<NetlistResult> {
+  return fetchBackend("/api/netlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ img_idx: imgIdx, ds, preset }),
+  });
 }
 
 export async function runPipelineAction(

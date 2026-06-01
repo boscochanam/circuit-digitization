@@ -1,4 +1,4 @@
-import type { PipelineResult, PresetMap, DatasetMap } from "./types";
+import type { PipelineResult, PresetMap, DatasetMap, NetlistResult } from "./types";
 
 /** Same-origin /api in the browser (Next rewrites → backend). Direct URL for SSR. */
 export function apiUrl(path: string): string {
@@ -56,6 +56,18 @@ export async function fetchPresets(): Promise<PresetMap> {
     throw new Error(`fetchPresets failed: ${res.status} ${text}`);
   }
   return res.json();
+}
+
+export async function fetchNetlist(
+  imgIdx: number,
+  ds: string,
+  preset: string,
+): Promise<NetlistResult> {
+  return fetchBackend("/api/netlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ img_idx: imgIdx, ds, preset }),
+  });
 }
 
 export async function runPipeline(
