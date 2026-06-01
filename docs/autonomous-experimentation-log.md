@@ -155,6 +155,17 @@
 
 ---
 
+## 2026-06-01 00:20: Wire-to-Component Mapping
+- Tested 3 methods: nearest, endpoint_clustering, direction
+- Nearest component: 69.06% accuracy
+- Endpoint clustering: 68.60% accuracy
+- Direction-based: 39.10% accuracy
+- Distance threshold: 50px gives 40.32% accuracy
+- Component types: junction (65%), terminal (70%), gnd (55%)
+- Verdict: **MAPPING ACCURACY IS ONLY 69%, NOT >90%**
+
+---
+
 ## FINAL STATUS: 2026-06-01 00:15
 
 ### All Leads Exhausted
