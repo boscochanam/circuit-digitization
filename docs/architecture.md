@@ -38,6 +38,33 @@ Stages are composed by the `Pipeline` class and built from config via `PipelineF
 
 FastAPI server with CORS, LRU image cache, and endpoints for listing images, serving thumbnails, running the pipeline, and querying available stages/datasets. See [API Endpoints](api/endpoints.md).
 
+**Endpoints:**
+- `/api/list`, `/api/thumb`, `/api/datasets`, `/api/presets` — data listing
+- `/api/process` — run wire detection with tunable params
+- `/api/netlist` — build netlist (combined OBB + clustered pin discovery)  
+- `/api/simulate` — run ngspice DC analysis
+- Entry point: `api/server.py` (not `main.py`)
+
+### Netlist Module (`core/netlist.py`)
+
+Two pin discovery strategies combined:
+1. `derive_pins_from_obb()` — OBB geometry for ALL 44 component types
+2. `discover_pins()` — DBSCAN wire-endpoint clustering for SPICE-active types only
+- Combined in `_build_netlist_data()`: OBB for everything + wire-guided override positions → `build_netlist()`
+
+### SPICE Module (`core/spice.py`)
+
+`SpiceGenerator` produces `.end`-delimited SPICE netlists from component labels and `Netlist` node assignments. Generates unique `.model` definitions for transistors/diodes. Auto-injects 5V VSRC when no voltage source detected.
+
+## UI (`ui/`)
+
+Next.js 15 app with:
+- **Desktop**: 4-panel image grid (Detected Lines, Threshold, Dilated/Closed, Source) always visible + 3 bottom tabs (Netlist, Simulation, Topology)
+- **Mobile**: 7 swipeable panels (touch/swipe navigation)
+- **Topology tab**: SVG circuit graph with position-based layout (actual image coordinates), zoom (wheel) and pan (drag)
+- **Param flow**: Tuner sliders → `/api/process` + `/api/netlist` (params forwarded to both)
+- No browser-side `localhost:8000` calls — all backend fetches via Next.js server actions
+
 ### Data Module
 
 Dataset registry that resolves paths, validates structure, and normalizes labels. Supports multiple label formats (YOLO OBB, YOLOv8 pose). See [Configuration](api/configuration.md).
