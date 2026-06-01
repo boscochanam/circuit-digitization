@@ -6,6 +6,7 @@ import { useImages } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import NetlistPanel from "@/components/NetlistPanel";
 import SimulationPanel from "@/components/SimulationPanel";
+import CircuitGraph from "@/components/CircuitGraph";
 import {
   MetricsBar,
   PanelTabs,
@@ -14,12 +15,12 @@ import {
   SidebarSection,
   ParamGroup,
   ParamSlider,
-  ToolbarStat,
   ImagePanel,
 } from "@/components/ui-widgets";
+import { fetchNetlistAction, runSimulationAction } from "@/app/actions";
 
 const DATASETS = ["gt_labels", "synthetic"] as const;
-const IMAGE_PANELS = ["Detected Lines", "Threshold", "Dilated / Closed", "Source", "Netlist", "Simulation"] as const;
+const IMAGE_PANELS = ["Detected Lines", "Threshold", "Dilated / Closed", "Source", "Netlist", "Simulation", "Topology"] as const;
 
 export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const imgs = useImages(initial);
@@ -38,7 +39,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const handlePanelTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(dx) > 50) {
-      if (dx < 0 && activePanel < 5) setActivePanel((p) => p + 1);
+      if (dx < 0 && activePanel < 6) setActivePanel((p) => p + 1);
       if (dx > 0 && activePanel > 0) setActivePanel((p) => p - 1);
     }
   };
@@ -74,6 +75,9 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
   const isNetlistPanel = activePanel === 4;
   const isSimulationPanel = activePanel === 5;
+  const isTopologyPanel = activePanel === 6;
+
+  const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
   const panelImage = getPanelImage(activePanel);
   const panelTitle = IMAGE_PANELS[activePanel];
@@ -100,12 +104,21 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           imageIdx={imgs.imageIdx}
           dataset={imgs.dataset}
           preset={pipe.preset}
+          params={currentParams}
         />
       ) : imgs.viewMode === "single" && isSimulationPanel ? (
         <SimulationPanel
           onRunSimulation={async () => {
-            return { node_voltages: [], branch_currents: [] };
+            const netlist = await fetchNetlistAction(imgs.imageIdx, imgs.dataset, pipe.preset, currentParams);
+            return runSimulationAction(netlist.spice_netlist);
           }}
+        />
+      ) : imgs.viewMode === "single" && isTopologyPanel ? (
+        <CircuitGraph
+          imageIdx={imgs.imageIdx}
+          dataset={imgs.dataset}
+          preset={pipe.preset}
+          params={currentParams}
         />
       ) : imgs.viewMode === "single" ? (
         <ImageViewport
@@ -137,13 +150,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
       <PanelTabs panels={IMAGE_PANELS} activePanel={activePanel} onSelect={setActivePanel} />
 
-      {/* ═══ DESKTOP PANEL TABS (hidden on mobile) ═══ */}
+      {/* ═══ DESKTOP PANEL TABS (hidden on mobile) — only Netlist, Simulation, Topology ═══ */}
       <div className="desktop-tab-bar">
-        {IMAGE_PANELS.map((name, i) => (
+        {IMAGE_PANELS.slice(4).map((name, i) => (
           <button
             key={name}
-            className={`desktop-tab ${i === activePanel ? "desktop-tab-active" : ""}`}
-            onClick={() => setActivePanel(i)}
+            className={`desktop-tab ${i + 4 === activePanel ? "desktop-tab-active" : ""}`}
+            onClick={() => setActivePanel(i + 4)}
           >
             {name}
           </button>
@@ -152,43 +165,56 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
       {/* ═══ DESKTOP CONTENT (hidden on mobile) ═══ */}
       <div className="desktop-grid">
-        {activePanel < 4 ? (
-          <>
-            <div className="desktop-toolbar">
-              <div className="desktop-toolbar-stats">
-                <ToolbarStat value={pipe.result?.line_count ?? "—"} label="Lines" />
-                <ToolbarStat value={pipe.result?.blob_count ?? "—"} label="Blobs" />
-                <ToolbarStat value={pipe.result?.elapsed_ms?.toFixed(1) ?? "—"} label="ms" />
-              </div>
-              <span className="desktop-toolbar-preset">{pipe.preset}</span>
-            </div>
-            <div className="desktop-image-grid">
-              <ImagePanel title="Detected Lines" base64={pipe.result?.overlay} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.overlay && setPreview({ title: "Detected Lines", image: `data:image/jpeg;base64,${pipe.result.overlay}` })} />
-              <ImagePanel title="Threshold" base64={pipe.result?.threshold} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.threshold && setPreview({ title: "Threshold", image: `data:image/jpeg;base64,${pipe.result.threshold}` })} />
-              <ImagePanel title="Dilated / Closed" base64={pipe.result?.dilated} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.dilated && setPreview({ title: "Dilated", image: `data:image/jpeg;base64,${pipe.result.dilated}` })} />
-              <ImagePanel title="Source" src={`/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}`} onClick={() => setPreview({ title: "Source", image: `/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}` })} />
-            </div>
-            {pipe.result?.params && (
-              <div className="desktop-params-strip">
-                {Object.entries(pipe.result.params).map(([k, v]) => (
-                  <span key={k}>{k}: <strong>{String(v)}</strong></span>
-                ))}
-              </div>
-            )}
-          </>
-        ) : activePanel === 4 ? (
-          <NetlistPanel
-            imageIdx={imgs.imageIdx}
-            dataset={imgs.dataset}
-            preset={pipe.preset}
-          />
-        ) : (
-          <SimulationPanel
-            onRunSimulation={async () => {
-              return { node_voltages: [], branch_currents: [] };
-            }}
-          />
+        {/* 4-panel image grid always visible */}
+        <div className="desktop-image-grid">
+          <ImagePanel title="Detected Lines" base64={pipe.result?.overlay} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.overlay && setPreview({ title: "Detected Lines", image: `data:image/jpeg;base64,${pipe.result.overlay}` })} />
+          <ImagePanel title="Threshold" base64={pipe.result?.threshold} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.threshold && setPreview({ title: "Threshold", image: `data:image/jpeg;base64,${pipe.result.threshold}` })} />
+          <ImagePanel title="Dilated / Closed" base64={pipe.result?.dilated} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.dilated && setPreview({ title: "Dilated", image: `data:image/jpeg;base64,${pipe.result.dilated}` })} />
+          <ImagePanel title="Source" src={`/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}`} onClick={() => setPreview({ title: "Source", image: `/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}` })} />
+        </div>
+        {pipe.result?.params && (
+          <div className="desktop-params-strip">
+            {Object.entries(pipe.result.params).map(([k, v]) => (
+              <span key={k}>{k}: <strong>{String(v)}</strong></span>
+            ))}
+          </div>
         )}
+        <div className="desktop-bottom-panel">
+          {activePanel === 4 ? (
+            <NetlistPanel
+              imageIdx={imgs.imageIdx}
+              dataset={imgs.dataset}
+              preset={pipe.preset}
+              params={currentParams}
+            />
+          ) : activePanel === 5 ? (
+            <SimulationPanel
+              onRunSimulation={async () => {
+                const netlist = await fetchNetlistAction(imgs.imageIdx, imgs.dataset, pipe.preset, currentParams);
+                return runSimulationAction(netlist.spice_netlist);
+              }}
+            />
+          ) : activePanel === 6 ? (
+            <div className="desktop-split">
+              <div className="desktop-split-image">
+                <ImagePanel
+                  title="Detected Lines"
+                  base64={pipe.result?.overlay}
+                  loading={pipe.loading}
+                  error={pipe.pipelineError}
+                />
+              </div>
+              <div className="desktop-split-graph">
+                <CircuitGraph
+                  imageIdx={imgs.imageIdx}
+                  dataset={imgs.dataset}
+                  preset={pipe.preset}
+                  params={currentParams}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* ═══ DESKTOP SIDEBAR (hidden on mobile) ═══ */}

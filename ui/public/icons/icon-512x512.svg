@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#000"/>
+  <g transform="translate(256,256)">
+    <line x1="-128" y1="0" x2="128" y2="0" stroke="#fff" stroke-width="25"/>
+    <line x1="0" y1="-128" x2="0" y2="128" stroke="#fff" stroke-width="25"/>
+    <circle cx="-128" cy="0" r="17" fill="#fff"/>
+    <circle cx="128" cy="0" r="17" fill="#fff"/>
+    <circle cx="0" cy="-128" r="17" fill="#fff"/>
+    <circle cx="0" cy="128" r="17" fill="#fff"/>
+    <text x="0" y="85" text-anchor="middle" font-family="monospace" font-size="64" font-weight="bold" fill="#fff">W</text>
+  </g>
+</svg>

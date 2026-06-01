@@ -4,21 +4,48 @@ services:
       context: .
       dockerfile: Dockerfile.python
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     volumes:
-      - ./roboflow_test2:/data/hdc
-      - ./roboflow_test:/data/hand_drawn
-      - ./Database:/data/database
+      # HDC components (in-repo) — works out of the box
+      - ./roboflow_test2:/data/hdc:ro
+      # GT wire labels — set GT_LABELS_PATH in .env (required for GT Labels dataset)
+      - ${GT_LABELS_PATH:-./data/gt_labels}:/data/gt_labels:ro
+      # Optional extra datasets
+      - ${HAND_DRAWN_PATH:-./roboflow_test}:/data/hand_drawn:ro
+      # Writable: synthetic data generated on first boot
+      - synthetic_data:/data/synthetic
     environment:
-      - DATASETS_YAML=/app/wire_detection/config/datasets.docker.yaml
+      DATASETS_YAML: /app/wire_detection/config/datasets.docker.yaml
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/datasets')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./ui
       dockerfile: Dockerfile
+      args:
+        API_INTERNAL_URL: http://backend:8000
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-4200}:4200"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      PORT: "4200"
+      HOSTNAME: "0.0.0.0"
+      API_INTERNAL_URL: http://backend:8000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  synthetic_data:

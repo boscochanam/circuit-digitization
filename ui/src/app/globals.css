@@ -1180,6 +1180,38 @@ html, body { height: 100%; overflow: hidden; }
     color: var(--grey-dark);
   }
 
+  .desktop-bottom-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    border-top: 3px solid var(--black);
+  }
+
+  .desktop-split {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .desktop-split-image {
+    width: 35%;
+    min-width: 200px;
+    border-right: 1px solid var(--black);
+    overflow: hidden;
+  }
+
+  .desktop-split-image .desktop-panel { height: 100%; border: none; }
+
+  .desktop-split-graph {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
   .desktop-params-strip strong { color: var(--black); }
 
   .bottom-sheet, .bottom-sheet-overlay { display: none !important; }

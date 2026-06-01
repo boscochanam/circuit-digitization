@@ -1,19 +1,20 @@
+# Docker dataset paths — mount host dirs in docker-compose.yml
 datasets:
-  hand_drawn:
-    path: /data/hand_drawn
-    image_glob: "**/images/*.jpg"
+  gt_labels:
+    path: /data/gt_labels
+    image_glob: "images/*.jpg"
     label_format: yolo_obb
-    label_glob: "**/labels/*.txt"
-    component_labels: false
-    description: "Hand-drawn circuit wires, 140 images"
+    label_glob: "labels/train/manually_verified_no_background_data/images/*.txt"
+    component_labels: true
+    description: "Manually verified wire labels (mount GT_LABELS_PATH)"
 
   hdc:
     path: /data/hdc
-    image_glob: "**/images/*.jpg"
+    image_glob: "train/images/*.jpg"
     label_format: yolo_obb
-    label_glob: "**/labels/*.txt"
+    label_glob: "train/labels/*.txt"
     component_labels: true
-    description: "HDC-Recognition PCB schematics"
+    description: "HDC-Recognition PCB schematics (roboflow_test2)"
 
   synthetic:
     path: /data/synthetic
@@ -21,12 +22,12 @@ datasets:
     label_format: lines
     label_glob: "labels/*.txt"
     component_labels: false
-    crop_to_components: false
-    description: "Synthetic bezier-curve wires on varied backgrounds, auto-generated"
+    description: "Synthetic wires (auto-generated on first start if empty)"
 
-  database:
-    path: /data/database
-    image_glob: "*/*.jpg"
-    label_format: null
-    label_glob: null
-    description: "Raw schematic images for visual inspection"
+  hand_drawn:
+    path: /data/hand_drawn
+    image_glob: "**/images/*.jpg"
+    label_format: yolo_obb
+    label_glob: "**/labels/*.txt"
+    component_labels: false
+    description: "Hand-drawn circuit wires (optional mount)"

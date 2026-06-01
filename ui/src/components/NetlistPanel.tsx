@@ -8,10 +8,12 @@ export default function NetlistPanel({
   imageIdx,
   dataset,
   preset,
+  params = {},
 }: {
   imageIdx: number;
   dataset: string;
   preset: string;
+  params?: Record<string, string | number>;
 }) {
   const [data, setData] = useState<NetlistResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,7 @@ export default function NetlistPanel({
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchNetlistAction(imageIdx, dataset, preset);
+      const result = await fetchNetlistAction(imageIdx, dataset, preset, params);
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load netlist");
@@ -31,7 +33,7 @@ export default function NetlistPanel({
     } finally {
       setLoading(false);
     }
-  }, [imageIdx, dataset, preset]);
+  }, [imageIdx, dataset, preset, params]);
 
   useEffect(() => {
     doFetch();

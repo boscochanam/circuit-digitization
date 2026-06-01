@@ -12,13 +12,17 @@ interface BranchCurrent {
   current: number;
 }
 
+interface SimResult {
+  success: boolean;
+  node_voltages: NodeVoltage[];
+  branch_currents: BranchCurrent[];
+  error?: string;
+}
+
 export default function SimulationPanel({
   onRunSimulation,
 }: {
-  onRunSimulation: () => Promise<{
-    node_voltages: NodeVoltage[];
-    branch_currents: BranchCurrent[];
-  }>;
+  onRunSimulation: () => Promise<SimResult>;
 }) {
   const [voltages, setVoltages] = useState<NodeVoltage[] | null>(null);
   const [currents, setCurrents] = useState<BranchCurrent[] | null>(null);
@@ -30,8 +34,11 @@ export default function SimulationPanel({
     setError(null);
     try {
       const result = await onRunSimulation();
-      setVoltages(result.node_voltages);
-      setCurrents(result.branch_currents);
+      if (result.success === false) {
+        throw new Error(result.error || "Simulation returned no result");
+      }
+      setVoltages(result.node_voltages ?? []);
+      setCurrents(result.branch_currents ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Simulation failed");
       setVoltages(null);

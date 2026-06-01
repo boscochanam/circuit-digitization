@@ -40,6 +40,11 @@ class NetlistRequest(BaseModel):
     img_idx: int = 0
     ds: str = "gt_labels"
     preset: str = "best_candidate_v4"
+    params: dict[str, Any] = {}
+
+
+class SimulateRequest(BaseModel):
+    spice_text: str
 
 
 class NetlistResponse(BaseModel):

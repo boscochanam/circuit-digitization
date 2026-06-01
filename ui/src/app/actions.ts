@@ -21,11 +21,27 @@ export async function fetchNetlistAction(
   imgIdx: number,
   ds: string,
   preset: string,
+  params: Record<string, string | number> = {},
 ): Promise<NetlistResult> {
   return fetchBackend("/api/netlist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ img_idx: imgIdx, ds, preset }),
+    body: JSON.stringify({ img_idx: imgIdx, ds, preset, params }),
+  });
+}
+
+export async function runSimulationAction(
+  spiceText: string,
+): Promise<{
+  success: boolean;
+  node_voltages: Array<{ node: string; voltage: number }>;
+  branch_currents: Array<{ source: string; current: number }>;
+  error?: string;
+}> {
+  return fetchBackend("/api/simulate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ spice_text: spiceText }),
   });
 }
 

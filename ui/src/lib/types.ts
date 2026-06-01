@@ -37,6 +37,7 @@ export interface NetlistResult {
     name: string;
     type: string;
     pins: string[];
+    position?: { x: number; y: number };
   }>;
   connections: Array<{
     from: { component: string; pin: string };
