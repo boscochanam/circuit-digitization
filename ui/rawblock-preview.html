@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wire Detection Tuner — RawBlock</title>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;600&family=Space+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════════
+       RAWBLOCK DESIGN SYSTEM — Wire Detection Tuner
+       ═══════════════════════════════════════════════ */
+
+    :root {
+      --black: #000000;
+      --white: #FFFFFF;
+      --blue: #0000FF;
+      --grey-light: #F0F0F0;
+      --grey-mid: #CCCCCC;
+      --grey-dark: #888888;
+      --error: #FF0000;
+      --success: #008000;
+      --warning: #FFA500;
+
+      --font-headline: 'Archivo Black', Impact, sans-serif;
+      --font-body: 'Work Sans', system-ui, sans-serif;
+      --font-mono: 'Space Mono', 'Courier New', monospace;
+
+      --border-thin: 1px solid var(--black);
+      --border-thick: 3px solid var(--black);
+      --border-heavy: 5px solid var(--black);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--white);
+      color: var(--black);
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── LAYOUT ── */
+    .app {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER BAR ── */
+    .header {
+      grid-column: 1 / -1;
+      background: var(--black);
+      color: var(--white);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: var(--border-heavy);
+    }
+
+    .header h1 {
+      font-family: var(--font-headline);
+      font-size: 24px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .header-meta {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--grey-mid);
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      background: var(--white);
+      border-right: var(--border-thick);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-section {
+      padding: 20px 24px;
+      border-bottom: var(--border-thick);
+    }
+
+    .sidebar-section:last-child {
+      border-bottom: none;
+    }
+
+    .section-label {
+      font-family: var(--font-headline);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--grey-dark);
+      margin-bottom: 16px;
+    }
+
+    /* ── PRESET SELECTOR ── */
+    .preset-select {
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      padding: 10px 12px;
+      background: var(--grey-light);
+      border: var(--border-thick);
+      border-radius: 0;
+      color: var(--black);
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23000' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    .preset-select:focus {
+      outline: none;
+      border: var(--border-heavy);
+    }
+
+    .preset-desc {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--grey-dark);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    /* ── DATASET TOGGLE ── */
+    .dataset-toggle {
+      display: flex;
+      gap: 0;
+    }
+
+    .dataset-btn {
+      flex: 1;
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 10px 16px;
+      background: var(--white);
+      color: var(--black);
+      border: var(--border-thick);
+      cursor: pointer;
+      transition: none;
+    }
+
+    .dataset-btn + .dataset-btn {
+      border-left: none;
+    }
+
+    .dataset-btn.active {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    .dataset-btn:hover:not(.active) {
+      background: var(--grey-light);
+    }
+
+    /* ── IMAGE PICKER ── */
+    .image-picker-btn {
+      width: 100%;
+      height: 80px;
+      border: var(--border-thick);
+      background: var(--grey-light);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--grey-dark);
+    }
+
+    .image-picker-btn:hover {
+      border: var(--border-heavy);
+      background: var(--white);
+    }
+
+    .image-picker-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* ── PARAMETER SLIDERS ── */
+    .param-group {
+      margin-bottom: 20px;
+    }
+
+    .param-group-title {
+      font-family: var(--font-headline);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--black);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: var(--border-thin);
+    }
+
+    .param-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .param-label {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--black);
+      flex-shrink: 0;
+      width: 120px;
+    }
+
+    .param-slider {
+      flex: 1;
+      margin: 0 12px;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: var(--black);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .param-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--black);
+      border: 2px solid var(--white);
+      cursor: pointer;
+    }
+
+    .param-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: var(--black);
+      border: 2px solid var(--white);
+      cursor: pointer;
+      border-radius: 0;
+    }
+
+    .param-value {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 50px;
+      text-align: right;
+      color: var(--black);
+    }
+
+    /* ── RESET BUTTON ── */
+    .btn-reset {
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 10px 16px;
+      background: var(--white);
+      color: var(--black);
+      border: var(--border-thick);
+      cursor: pointer;
+    }
+
+    .btn-reset:hover {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    /* ── DIAGNOSTICS ── */
+    .diagnostics {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--grey-dark);
+      background: var(--grey-light);
+      border: var(--border-thin);
+      padding: 12px;
+    }
+
+    .diagnostics div {
+      margin-bottom: 2px;
+    }
+
+    .diagnostics .val {
+      color: var(--black);
+      font-weight: 600;
+    }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      background: var(--white);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      border-bottom: var(--border-thick);
+      background: var(--white);
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .toolbar-stat {
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    .toolbar-stat .num {
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .toolbar-stat .label {
+      color: var(--grey-dark);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .toolbar-preset-chip {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      border: 2px solid var(--black);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ── IMAGE GRID ── */
+    .image-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 0;
+      min-height: 0;
+    }
+
+    .image-panel {
+      border: var(--border-thin);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .image-panel:hover {
+      border: var(--border-thick);
+    }
+
+    .image-panel:hover .panel-title {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    .panel-title {
+      font-family: var(--font-headline);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      padding: 8px 12px;
+      background: var(--white);
+      border-bottom: var(--border-thin);
+      color: var(--grey-dark);
+    }
+
+    .panel-image {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--grey-light);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .panel-image .no-data {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--grey-mid);
+    }
+
+    .panel-image .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid var(--grey-mid);
+      border-top-color: var(--black);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── FOOTER STATUS BAR ── */
+    .status-bar {
+      grid-column: 1 / -1;
+      background: var(--black);
+      color: var(--grey-mid);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 6px 24px;
+      display: flex;
+      gap: 24px;
+      border-top: var(--border-thick);
+    }
+
+    .status-bar .active {
+      color: var(--success);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto;
+      }
+      .sidebar {
+        border-right: none;
+        border-bottom: var(--border-thick);
+        max-height: 40vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- ═══ HEADER ═══ -->
+    <header class="header">
+      <h1>Wire Detection Tuner</h1>
+      <div class="header-meta">Circuit Digitization Pipeline · v0.833 F1</div>
+    </header>
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar">
+      <!-- Preset -->
+      <div class="sidebar-section">
+        <div class="section-label">Pipeline Preset</div>
+        <select class="preset-select">
+          <option>Best v4 — Sauvola+Component (F1=0.833)</option>
+          <option>v2 — Sauvola+Component (F1=0.826)</option>
+          <option>Skeleton Graph v1 (F1=0.819)</option>
+          <option>Baseline — Sauvola+Component (F1=0.795)</option>
+          <option>Legacy — OTSU/Manual threshold</option>
+        </select>
+        <div class="preset-desc">Sauvola k=0.285 w=67 · close 3×3 · CCL 28 · PCA endpoints · overlap dedup · anchor filter</div>
+      </div>
+
+      <!-- Dataset -->
+      <div class="sidebar-section">
+        <div class="section-label">Dataset</div>
+        <div class="dataset-toggle">
+          <button class="dataset-btn active">GT Labels</button>
+          <button class="dataset-btn">Synthetic</button>
+        </div>
+      </div>
+
+      <!-- Image Picker -->
+      <div class="sidebar-section">
+        <div class="section-label">Current Image</div>
+        <button class="image-picker-btn">
+          [ BROWSE 1680 IMAGES ]
+        </button>
+      </div>
+
+      <!-- Thresholding Params -->
+      <div class="sidebar-section">
+        <div class="param-group">
+          <div class="param-group-title">Thresholding</div>
+          <div class="param-row">
+            <span class="param-label">Sauvola k</span>
+            <input type="range" class="param-slider" min="50" max="600" value="285">
+            <span class="param-value">0.285</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label">Window</span>
+            <input type="range" class="param-slider" min="3" max="151" value="67">
+            <span class="param-value">67</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label">Close Kernel</span>
+            <input type="range" class="param-slider" min="1" max="15" value="3">
+            <span class="param-value">3</span>
+          </div>
+        </div>
+
+        <div class="param-group">
+          <div class="param-group-title">Component Filtering</div>
+          <div class="param-row">
+            <span class="param-label">CCL Min Area</span>
+            <input type="range" class="param-slider" min="0" max="100" value="28">
+            <span class="param-value">28</span>
+          </div>
+        </div>
+
+        <div class="param-group">
+          <div class="param-group-title">Deduplication</div>
+          <div class="param-row">
+            <span class="param-label">Angle</span>
+            <input type="range" class="param-slider" min="0" max="45" value="10">
+            <span class="param-value">10°</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label">Distance</span>
+            <input type="range" class="param-slider" min="0" max="50" value="18">
+            <span class="param-value">18px</span>
+          </div>
+        </div>
+
+        <div class="param-group">
+          <div class="param-group-title">Anchor Filter</div>
+          <div class="param-row">
+            <span class="param-label">Endpoint Dist</span>
+            <input type="range" class="param-slider" min="0" max="300" value="120">
+            <span class="param-value">12.0</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label">Link Dist</span>
+            <input type="range" class="param-slider" min="0" max="200" value="80">
+            <span class="param-value">8.0</span>
+          </div>
+        </div>
+
+        <button class="btn-reset">Reset to Preset Defaults</button>
+      </div>
+
+      <!-- Diagnostics -->
+      <div class="sidebar-section">
+        <div class="diagnostics">
+          <div>API: <span class="val">/api (proxied)</span></div>
+          <div>Dataset: <span class="val">gt_labels</span></div>
+          <div>Images: <span class="val">1680</span></div>
+          <div>Preset: <span class="val">best_candidate_v4</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="main">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="toolbar-stat">
+            <span class="num">19</span>
+            <span class="label"> Lines</span>
+          </div>
+          <div class="toolbar-stat">
+            <span class="num">19</span>
+            <span class="label"> Blobs</span>
+          </div>
+          <div class="toolbar-stat">
+            <span class="num">10.9</span>
+            <span class="label"> ms</span>
+          </div>
+        </div>
+        <div class="toolbar-preset-chip">best_candidate_v4</div>
+      </div>
+
+      <!-- Image Grid -->
+      <div class="image-grid">
+        <div class="image-panel">
+          <div class="panel-title">Detected Lines</div>
+          <div class="panel-image">
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+        <div class="image-panel">
+          <div class="panel-title">Threshold</div>
+          <div class="panel-image">
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+        <div class="image-panel">
+          <div class="panel-title">Dilated / Closed</div>
+          <div class="panel-image">
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+        <div class="image-panel">
+          <div class="panel-title">Source</div>
+          <div class="panel-image">
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ═══ STATUS BAR ═══ -->
+    <div class="status-bar">
+      <span>Backend: <span class="active">● LIVE</span></span>
+      <span>Port 8000</span>
+      <span>1680 images loaded</span>
+      <span>best_candidate_v4</span>
+    </div>
+  </div>
+</body>
+</html>

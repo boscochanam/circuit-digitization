@@ -23,6 +23,9 @@ class WireLine:
     p2: tuple[int, int]
 
 
+HDC_SPLITS = ["train", "valid", "test"]
+
+
 class DatasetRegistry:
     def __init__(self, config_path: Path | None = None):
         import os
@@ -60,7 +63,9 @@ class DatasetRegistry:
         cfg = self.get(key)
         if cfg is None:
             return []
-        pattern = cfg.image_glob.replace("**/", f"{split}/")
+        pattern = cfg.image_glob
+        if "**/" in pattern:
+            pattern = pattern.replace("**/", f"{split}/")
         return sorted(cfg.path.glob(pattern))
 
     def load_labels(self, image_path: Path, img_w: int = 640, img_h: int = 640) -> list[WireLine]:
@@ -100,5 +105,58 @@ class DatasetRegistry:
                     continue
         return lines
 
-    def load_component_labels(self, image_path: Path) -> list[dict[str, Any]] | None:
-        return None
+    def load_component_labels(self, image_path: Path) -> list[tuple[int, list[tuple[int, int]], tuple[int, int, int, int]]] | None:
+        """Load HDC component labels for an image by filename prefix matching.
+        
+        Returns list of (class_id, polygon_points, bounding_box) or None if no match.
+        """
+        import cv2
+        stem = image_path.stem  # e.g. "C100_D1_P1_jpg"
+
+        hdc_cfg = self.get("hdc")
+        if hdc_cfg is None:
+            return None
+        hdc_base = hdc_cfg.path
+
+        # Try prefix matching against HDC label files
+        label_path = None
+        for split in HDC_SPLITS:
+            label_dir = hdc_base / split / "labels"
+            if not label_dir.exists():
+                continue
+            matches = sorted(label_dir.glob(f"{stem}.rf.*.txt"))
+            if matches:
+                label_path = matches[0]
+                break
+        
+        if label_path is None or not label_path.exists():
+            return None
+        
+        # Read image dimensions for normalization
+        img = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            return None
+        h, w = img.shape
+        
+        # Parse YOLO-OBB labels (class_id x1 y1 x2 y2 x3 y3 x4 y4 normalized)
+        components = []
+        with open(label_path) as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) < 9:
+                    continue
+                try:
+                    cls_id = int(parts[0])
+                    coords = [float(x) for x in parts[1:9]]
+                    vertices = [
+                        (int(coords[i] * w), int(coords[i + 1] * h))
+                        for i in range(0, 8, 2)
+                    ]
+                    xs = [v[0] for v in vertices]
+                    ys = [v[1] for v in vertices]
+                    bbox = (min(xs), min(ys), max(xs), max(ys))
+                    components.append((cls_id, vertices, bbox))
+                except (ValueError, IndexError):
+                    continue
+        
+        return components if components else None
