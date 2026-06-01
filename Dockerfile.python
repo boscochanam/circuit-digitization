@@ -1,4 +1,4 @@
-FROM python:3.13-slim AS builder
+FROM python:3.13-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
@@ -10,5 +10,11 @@ COPY pyproject.toml .
 COPY wire_detection/ wire_detection/
 RUN pip install --no-cache-dir .
 
+ENV DATASETS_YAML=/app/wire_detection/config/datasets.docker.yaml
+
 EXPOSE 8000
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/datasets')"
+
 CMD ["wire-tune"]

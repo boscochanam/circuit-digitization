@@ -13,8 +13,11 @@ A modular Python framework for detecting interconnect wires in circuit schematic
 ```bash
 uv venv && uv sync          # Backend setup
 cd ui && pnpm install       # Frontend setup
-docker compose up --build   # Or: uv run wire-tune + pnpm dev
+uv run wire-tune            # Terminal 1 — API on :8000
+cd ui && pnpm dev           # Terminal 2 — UI on :4200
 ```
+
+Open **http://localhost:4200**. Optional: `docker compose up --build` (see `.env.example`).
 
 ## CLI
 
