@@ -1,9 +1,7 @@
 "use server";
 
 import { fetchBackend } from "@/lib/api";
-import type { PipelineResult, PresetMap, DatasetMap, NetlistResult } from "@/lib/types";
-
-export type { PresetMap, DatasetMap };
+import type { PipelineResult, NetlistResult } from "@/lib/types";
 
 export async function listImagesAction(ds: string): Promise<string[]> {
   const data = await fetchBackend<string[]>(`/api/list?ds=${encodeURIComponent(ds)}`);
@@ -11,12 +9,12 @@ export async function listImagesAction(ds: string): Promise<string[]> {
   return data;
 }
 
-export async function fetchDatasetsAction(): Promise<DatasetMap> {
-  return fetchBackend<DatasetMap>("/api/datasets");
+export async function fetchDatasetsAction(): Promise<Record<string, { path: string; images: number; sample: string | null }>> {
+  return fetchBackend("/api/datasets");
 }
 
-export async function fetchPresetsAction(): Promise<PresetMap> {
-  return fetchBackend<PresetMap>("/api/presets");
+export async function fetchPresetsAction(): Promise<Record<string, { label: string; description: string; params?: Record<string, number> }>> {
+  return fetchBackend("/api/presets");
 }
 
 export async function fetchNetlistAction(
