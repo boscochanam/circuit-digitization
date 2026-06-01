@@ -1,50 +1,25 @@
-from pathlib import Path
+"""Wire Detection API — FastAPI application entry point.
+
+App setup, CORS, lifespan, and route registration only.
+Actual route handlers live in api/routes/.
+"""
+from __future__ import annotations
+
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import yaml
 
-from wire_detection.pipeline.factory import PipelineFactory
 from wire_detection.pipeline.registry import STAGES
-from wire_detection.data.dataset import DatasetRegistry
-from wire_detection.api.cache import ImageCache
-from wire_detection.api.startup import (
-    load_default_config as _load_default_config_impl,
-    ensure_synthetic_data,
-    log_dataset_inventory,
-)
+from wire_detection.api.deps import registry, cache, ensure_synthetic_data, log_dataset_inventory
 
-
-# ═══════════════════════════════════════════════
-# SHARED SINGLETONS (imported by route modules)
-# ═══════════════════════════════════════════════
-
-registry = DatasetRegistry()
-cache = ImageCache()
-
-
-def _load_default_config():
-    return _load_default_config_impl()
-
-
-def _ensure_synthetic_data():
-    ensure_synthetic_data(registry)
-
-
-def _log_dataset_inventory():
-    log_dataset_inventory(registry)
-
-
-# ═══════════════════════════════════════════════
-# APP SETUP
-# ═══════════════════════════════════════════════
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    _ensure_synthetic_data()
-    _log_dataset_inventory()
+    ensure_synthetic_data()
+    log_dataset_inventory()
     yield
 
 

@@ -11,8 +11,9 @@ import numpy as np
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-import wire_detection.api.server as _server
+import wire_detection.api.deps as deps
 from wire_detection.api.routes.presets import PRESETS
+from wire_detection.pipeline.factory import PipelineFactory
 
 router = APIRouter()
 
@@ -24,7 +25,7 @@ def _img_to_base64(image: np.ndarray) -> str:
 
 def _build_legacy_config(params: dict) -> dict:
     """Build pipeline config from old-style UI params."""
-    config = _server._load_default_config()
+    config = deps._load_default_config()
     stage_params = config.get("stage_params", {})
     if "k" in params:
         stage_params["threshold"]["k"] = float(params["k"])
@@ -91,7 +92,7 @@ def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, i
 
     components = []
     if image_path:
-        comp_labels = _server.registry.load_component_labels(Path(image_path))
+        comp_labels = deps.registry.load_component_labels(Path(image_path))
         if comp_labels:
             components = comp_labels
 
@@ -144,18 +145,18 @@ def process_image(data: dict[str, Any]):
     params = data.get("params", {})
     preset = data.get("preset", "legacy_threshold")
 
-    images = _server.registry.list_images(ds)
+    images = deps.registry.list_images(ds)
     if img_idx < 0 or img_idx >= len(images):
         return JSONResponse({"error": "index out of range"}, status_code=404)
 
     try:
-        image = _server.cache.load_image(str(images[img_idx]))
+        image = deps.cache.load_image(str(images[img_idx]))
     except FileNotFoundError:
         return JSONResponse({"error": "image not found"}, status_code=404)
 
     if preset == "legacy_threshold":
         config = _build_legacy_config(params)
-        pipeline = _server.PipelineFactory.from_config(config)
+        pipeline = PipelineFactory.from_config(config)
         result = pipeline.run(image)
         overlay = pipeline.visualize(image, result)
         return JSONResponse({

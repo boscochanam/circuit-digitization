@@ -7,7 +7,7 @@ import cv2
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-import wire_detection.api.server as _server
+import wire_detection.api.deps as deps
 from wire_detection.api.models import NetlistRequest
 from wire_detection.api.routes.process import _run_preset_pipeline
 from wire_detection.core.netlist import (
@@ -24,19 +24,19 @@ def _build_netlist_response(
     ds: str,
     preset: str,
 ) -> dict:
-    images = _server.registry.list_images(ds)
+    images = deps.registry.list_images(ds)
     if img_idx < 0 or img_idx >= len(images):
         return {"error": "index out of range"}
 
     try:
-        image = _server.cache.load_image(str(images[img_idx]))
+        image = deps.cache.load_image(str(images[img_idx]))
     except FileNotFoundError:
         return {"error": "image not found"}
 
     image_path = str(images[img_idx])
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    components_raw = _server.registry.load_component_labels(Path(image_path)) or []
+    components_raw = deps.registry.load_component_labels(Path(image_path)) or []
 
     pipeline_result = _run_preset_pipeline(
         gray, preset, {}, image_path=image_path
