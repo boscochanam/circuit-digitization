@@ -8,6 +8,7 @@ import NetlistPanel from "@/components/NetlistPanel";
 import SimulationPanel from "@/components/SimulationPanel";
 import CircuitGraph from "@/components/CircuitGraph";
 import JoinCheckPanel from "@/components/JoinCheckPanel";
+import VoltageMapPanel from "@/components/VoltageMapPanel";
 import {
   MetricsBar,
   PanelTabs,
@@ -21,7 +22,7 @@ import {
 import { fetchNetlistAction, runSimulationAction } from "@/app/actions";
 
 const DATASETS = ["gt_labels", "synthetic"] as const;
-const IMAGE_PANELS = ["Detected Lines", "Threshold", "Dilated / Closed", "Source", "Netlist", "Simulation", "Topology", "Join Check"] as const;
+const IMAGE_PANELS = ["Detected Lines", "Threshold", "Dilated / Closed", "Source", "Netlist", "Simulation", "Topology", "Join Check", "Voltage Map"] as const;
 
 export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const imgs = useImages(initial);
@@ -40,7 +41,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const handlePanelTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(dx) > 50) {
-      if (dx < 0 && activePanel < 7) setActivePanel((p) => p + 1);
+      if (dx < 0 && activePanel < 8) setActivePanel((p) => p + 1);
       if (dx > 0 && activePanel > 0) setActivePanel((p) => p - 1);
     }
   };
@@ -78,6 +79,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const isSimulationPanel = activePanel === 5;
   const isTopologyPanel = activePanel === 6;
   const isJoinPanel = activePanel === 7;
+  const isVoltPanel = activePanel === 8;
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
@@ -124,6 +126,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         />
       ) : imgs.viewMode === "single" && isJoinPanel ? (
         <JoinCheckPanel
+          imageIdx={imgs.imageIdx}
+          dataset={imgs.dataset}
+          preset={pipe.preset}
+          params={currentParams}
+        />
+      ) : imgs.viewMode === "single" && isVoltPanel ? (
+        <VoltageMapPanel
           imageIdx={imgs.imageIdx}
           dataset={imgs.dataset}
           preset={pipe.preset}
@@ -224,6 +233,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
             </div>
           ) : activePanel === 7 ? (
             <JoinCheckPanel
+              imageIdx={imgs.imageIdx}
+              dataset={imgs.dataset}
+              preset={pipe.preset}
+              params={currentParams}
+            />
+          ) : activePanel === 8 ? (
+            <VoltageMapPanel
               imageIdx={imgs.imageIdx}
               dataset={imgs.dataset}
               preset={pipe.preset}
