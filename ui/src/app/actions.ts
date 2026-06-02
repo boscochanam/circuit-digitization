@@ -1,7 +1,7 @@
 "use server";
 
 import { fetchBackend } from "@/lib/api";
-import type { PipelineResult, NetlistResult } from "@/lib/types";
+import type { PipelineResult, NetlistResult, JoinOverlayResult, JoinStrategy } from "@/lib/types";
 
 export async function listImagesAction(ds: string): Promise<string[]> {
   const data = await fetchBackend<string[]>(`/api/list?ds=${encodeURIComponent(ds)}`);
@@ -43,6 +43,25 @@ export async function runSimulationAction(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ spice_text: spiceText }),
   });
+}
+
+export async function fetchJoinOverlayAction(
+  imgIdx: number,
+  ds: string,
+  preset: string,
+  params: Record<string, string | number> = {},
+  net: number | null = null,
+  strategy: string | null = null,
+): Promise<JoinOverlayResult> {
+  return fetchBackend("/api/join_overlay", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ img_idx: imgIdx, ds, preset, params, net, strategy }),
+  });
+}
+
+export async function fetchJoinStrategiesAction(): Promise<{ strategies: JoinStrategy[]; default: string }> {
+  return fetchBackend("/api/join_strategies");
 }
 
 export async function runPipelineAction(
