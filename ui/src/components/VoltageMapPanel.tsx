@@ -8,6 +8,9 @@ import type { SimOverlayResult, JoinStrategy } from "@/lib/types";
  * Voltage Map — visualizes the SPICE nodal-analysis result ON the schematic.
  * Each electrical net is coloured by its computed DC node voltage (blue=low,
  * red=high) with the value labelled. Turns the simulation table into a picture.
+ *
+ * Styled with the app's brutalist black-on-white tokens + netlist-* classes
+ * (issue #11 #4/#7); params is in the deps so detection-slider changes re-run it.
  */
 export default function VoltageMapPanel({
   imageIdx,
@@ -32,6 +35,7 @@ export default function VoltageMapPanel({
       .catch(() => {});
   }, []);
 
+  // params IS in the deps so changing detection sliders re-runs the map (issue #11 bug).
   const doFetch = useCallback(async (strat: string) => {
     setLoading(true);
     setError(null);
@@ -44,78 +48,56 @@ export default function VoltageMapPanel({
     } finally {
       setLoading(false);
     }
-  }, [imageIdx, dataset, preset]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [imageIdx, dataset, preset, params]);
 
   useEffect(() => {
     doFetch(strategy);
-  }, [imageIdx, dataset, preset, strategy]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [imageIdx, dataset, preset, strategy, params, doFetch]);
 
   const cur = strategies.find((s) => s.name === strategy);
 
   return (
     <div className="panel-content">
-      <div className="panel-content-inner" style={{ padding: 0, position: "relative" }}>
+      <div className="panel-content-inner" style={{ padding: 0 }}>
         {/* Strategy bar */}
-        <div style={{
-          display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap",
-          padding: "6px 12px", borderBottom: "1px solid #27272a", fontSize: 11, color: "#a1a1aa",
-        }}>
-          <span style={{ color: "#71717a" }}>Join strategy:</span>
-          <select
-            value={strategy}
-            onChange={(e) => setStrategy(e.target.value)}
-            style={{
-              background: "#0f1115", color: "#e6e6e6", border: "1px solid #2a2f3a",
-              borderRadius: 4, padding: "3px 6px", fontSize: 11, minWidth: 220,
-            }}
-          >
+        <div style={BAR}>
+          <span style={LABEL}>JOIN STRATEGY</span>
+          <select value={strategy} onChange={(e) => setStrategy(e.target.value)} style={SELECT}>
             {strategies.map((s) => (
               <option key={s.name} value={s.name}>{s.label}</option>
             ))}
           </select>
           {data?.available && (
-            <span style={{ marginLeft: "auto", color: "#a1a1aa" }}>
+            <span style={{ marginLeft: "auto", color: "var(--grey-dark)" }}>
               {data.n_solved} nodes solved &middot; {data.vmin}V … {data.vmax}V
             </span>
           )}
         </div>
 
         {/* Caveat */}
-        <div style={{
-          padding: "4px 12px", fontSize: 10, color: "#71717a",
-          borderBottom: "1px solid #27272a",
-        }}>
+        <div style={CAVEAT}>
           DC operating point on the extracted topology. Values use default component
-          values (R=1k, V=5V…), so they're illustrative, not the real circuit's numbers —
-          and only as correct as the join.
+          values (R=1k, V=5V…) — illustrative, not the real circuit&apos;s numbers, and
+          only as correct as the join.
         </div>
 
         {/* Image */}
-        <div style={{
-          position: "relative", minHeight: 320, background: "#09090b",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: 8,
-        }}>
+        <div style={STAGE}>
           {loading && <div className="loading-overlay"><div className="loading-spinner" /></div>}
           {error && <div className="netlist-warning">{error}</div>}
           {!error && data?.overlay && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`data:image/png;base64,${data.overlay}`}
-              alt="voltage map"
-              style={{ maxWidth: "100%", maxHeight: "62vh", display: "block", borderRadius: 4 }}
-            />
+            <img src={`data:image/png;base64,${data.overlay}`} alt="voltage map"
+              style={{ maxWidth: "100%", maxHeight: "62vh", display: "block", border: "1px solid var(--black)" }} />
           )}
         </div>
 
         {data && !data.available && data.warnings.length > 0 && (
-          <div style={{ padding: "6px 12px", fontSize: 11, color: "#fb923c" }}>
-            {data.warnings.join("  ·  ")}
-          </div>
+          <div className="netlist-warning" style={{ margin: "8px 12px" }}>{data.warnings.join("  ·  ")}</div>
         )}
 
-        {/* Node voltage table */}
         {data?.available && data.node_voltages.length > 0 && (
-          <div className="netlist-section" style={{ padding: "8px 12px" }}>
+          <div className="netlist-section" style={{ margin: "10px 12px" }}>
             <div className="netlist-section-title">Node voltages ({data.node_voltages.length})</div>
             <table className="netlist-table">
               <thead><tr><th>Node</th><th>Voltage (V)</th></tr></thead>
@@ -130,8 +112,30 @@ export default function VoltageMapPanel({
             </table>
           </div>
         )}
-        {cur && <div style={{ padding: "0 12px 10px", fontSize: 10, color: "#52525b" }}>{cur.desc}</div>}
+        {cur && <div style={{ padding: "0 12px 12px", fontSize: 10, color: "var(--grey-dark)" }}>{cur.desc}</div>}
       </div>
     </div>
   );
 }
+
+// brutalist black-on-white styles (design tokens)
+const BAR: React.CSSProperties = {
+  display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap",
+  padding: "8px 12px", borderBottom: "2px solid var(--black)", fontSize: 11,
+  color: "var(--grey-dark)", background: "var(--white)",
+};
+const LABEL: React.CSSProperties = {
+  fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: "var(--grey-dark)",
+};
+const SELECT: React.CSSProperties = {
+  background: "var(--white)", color: "var(--black)", border: "1px solid var(--black)",
+  borderRadius: 0, padding: "3px 6px", fontSize: 11, minWidth: 220,
+};
+const CAVEAT: React.CSSProperties = {
+  padding: "6px 12px", fontSize: 10, color: "var(--grey-dark)",
+  borderBottom: "1px solid var(--grey-mid)", background: "var(--grey-light)",
+};
+const STAGE: React.CSSProperties = {
+  position: "relative", minHeight: 320, background: "var(--grey-light)",
+  display: "flex", alignItems: "center", justifyContent: "center", padding: 10,
+};
