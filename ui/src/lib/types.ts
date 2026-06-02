@@ -53,6 +53,35 @@ export interface SimulationResult {
   branch_currents: Array<{ source: string; current: number }>;
 }
 
+export interface JoinMetrics {
+  n_components: number;
+  n_nets: number;
+  self_loop_components: number;
+  floating_components: number;
+  giant_nets: number;
+  dangling_wire_ends: number;
+  unused_wires: number;
+  pct_wires_used: number;
+  pct_connected: number;
+  nets_per_component: number;
+  composite: number;
+  balanced: number;
+}
+
+export interface JoinOverlayResult {
+  overlay: string; // base64 PNG
+  nets: Array<{ net_id: number; pins: number; components: number; wires: number }>;
+  metrics: JoinMetrics | null;
+  strategy: string;
+  warnings: string[];
+}
+
+export interface JoinStrategy {
+  name: string;
+  label: string;
+  desc: string;
+}
+
 export interface HomeInitialData {
   images: string[];
   presets: PresetMap;

@@ -7,6 +7,7 @@ import { usePipeline } from "@/hooks/usePipeline";
 import NetlistPanel from "@/components/NetlistPanel";
 import SimulationPanel from "@/components/SimulationPanel";
 import CircuitGraph from "@/components/CircuitGraph";
+import JoinCheckPanel from "@/components/JoinCheckPanel";
 import {
   MetricsBar,
   PanelTabs,
@@ -20,7 +21,7 @@ import {
 import { fetchNetlistAction, runSimulationAction } from "@/app/actions";
 
 const DATASETS = ["gt_labels", "synthetic"] as const;
-const IMAGE_PANELS = ["Detected Lines", "Threshold", "Dilated / Closed", "Source", "Netlist", "Simulation", "Topology"] as const;
+const IMAGE_PANELS = ["Detected Lines", "Threshold", "Dilated / Closed", "Source", "Netlist", "Simulation", "Topology", "Join Check"] as const;
 
 export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const imgs = useImages(initial);
@@ -39,7 +40,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const handlePanelTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(dx) > 50) {
-      if (dx < 0 && activePanel < 6) setActivePanel((p) => p + 1);
+      if (dx < 0 && activePanel < 7) setActivePanel((p) => p + 1);
       if (dx > 0 && activePanel > 0) setActivePanel((p) => p - 1);
     }
   };
@@ -76,6 +77,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const isNetlistPanel = activePanel === 4;
   const isSimulationPanel = activePanel === 5;
   const isTopologyPanel = activePanel === 6;
+  const isJoinPanel = activePanel === 7;
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
@@ -115,6 +117,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         />
       ) : imgs.viewMode === "single" && isTopologyPanel ? (
         <CircuitGraph
+          imageIdx={imgs.imageIdx}
+          dataset={imgs.dataset}
+          preset={pipe.preset}
+          params={currentParams}
+        />
+      ) : imgs.viewMode === "single" && isJoinPanel ? (
+        <JoinCheckPanel
           imageIdx={imgs.imageIdx}
           dataset={imgs.dataset}
           preset={pipe.preset}
@@ -213,6 +222,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                 />
               </div>
             </div>
+          ) : activePanel === 7 ? (
+            <JoinCheckPanel
+              imageIdx={imgs.imageIdx}
+              dataset={imgs.dataset}
+              preset={pipe.preset}
+              params={currentParams}
+            />
           ) : null}
         </div>
       </div>
@@ -258,9 +274,23 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
             )}
           </button>
           {imgs.imageCount > 0 && (
-            <div className="preset-desc" style={{ marginTop: 8 }}>
-              {imgs.imageIdx + 1} / {imgs.imageCount}
-              {imgs.imageList.length === 0 && imgs.datasetInfo[imgs.dataset]?.images ? " (index only)" : ""}
+            <div className="image-nav" style={{ marginTop: 8 }}>
+              <button
+                className="image-nav-btn"
+                onClick={() => imgs.setImageIdx(Math.max(0, imgs.imageIdx - 1))}
+                disabled={imgs.imageIdx === 0}
+                aria-label="Previous image"
+              >←</button>
+              <span className="image-nav-count">
+                {imgs.imageIdx + 1} / {imgs.imageCount}
+                {imgs.imageList.length === 0 && imgs.datasetInfo[imgs.dataset]?.images ? " (index only)" : ""}
+              </span>
+              <button
+                className="image-nav-btn"
+                onClick={() => imgs.setImageIdx(Math.min(imgs.imageCount - 1, imgs.imageIdx + 1))}
+                disabled={imgs.imageIdx >= imgs.imageCount - 1}
+                aria-label="Next image"
+              >→</button>
             </div>
           )}
         </SidebarSection>
