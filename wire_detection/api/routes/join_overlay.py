@@ -153,57 +153,61 @@ def _net_summaries(netlist):
 
 
 @router.post("/api/join_overlay")
-def join_overlay(data: JoinOverlayRequest):
-    from wire_detection.api.routes.process import _run_preset_pipeline
+async def join_overlay(data: JoinOverlayRequest):
+    import asyncio
+    def _sync():
+        from wire_detection.api.routes.process import _run_preset_pipeline_cached
 
-    images = deps.registry.list_images(data.ds)
-    if data.img_idx < 0 or data.img_idx >= len(images):
-        return JSONResponse({"error": "index out of range"}, status_code=404)
-    image_path = str(images[data.img_idx])
-    try:
-        image = deps.cache.load_image(image_path)
-    except FileNotFoundError:
-        return JSONResponse({"error": "image not found"}, status_code=404)
-    gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        images = deps.registry.list_images(data.ds)
+        if data.img_idx < 0 or data.img_idx >= len(images):
+            return JSONResponse({"error": "index out of range"}, status_code=404)
+        image_path = str(images[data.img_idx])
+        try:
+            image = deps.cache.load_image(image_path)
+        except FileNotFoundError:
+            return JSONResponse({"error": "image not found"}, status_code=404)
+        gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    components = deps.registry.load_component_labels(Path(image_path)) or []
-    result = _run_preset_pipeline(gray, data.preset, data.params or {}, image_path=image_path)
-    wires = [((int(a[0]), int(a[1])), (int(b[0]), int(b[1]))) for a, b in result.get("lines", [])]
+        components = deps.registry.load_component_labels(Path(image_path)) or []
+        result = _run_preset_pipeline_cached(gray, image_path, data.preset, data.params or {})
+        wires = [((int(a[0]), int(a[1])), (int(b[0]), int(b[1]))) for a, b in result.get("lines", [])]
 
-    warnings = []
-    if not components:
-        warnings.append("No component labels for this image")
-    if not wires:
-        warnings.append("No wires detected")
+        warnings = []
+        if not components:
+            warnings.append("No component labels for this image")
+        if not wires:
+            warnings.append("No wires detected")
 
-    max_pin_dist = float(data.max_pin_dist or MAX_PIN_DIST)
-    strategy = data.strategy or DEFAULT_STRATEGY
-    if not components or not wires:
-        canvas = _dim(gray)
-        _put(canvas, "  ".join(warnings) or "nothing to render", (8, 16), (90, 160, 255))
-        return JSONResponse({"overlay": _img_to_base64(canvas), "nets": [],
-                             "metrics": None, "strategy": strategy, "warnings": warnings})
+        max_pin_dist = float(data.max_pin_dist or MAX_PIN_DIST)
+        strategy = data.strategy or DEFAULT_STRATEGY
+        if not components or not wires:
+            canvas = _dim(gray)
+            _put(canvas, "  ".join(warnings) or "nothing to render", (8, 16), (90, 160, 255))
+            return JSONResponse({"overlay": _img_to_base64(canvas), "nets": [],
+                                 "metrics": None, "strategy": strategy, "warnings": warnings})
 
-    pins, netlist = run_strategy(strategy, wires, components)
-    metrics = score_netlist(wires, components, pins, netlist, max_pin_dist)
-    summaries, nets = _net_summaries(netlist)
+        pins, netlist = run_strategy(strategy, wires, components)
+        metrics = score_netlist(wires, components, pins, netlist, max_pin_dist)
+        summaries, nets = _net_summaries(netlist)
 
-    if data.net is not None:
-        match = next(((i, n) for i, n in enumerate(nets) if n.node_id == data.net), None)
-        if match is None:
-            return JSONResponse({"error": f"net {data.net} not found"}, status_code=404)
-        rank, node = match
-        canvas = _render_one(gray, wires, components, pins, netlist, node, max_pin_dist, rank + 1, len(nets))
-    else:
-        canvas = _render_all(gray, wires, components, pins, netlist, max_pin_dist)
+        if data.net is not None:
+            match = next(((i, n) for i, n in enumerate(nets) if n.node_id == data.net), None)
+            if match is None:
+                return JSONResponse({"error": f"net {data.net} not found"}, status_code=404)
+            rank, node = match
+            canvas = _render_one(gray, wires, components, pins, netlist, node, max_pin_dist, rank + 1, len(nets))
+        else:
+            canvas = _render_all(gray, wires, components, pins, netlist, max_pin_dist)
 
-    return JSONResponse({
-        "overlay": _img_to_base64(canvas),
-        "nets": summaries,
-        "metrics": metrics,
-        "strategy": strategy,
-        "warnings": warnings,
-    })
+        return JSONResponse({
+            "overlay": _img_to_base64(canvas),
+            "nets": summaries,
+            "metrics": metrics,
+            "strategy": strategy,
+            "warnings": warnings,
+        })
+
+    return await asyncio.get_event_loop().run_in_executor(None, _sync)
 
 
 @router.get("/api/join_strategies")

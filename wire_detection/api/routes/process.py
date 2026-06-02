@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import base64
+import hashlib
+import json
 import time
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +19,39 @@ from wire_detection.api.routes.presets import PRESETS
 from wire_detection.pipeline.factory import PipelineFactory
 
 router = APIRouter()
+
+# ── Pipeline result cache ──
+# Keys on (image_path, preset_name, canonical_params_json) so tab switches
+# that reuse the same detection params return instantly.
+_PIPELINE_CACHE: dict[str, dict] = {}
+_PIPELINE_CACHE_MAX = 128
+_PIPELINE_CACHE_ORDER: list[str] = []  # LRU eviction tracking
+
+
+def _cache_key(image_path: str, preset_name: str, params: dict) -> str:
+    canonical = json.dumps(params, sort_keys=True, default=str)
+    raw = f"{image_path}|{preset_name}|{canonical}"
+    return hashlib.md5(raw.encode()).hexdigest()
+
+
+def _cache_get(key: str) -> dict | None:
+    if key in _PIPELINE_CACHE:
+        # move to end (most recently used)
+        _PIPELINE_CACHE_ORDER.remove(key)
+        _PIPELINE_CACHE_ORDER.append(key)
+        return _PIPELINE_CACHE[key]
+    return None
+
+
+def _cache_put(key: str, value: dict) -> None:
+    if key in _PIPELINE_CACHE:
+        _PIPELINE_CACHE_ORDER.remove(key)
+    elif len(_PIPELINE_CACHE) >= _PIPELINE_CACHE_MAX:
+        # evict oldest
+        oldest = _PIPELINE_CACHE_ORDER.pop(0)
+        _PIPELINE_CACHE.pop(oldest)
+    _PIPELINE_CACHE[key] = value
+    _PIPELINE_CACHE_ORDER.append(key)
 
 
 def _img_to_base64(image: np.ndarray) -> str:
@@ -38,6 +74,19 @@ def _build_legacy_config(params: dict) -> dict:
     if "close_ks" in params:
         stage_params["close"]["kernel_size"] = int(params["close_ks"])
     return config
+
+
+def _run_preset_pipeline_cached(
+    image: np.ndarray, image_path: str, preset_name: str, ui_params: dict
+) -> dict:
+    """Run pipeline with LRU caching by (image_path, preset_name, params)."""
+    key = _cache_key(image_path, preset_name, ui_params)
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
+    result = _run_preset_pipeline(image, preset_name, ui_params, image_path=image_path)
+    _cache_put(key, result)
+    return result
 
 
 def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, image_path: str = "") -> dict:
@@ -139,39 +188,48 @@ def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, i
 
 
 @router.post("/api/process")
-def process_image(data: dict[str, Any]):
-    img_idx = data.get("img_idx", 0)
-    ds = data.get("ds", "gt_labels")
-    params = data.get("params", {})
-    preset = data.get("preset", "legacy_threshold")
+async def process_image(data: dict[str, Any]):
+    import asyncio
+    loop = asyncio.get_event_loop()
 
-    images = deps.registry.list_images(ds)
-    if img_idx < 0 or img_idx >= len(images):
-        return JSONResponse({"error": "index out of range"}, status_code=404)
+    def _sync():
+        img_idx = data.get("img_idx", 0)
+        ds = data.get("ds", "gt_labels")
+        params = data.get("params", {})
+        preset = data.get("preset", "legacy_threshold")
 
-    try:
-        image = deps.cache.load_image(str(images[img_idx]))
-    except FileNotFoundError:
-        return JSONResponse({"error": "image not found"}, status_code=404)
+        images = deps.registry.list_images(ds)
+        if img_idx < 0 or img_idx >= len(images):
+            return JSONResponse({"error": "index out of range"}, status_code=404)
 
-    if preset == "legacy_threshold":
-        config = _build_legacy_config(params)
-        pipeline = PipelineFactory.from_config(config)
-        result = pipeline.run(image)
-        overlay = pipeline.visualize(image, result)
-        return JSONResponse({
-            "line_count": len(result.lines),
-            "blob_count": result.blob_count,
-            "elapsed_ms": result.elapsed_ms,
-            "overlay": _img_to_base64(overlay),
-            "threshold": _img_to_base64(result.stage_outputs.get("threshold", image)),
-            "close": _img_to_base64(result.stage_outputs.get("close", image)),
-            "preset": preset,
-        })
-    else:
+        try:
+            image = deps.cache.load_image(str(images[img_idx]))
+        except FileNotFoundError:
+            return JSONResponse({"error": "image not found"}, status_code=404)
+        image_path = str(images[img_idx])
+
+        if preset == "legacy_threshold":
+            config = _build_legacy_config(params)
+            pipeline = PipelineFactory.from_config(config)
+            result = pipeline.run(image)
+            overlay = pipeline.visualize(image, result)
+            return JSONResponse({
+                "line_count": len(result.lines),
+                "blob_count": result.blob_count,
+                "elapsed_ms": result.elapsed_ms,
+                "overlay": _img_to_base64(overlay),
+                "threshold": _img_to_base64(result.stage_outputs.get("threshold", image)),
+                "close": _img_to_base64(result.stage_outputs.get("close", image)),
+                "preset": preset,
+            })
+
         if preset not in PRESETS:
             return JSONResponse({"error": f"Unknown preset: {preset}"}, status_code=400)
+
         try:
-            return JSONResponse(_run_preset_pipeline(image, preset, params, image_path=str(images[img_idx])))
+            pipeline_result = _run_preset_pipeline_cached(image, image_path, preset, params)
+            return JSONResponse(pipeline_result)
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=500)
+
+    return await loop.run_in_executor(None, _sync)
