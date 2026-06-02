@@ -48,13 +48,13 @@ export default function JoinCheckPanel({
     } finally {
       setLoading(false);
     }
-  }, [imageIdx, dataset, preset]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [imageIdx, dataset, preset, params]); // params included so detection-slider changes re-run the overlay (issue #11)
 
-  // Reset to all-nets whenever the image or strategy changes, and fetch.
+  // Reset to all-nets whenever the image, strategy, or detection params change, and fetch.
   useEffect(() => {
     setSelectedNet(null);
     doFetch(null, strategy);
-  }, [imageIdx, dataset, preset, strategy]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [imageIdx, dataset, preset, strategy, params, doFetch]);
 
   const currentStrategy = strategies.find((s) => s.name === strategy);
 
@@ -84,15 +84,15 @@ export default function JoinCheckPanel({
         {/* Strategy bar */}
         <div style={{
           display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap",
-          padding: "6px 12px", borderBottom: "1px solid #27272a", fontSize: 11, color: "#a1a1aa",
+          padding: "6px 12px", borderBottom: "1px solid var(--grey-mid)", fontSize: 11, color: "var(--grey-dark)",
         }}>
-          <span style={{ color: "#71717a" }}>Join strategy:</span>
+          <span style={{ color: "var(--grey-dark)" }}>Join strategy:</span>
           <select
             value={strategy}
             onChange={(e) => setStrategy(e.target.value)}
             style={{
-              background: "#0f1115", color: "#e6e6e6", border: "1px solid #2a2f3a",
-              borderRadius: 4, padding: "3px 6px", fontSize: 11, minWidth: 220,
+              background: "var(--white)", color: "var(--black)", border: "1px solid var(--black)",
+              borderRadius: 0, padding: "3px 6px", fontSize: 11, minWidth: 220,
             }}
           >
             {strategies.map((s) => (
@@ -100,7 +100,7 @@ export default function JoinCheckPanel({
             ))}
           </select>
           {currentStrategy && (
-            <span style={{ color: "#71717a", fontSize: 10, flex: "1 1 240px" }}>{currentStrategy.desc}</span>
+            <span style={{ color: "var(--grey-dark)", fontSize: 10, flex: "1 1 240px" }}>{currentStrategy.desc}</span>
           )}
         </div>
 
@@ -110,14 +110,14 @@ export default function JoinCheckPanel({
           // verdict: a strategy can score a low over-merge composite by NOT connecting
           const overMerged = m.giant_nets >= 3 || m.self_loop_components >= 8;
           const underConnected = m.pct_wires_used < 60;
-          const verdict = overMerged && !underConnected ? { t: "OVER-MERGED", c: "#fb923c" }
-            : underConnected && !overMerged ? { t: "UNDER-CONNECTED", c: "#fbbf24" }
-            : overMerged && underConnected ? { t: "BOTH WRONG", c: "#f87171" }
-            : { t: "BALANCED", c: "#4ade80" };
+          const verdict = overMerged && !underConnected ? { t: "OVER-MERGED", c: "var(--warning)" }
+            : underConnected && !overMerged ? { t: "UNDER-CONNECTED", c: "var(--warning)" }
+            : overMerged && underConnected ? { t: "BOTH WRONG", c: "var(--error)" }
+            : { t: "BALANCED", c: "var(--success)" };
           return (
             <div style={{
               display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap",
-              padding: "8px 12px", borderBottom: "1px solid #27272a", fontSize: 11,
+              padding: "8px 12px", borderBottom: "1px solid var(--grey-mid)", fontSize: 11,
               fontVariantNumeric: "tabular-nums",
             }}>
               <Group title="over-merge">
@@ -134,17 +134,17 @@ export default function JoinCheckPanel({
                 <Metric label="/comp" value={m.nets_per_component} />
               </Group>
               <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
-                <span style={{ color: "#71717a" }}>
-                  composite <strong style={{ color: "#a1a1aa" }}>{m.composite.toFixed(3)}</strong>
+                <span style={{ color: "var(--grey-dark)" }}>
+                  composite <strong style={{ color: "var(--grey-dark)" }}>{m.composite.toFixed(3)}</strong>
                 </span>
                 <span title="composite + under-connection penalty — matches what you see">
-                  balanced <strong style={{ color: m.balanced < 0.18 ? "#4ade80" : m.balanced < 0.26 ? "#fbbf24" : "#fb923c", fontSize: 13 }}>
+                  balanced <strong style={{ color: m.balanced < 0.18 ? "var(--success)" : m.balanced < 0.26 ? "var(--warning)" : "var(--warning)", fontSize: 13 }}>
                     {m.balanced.toFixed(3)}
                   </strong>
                 </span>
                 <span style={{
-                  padding: "2px 8px", borderRadius: 4, fontWeight: 700, fontSize: 10,
-                  color: "#0b0b0b", background: verdict.c,
+                  padding: "2px 8px", borderRadius: 0, fontWeight: 700, fontSize: 10,
+                  color: "var(--black)", background: verdict.c,
                 }}>{verdict.t}</span>
               </div>
             </div>
@@ -154,9 +154,9 @@ export default function JoinCheckPanel({
         {/* Toolbar */}
         <div style={{
           display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap",
-          padding: "6px 12px", borderBottom: "1px solid #27272a", fontSize: 11, color: "#a1a1aa",
+          padding: "6px 12px", borderBottom: "1px solid var(--grey-mid)", fontSize: 11, color: "var(--grey-dark)",
         }}>
-          <span style={{ color: "#71717a" }}>View:</span>
+          <span style={{ color: "var(--grey-dark)" }}>View:</span>
           <button
             onClick={() => selectNet(null)}
             style={tabStyle(selectedNet === null)}
@@ -167,8 +167,8 @@ export default function JoinCheckPanel({
             value={selectedNet === null ? "" : String(selectedNet)}
             onChange={(e) => selectNet(e.target.value === "" ? null : parseInt(e.target.value, 10))}
             style={{
-              background: "#0f1115", color: "#e6e6e6", border: "1px solid #2a2f3a",
-              borderRadius: 4, padding: "3px 6px", fontSize: 11,
+              background: "var(--white)", color: "var(--black)", border: "1px solid var(--black)",
+              borderRadius: 0, padding: "3px 6px", fontSize: 11,
             }}
           >
             <option value="">All nets ({nets.length})</option>
@@ -179,7 +179,7 @@ export default function JoinCheckPanel({
             ))}
           </select>
           {current && (
-            <span style={{ marginLeft: "auto", color: current.components > 3 ? "#fb923c" : "#a1a1aa" }}>
+            <span style={{ marginLeft: "auto", color: current.components > 3 ? "var(--warning)" : "var(--grey-dark)" }}>
               N{current.net_id}: {current.pins} pins on {current.components} components · {current.wires} wires
             </span>
           )}
@@ -187,8 +187,8 @@ export default function JoinCheckPanel({
 
         {/* Legend */}
         <div style={{
-          padding: "4px 12px", fontSize: 10, color: "#71717a",
-          borderBottom: "1px solid #27272a", display: "flex", gap: 14, flexWrap: "wrap",
+          padding: "4px 12px", fontSize: 10, color: "var(--grey-dark)",
+          borderBottom: "1px solid var(--grey-mid)", display: "flex", gap: 14, flexWrap: "wrap",
         }}>
           <Legend color="#28b4ff" label="detected wire" />
           <Legend color="#78ff5a" label="nearest-pin join (intended)" />
@@ -197,7 +197,7 @@ export default function JoinCheckPanel({
         </div>
 
         {/* Image */}
-        <div style={{ position: "relative", minHeight: 320, background: "#09090b",
+        <div style={{ position: "relative", minHeight: 320, background: "var(--grey-light)",
           display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}>
           {loading && (
             <div className="loading-overlay"><div className="loading-spinner" /></div>
@@ -208,7 +208,7 @@ export default function JoinCheckPanel({
             <img
               src={`data:image/png;base64,${data.overlay}`}
               alt="join overlay"
-              style={{ maxWidth: "100%", maxHeight: "70vh", display: "block", borderRadius: 4 }}
+              style={{ maxWidth: "100%", maxHeight: "70vh", display: "block", borderRadius: 0 }}
             />
           )}
           {!error && !loading && !data?.overlay && (
@@ -217,7 +217,7 @@ export default function JoinCheckPanel({
         </div>
 
         {data?.warnings && data.warnings.length > 0 && (
-          <div style={{ padding: "6px 12px", fontSize: 11, color: "#fb923c" }}>
+          <div style={{ padding: "6px 12px", fontSize: 11, color: "var(--warning)" }}>
             {data.warnings.join("  ·  ")}
           </div>
         )}
@@ -229,16 +229,16 @@ export default function JoinCheckPanel({
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <span style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
-      <span style={{ color: "#52525b", fontSize: 9, textTransform: "uppercase", letterSpacing: ".04em" }}>{title}</span>
+      <span style={{ color: "var(--grey-dark)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".04em" }}>{title}</span>
       {children}
     </span>
   );
 }
 
 function Metric({ label, value, good, bad }: { label: string; value: number | string; good?: boolean; bad?: boolean }) {
-  const color = bad ? "#fb923c" : good ? "#4ade80" : "#a1a1aa";
+  const color = bad ? "var(--warning)" : good ? "var(--success)" : "var(--grey-dark)";
   return (
-    <span style={{ color: "#71717a" }}>
+    <span style={{ color: "var(--grey-dark)" }}>
       {label} <strong style={{ color }}>{value}</strong>
     </span>
   );
@@ -247,21 +247,21 @@ function Metric({ label, value, good, bad }: { label: string; value: number | st
 function Legend({ color, label }: { color: string; label: string }) {
   return (
     <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-      <span style={{ width: 14, height: 3, background: color, display: "inline-block", borderRadius: 2 }} />
+      <span style={{ width: 14, height: 3, background: color, display: "inline-block", borderRadius: 0 }} />
       {label}
     </span>
   );
 }
 
 const btnStyle: React.CSSProperties = {
-  background: "#0f1115", color: "#e6e6e6", border: "1px solid #2a2f3a",
-  borderRadius: 4, padding: "3px 8px", fontSize: 11, cursor: "pointer",
+  background: "var(--white)", color: "var(--black)", border: "1px solid var(--black)",
+  borderRadius: 0, padding: "3px 8px", fontSize: 11, cursor: "pointer",
 };
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     ...btnStyle,
-    background: active ? "#1a2237" : "#0f1115",
-    borderColor: active ? "#7aa2ff" : "#2a2f3a",
-    color: active ? "#b3c7ff" : "#e6e6e6",
+    background: active ? "var(--blue)" : "var(--white)",
+    borderColor: active ? "var(--blue)" : "var(--black)",
+    color: active ? "var(--white)" : "var(--black)",
   };
 }

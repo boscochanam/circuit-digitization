@@ -82,6 +82,19 @@ export interface JoinStrategy {
   desc: string;
 }
 
+export interface SimOverlayResult {
+  overlay: string; // base64 PNG (voltage heatmap)
+  available: boolean;
+  node_voltages: Array<{ node: string; voltage: number }>;
+  branch_currents?: Array<{ source: string; current: number }>;
+  vmin?: number;
+  vmax?: number;
+  n_solved?: number;
+  n_nets?: number;
+  strategy?: string;
+  warnings: string[];
+}
+
 export interface HomeInitialData {
   images: string[];
   presets: PresetMap;
