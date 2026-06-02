@@ -150,23 +150,102 @@ class SpiceGenerator:
             return "\n".join(lines)
 
         gnd_node = self._find_gnd_node(components, netlist)
-
-        node_remap = {}
+        node_remap: dict[int, str] = {}
         if gnd_node is not None:
             node_remap[gnd_node] = "0"
-
         for node in netlist.nodes:
-            nid = node.node_id
-            if nid not in node_remap:
-                node_remap[nid] = f"N{nid}"
-
+            if node.node_id not in node_remap:
+                node_remap[node.node_id] = f"N{node.node_id}"
         pin_map = self._build_pin_map(netlist)
 
-        for i, comp in enumerate(components):
-            comp_lines = self._generate_component_line(i, comp, pin_map, node_remap)
-            if comp_lines:
-                lines.extend(comp_lines)
+        device_lines: list[str] = []
+        model_lines: set[str] = set()
+        skipped: dict[str, int] = {}
+        has_vsrc = False
 
+        for i, comp in enumerate(components):
+            type_name = self._get_type_name(comp[0])
+            if type_name == "gnd":
+                continue
+            prefix = self._get_prefix(type_name)
+            if prefix is None:
+                skipped[type_name] = skipped.get(type_name, 0) + 1
+                continue
+
+            pin_nodes: list[str] = []
+            for pin_idx in range(50):
+                key = (i, pin_idx)
+                if key in pin_map:
+                    pin_nodes.append(node_remap.get(pin_map[key], f"N{pin_map[key]}"))
+                else:
+                    break
+            if not pin_nodes:
+                continue
+
+            # Emit only devices ngspice can simulate with a known model.
+            if type_name.startswith("diode") or type_name == "diac":
+                a = pin_nodes[0]
+                k = pin_nodes[1] if len(pin_nodes) > 1 else "0"
+                if a == k:  # self-loop short from over-merge — skip
+                    skipped[type_name] = skipped.get(type_name, 0) + 1
+                    continue
+                model = "LEDMOD" if type_name == "diode-light_emitting" else "DMOD"
+                device_lines.append(f"{self._get_next_name('D')} {a} {k} {model}")
+                model_lines.add(".model LEDMOD D(Is=1e-14 N=1.5)" if model == "LEDMOD"
+                                else ".model DMOD D(Is=1e-14 N=1)")
+            elif type_name in ("transistor", "transistor-pnp"):
+                c = pin_nodes[0]
+                b = pin_nodes[1] if len(pin_nodes) > 1 else "0"
+                e = pin_nodes[2] if len(pin_nodes) > 2 else "0"
+                if c == b == e:
+                    skipped[type_name] = skipped.get(type_name, 0) + 1
+                    continue
+                mdl = "QPNP" if type_name == "transistor-pnp" else "QNPN"
+                device_lines.append(f"{self._get_next_name('Q')} {c} {b} {e} {mdl}")
+                model_lines.add(".model QPNP PNP(Is=1e-14 Bf=100 Vaf=50)" if mdl == "QPNP"
+                                else ".model QNPN NPN(Is=1e-14 Bf=100 Vaf=50)")
+            elif type_name == "voltage_source":
+                p = pin_nodes[0]
+                n = pin_nodes[1] if len(pin_nodes) > 1 else "0"
+                if p == n:
+                    skipped[type_name] = skipped.get(type_name, 0) + 1
+                    continue
+                device_lines.append(f"{self._get_next_name('V')} {p} {n} DC 5")
+                has_vsrc = True
+            elif prefix in ("R", "C", "L"):
+                value = self._get_default_value(type_name)
+                if len(pin_nodes) >= 2 and pin_nodes[0] != pin_nodes[1]:
+                    device_lines.append(f"{self._get_next_name(prefix)} {pin_nodes[0]} {pin_nodes[1]} {value}")
+                else:
+                    device_lines.append(f"{self._get_next_name(prefix)} {pin_nodes[0]} 0 {value}")
+            else:
+                # U (IC/opamp/logic), X (subckt), F (fuse), S (switch), M (motor), etc.
+                # — no SPICE model available; skip so the netlist stays runnable.
+                skipped[type_name] = skipped.get(type_name, 0) + 1
+
+        if not device_lines:
+            lines.append("* no simulatable primitives (R/C/L/V/D/Q) in this circuit")
+            lines.append(".end")
+            return "\n".join(lines)
+
+        # Auto-inject a source if none was detected, so .op has a stimulus.
+        if not has_vsrc:
+            first = next((node_remap[n.node_id] for n in netlist.nodes
+                          if node_remap.get(n.node_id) and node_remap[n.node_id] != "0"), None)
+            if first:
+                device_lines.append(f"V1 {first} 0 DC 5")
+                device_lines.append("* auto-injected source (no voltage_source detected)")
+
+        lines.extend(device_lines)
+        lines.extend(sorted(model_lines))
+        # rshunt ties every node to ground through a huge resistor so the DC
+        # operating point stays solvable despite floating/degenerate nodes from
+        # imperfect joins (avoids "singular matrix" / "no DC path to ground").
+        lines.append(".options rshunt=1e12")
+        if skipped:
+            lines.append("* skipped (no SPICE model): "
+                         + ", ".join(f"{t}x{c}" for t, c in sorted(skipped.items())))
+        lines.append(".op")
         lines.append(".end")
         return "\n".join(lines)
 

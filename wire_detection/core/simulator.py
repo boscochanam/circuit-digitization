@@ -1,6 +1,7 @@
 """SPICE circuit simulator wrapper using ngspice."""
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -8,13 +9,31 @@ import tempfile
 from pathlib import Path
 
 
+def _resolve_ngspice() -> str | None:
+    """Locate an ngspice batch binary.
+
+    Order: NGSPICE_PATH env var (full path to the .exe) > `ngspice_con` on PATH
+    > `ngspice` on PATH. On Windows the **console** build (`ngspice_con.exe`) is
+    required for `-b` batch mode — the GUI `ngspice.exe` does not emit results to
+    stdout, so prefer it.
+    """
+    env = os.environ.get("NGSPICE_PATH")
+    if env and Path(env).exists():
+        return env
+    for name in ("ngspice_con", "ngspice"):
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
 class SpiceSimulator:
-    def __init__(self, ngspice_path: str = "ngspice"):
-        self._ngspice_path = ngspice_path
+    def __init__(self, ngspice_path: str | None = None):
+        self._ngspice_path = ngspice_path or _resolve_ngspice() or "ngspice"
 
     @staticmethod
     def is_available() -> bool:
-        return shutil.which("ngspice") is not None
+        return _resolve_ngspice() is not None
 
     def run_dc_analysis(self, spice_text: str) -> dict:
         if not self.is_available():

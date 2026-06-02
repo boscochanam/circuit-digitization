@@ -47,6 +47,16 @@ class SimulateRequest(BaseModel):
     spice_text: str
 
 
+class JoinOverlayRequest(BaseModel):
+    img_idx: int = 0
+    ds: str = "gt_labels"
+    preset: str = "best_candidate_v4"
+    params: dict[str, Any] = {}
+    net: int | None = None          # isolate one net by id; None = all nets
+    max_pin_dist: float = 30.0
+    strategy: str | None = None     # join strategy name; None = production default
+
+
 class NetlistResponse(BaseModel):
     nodes: list[dict[str, Any]]
     components: list[dict[str, Any]]

@@ -117,3 +117,30 @@ The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netl
 1. `api/main.py` does NOT exist — entry point is `api/server.py` (uvicorn `api.server:app`)
 2. Backend runs on port 8000, UI on port 4200 (proxied via Next.js rewrites)
 3. All `localhost:8000` calls happen server-side in Next.js server actions, never from the browser
+
+## Join Verification (the joining is the weak link — see `docs/join-verification.md`)
+
+Detection F1 (0.83) does **not** measure join quality, and there's no end-to-end
+netlist-correctness metric. The production join **over-merges** (≈58 components →
+≈3.5 nets/image; 6.7% of components self-loop-shorted) because `build_netlist`
+ties a wire-end to **every** pin within 30px (not the nearest) + transitive
+union-find, which runs away in dense areas / at junctions.
+
+Tooling for verifying & tracking joins (full details in `docs/join-verification.md`):
+- `netlist_validate.py` — structural join-health scorecard (composite = struct
+  errors/component; the regression number to track).
+- `netlist_viz.py` — image-grounded join overlays (`_joins.png`) + `--isolate <stem>`
+  per-net stepper. Legend: cyan=wire, green=nearest-pin join, orange=extra over-join.
+- **Join Check** UI tab + `/api/join_overlay` (`api/routes/join_overlay.py`,
+  `JoinCheckPanel.tsx`) — same overlay in the tuner, with all-nets + per-net views.
+  Use **Topology** to spot an over-merged net, **Join Check** to prove which pins
+  shouldn't be in it.
+
+**Gotchas discovered:**
+- `core/netlist.py` imports `sklearn` but `scikit-learn` is **missing from
+  `pyproject.toml`** → clean installs crash `/api/netlist` + `/api/join_overlay`.
+  Add it to deps.
+- `ui/package.json` `dev` script (`HOSTNAME=0.0.0.0 next…`) fails on Windows; run
+  `pnpm exec next dev -p 4200`.
+- ngspice isn't bundled; Simulation fails gracefully until the binary is on PATH.
+  Simulation uses generator default values, so it does **not** validate joins.
