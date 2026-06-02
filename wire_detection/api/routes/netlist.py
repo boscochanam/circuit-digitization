@@ -21,9 +21,9 @@ router = APIRouter()
 
 
 def _run_preset_pipeline(gray, preset, params_overrides, image_path=None):
-    """Run pipeline using the given preset config."""
-    from wire_detection.api.routes.process import _run_preset_pipeline as _run
-    return _run(gray, preset, params_overrides, image_path=image_path)
+    """Run pipeline using cached preset config."""
+    from wire_detection.api.routes.process import _run_preset_pipeline_cached
+    return _run_preset_pipeline_cached(gray, image_path or "", preset, params_overrides or {})
 
 
 def _build_netlist_data(
@@ -136,16 +136,19 @@ def _build_netlist_data(
 
 
 @router.post("/api/netlist")
-def get_netlist(data: NetlistRequest):
-    result = _build_netlist_data(
-        img_idx=data.img_idx,
-        ds=data.ds,
-        preset=data.preset,
-        params_overrides=data.params,
-    )
-    if "error" in result:
-        return JSONResponse({"error": result["error"]}, status_code=404)
-    return JSONResponse(result)
+async def get_netlist(data: NetlistRequest):
+    import asyncio
+    def _sync():
+        result = _build_netlist_data(
+            img_idx=data.img_idx,
+            ds=data.ds,
+            preset=data.preset,
+            params_overrides=data.params,
+        )
+        if "error" in result:
+            return JSONResponse({"error": result["error"]}, status_code=404)
+        return JSONResponse(result)
+    return await asyncio.get_event_loop().run_in_executor(None, _sync)
 
 
 @router.post("/api/simulate")
