@@ -17,7 +17,13 @@ investigating a report that "joining isn't great" despite the high detection F1.
   **every pin within 30px** (not the nearest), plus transitive union-find — so
   dense areas / junctions / mislocated pins cause runaway merges.
 
-## ⭐ RECOMMENDED STRATEGY RANKING (1,648-image eval, by `balanced` score)
+> **⏭ SUPERSEDED — the current best join is the endpoint-graph `graph_rescue`**
+> (the new default). It beats every attach-rule strategy below on the robust
+> `join_quality` metric (53/58 images vs production). See the
+> **Endpoint-graph join** section further down. The ranking below is the earlier
+> attach-rule-only study (kept for history); among *those*, `nearest2_30` was best.
+
+## RECOMMENDED STRATEGY RANKING (1,648-image eval, by `balanced` score) — historical
 
 Ranked by the eye-matching **`balanced`** metric (over-merge + under-connection).
 Production is only 4th. The new methods take the top 3.
