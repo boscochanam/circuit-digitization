@@ -22,6 +22,7 @@ from wire_detection.core.netlist import (
     derive_pins_from_obb,
     discover_pins,
 )
+from wire_detection.core.join_graph import build_endpoint_graph
 from wire_detection.core.mapping import TWO_TERMINAL_TYPES
 from wire_detection.core.spice import COMPONENT_NAMES
 
@@ -296,9 +297,33 @@ STRATEGIES = [
     {"name": "junction_extend_n1", "label": "Junction pins + extend + nearest",
      "desc": "Combine junction-aware pins, 12px end extension, and nearest attach — the best-of stack.",
      "radius": 30, "kind": "nearest", "k": 1, "pins": "junction", "extend": 12},
+    # ── endpoint-graph family (wire endpoints AND pins are nodes; wire-to-wire edges) ──
+    {"name": "graph_30", "label": "Endpoint graph (30px)",
+     "desc": "Wire ends + pins are graph nodes; adds endpoint↔endpoint and T-junction (endpoint↔wire-body) edges. Connects rails/junctions the pin-only join can't.",
+     "radius": 30, "kind": "graph",
+     "graph": {"tau_pin": 30.0, "tau_join": 14.0, "tau_t": 10.0, "directional": False, "t_junctions": True}},
+    {"name": "graph_dir_30", "label": "Endpoint graph + directional (30px)",
+     "desc": "Endpoint graph, but a wire-end binds the pin it POINTS at (distance × angle), not merely the nearest. Cuts side-grab shorts.",
+     "radius": 30, "kind": "graph",
+     "graph": {"tau_pin": 30.0, "tau_join": 14.0, "tau_t": 10.0, "directional": True, "t_junctions": True}},
+    {"name": "graph_scale", "label": "Endpoint graph, scale-relative",
+     "desc": "Endpoint graph with tolerances = k×(median component size), so one rule fits the ~6× circuit-scale range. Directional.",
+     "radius": 30, "kind": "graph",
+     "graph": {"tau_pin": 0.62, "tau_join": 0.30, "tau_t": 0.20, "directional": True, "t_junctions": True, "scale_rel": True}},
+    {"name": "graph_full", "label": "Endpoint graph + extend + scale (flagship)",
+     "desc": "Endpoint graph: scale-relative tolerances, directional pin binding, T-junctions, and 12px end extension. The most robust across cases.",
+     "radius": 30, "kind": "graph", "extend": 12,
+     "graph": {"tau_pin": 0.62, "tau_join": 0.30, "tau_t": 0.20, "directional": True, "t_junctions": True, "scale_rel": True}},
+    {"name": "graph_rescue", "label": "Endpoint graph + dead-end rescue",
+     "desc": "graph_full plus dead-end rescue: a wire anchored on ONE pin extends its dangling end (2.2x reach, directional) to the pin it points at — recovers wires the detector cut short.",
+     "radius": 30, "kind": "graph", "extend": 12,
+     "graph": {"tau_pin": 0.62, "tau_join": 0.30, "tau_t": 0.20, "directional": True, "t_junctions": True, "scale_rel": True, "dead_end_rescue": True}},
 ]
 _BY_NAME = {s["name"]: s for s in STRATEGIES}
-DEFAULT_STRATEGY = "production"
+# The endpoint-graph join with dead-end rescue — best join_quality across the eval
+# (see docs/join-verification.md). Used by /api/netlist (netlist+topology+SPICE) and
+# as the Join Check default; `production` stays in the registry for comparison.
+DEFAULT_STRATEGY = "graph_rescue"
 
 
 def list_strategies():
@@ -311,6 +336,8 @@ def _build_with_pins(s, wires, components, pins):
         return build_netlist(wires, components, pins, max_pin_dist=radius)
     if kind == "mutual":
         return build_mutual(wires, components, pins, radius)
+    if kind == "graph":
+        return build_endpoint_graph(wires, components, pins, **s.get("graph", {}))
     if kind == "all":
         attach = lambda ep, pp, comps: attach_all(ep, pp, radius)
     elif kind == "anchored":
@@ -391,11 +418,17 @@ def score_netlist(wires, components, pins, netlist, max_pin_dist=30.0, giant=8):
     # which the eye reads as "sparse / fragmented joins". The over-merge composite
     # alone misses this; report it alongside.
     used_wires = set()
+    effective_wires = set()  # wires inside a net that spans >=2 DISTINCT components
     for n in netlist.nodes:
         used_wires.update(n.wires)
+        if len({p.component_idx for p in n.pins}) >= 2:
+            effective_wires.update(n.wires)
     n_wires = len(wires)
     unused_wires = max(0, n_wires - len(used_wires))
     pct_wires_used = round(100.0 * len(used_wires) / max(1, n_wires), 1)
+    # effective use is NOT gameable by wire-to-wire chaining that never reaches a
+    # component: a pin-less or single-component chain contributes 0 effective wires.
+    pct_effective_wires = round(100.0 * len(effective_wires) / max(1, n_wires), 1)
 
     nets = [n for n in netlist.nodes if len(n.pins) >= 2]
     n_comp = len(components)
@@ -403,7 +436,13 @@ def score_netlist(wires, components, pins, netlist, max_pin_dist=30.0, giant=8):
     composite = round((self_loops + floating + giant_nets) / max(1, n_comp), 4)
     # balanced composite: also penalise under-connection (unused wires), so a
     # strategy can't win just by refusing to join. Lower = better on BOTH axes.
+    # CAVEAT: uses raw wire-use, so it can be GAMED by wire-to-wire chains that never
+    # reach a component (used%=100 but conn%=0). Prefer join_quality below.
     balanced = round(composite + 0.5 * (unused_wires / max(1, n_wires)), 4)
+    # join_quality: the robust objective. composite (floating + over-merge) plus an
+    # under-connection penalty based on EFFECTIVE wires (those joining >=2 components),
+    # so pin-less chaining can't fake it. Lower = better.
+    join_quality = round(composite + 0.5 * (1.0 - len(effective_wires) / max(1, n_wires)), 4)
     return {
         "n_components": n_comp,
         "n_nets": len(nets),
@@ -413,8 +452,10 @@ def score_netlist(wires, components, pins, netlist, max_pin_dist=30.0, giant=8):
         "dangling_wire_ends": dangling,
         "unused_wires": unused_wires,
         "pct_wires_used": pct_wires_used,
+        "pct_effective_wires": pct_effective_wires,
         "pct_connected": round(100.0 * connected / max(1, non_inert), 1),
         "nets_per_component": round(len(nets) / max(1, n_comp), 2),
         "composite": composite,
         "balanced": balanced,
+        "join_quality": join_quality,
     }
