@@ -95,6 +95,38 @@ export interface SimOverlayResult {
   warnings: string[];
 }
 
+export interface RecoveryIteration {
+  key: string;
+  label: string;
+  desc: string;
+  grid: boolean;
+}
+
+export interface RecoveryIterationRow {
+  key: string;
+  label: string;
+  desc: string;
+  lines: number;
+  delta_base: number;
+  ink: number;
+  used: number;
+  floating: number;
+  nets: number;
+}
+
+export interface RecoveryResult {
+  overlay: string; // base64 PNG (diff-highlighted)
+  iterations: RecoveryIterationRow[];
+  selected: string;
+  compare: string;
+  compare_key: string;
+  added: number;
+  removed: number;
+  kept: number;
+  n_components: number;
+  warnings: string[];
+}
+
 export interface HomeInitialData {
   images: string[];
   presets: PresetMap;

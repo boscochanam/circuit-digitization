@@ -1,7 +1,7 @@
 "use server";
 
 import { fetchBackend } from "@/lib/api";
-import type { PipelineResult, NetlistResult, JoinOverlayResult, JoinStrategy, SimOverlayResult } from "@/lib/types";
+import type { PipelineResult, NetlistResult, JoinOverlayResult, JoinStrategy, SimOverlayResult, RecoveryResult, RecoveryIteration } from "@/lib/types";
 
 export async function listImagesAction(ds: string): Promise<string[]> {
   const data = await fetchBackend<string[]>(`/api/list?ds=${encodeURIComponent(ds)}`);
@@ -76,6 +76,25 @@ export async function fetchSimOverlayAction(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ img_idx: imgIdx, ds, preset, params, strategy }),
   });
+}
+
+export async function fetchRecoveryOverlayAction(
+  imgIdx: number,
+  ds: string,
+  preset: string,
+  params: Record<string, string | number> = {},
+  iteration: string,
+  compare: string,
+): Promise<RecoveryResult> {
+  return fetchBackend("/api/recovery_overlay", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ img_idx: imgIdx, ds, preset, params, iteration, compare }),
+  });
+}
+
+export async function fetchRecoveryIterationsAction(): Promise<{ iterations: RecoveryIteration[]; default: string }> {
+  return fetchBackend("/api/recovery_iterations");
 }
 
 export async function runPipelineAction(
