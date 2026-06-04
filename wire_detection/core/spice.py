@@ -228,13 +228,68 @@ class SpiceGenerator:
             lines.append(".end")
             return "\n".join(lines)
 
-        # Auto-inject a source if none was detected, so .op has a stimulus.
-        if not has_vsrc:
-            first = next((node_remap[n.node_id] for n in netlist.nodes
-                          if node_remap.get(n.node_id) and node_remap[n.node_id] != "0"), None)
-            if first:
-                device_lines.append(f"V1 {first} 0 DC 5")
-                device_lines.append("* auto-injected source (no voltage_source detected)")
+        # Energize the circuit for the DC operating point. A hand-drawn extraction
+        # usually fragments into several disconnected sub-circuits; a single source
+        # would leave every island but one at 0V (the rest only tied to ground through
+        # rshunt). So inject a 5V TEST source into each island that has none — a
+        # correctly-connected circuit is one island and still gets exactly one source.
+        # (Illustrative: these test sources are not the real supply.)
+        import re as _re
+        from collections import defaultdict as _dd
+        _node_re = _re.compile(r"^(0|N\d+)$")
+        _parent: dict[str, str] = {}
+
+        def _find(x: str) -> str:
+            _parent.setdefault(x, x)
+            root = x
+            while _parent[root] != root:
+                root = _parent[root]
+            while _parent[x] != root:
+                _parent[x], x = root, _parent[x]
+            return root
+
+        def _union(a: str, b: str) -> None:
+            ra, rb = _find(a), _find(b)
+            if ra != rb:
+                _parent[ra] = rb
+
+        def _nodes_of(line: str) -> list[str]:
+            return [t for t in line.split()[1:] if _node_re.match(t)]
+
+        sourced_roots: set[str] = set()
+        for ln in device_lines:
+            if ln.startswith("*"):
+                continue
+            ns = _nodes_of(ln)
+            for n in ns[1:]:
+                _union(ns[0], n)
+            if ln.split()[0].startswith("V"):  # an existing source marks its island
+                for n in ns:
+                    sourced_roots.add(_find(n))
+
+        island_nodes: dict[str, list[str]] = _dd(list)
+        for n in list(_parent.keys()):
+            island_nodes[_find(n)].append(n)
+
+        injected = 0
+        for root, nodes_in in island_nodes.items():
+            if root in sourced_roots:
+                continue
+            non0 = [n for n in nodes_in if n != "0"]
+            if not non0:  # pure-ground island, nothing to drive
+                continue
+            injected += 1
+            device_lines.append(f"VTEST{injected} {non0[0]} 0 DC 5")
+            # If the island has no ground return, current can't flow (rshunt>>R) and
+            # every node sits at ~5V. Tie a DIFFERENT node to ground so the source
+            # drives current through the island's components -> a real voltage gradient.
+            if "0" not in nodes_in and len(non0) >= 2:
+                device_lines.append(f"VRET{injected} {non0[-1]} 0 DC 0")
+        if injected:
+            device_lines.append(
+                f"* injected {injected} 5V test source(s) (+ground returns) to energize "
+                f"{'the circuit' if injected == 1 and not has_vsrc else 'disconnected sub-circuits'} (illustrative)"
+            )
 
         lines.extend(device_lines)
         lines.extend(sorted(model_lines))
