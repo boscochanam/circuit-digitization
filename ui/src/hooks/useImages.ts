@@ -4,7 +4,7 @@ import type { DatasetMap } from "@/lib/types";
 
 const GRID_PAGE = 60;
 
-export type Dataset = "gt_labels" | "synthetic";
+export type Dataset = "gt_labels" | "hdc" | "synthetic";
 
 export function useImages(initial: { images: string[]; datasets: DatasetMap }) {
   const [dataset, setDataset] = useState<Dataset>("gt_labels");
