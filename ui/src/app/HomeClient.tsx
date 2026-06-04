@@ -21,7 +21,12 @@ import {
 } from "@/components/ui-widgets";
 import { fetchNetlistAction, runSimulationAction } from "@/app/actions";
 
-const DATASETS = ["gt_labels", "synthetic"] as const;
+const DATASETS = ["gt_labels", "hdc", "synthetic"] as const;
+const DATASET_LABELS: Record<string, string> = {
+  gt_labels: "GT Labels",
+  hdc: "HDC (1680)",
+  synthetic: "Synthetic",
+};
 const IMAGE_PANELS = ["Detected Lines", "Threshold", "Dilated / Closed", "Source", "Netlist", "Simulation", "Topology", "Join Check", "Voltage Map"] as const;
 
 export default function HomeClient({ initial }: { initial: HomeInitialData }) {
@@ -266,7 +271,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           <div className="dataset-toggle">
             {DATASETS.map((d, i) => (
               <button key={d} onClick={() => imgs.setDataset(d)} className={`dataset-btn ${imgs.dataset === d ? "dataset-btn-active" : ""}`} style={{ borderLeft: i > 0 ? "none" : undefined }}>
-                {d === "gt_labels" ? "GT Labels" : "Synthetic"}
+                {DATASET_LABELS[d] ?? d}
               </button>
             ))}
           </div>
@@ -400,7 +405,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
             <div className="dataset-toggle">
               {DATASETS.map((d, i) => (
                 <button key={d} onClick={() => imgs.setDataset(d)} className={`dataset-btn ${imgs.dataset === d ? "dataset-btn-active" : ""}`} style={{ borderLeft: i > 0 ? "none" : undefined }}>
-                  {d === "gt_labels" ? "GT Labels" : "Synthetic"}
+                  {DATASET_LABELS[d] ?? d}
                 </button>
               ))}
             </div>
