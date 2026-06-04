@@ -27,7 +27,7 @@ export default function VoltageMapPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [strategies, setStrategies] = useState<JoinStrategy[]>([]);
-  const [strategy, setStrategy] = useState<string>("nearest2_30");
+  const [strategy, setStrategy] = useState<string>("graph_rescue");
 
   useEffect(() => {
     fetchJoinStrategiesAction()
@@ -76,9 +76,10 @@ export default function VoltageMapPanel({
 
         {/* Caveat */}
         <div style={CAVEAT}>
-          DC operating point on the extracted topology. Values use default component
-          values (R=1k, V=5V…) — illustrative, not the real circuit&apos;s numbers, and
-          only as correct as the join.
+          DC operating point on the extracted topology. Default component values
+          (R=1k, V=5V…); each disconnected sub-circuit is driven by a 5V test source +
+          ground return so it isn&apos;t left at 0V. Illustrative — not the real
+          circuit&apos;s numbers, and only as correct (and connected) as the join.
         </div>
 
         {/* Image */}
