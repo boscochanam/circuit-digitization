@@ -104,16 +104,18 @@ export default function JoinCheckPanel({
           )}
         </div>
 
-        {/* Metrics — grouped so the over-merge vs under-connect trade-off is readable */}
+        {/* Metrics — grouped so the over-merge vs under-connect trade-off is readable.
+            join_quality is the ROBUST headline (conn% + over-merge, not gameable by
+            wire-to-wire chaining like `balanced` is). */}
         {data?.metrics && (() => {
           const m = data.metrics;
-          // verdict: a strategy can score a low over-merge composite by NOT connecting
           const overMerged = m.giant_nets >= 3 || m.self_loop_components >= 8;
-          const underConnected = m.pct_wires_used < 60;
+          const underConnected = m.pct_connected < 55;
           const verdict = overMerged && !underConnected ? { t: "OVER-MERGED", c: "var(--warning)" }
             : underConnected && !overMerged ? { t: "UNDER-CONNECTED", c: "var(--warning)" }
             : overMerged && underConnected ? { t: "BOTH WRONG", c: "var(--error)" }
             : { t: "BALANCED", c: "var(--success)" };
+          const jq = m.join_quality ?? m.balanced;
           return (
             <div style={{
               display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap",
@@ -124,22 +126,18 @@ export default function JoinCheckPanel({
                 <Metric label="self-loops" value={m.self_loop_components} bad={m.self_loop_components >= 8} />
                 <Metric label="giant nets" value={m.giant_nets} bad={m.giant_nets >= 3} />
               </Group>
-              <Group title="under-connect">
+              <Group title="connectivity">
+                <Metric label="comp conn" value={`${m.pct_connected}%`} bad={m.pct_connected < 55} good={m.pct_connected >= 75} />
+                <Metric label="eff wires" value={`${m.pct_effective_wires ?? m.pct_wires_used}%`} good={(m.pct_effective_wires ?? 0) >= 85} />
                 <Metric label="floating" value={m.floating_components} bad={m.floating_components > 5} />
-                <Metric label="wires used" value={`${m.pct_wires_used}%`} bad={m.pct_wires_used < 60}
-                  good={m.pct_wires_used >= 80} />
               </Group>
               <Group title="size">
                 <Metric label="nets" value={m.n_nets} />
-                <Metric label="/comp" value={m.nets_per_component} />
               </Group>
               <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
-                <span style={{ color: "var(--grey-dark)" }}>
-                  composite <strong style={{ color: "var(--grey-dark)" }}>{m.composite.toFixed(3)}</strong>
-                </span>
-                <span title="composite + under-connection penalty — matches what you see">
-                  balanced <strong style={{ color: m.balanced < 0.18 ? "var(--success)" : m.balanced < 0.26 ? "var(--warning)" : "var(--warning)", fontSize: 13 }}>
-                    {m.balanced.toFixed(3)}
+                <span title="composite over-merge + under-connection (by EFFECTIVE wires). Lower = better. Robust." style={{ color: "var(--grey-dark)" }}>
+                  join_q <strong style={{ color: jq < 0.16 ? "var(--success)" : jq < 0.24 ? "var(--warning)" : "var(--error)", fontSize: 13 }}>
+                    {jq.toFixed(3)}
                   </strong>
                 </span>
                 <span style={{

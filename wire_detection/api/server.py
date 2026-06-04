@@ -46,7 +46,11 @@ def index():
 
 
 def main():
-    uvicorn.run(app, host="0.0.0.0", port=8000, workers=4)
+    # uvicorn requires an import string (not the app object) when workers>1/reload,
+    # otherwise `wire-tune` crashes with "You must pass the application as an import
+    # string to enable 'reload' or 'workers'." Pass the import path so multi-worker
+    # launch works.
+    uvicorn.run("wire_detection.api.server:app", host="0.0.0.0", port=8000, workers=4)
 
 
 if __name__ == "__main__":

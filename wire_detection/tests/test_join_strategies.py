@@ -39,7 +39,8 @@ def test_run_every_strategy_smoke_and_metric_keys():
     expected_keys = {
         "n_components", "n_nets", "self_loop_components", "floating_components",
         "giant_nets", "dangling_wire_ends", "unused_wires", "pct_wires_used",
-        "pct_connected", "nets_per_component", "composite", "balanced",
+        "pct_effective_wires", "pct_connected", "nets_per_component",
+        "composite", "balanced", "join_quality",
     }
     for s in STRATEGIES:
         pins, netlist = run_strategy(s["name"], wires, comps)
@@ -49,6 +50,28 @@ def test_run_every_strategy_smoke_and_metric_keys():
         # balanced never below composite (it only adds an under-connection penalty)
         assert m["balanced"] >= m["composite"] - 1e-9
         assert 0.0 <= m["pct_wires_used"] <= 100.0
+        assert 0.0 <= m["pct_effective_wires"] <= 100.0
+
+
+def test_endpoint_graph_connects_t_junction():
+    """The endpoint-graph join links a component tapped onto the MID-SPAN of a rail
+    (a T-junction) — the structural case the pin-only join cannot represent."""
+    r1, r2, r3 = _resistor(200, 100), _resistor(200, 300), _resistor(400, 220)
+    comps = [r1, r2, r3]
+    rail = ((200, 118), (200, 282))          # vertical rail: r1 bottom -> r2 top
+    tap = ((400, 210), (205, 200))            # r3 bottom pin -> lands mid-span on the rail
+    wires = [rail, tap]
+
+    # graph join: the tap's mid-span landing must pull r3 into the r1-r2 net
+    _, nl_graph = run_strategy("graph_30", wires, comps)
+    graph_nets = [{p.component_idx for p in n.pins} for n in nl_graph.nodes]
+    assert any({0, 1, 2} <= cs for cs in graph_nets), "graph join missed the T-junction"
+
+    # production (pin-only) cannot: the tap's rail end reaches no pin, so r3 floats
+    _, nl_prod = run_strategy("production", wires, comps)
+    prod_nets = [{p.component_idx for p in n.pins} for n in nl_prod.nodes]
+    assert not any(2 in cs and len(cs) >= 2 for cs in prod_nets), \
+        "production unexpectedly connected the T-junction (test no longer isolates the capability)"
 
 
 def test_wire_joins_the_two_components_it_touches():
