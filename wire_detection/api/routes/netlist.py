@@ -14,6 +14,7 @@ from wire_detection.core.netlist import (
     derive_pins_from_obb,
     discover_pins,
 )
+from wire_detection.core.join_strategies import build as build_join, DEFAULT_STRATEGY
 from wire_detection.core.spice import COMPONENT_NAMES, SpiceGenerator
 from wire_detection.core.simulator import SpiceSimulator
 
@@ -91,8 +92,11 @@ def _build_netlist_data(
             if key in pin_overrides:
                 pin.x, pin.y = pin_overrides[key]
 
-    # Step 4: Build netlist with ALL pins
-    netlist = build_netlist(wires, components_raw, all_pins, max_pin_dist=30)
+    # Step 4: Build netlist with ALL pins, using the default join strategy
+    # (the endpoint-graph join — see core/join_graph.py / docs/join-verification.md).
+    # This is the SAME join the Join Check tab shows for DEFAULT_STRATEGY, so the
+    # netlist, topology graph and SPICE all reflect the improved connectivity.
+    netlist = build_join(DEFAULT_STRATEGY, wires, components_raw, all_pins)
     spice_text = gen.generate(components_raw, netlist)
 
     # Step 5: Build response — one entry per component with node assignments

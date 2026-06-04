@@ -62,10 +62,12 @@ export interface JoinMetrics {
   dangling_wire_ends: number;
   unused_wires: number;
   pct_wires_used: number;
+  pct_effective_wires: number;
   pct_connected: number;
   nets_per_component: number;
   composite: number;
   balanced: number;
+  join_quality: number;
 }
 
 export interface JoinOverlayResult {

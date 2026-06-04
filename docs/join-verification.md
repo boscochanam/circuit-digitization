@@ -17,7 +17,13 @@ investigating a report that "joining isn't great" despite the high detection F1.
   **every pin within 30px** (not the nearest), plus transitive union-find — so
   dense areas / junctions / mislocated pins cause runaway merges.
 
-## ⭐ RECOMMENDED STRATEGY RANKING (1,648-image eval, by `balanced` score)
+> **⏭ SUPERSEDED — the current best join is the endpoint-graph `graph_rescue`**
+> (the new default). It beats every attach-rule strategy below on the robust
+> `join_quality` metric (53/58 images vs production). See the
+> **Endpoint-graph join** section further down. The ranking below is the earlier
+> attach-rule-only study (kept for history); among *those*, `nearest2_30` was best.
+
+## RECOMMENDED STRATEGY RANKING (1,648-image eval, by `balanced` score) — historical
 
 Ranked by the eye-matching **`balanced`** metric (over-merge + under-connection).
 Production is only 4th. The new methods take the top 3.
@@ -300,7 +306,66 @@ Each is a separable stage; combine the winners.
   (e.g. `experiment_harness.py`, `connectivity_experiment.py`).
 - `paper/` — the LaTeX write-up + tables for publication.
 
+## Endpoint-graph join — a better connectivity model (not just a tuned attach rule)
+
+All strategies above share one structural limit: the join graph has **only component
+pins as nodes; wires are edges** that merge the pins near both ends. That cannot
+represent **wire-to-wire** connectivity (T-junctions, rails/buses, collinear
+fragments) — a wire that reaches no pin connects nothing — and it over-merges via
+all-to-all grabbing. The `junction`-pin hack only helps where a *labeled* junction
+component happens to sit.
+
+`wire_detection/core/join_graph.py` replaces the model: **both wire endpoints AND
+pins are graph nodes**, with five edge types —
+1. wire body (ep1–ep2),
+2. endpoint↔endpoint within `tau_join` (fragments, junctions, corners),
+3. endpoint↔pin, nearest within `tau_pin`, optionally **directional** (bind the pin
+   the wire *points at*, not merely the closest),
+4. endpoint↔wire-body within `tau_t` (**T-junction** onto a rail/bus),
+5. pin↔wire-body within `tau_t` (a component **tapped onto a passing rail**).
+
+Nets = connected components of {pins ∪ endpoints}, projected onto pins. Tolerances can
+be **scale-relative** (`k × median component size`, clamped to [floor, cap]) so one
+rule fits the ~6× circuit-scale range. Registered strategies: `graph_30`,
+`graph_dir_30`, `graph_scale`, `graph_full` (scale-relative + directional + extend).
+
+**Metric fix.** `balanced` rewards raw wire-use, so the endpoint graph can *game* it by
+chaining wires together without reaching components (`used%`=100 while `conn%`=0).
+`score_netlist` now also returns **`pct_effective_wires`** (wires in a net spanning ≥2
+distinct components — not gameable) and **`join_quality`** = composite over-merge +
+under-connection penalty by *effective* wires. **Rank joins by `join_quality`.**
+
+**Dead-end rescue.** A wire firmly anchored at ONE end (its net spans exactly one
+component) but dangling at the other is almost always a real connection the *detector*
+cut short (e.g. a resistor→inductor wire captured only halfway, free end stopping 55px
+short — beyond the normal reach). `graph_rescue` gives just those free ends a longer,
+DIRECTIONAL reach (`rescue_factor × tau_pin`) toward a pin on a different component. The
+one-anchor evidence + forward-direction gate keep it from re-introducing over-merge.
+
+**Result (60 HDC images, fixed baseline detection, median):**
+
+| strategy | join_quality | conn% | eff% | giant | self |
+|---|---|---|---|---|---|
+| **graph_rescue** | **0.126** | **84** | 100 | 1.0 | 2.5 |
+| graph_full | 0.131 | 76 | 97 | 1.0 | 2.5 |
+| junction_extend_n1 | 0.137 | 67 | 87 | 0.0 | 0.0 |
+| nearest2_30 | 0.163 | 75 | 91 | 1.0 | 2.0 |
+| production (current) | 0.222 | 81 | 80 | 1.0 | 2.0 |
+
+`graph_rescue` **beats production on 53 / 58 images (ties 3, loses 2)** and now exceeds
+production's connectivity (`conn%` 84 vs 81) with **100% effective wires** — while
+keeping the clean structure (no over-join shorts). The 2 losses are detection-starved
+images (≈1–5 wires for a large circuit) where no join can connect components the detector
+never produced. Verify in the **Join Check** tab by selecting `graph_rescue` (auto-listed).
+
+WHY wires still get excluded (e.g. images C115_D1_P2/P3): the join keeps a wire only if
+it bridges ≥2 component pins. An excluded wire is anchored on one pin but its other end
+falls short of the next pin (detection cut the wire), beyond the join's reach. `graph_rescue`
+recovers these; what remains is detection-limited (no wire was produced at all).
+
 ## Files added by this investigation (repo root unless noted)
+- `wire_detection/core/join_graph.py` — endpoint-graph join (5 edge types, scale-relative).
+- `join_compare.py` (local) — rank every strategy by `join_quality` on fixed detection.
 - `netlist_viz.py` — image-grounded join overlays + per-net stepper.
 - `netlist_validate.py` — structural join-health scorecard.
 - `join_experiments.py` — attach-rule strategy comparison (Exp 1 above).
