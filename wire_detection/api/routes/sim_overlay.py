@@ -70,7 +70,8 @@ async def sim_overlay(data: JoinOverlayRequest):
             return JSONResponse({"error": "image not found"}, status_code=404)
         gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        components = deps.registry.load_component_labels(Path(image_path)) or []
+        components = deps.registry.load_component_labels(
+            Path(image_path), img_wh=(gray.shape[1], gray.shape[0])) or []
         res = _run_preset_pipeline_cached(gray, image_path, data.preset, data.params or {})
         wires = [((int(a[0]), int(a[1])), (int(b[0]), int(b[1]))) for a, b in res.get("lines", [])]
 

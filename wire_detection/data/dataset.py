@@ -105,12 +105,17 @@ class DatasetRegistry:
                     continue
         return lines
 
-    def load_component_labels(self, image_path: Path) -> list[tuple[int, list[tuple[int, int]], tuple[int, int, int, int]]] | None:
+    def load_component_labels(
+        self,
+        image_path: Path,
+        img_wh: tuple[int, int] | None = None,
+    ) -> list[tuple[int, list[tuple[int, int]], tuple[int, int, int, int]]] | None:
         """Load HDC component labels for an image by filename prefix matching.
-        
+
         Returns list of (class_id, polygon_points, bounding_box) or None if no match.
+        Pass img_wh=(width, height) to skip re-decoding the image from disk just to
+        denormalize the labels (the caller usually already has the decoded frame).
         """
-        import cv2
         stem = image_path.stem  # e.g. "C100_D1_P1_jpg"
 
         hdc_cfg = self.get("hdc")
@@ -132,11 +137,15 @@ class DatasetRegistry:
         if label_path is None or not label_path.exists():
             return None
         
-        # Read image dimensions for normalization
-        img = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
-        if img is None:
-            return None
-        h, w = img.shape
+        # Image dimensions for normalization — use the caller's if given, else decode.
+        if img_wh is not None:
+            w, h = img_wh
+        else:
+            import cv2
+            img = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+            if img is None:
+                return None
+            h, w = img.shape
         
         # Parse YOLO-OBB labels (class_id x1 y1 x2 y2 x3 y3 x4 y4 normalized)
         components = []
