@@ -1,0 +1,7 @@
+{
+  "currentPhase": 0,
+  "completedPhases": [],
+  "lastCheckpoint": "Design doc written, not yet implemented",
+  "knownIssues": [],
+  "nextStep": "Phase 1: Foundation (Zustand store, layout wrappers)"
+}
