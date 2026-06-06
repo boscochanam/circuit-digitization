@@ -17,6 +17,8 @@ export default function NetlistPanel({
   const { netlist: data, loading, error } = useNetlist(imageIdx, dataset, preset, params as Record<string, number>);
   const [copied, setCopied] = useState(false);
   const [netlistExpanded, setNetlistExpanded] = useState(true);
+  const [ocrResults, setOcrResults] = useState<any>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
 
   const handleCopy = async () => {
     if (!data?.spice_netlist) return;

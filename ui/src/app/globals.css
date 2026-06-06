@@ -867,6 +867,22 @@ html, body { height: 100%; overflow: hidden; }
   -webkit-overflow-scrolling: touch;
 }
 
+.netlist-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--grey-light);
+  border-bottom: 1px solid var(--black);
+  font-family: var(--font-body), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  user-select: none;
+}
+
 .netlist-section {
   margin-bottom: 20px;
   border: 2px solid var(--black);
@@ -989,6 +1005,23 @@ html, body { height: 100%; overflow: hidden; }
   letter-spacing: 1px;
   flex-shrink: 0;
 }
+
+.ocr-btn {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  background: var(--white);
+  color: var(--black);
+  border: 2px solid var(--black);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.ocr-btn:hover { background: var(--grey-light); }
+.ocr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ocr-btn:active:not(:disabled) { background: var(--black); color: var(--white); }
 
 .netlist-copy-btn:active {
   background: var(--white);
