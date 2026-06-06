@@ -66,7 +66,21 @@ class DatasetRegistry:
         pattern = cfg.image_glob
         if "**/" in pattern:
             pattern = pattern.replace("**/", f"{split}/")
-        return sorted(cfg.path.glob(pattern))
+        images = sorted(cfg.path.glob(pattern))
+        # If label_glob is defined, filter to images that have at least one label
+        if cfg.label_glob and cfg.label_glob.endswith("*.txt"):
+            # Build set of stems that have labels
+            label_dir = cfg.path
+            lpattern = cfg.label_glob
+            if "**/" in lpattern:
+                lpattern = lpattern.replace("**/", f"{split}/")
+            label_stems = {lp.stem for lp in label_dir.glob(lpattern)}
+            # Match image stem to label stem
+            # Images are like "C100_D1_P1_jpg.jpg", labels are like "C100_D1_P1_jpg.txt"
+            filtered = [img for img in images if img.stem in label_stems]
+            if filtered:
+                return filtered
+        return images
 
     def load_labels(self, image_path: Path, img_w: int = 640, img_h: int = 640) -> list[WireLine]:
         label_path = image_path.parent.parent / "labels" / image_path.with_suffix(".txt").name
