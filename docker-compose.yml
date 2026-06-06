@@ -6,8 +6,10 @@ services:
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
-      # HDC components (in-repo) — works out of the box
+      # HDC components (symlinked in-repo)
       - ./roboflow_test2:/data/hdc:ro
+      # Also mount at original path for OCR endpoint
+      - /home/claw/circuit-digitization/roboflow_test2:/home/claw/circuit-digitization/roboflow_test2:ro
       # GT wire labels — set GT_LABELS_PATH in .env (required for GT Labels dataset)
       - ${GT_LABELS_PATH:-./data/gt_labels}:/data/gt_labels:ro
       # Optional extra datasets
@@ -16,6 +18,7 @@ services:
       - synthetic_data:/data/synthetic
     environment:
       DATASETS_YAML: /app/wire_detection/config/datasets.docker.yaml
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
     healthcheck:
       test:
         [
