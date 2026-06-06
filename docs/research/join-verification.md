@@ -245,8 +245,11 @@ Reproduce the table: `uv run python wire_detection/benchmark/join_experiments.py
 - The registry `core/join_strategies.py` is the **single source of truth** — adding a
   strategy there makes it appear in the UI dropdown, the API, and the CLI automatically.
 
-## Improvement roadmap (stages, beyond the implemented attach-rule strategies)
-Each is a separable stage; combine the winners.
+## Future enhancements (beyond the current `graph_rescue` implementation)
+
+These are quality improvements for future work, not missing functionality. The current
+endpoint-graph join (`graph_rescue`) is the default strategy and is substantially complete.
+
 1. **Pin localization (highest leverage):** cluster-discover pins for ALL component
    types incl. junctions/terminals; use OBB orientation. Most floating + dangling
    traces back here.
