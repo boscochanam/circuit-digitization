@@ -69,35 +69,36 @@ export default function StageTabs({ activePanel, onSelectPanel }: StageTabsProps
           padding: 8px 16px;
           border: none;
           border-radius: 8px 8px 0 0;
-          background: transparent;
-          color: rgba(255, 255, 255, 0.5);
+          background: rgba(255, 255, 255, 0.06);
+          color: rgba(255, 255, 255, 0.75);
           font-size: 13px;
-          font-weight: 500;
+          font-weight: 600;
           cursor: pointer;
           transition: all 0.15s ease;
         }
         .stage-btn:hover {
-          background: rgba(255, 255, 255, 0.05);
-          color: rgba(255, 255, 255, 0.8);
+          background: rgba(255, 255, 255, 0.12);
+          color: #ffffff;
         }
         .stage-btn.active {
-          background: rgba(99, 102, 241, 0.15);
-          color: #818cf8;
+          background: rgba(99, 102, 241, 0.25);
+          color: #a5b4fc;
         }
         .stage-num {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 20px;
-          height: 20px;
+          width: 22px;
+          height: 22px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.15);
+          color: rgba(255, 255, 255, 0.9);
           font-size: 11px;
-          font-weight: 600;
+          font-weight: 700;
         }
         .stage-btn.active .stage-num {
-          background: rgba(99, 102, 241, 0.3);
-          color: #a5b4fc;
+          background: rgba(99, 102, 241, 0.4);
+          color: #ffffff;
         }
         .stage-label {
           letter-spacing: 0.02em;
@@ -112,17 +113,19 @@ export default function StageTabs({ activePanel, onSelectPanel }: StageTabsProps
           border: none;
           border-bottom: 2px solid transparent;
           background: transparent;
-          color: rgba(255, 255, 255, 0.45);
+          color: rgba(255, 255, 255, 0.65);
           font-size: 12px;
+          font-weight: 500;
           cursor: pointer;
           transition: all 0.15s ease;
         }
         .sub-tab:hover {
-          color: rgba(255, 255, 255, 0.7);
+          color: rgba(255, 255, 255, 0.9);
+          background: rgba(255, 255, 255, 0.04);
         }
         .sub-tab.active {
-          color: #c7d2fe;
-          border-bottom-color: #6366f1;
+          color: #e0e7ff;
+          border-bottom-color: #818cf8;
         }
       `}</style>
     </div>
