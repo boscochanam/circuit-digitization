@@ -15,7 +15,7 @@ import {
   type FitViewOptions,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { fetchNetlistAction } from "@/app/actions";
+import { useNetlist } from "@/hooks/useNetlist";
 import type { NetlistResult } from "@/lib/types";
 import CircuitNode from "./CircuitNode";
 
@@ -122,13 +122,13 @@ const nodeTypes = { circuitNode: CircuitNode } as any;
 function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
   const rfWrapper = useRef<HTMLDivElement>(null);
   const [rfInstance, setRfInstance] = useState<any>(null);
+  const [componentScale, setComponentScale] = useState(1.0);
+
+  // Managed node/edge change handlers
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [componentScale, setComponentScale] = useState(1.0);
-  const fetchRef = useRef(0);
+  const { netlist, loading, error } = useNetlist(imageIdx, dataset, preset, params as Record<string, number>);
 
   // Managed node/edge change handlers
   const onNodesChange = useCallback((changes: NodeChange[]) => {
@@ -138,76 +138,60 @@ function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
     setEdges((eds) => applyEdgeChanges(changes, eds));
   }, []);
 
-  // Fetch and build nodes/edges
+  // Process netlist into React Flow nodes/edges
   useEffect(() => {
-    const id = ++fetchRef.current;
-    setLoading(true);
-    setError(null);
-    setSelectedId(null);
+    if (!netlist || !netlist.components || netlist.components.length === 0) {
+      setNodes([]);
+      setEdges([]);
+      setSelectedId(null);
+      return;
+    }
 
-    fetchNetlistAction(imageIdx, dataset, preset, params)
-      .then((data: NetlistResult) => {
-        if (id !== fetchRef.current) return; // stale fetch
-        if (!data.components || data.components.length === 0) {
-          setNodes([]);
-          setEdges([]);
-          setLoading(false);
-          return;
-        }
+    const layout = computeLayout(netlist.components);
 
-        const layout = computeLayout(data.components);
+    const rfNodes: Node[] = netlist.components.map((c) => {
+      const pos = layout.get(c.name) || { x: 400, y: 400 };
+      return {
+        id: c.name,
+        type: "circuitNode",
+        position: { x: pos.x, y: pos.y },
+        width: 40,
+        height: 40,
+        data: {
+          label: c.name,
+          typeLabel: typeLabel(c.type),
+          color: getColor(c.type),
+        },
+      };
+    });
 
-        // Build React Flow nodes (24px circle in 40×40 box)
-        const rfNodes: Node[] = data.components.map((c) => {
-          const pos = layout.get(c.name) || { x: 400, y: 400 };
-          return {
-            id: c.name,
-            type: "circuitNode",
-            position: { x: pos.x, y: pos.y },
-            width: 40,
-            height: 40,
-            data: {
-              label: c.name,
-              typeLabel: typeLabel(c.type),
-              color: getColor(c.type),
-            },
-          };
-        });
-
-        // Build edges from shared netlist nodes
-        const rfEdges: Edge[] = [];
-        const seen = new Set<string>();
-        if (data.nodes) {
-          for (const netNode of data.nodes) {
-            const compsOnNode = [...new Set(netNode.pins.map((p: any) => p.component))];
-            for (let i = 0; i < compsOnNode.length; i++) {
-              for (let j = i + 1; j < compsOnNode.length; j++) {
-                const key = [compsOnNode[i], compsOnNode[j]].sort().join("|");
-                if (!seen.has(key)) {
-                  seen.add(key);
-                  rfEdges.push({
-                    id: key,
-                    source: compsOnNode[i],
-                    target: compsOnNode[j],
-                    type: "straight",
-                    style: { stroke: "#27272a", strokeWidth: 1.5, opacity: 0.6 },
-                  });
-                }
-              }
+    const rfEdges: Edge[] = [];
+    const seen = new Set<string>();
+    if (netlist.nodes) {
+      for (const netNode of netlist.nodes) {
+        const compsOnNode = [...new Set(netNode.pins.map((p: any) => p.component))];
+        for (let i = 0; i < compsOnNode.length; i++) {
+          for (let j = i + 1; j < compsOnNode.length; j++) {
+            const key = [compsOnNode[i], compsOnNode[j]].sort().join("|");
+            if (!seen.has(key)) {
+              seen.add(key);
+              rfEdges.push({
+                id: key,
+                source: compsOnNode[i],
+                target: compsOnNode[j],
+                type: "straight",
+                style: { stroke: "#27272a", strokeWidth: 1.5, opacity: 0.6 },
+              });
             }
           }
         }
+      }
+    }
 
-        setNodes(rfNodes);
-        setEdges(rfEdges);
-        setLoading(false);
-      })
-      .catch((err) => {
-        if (id !== fetchRef.current) return;
-        setError(err instanceof Error ? err.message : "Failed to load netlist");
-        setLoading(false);
-      });
-  }, [imageIdx, dataset, preset, params]);
+    setNodes(rfNodes);
+    setEdges(rfEdges);
+    setSelectedId(null);
+  }, [netlist]);
 
   // Fit view on first load and when scale resets near 1.0
   const hasFitRef = useRef(false);
