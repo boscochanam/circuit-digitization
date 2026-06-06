@@ -142,12 +142,17 @@ registry-based. `DEFAULT_STRATEGY = "graph_rescue"`. Strategies compose:
 - `wire_detection/benchmark/netlist_viz.py` — image-grounded overlays (`_joins.png`) + per-net stepper
 - **Join Check** UI tab (`JoinCheckPanel.tsx`, `/api/join_overlay`) — cycle strategies, view metrics + overlays
 
-**Key numbers (1,648-image eval):**
-| Strategy | join_quality | conn% | eff% | self-loop |
-|----------|-------------|-------|------|-----------|
-| **graph_rescue** (default) | **0.126** | **84** | **100** | 2.5 |
-| production (old) | 0.222 | 81 | 80 | 2.0 |
-| nearest2_30 | 0.163 | 75 | 91 | 2.0 |
+**Key numbers (134-image GT set, fresh best_candidate_v4 detection):**
+| Strategy | balanced | composite | wires-used% | nets/comp | self-loop | floating |
+|----------|----------|-----------|-------------|-----------|-----------|----------|
+| **graph_rescue** (default) | **0.1247** | 0.1176 | **97.7** | 0.123 | 233 | 276 |
+| graph_scale | 0.1261 | 0.1163 | 97.5 | 0.157 | 96 | 454 |
+| graph_dir_30 | 0.1262 | 0.1128 | 97.6 | 0.153 | 110 | 409 |
+| graph_full | 0.1262 | 0.1195 | 97.7 | 0.120 | 233 | 288 |
+| junction_extend_n1 | 0.1954 | 0.1096 | 83.4 | 0.142 | 72 | 415 |
+| production (old) | 0.2504 | 0.1140 | 73.0 | 0.119 | 224 | 266 |
+
+Graph strategies dominate the top 5. `graph_rescue` uses 97.7% of wires (vs production's 73%) while keeping low over-merge.
 
 Full details: `docs/research/join-verification.md`
 

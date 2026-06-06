@@ -4,7 +4,7 @@ A modular Python framework for detecting interconnect wires in circuit schematic
 
 > **Full documentation**: [https://boscochanam.github.io/circuit-digitization](https://boscochanam.github.io/circuit-digitization) — or build locally with `uv run mkdocs serve`.
 > **Status**: **Global F1: 0.833** (Anchor Filter + PCA endpoints + Overlap Dedup, 134 images)
-> **Joining**: `graph_rescue` endpoint-graph join — beats production on 53/58 images, 84% connectivity, 100% effective wires
+> **Joining**: `graph_rescue` endpoint-graph join — 0.1247 balanced on 134-image GT set, 97.7% wires used
 > **Dataset**: 134 circuit schematic images (predominantly 704×704), 3,524 ground-truth wire segments
 
 ---
@@ -49,12 +49,18 @@ Both wire endpoints AND component pins are graph nodes, connected by 5 edge type
 
 Scale-relative tolerances handle the ~6× circuit-scale range. Dead-end rescue gives dangling wire-ends a longer directional reach.
 
-### Results
+### Results (134-image GT set)
 
-| Strategy | join_quality | conn% | eff% | self-loop |
-|----------|-------------|-------|------|-----------|
-| **graph_rescue** (default) | **0.126** | **84** | **100** | 2.5 |
-| production (old) | 0.222 | 81 | 80 | 2.0 |
+| Strategy | balanced | wires-used% | self-loop | floating |
+|----------|----------|-------------|-----------|----------|
+| **graph_rescue** (default) | **0.1247** | **97.7** | 233 | 276 |
+| graph_scale | 0.1261 | 97.5 | 96 | 454 |
+| graph_dir_30 | 0.1262 | 97.6 | 110 | 409 |
+| graph_full | 0.1262 | 97.7 | 233 | 288 |
+| junction_extend_n1 | 0.1954 | 83.4 | 72 | 415 |
+| production (old) | 0.2504 | 73.0 | 224 | 266 |
+
+Graph strategies dominate the top 5. `graph_rescue` uses 97.7% of wires (vs production's 73%) while keeping low over-merge.
 
 ### Verification
 
