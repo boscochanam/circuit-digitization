@@ -67,8 +67,35 @@ export function usePipeline(
     [dataset],
   );
 
+  // Debounce: param slider changes fire after 300ms idle; image/preset changes run immediately.
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastImageRef = useRef(imageIdx);
+  const lastPresetRef = useRef(preset);
+
   useEffect(() => {
-    if (imageCount > 0) doRun(imageIdx, params, preset, presetParams);
+    if (imageCount <= 0) return;
+
+    const imageChanged = imageIdx !== lastImageRef.current;
+    const presetChanged = preset !== lastPresetRef.current;
+    lastImageRef.current = imageIdx;
+    lastPresetRef.current = preset;
+
+    // Clear any pending debounce
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
+    if (imageChanged || presetChanged) {
+      // Immediate run for image/preset changes
+      doRun(imageIdx, params, preset, presetParams);
+    } else {
+      // Debounced run for param slider changes
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        doRun(imageIdx, params, preset, presetParams);
+      }, 300);
+    }
   }, [imageIdx, params, dataset, preset, presetParams, imageCount, doRun]);
 
   const setParam = (key: string, value: number | string) =>
