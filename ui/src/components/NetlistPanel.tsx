@@ -98,9 +98,14 @@ export default function NetlistPanel({
 
         {/* SPICE Netlist */}
         <div className="netlist-section">
-          <button
+          {/* role=button (not <button>) so the Copy <button> can nest legally —
+              a <button> inside a <button> is invalid HTML / a hydration error. */}
+          <div
             className="netlist-section-title netlist-collapsible"
+            role="button"
+            tabIndex={0}
             onClick={() => setNetlistExpanded((v) => !v)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNetlistExpanded((v) => !v); } }}
           >
             {netlistExpanded ? "▾" : "▸"} SPICE Netlist
             <button
@@ -109,7 +114,7 @@ export default function NetlistPanel({
             >
               {copied ? "Copied!" : "Copy"}
             </button>
-          </button>
+          </div>
           {netlistExpanded && (
             <pre className="netlist-code">{data.spice_netlist}</pre>
           )}
