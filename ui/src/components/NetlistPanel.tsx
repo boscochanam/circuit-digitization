@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { fetchNetlistAction } from "@/app/actions";
-import type { NetlistResult } from "@/lib/types";
+import { useState } from "react";
+import { useNetlist } from "@/hooks/useNetlist";
 
 export default function NetlistPanel({
   imageIdx,
@@ -15,29 +14,9 @@ export default function NetlistPanel({
   preset: string;
   params?: Record<string, string | number>;
 }) {
-  const [data, setData] = useState<NetlistResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { netlist: data, loading, error } = useNetlist(imageIdx, dataset, preset, params as Record<string, number>);
   const [copied, setCopied] = useState(false);
   const [netlistExpanded, setNetlistExpanded] = useState(true);
-
-  const doFetch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await fetchNetlistAction(imageIdx, dataset, preset, params);
-      setData(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load netlist");
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [imageIdx, dataset, preset, params]);
-
-  useEffect(() => {
-    doFetch();
-  }, [doFetch]);
 
   const handleCopy = async () => {
     if (!data?.spice_netlist) return;
