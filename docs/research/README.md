@@ -2,6 +2,12 @@
 
 This directory contains experiment logs, synthesis documents, and analysis related to the wire detection and netlist extraction research.
 
+## Current Status
+
+- **Wire Detection:** F1=0.8334 on 134 images (best_candidate_v4). All FP-removal leads exhausted — accepting as ceiling.
+- **Node Joining:** `graph_rescue` endpoint-graph join is the default strategy. Beats production on 53/58 images, 84% connectivity, 100% effective wires. Substantially complete.
+- **SPICE Simulation:** Working — ngspice integration verified, DC operating point returns success.
+
 ## Benchmark Results
 
 - **[expanded-benchmark.md](expanded-benchmark.md)** — Full benchmark of 36 configs on 134 images. `best_candidate_v4` wins at F1=0.8334.

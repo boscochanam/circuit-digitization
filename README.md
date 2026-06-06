@@ -1,9 +1,10 @@
 # Wire Detection Framework
 
-A modular Python framework for detecting interconnect wires in circuit schematics — classical CV pipeline, synthetic data generator, evaluation toolkit, FastAPI backend, and Next.js tuner UI.
+A modular Python framework for detecting interconnect wires in circuit schematics — classical CV pipeline, **node joining**, SPICE netlist generation, synthetic data generator, evaluation toolkit, FastAPI backend, and Next.js tuner UI.
 
 > **Full documentation**: [https://boscochanam.github.io/circuit-digitization](https://boscochanam.github.io/circuit-digitization) — or build locally with `uv run mkdocs serve`.
 > **Status**: **Global F1: 0.833** (Anchor Filter + PCA endpoints + Overlap Dedup, 134 images)
+> **Joining**: `graph_rescue` endpoint-graph join — beats production on 53/58 images, 84% connectivity, 100% effective wires
 > **Dataset**: 134 circuit schematic images (predominantly 704×704), 3,524 ground-truth wire segments
 
 ---
@@ -30,6 +31,38 @@ Open **http://localhost:4200**. Optional: `docker compose up --build` (see `.env
 | `wire-sweep` | Run a parameter sweep |
 | `wire-vlm` | VLM quality assessment (classify, sweep, audit) |
 | `wire-benchmark-exp` | Run experiment harness (wave1/wave2) |
+
+---
+
+## Node Joining & Netlist
+
+Wire detection gives a parts list + wires. **Node joining** answers "which component terminals are electrically the same point?" — grouping pins into nets for SPICE simulation.
+
+### Strategy: `graph_rescue` (endpoint-graph join)
+
+Both wire endpoints AND component pins are graph nodes, connected by 5 edge types:
+1. Wire body (ep1–ep2)
+2. Endpoint↔endpoint (fragments, junctions, corners)
+3. Endpoint↔pin (component binding, directional)
+4. Endpoint↔wire-body (T-junctions onto rails/buses)
+5. Pin↔wire-body (components tapped onto passing rails)
+
+Scale-relative tolerances handle the ~6× circuit-scale range. Dead-end rescue gives dangling wire-ends a longer directional reach.
+
+### Results
+
+| Strategy | join_quality | conn% | eff% | self-loop |
+|----------|-------------|-------|------|-----------|
+| **graph_rescue** (default) | **0.126** | **84** | **100** | 2.5 |
+| production (old) | 0.222 | 81 | 80 | 2.0 |
+
+### Verification
+
+- `wire_detection/benchmark/netlist_validate.py` — structural join-health scorecard
+- `wire_detection/benchmark/netlist_viz.py` — image-grounded overlays + per-net stepper
+- **Join Check** UI tab — cycle strategies, view metrics + overlays live
+
+Full details: `docs/research/join-verification.md`
 
 ---
 
@@ -171,8 +204,15 @@ See `~/workspace/README.md` for full experiment history and publishing timeline.
 
 ```
 wire_detection/     Python backend (pipeline, API, SDG, evaluation, experiments)
-ui/                 Next.js frontend (tuner UI)
+  api/              FastAPI routes (process, netlist, join_overlay, sim_overlay, presets)
+  benchmark/        Evaluation scripts (expanded_benchmark, netlist_validate, join_eval_all)
+  core/             Core modules (netlist, join_strategies, join_graph, spice, simulator, mapping)
+  vlm/              VLM quality classifier
+ui/                 Next.js frontend (tuner UI, Join Check, Topology, Simulation tabs)
 docs/               MkDocs documentation
+  research/         Experiment logs, synthesis docs, analysis
+  archive/          Superseded docs
+paper/              LaTeX paper (MethodsX submission)
 ```
 
 ## Development
