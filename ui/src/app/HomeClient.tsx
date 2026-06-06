@@ -21,6 +21,7 @@ import {
 } from "@/components/ui-widgets";
 import { fetchNetlistAction, runSimulationAction } from "@/app/actions";
 import { PANEL, PANEL_NAMES, STAGE_PANELS, panelToStage, IMAGE_PANELS } from "@/lib/panels";
+import StageTabs from "@/components/StageTabs";
 
 const DATASETS = ["gt_labels", "hdc", "synthetic"] as const;
 const DATASET_LABELS: Record<string, string> = {
@@ -172,20 +173,9 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         />
       )}
 
-      <PanelTabs panels={IMAGE_PANELS} activePanel={activePanel} onSelect={setActivePanel} />
+      <StageTabs activePanel={activePanel} onSelectPanel={setActivePanel} />
 
-      {/* ═══ DESKTOP PANEL TABS (hidden on mobile) — only Netlist, Simulation, Topology ═══ */}
-      <div className="desktop-tab-bar">
-        {IMAGE_PANELS.slice(4).map((name, i) => (
-          <button
-            key={name}
-            className={`desktop-tab ${i + 4 === activePanel ? "desktop-tab-active" : ""}`}
-            onClick={() => setActivePanel(i + 4)}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
+
 
       {/* ═══ DESKTOP CONTENT (hidden on mobile) ═══ */}
       <div className="desktop-grid">

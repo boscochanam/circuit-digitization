@@ -4,8 +4,8 @@ import { STAGES, STAGE_PANELS, PANEL_NAMES } from "@/lib/panels";
 import type { Stage, PanelIndex } from "@/lib/panels";
 
 interface StageTabsProps {
-  activePanel: PanelIndex;
-  onSelectPanel: (panel: PanelIndex) => void;
+  activePanel: number;
+  onSelectPanel: (panel: number) => void;
 }
 
 /**
