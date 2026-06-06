@@ -15,9 +15,6 @@ theme:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
-  - Dataset Setup: datasets.md
-  - Data Quality: data-quality.md
-  - VLM Experiments: vlm-experiments.md
   - Architecture: architecture.md
   - Pipeline:
     - Overview: pipeline/overview.md
@@ -26,10 +23,24 @@ nav:
   - API Reference:
     - Endpoints: api/endpoints.md
     - Configuration: api/configuration.md
-  - Synthetic Data Generation: sdg.md
-  - Evaluation: evaluate.md
-  - Experiment Engine: experiment.md
-  - CLI Reference: cli.md
+  - Datasets:
+    - Setup: datasets.md
+    - Data Quality: data-quality.md
+    - Synthetic Data: sdg.md
+  - Evaluation:
+    - Metrics: evaluate.md
+    - Experiment Engine: experiment.md
+    - CLI Reference: cli.md
+  - Research:
+    - Overview: research/README.md
+    - Expanded Benchmark: research/expanded-benchmark.md
+    - Join Verification: research/join-verification.md
+    - Netlist Exploration: research/netlist-exploration.md
+    - Connectivity: research/connectivity.md
+    - Mapping Experiment: research/mapping-experiment.md
+    - VLM Experiments: research/vlm-experiments.md
+    - Iteration Tracker: research/iteration-tracker.md
+    - TDD Plan: research/tdd-plan.md
   - Deployment: deployment.md
   - Development: development.md
 

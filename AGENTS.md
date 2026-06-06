@@ -127,9 +127,9 @@ ties a wire-end to **every** pin within 30px (not the nearest) + transitive
 union-find, which runs away in dense areas / at junctions.
 
 Tooling for verifying & tracking joins (full details in `docs/join-verification.md`):
-- `netlist_validate.py` — structural join-health scorecard (composite = struct
+- `wire_detection/benchmark/netlist_validate.py` — structural join-health scorecard (composite = struct
   errors/component; the regression number to track).
-- `netlist_viz.py` — image-grounded join overlays (`_joins.png`) + `--isolate <stem>`
+- `wire_detection/benchmark/netlist_viz.py` — image-grounded join overlays (`_joins.png`) + `--isolate <stem>`
   per-net stepper. Legend: cyan=wire, green=nearest-pin join, orange=extra over-join.
 - **Join Check** UI tab + `/api/join_overlay` (`api/routes/join_overlay.py`,
   `JoinCheckPanel.tsx`) — same overlay in the tuner, with all-nets + per-net views.

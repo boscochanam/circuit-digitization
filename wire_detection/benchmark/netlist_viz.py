@@ -19,9 +19,9 @@ Color legend on the output PNG:
   * Small white dots = discovered/derived pin locations.
 
 Usage (run from inside circuit-upstream/):
-  uv run python netlist_viz.py --obb-zip "C:/Users/chris/Downloads/wires_yolo_obb_XXigt.zip"
-  uv run python netlist_viz.py --obb-zip <zip> --limit 15
-  uv run python netlist_viz.py --obb-dir <extracted_dir> --labels-dir <comp_labels>
+  uv run python wire_detection/benchmark/netlist_viz.py --obb-zip "C:/Users/chris/Downloads/wires_yolo_obb_XXigt.zip"
+  uv run python wire_detection/benchmark/netlist_viz.py --obb-zip <zip> --limit 15
+  uv run python wire_detection/benchmark/netlist_viz.py --obb-dir <extracted_dir> --labels-dir <comp_labels>
 
 Outputs (default ../netlist_viz/<export_name>/):
   index.html        <- grid browser

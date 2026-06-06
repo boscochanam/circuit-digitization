@@ -26,8 +26,8 @@ scorecard + the worst images. Track the composite score across versions:
 lower = better.
 
 Usage (from circuit-upstream/):
-  uv run python netlist_validate.py --obb-zip "C:/Users/chris/Downloads/wires_yolo_obb_XXXX.zip"
-  uv run python netlist_validate.py --obb-zip <zip> --max-pin-dist 45   # probe a change
+  uv run python wire_detection/benchmark/netlist_validate.py --obb-zip "C:/Users/chris/Downloads/wires_yolo_obb_XXXX.zip"
+  uv run python wire_detection/benchmark/netlist_validate.py --obb-zip <zip> --max-pin-dist 45   # probe a change
 """
 from __future__ import annotations
 
