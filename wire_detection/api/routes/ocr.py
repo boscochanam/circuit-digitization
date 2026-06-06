@@ -13,21 +13,38 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-# Component class names
+# Component class names (from Roboflow data.yaml)
 COMPONENT_TYPES = {
-    0: "junction", 1: "terminal", 2: "resistor", 3: "capacitor",
-    4: "inductor", 5: "diode", 6: "transistor", 7: "voltage_source",
-    8: "ground", 9: "wire", 10: "ic_opamp", 11: "switch",
-    12: "fuse", 13: "transformer", 14: "antenna", 15: "probe",
-    16: "crossover", 17: "crystal", 18: "relay", 19: "speaker",
+    0: "and", 1: "antenna", 2: "capacitor-adjustable", 3: "capacitor-polarized",
+    4: "capacitor-unpolarized", 5: "crossover", 6: "crystal", 7: "diac",
+    8: "diode", 9: "diode-LED", 10: "diode-thyrector", 11: "diode-zener",
+    12: "fuse", 13: "gnd", 14: "inductor", 15: "inductor-ferrite",
+    16: "IC", 17: "IC-NE555", 18: "IC-voltage-reg", 19: "junction",
+    20: "lamp", 21: "magnetic", 22: "mechanical", 23: "microphone",
+    24: "motor", 25: "nand", 26: "nor", 27: "not",
+    28: "opamp", 29: "opamp-schmitt", 30: "optical", 31: "optocoupler",
+    32: "or", 33: "probe", 34: "probe-current", 35: "probe-voltage",
+    36: "relay", 37: "resistor", 38: "resistor-adjustable", 39: "resistor-photo",
+    40: "socket", 41: "speaker", 42: "switch", 43: "terminal",
+    44: "text", 45: "thyristor", 46: "transformer", 47: "transistor-BJT",
+    48: "transistor-FET", 49: "transistor-photo", 50: "triac", 51: "unknown",
+    52: "varistor", 53: "voltage-AC", 54: "voltage-battery", 55: "voltage-DC",
+    56: "vss", 57: "xor",
 }
-VALUE_TYPES = {2, 3, 4, 5, 6, 7, 10}
+# Only OCR text labels (class 44) — they ARE the values
+# Resistors/caps/inductors are symbols; their values are in nearby text labels
+VALUE_TYPES = {44}
 
-PROMPT = """You are reading a circuit schematic. This component is a {comp_type}.
+PROMPT = """You are reading a text label from a circuit schematic. The label is a {comp_type}.
 
-Look at the text label near or on this component. What is its value?
+Read the text exactly as written. Common formats:
+- Resistor: "10k" (10kΩ), "4.7R" (4.7Ω), "1M" (1MΩ)
+- Capacitor: "100n" (100nF), "10u" (10µF), "22p" (22pF)
+- Inductor: "10m" (10mH), "100u" (100µH)
+- Voltage: "5V", "12V", "3.3V"
+- Part number: "1N4148", "2N2222", "LM741"
 
-Return ONLY a JSON object: {{"value": "the value string", "unit": "ohm/farad/henry/V/part_number/none", "confidence": "high/medium/low"}}
+Return ONLY a JSON object: {{"value": "the text as written", "unit": "ohm/farad/henry/V/part_number/none", "confidence": "high/medium/low"}}
 
 If no value is visible, return: {{"value": null, "unit": null, "confidence": "none"}}
 No explanation — only JSON."""
@@ -84,7 +101,7 @@ def _call_vlm_batch(components: list, model: str, api_key: str) -> list:
     if not components:
         return []
 
-    content = [{"type": "text", "text": f"Identify values for these circuit components. Return a JSON array, one object per component with value, unit, confidence fields. If no value visible, use null for value.\n\nComponent types: {', '.join(c['type'] for c in components)}"}]
+    content = [{"type": "text", "text": f"Read the text labels from these circuit components. For each, return value, unit, confidence. Common: 10k=10kΩ, 100n=100nF, 5V=5V. Return JSON array.\n\nComponent types: {', '.join(c['type'] for c in components)}"}]
 
     for i, comp in enumerate(components):
         _, buf = cv2.imencode(".jpg", comp["crop"], [cv2.IMWRITE_JPEG_QUALITY, 90])
