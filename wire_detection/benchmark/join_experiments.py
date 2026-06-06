@@ -7,7 +7,7 @@ The strategies, the join builder, the pin discovery, and the scoring all live in
 API and the UI Join Check panel). This script just runs them over the batch and
 prints an aggregate comparison.
 
-Run:  uv run python join_experiments.py --obb-zip <downloaded_obb.zip>
+Run:  uv run python wire_detection/benchmark/join_experiments.py --obb-zip <downloaded_obb.zip>
 """
 from __future__ import annotations
 

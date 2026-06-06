@@ -7,8 +7,8 @@ the join with every strategy in the registry, score the structural health, and
 aggregate across the whole dataset. This is the definitive strategy ranking
 (independent of any particular OBB export).
 
-Run:  uv run python join_eval_all.py                 # all images
-      uv run python join_eval_all.py --limit 300     # quick sample
+Run:  uv run python wire_detection/benchmark/join_eval_all.py                 # all images
+      uv run python wire_detection/benchmark/join_eval_all.py --limit 300     # quick sample
 """
 from __future__ import annotations
 

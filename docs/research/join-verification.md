@@ -69,18 +69,18 @@ dense areas (64% of mapping errors), junction confusion, "connectivity too permi
 
 ## How to verify (no ground truth needed)
 
-### 1. Objective scorecard — `netlist_validate.py`
+### 1. Objective scorecard — `wire_detection/benchmark/netlist_validate.py`
 Counts structural errors that are wrong by circuit laws. The **composite** (struct
 errors / component, lower=better) is the regression number to track across changes.
 ```
-uv run python netlist_validate.py --obb-zip <downloaded_obb.zip>
+uv run python wire_detection/benchmark/netlist_validate.py --obb-zip <downloaded_obb.zip>
 ```
 Baseline (94-img batch, best_candidate_v4): self-loops 6.7%, floating 1.5%,
 giant-nets 113, nets/component 0.09, **composite 0.1029**. A tighter radius
 (`--max-pin-dist 18`) cut self-loops but exploded dangling/floating → composite
 *worse* (0.1209): **no single global radius wins** — the fix must be structural.
 
-### 2. Image-grounded views — `netlist_viz.py`
+### 2. Image-grounded views — `wire_detection/benchmark/netlist_viz.py`
 Draws the joins **on the schematic** so you can check them against real copper:
 - `<stem>_netlist.png` — all nets, color per net.
 - `<stem>_joins.png` — all nets as real edges: **cyan**=wire, **green**=wire-end→nearest
@@ -88,8 +88,8 @@ Draws the joins **on the schematic** so you can check them against real copper:
 - `--isolate <stem>` — a browsable **per-net stepper**: one net at a time, so you can
   verify a single net's terminals against the image.
 ```
-uv run python netlist_viz.py --obb-zip <zip>                 # all images, both overlays
-uv run python netlist_viz.py --obb-zip <zip> --isolate <STEM>  # per-net stepper
+uv run python wire_detection/benchmark/netlist_viz.py --obb-zip <zip>                 # all images, both overlays
+uv run python wire_detection/benchmark/netlist_viz.py --obb-zip <zip> --isolate <STEM>  # per-net stepper
 ```
 
 ### 3. In the tuner UI — the **Join Check** tab
@@ -140,7 +140,7 @@ Production path (`/api/netlist`, `/api/join_overlay` with `strategy=production`)
 3. **Score** with `score_netlist` (structural errors, no GT).
 
 Verify it yourself: UI **Join Check** tab with strategy = *Production* (overlay +
-metrics on the image), or `uv run python netlist_validate.py --obb-zip <zip>`.
+metrics on the image), or `uv run python wire_detection/benchmark/netlist_validate.py --obb-zip <zip>`.
 
 ## Where it lacks
 
@@ -171,7 +171,7 @@ Both are shown in the UI Join Check metrics row, with an over-merge vs under-con
 
 ## FULL EVALUATION — all 1,648 images (fresh best_candidate_v4 detection)
 
-`join_eval_all.py` (1,648 images, 140,573 components). **Sorted by `balanced`** (the
+`wire_detection/benchmark/join_eval_all.py` (1,648 images, 140,573 components). **Sorted by `balanced`** (the
 eye-matching score). Note how `composite` and `balanced` disagree:
 
 | rank | strategy | self-loop | floating | giant | wires-used% | composite | **balanced** |
@@ -204,7 +204,7 @@ eye-matching score). Note how `composite` and `balanced` disagree:
   visual overlay. The true optimum is *connect most wires AND avoid over-merge*
   (nearest2 / junction+extend), not either extreme.
 
-Reproduce: `uv run python join_eval_all.py` (≈3 min for all images).
+Reproduce: `uv run python wire_detection/benchmark/join_eval_all.py` (≈3 min for all images).
 
 ## Strategy catalog (registry: `core/join_strategies.py`, cycle in UI Join Check)
 
@@ -234,14 +234,14 @@ scorecard (94 images, 5434 components; lower composite = better, nets/comp ~0.5-
   wire vs. untangle a blob).
 - **Tightening radius alone hurts** — no single global radius wins.
 
-Reproduce the table: `uv run python join_experiments.py --obb-zip <zip>`
+Reproduce the table: `uv run python wire_detection/benchmark/join_experiments.py --obb-zip <zip>`
 
 ## How to cycle & decide
 - **UI → Join Check tab:** the **Join strategy** dropdown swaps strategies live; the
   metrics row (self-loops / floating / giant / nets/comp / **composite**) updates per
   strategy + image, and the overlay redraws. Use the **net selector** to verify
   individual nets. This is the "view and decide by metrics" loop.
-- **CLI:** `join_experiments.py` for the batch-wide composite ranking.
+- **CLI:** `wire_detection/benchmark/join_experiments.py` for the batch-wide composite ranking.
 - The registry `core/join_strategies.py` is the **single source of truth** — adding a
   strategy there makes it appear in the UI dropdown, the API, and the CLI automatically.
 
@@ -366,9 +366,9 @@ recovers these; what remains is detection-limited (no wire was produced at all).
 ## Files added by this investigation (repo root unless noted)
 - `wire_detection/core/join_graph.py` — endpoint-graph join (5 edge types, scale-relative).
 - `join_compare.py` (local) — rank every strategy by `join_quality` on fixed detection.
-- `netlist_viz.py` — image-grounded join overlays + per-net stepper.
-- `netlist_validate.py` — structural join-health scorecard.
-- `join_experiments.py` — attach-rule strategy comparison (Exp 1 above).
+- `wire_detection/benchmark/netlist_viz.py` — image-grounded join overlays + per-net stepper.
+- `wire_detection/benchmark/netlist_validate.py` — structural join-health scorecard.
+- `wire_detection/benchmark/join_experiments.py` — attach-rule strategy comparison (Exp 1 above).
 - `make_netlist_pdf.py` — bundle overlays into a shareable PDF.
 - `wire_detection/api/routes/join_overlay.py` — `/api/join_overlay` endpoint.
 - `wire_detection/api/models.py` — `JoinOverlayRequest` (added).
