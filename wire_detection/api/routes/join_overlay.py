@@ -25,10 +25,6 @@ from fastapi.responses import JSONResponse
 
 import wire_detection.api.deps as deps
 from wire_detection.api.models import JoinOverlayRequest
-from wire_detection.core.netlist import (
-    derive_pins_from_obb,
-    discover_pins,
-)
 from wire_detection.core.join_strategies import (
     DEFAULT_STRATEGY,
     list_strategies,
@@ -61,21 +57,6 @@ def _pins_near(ep, pins, max_pin_dist):
     out = [(d, p) for d, p in out if d <= max_pin_dist]
     out.sort(key=lambda x: x[0])
     return out
-
-
-def _make_pins(wires, components):
-    all_pins = []
-    for ci, comp in enumerate(components):
-        tname = COMPONENT_NAMES.get(comp[0], f"cls_{comp[0]}")
-        all_pins.extend(derive_pins_from_obb(ci, comp, tname))
-    clustered = discover_pins(wires, components)
-    if clustered:
-        ov = {(cp.component_idx, cp.pin_idx): (cp.x, cp.y) for cp in clustered}
-        for p in all_pins:
-            k = (p.component_idx, p.pin_idx)
-            if k in ov:
-                p.x, p.y = ov[k]
-    return all_pins
 
 
 def _put(canvas, text, org, color, scale=0.40):
@@ -168,7 +149,8 @@ async def join_overlay(data: JoinOverlayRequest):
             return JSONResponse({"error": "image not found"}, status_code=404)
         gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        components = deps.registry.load_component_labels(Path(image_path)) or []
+        components = deps.registry.load_component_labels(
+            Path(image_path), img_wh=(gray.shape[1], gray.shape[0])) or []
         result = _run_preset_pipeline_cached(gray, image_path, data.preset, data.params or {})
         wires = [((int(a[0]), int(a[1])), (int(b[0]), int(b[1]))) for a, b in result.get("lines", [])]
 

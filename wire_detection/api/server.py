@@ -46,11 +46,17 @@ def index():
 
 
 def main():
-    # uvicorn requires an import string (not the app object) when workers>1/reload,
-    # otherwise `wire-tune` crashes with "You must pass the application as an import
-    # string to enable 'reload' or 'workers'." Pass the import path so multi-worker
-    # launch works.
-    uvicorn.run("wire_detection.api.server:app", host="0.0.0.0", port=8000, workers=4)
+    import os
+    # Default to a single worker: each worker holds its OWN in-memory image +
+    # pipeline cache and dataset registry, so for this (single-user, cache-sensitive,
+    # CPU work already offloaded to a threadpool) tool extra workers just multiply
+    # memory and quarter the cache hit-rate. Override with WIRE_TUNE_WORKERS if you
+    # front it with a shared cache. uvicorn needs the import STRING (not the app
+    # object) whenever workers>1, else it raises "pass the application as an import
+    # string".
+    workers = max(1, int(os.environ.get("WIRE_TUNE_WORKERS", "1")))
+    port = int(os.environ.get("WIRE_TUNE_PORT", "8000"))
+    uvicorn.run("wire_detection.api.server:app", host="0.0.0.0", port=port, workers=workers)
 
 
 if __name__ == "__main__":

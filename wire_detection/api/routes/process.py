@@ -4,8 +4,8 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import threading
 import time
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +26,10 @@ router = APIRouter()
 _PIPELINE_CACHE: dict[str, dict] = {}
 _PIPELINE_CACHE_MAX = 128
 _PIPELINE_CACHE_ORDER: list[str] = []  # LRU eviction tracking
+# Routes run their work in a threadpool (run_in_executor), so the cache is touched
+# concurrently — guard the dict + order-list mutations or two threads racing on
+# list.remove()/pop() crash with ValueError/KeyError (matches ImageCache's lock).
+_PIPELINE_CACHE_LOCK = threading.Lock()
 
 
 def _cache_key(image_path: str, preset_name: str, params: dict) -> str:
@@ -35,23 +39,25 @@ def _cache_key(image_path: str, preset_name: str, params: dict) -> str:
 
 
 def _cache_get(key: str) -> dict | None:
-    if key in _PIPELINE_CACHE:
-        # move to end (most recently used)
-        _PIPELINE_CACHE_ORDER.remove(key)
-        _PIPELINE_CACHE_ORDER.append(key)
-        return _PIPELINE_CACHE[key]
-    return None
+    with _PIPELINE_CACHE_LOCK:
+        if key in _PIPELINE_CACHE:
+            # move to end (most recently used)
+            _PIPELINE_CACHE_ORDER.remove(key)
+            _PIPELINE_CACHE_ORDER.append(key)
+            return _PIPELINE_CACHE[key]
+        return None
 
 
 def _cache_put(key: str, value: dict) -> None:
-    if key in _PIPELINE_CACHE:
-        _PIPELINE_CACHE_ORDER.remove(key)
-    elif len(_PIPELINE_CACHE) >= _PIPELINE_CACHE_MAX:
-        # evict oldest
-        oldest = _PIPELINE_CACHE_ORDER.pop(0)
-        _PIPELINE_CACHE.pop(oldest)
-    _PIPELINE_CACHE[key] = value
-    _PIPELINE_CACHE_ORDER.append(key)
+    with _PIPELINE_CACHE_LOCK:
+        if key in _PIPELINE_CACHE:
+            _PIPELINE_CACHE_ORDER.remove(key)
+        elif len(_PIPELINE_CACHE) >= _PIPELINE_CACHE_MAX:
+            # evict oldest
+            oldest = _PIPELINE_CACHE_ORDER.pop(0)
+            _PIPELINE_CACHE.pop(oldest)
+        _PIPELINE_CACHE[key] = value
+        _PIPELINE_CACHE_ORDER.append(key)
 
 
 def _img_to_base64(image: np.ndarray) -> str:
@@ -141,7 +147,8 @@ def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, i
 
     components = []
     if image_path:
-        comp_labels = deps.registry.load_component_labels(Path(image_path))
+        comp_labels = deps.registry.load_component_labels(
+            Path(image_path), img_wh=(gray.shape[1], gray.shape[0]))
         if comp_labels:
             components = comp_labels
 
