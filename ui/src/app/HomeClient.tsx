@@ -21,6 +21,7 @@ import {
 } from "@/components/ui-widgets";
 import { fetchNetlistAction, runSimulationAction } from "@/app/actions";
 import { PANEL, PANEL_NAMES, STAGE_PANELS, panelToStage, IMAGE_PANELS } from "@/lib/panels";
+import type { Stage } from "@/lib/panels";
 import StageTabs from "@/components/StageTabs";
 
 const DATASETS = ["gt_labels", "hdc", "synthetic"] as const;
@@ -87,6 +88,8 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const isTopologyPanel = activePanel === PANEL.TOPOLOGY;
   const isJoinPanel = activePanel === PANEL.JOIN_CHECK;
   const isVoltPanel = activePanel === PANEL.VOLTAGE_MAP;
+  const activeStage: Stage = panelToStage(activePanel);
+  const isDetectStage = activeStage === "Detect";
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
@@ -179,21 +182,25 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
       {/* ═══ DESKTOP CONTENT (hidden on mobile) ═══ */}
       <div className="desktop-grid">
-        {/* 4-panel image grid always visible */}
-        <div className="desktop-image-grid">
-          <ImagePanel title="Detected Lines" base64={pipe.result?.overlay} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.overlay && setPreview({ title: "Detected Lines", image: `data:image/jpeg;base64,${pipe.result.overlay}` })} />
-          <ImagePanel title="Threshold" base64={pipe.result?.threshold} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.threshold && setPreview({ title: "Threshold", image: `data:image/jpeg;base64,${pipe.result.threshold}` })} />
-          <ImagePanel title="Dilated / Closed" base64={pipe.result?.dilated} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.dilated && setPreview({ title: "Dilated", image: `data:image/jpeg;base64,${pipe.result.dilated}` })} />
-          <ImagePanel title="Source" src={`/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}`} onClick={() => setPreview({ title: "Source", image: `/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}` })} />
-        </div>
-        {pipe.result?.params && (
-          <div className="desktop-params-strip">
-            {Object.entries(pipe.result.params).map(([k, v]) => (
-              <span key={k}>{k}: <strong>{String(v)}</strong></span>
-            ))}
-          </div>
+        {/* 4-panel image grid: only visible in Detect stage */}
+        {isDetectStage && (
+          <>
+            <div className="desktop-image-grid">
+              <ImagePanel title="Detected Lines" base64={pipe.result?.overlay} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.overlay && setPreview({ title: "Detected Lines", image: `data:image/jpeg;base64,${pipe.result.overlay}` })} />
+              <ImagePanel title="Threshold" base64={pipe.result?.threshold} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.threshold && setPreview({ title: "Threshold", image: `data:image/jpeg;base64,${pipe.result.threshold}` })} />
+              <ImagePanel title="Dilated / Closed" base64={pipe.result?.dilated} loading={pipe.loading} error={pipe.pipelineError} onClick={() => pipe.result?.dilated && setPreview({ title: "Dilated", image: `data:image/jpeg;base64,${pipe.result.dilated}` })} />
+              <ImagePanel title="Source" src={`/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}`} onClick={() => setPreview({ title: "Source", image: `/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}` })} />
+            </div>
+            {pipe.result?.params && (
+              <div className="desktop-params-strip">
+                {Object.entries(pipe.result.params).map(([k, v]) => (
+                  <span key={k}>{k}: <strong>{String(v)}</strong></span>
+                ))}
+              </div>
+            )}
+          </>
         )}
-        <div className="desktop-bottom-panel">
+        <div className="desktop-bottom-panel" style={isDetectStage ? {} : { flex: 1 }}>
           {activePanel === PANEL.NETLIST ? (
             <NetlistPanel
               imageIdx={imgs.imageIdx}
