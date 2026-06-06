@@ -5,7 +5,7 @@ This directory contains experiment logs, synthesis documents, and analysis relat
 ## Current Status
 
 - **Wire Detection:** F1=0.8334 on 134 images (best_candidate_v4). All FP-removal leads exhausted — accepting as ceiling.
-- **Node Joining:** `graph_rescue` endpoint-graph join is the default strategy. Beats production on 53/58 images, 84% connectivity, 100% effective wires. Substantially complete.
+- **Node Joining:** `graph_rescue` endpoint-graph join is the default strategy. Balanced 0.1247 on 134-image GT set, 97.7% wires used. Graph strategies occupy top 5. Substantially complete.
 - **SPICE Simulation:** Working — ngspice integration verified, DC operating point returns success.
 
 ## Benchmark Results
