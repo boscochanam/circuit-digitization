@@ -118,25 +118,40 @@ The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netl
 2. Backend runs on port 8000, UI on port 4200 (proxied via Next.js rewrites)
 3. All `localhost:8000` calls happen server-side in Next.js server actions, never from the browser
 
-## Join Verification (the joining is the weak link — see `docs/join-verification.md`)
+## Netlist / Joining (COMPLETE — `graph_rescue` is default)
 
-Detection F1 (0.83) does **not** measure join quality, and there's no end-to-end
-netlist-correctness metric. The production join **over-merges** (≈58 components →
-≈3.5 nets/image; 6.7% of components self-loop-shorted) because `build_netlist`
-ties a wire-end to **every** pin within 30px (not the nearest) + transitive
-union-find, which runs away in dense areas / at junctions.
+**Status:** Node joining is substantially complete. The endpoint-graph join
+(`graph_rescue`) is the default strategy and beats the original production join
+on **53/58 images** with 100% effective wire usage and 84% connectivity.
 
-Tooling for verifying & tracking joins (full details in `docs/join-verification.md`):
-- `wire_detection/benchmark/netlist_validate.py` — structural join-health scorecard (composite = struct
-  errors/component; the regression number to track).
-- `wire_detection/benchmark/netlist_viz.py` — image-grounded join overlays (`_joins.png`) + `--isolate <stem>`
-  per-net stepper. Legend: cyan=wire, green=nearest-pin join, orange=extra over-join.
-- **Join Check** UI tab + `/api/join_overlay` (`api/routes/join_overlay.py`,
-  `JoinCheckPanel.tsx`) — same overlay in the tuner, with all-nets + per-net views.
-  Use **Topology** to spot an over-merged net, **Join Check** to prove which pins
-  shouldn't be in it.
+**Strategy:** `wire_detection/core/join_strategies.py` — 12+ composable strategies,
+registry-based. `DEFAULT_STRATEGY = "graph_rescue"`. Strategies compose:
+1. Pin localization — static OBB pins + DBSCAN clustering (SPICE-active types)
+2. Wire conditioning — optional end-extension
+3. Attach — which pins each wire-end connects to
+4. Merge — union-find across pins + endpoints
 
-**Gotchas discovered:**
+**Endpoint-graph join** (`wire_detection/core/join_graph.py`):
+- Both wire endpoints AND component pins are graph nodes
+- 5 edge types: wire body, endpoint↔endpoint, endpoint↔pin, endpoint↔wire-body (T-junction), pin↔wire-body
+- Scale-relative tolerances (`k × median component size`) for ~6× circuit-scale range
+- `graph_rescue` gives dangling wire-ends a longer directional reach toward pins on different components
+
+**Verification tooling:**
+- `wire_detection/benchmark/netlist_validate.py` — structural join-health scorecard
+- `wire_detection/benchmark/netlist_viz.py` — image-grounded overlays (`_joins.png`) + per-net stepper
+- **Join Check** UI tab (`JoinCheckPanel.tsx`, `/api/join_overlay`) — cycle strategies, view metrics + overlays
+
+**Key numbers (1,648-image eval):**
+| Strategy | join_quality | conn% | eff% | self-loop |
+|----------|-------------|-------|------|-----------|
+| **graph_rescue** (default) | **0.126** | **84** | **100** | 2.5 |
+| production (old) | 0.222 | 81 | 80 | 2.0 |
+| nearest2_30 | 0.163 | 75 | 91 | 2.0 |
+
+Full details: `docs/research/join-verification.md`
+
+**Known gotchas:**
 - `core/netlist.py` imports `sklearn` but `scikit-learn` is **missing from
   `pyproject.toml`** → clean installs crash `/api/netlist` + `/api/join_overlay`.
   Add it to deps.
