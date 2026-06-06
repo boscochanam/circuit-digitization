@@ -20,6 +20,7 @@ import {
   ImagePanel,
 } from "@/components/ui-widgets";
 import { fetchNetlistAction, runSimulationAction } from "@/app/actions";
+import { PANEL, PANEL_NAMES, STAGE_PANELS, panelToStage, IMAGE_PANELS } from "@/lib/panels";
 
 const DATASETS = ["gt_labels", "hdc", "synthetic"] as const;
 const DATASET_LABELS: Record<string, string> = {
@@ -27,7 +28,7 @@ const DATASET_LABELS: Record<string, string> = {
   hdc: "HDC (1680)",
   synthetic: "Synthetic",
 };
-const IMAGE_PANELS = ["Detected Lines", "Threshold", "Dilated / Closed", "Source", "Netlist", "Simulation", "Topology", "Join Check", "Voltage Map"] as const;
+// IMAGE_PANELS — imported from @/lib/panels
 
 export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const imgs = useImages(initial);
@@ -80,16 +81,16 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     }
   };
 
-  const isNetlistPanel = activePanel === 4;
-  const isSimulationPanel = activePanel === 5;
-  const isTopologyPanel = activePanel === 6;
-  const isJoinPanel = activePanel === 7;
-  const isVoltPanel = activePanel === 8;
+  const isNetlistPanel = activePanel === PANEL.NETLIST;
+  const isSimulationPanel = activePanel === PANEL.SIMULATION;
+  const isTopologyPanel = activePanel === PANEL.TOPOLOGY;
+  const isJoinPanel = activePanel === PANEL.JOIN_CHECK;
+  const isVoltPanel = activePanel === PANEL.VOLTAGE_MAP;
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
   const panelImage = getPanelImage(activePanel);
-  const panelTitle = IMAGE_PANELS[activePanel];
+  const panelTitle = PANEL_NAMES[activePanel as keyof typeof PANEL_NAMES] ?? IMAGE_PANELS[activePanel];
 
   return (
     <>
@@ -203,21 +204,21 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           </div>
         )}
         <div className="desktop-bottom-panel">
-          {activePanel === 4 ? (
+          {activePanel === PANEL.NETLIST ? (
             <NetlistPanel
               imageIdx={imgs.imageIdx}
               dataset={imgs.dataset}
               preset={pipe.preset}
               params={currentParams}
             />
-          ) : activePanel === 5 ? (
+          ) : activePanel === PANEL.SIMULATION ? (
             <SimulationPanel
               onRunSimulation={async () => {
                 const netlist = await fetchNetlistAction(imgs.imageIdx, imgs.dataset, pipe.preset, currentParams);
                 return runSimulationAction(netlist.spice_netlist);
               }}
             />
-          ) : activePanel === 6 ? (
+          ) : activePanel === PANEL.TOPOLOGY ? (
             <div className="desktop-split">
               <div className="desktop-split-image">
                 <ImagePanel
@@ -236,14 +237,14 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                 />
               </div>
             </div>
-          ) : activePanel === 7 ? (
+          ) : activePanel === PANEL.JOIN_CHECK ? (
             <JoinCheckPanel
               imageIdx={imgs.imageIdx}
               dataset={imgs.dataset}
               preset={pipe.preset}
               params={currentParams}
             />
-          ) : activePanel === 8 ? (
+          ) : activePanel === PANEL.VOLTAGE_MAP ? (
             <VoltageMapPanel
               imageIdx={imgs.imageIdx}
               dataset={imgs.dataset}
