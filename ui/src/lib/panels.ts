@@ -53,7 +53,7 @@ export const STAGE_PANELS: Record<Stage, readonly PanelIndex[]> = {
 } as const;
 
 // ── Panel → stage reverse lookup ──
-export function panelToStage(panel: PanelIndex): Stage {
+export function panelToStage(panel: number): Stage {
   if (panel <= 3) return "Detect";
   if (panel === 4 || panel === 7) return "Netlist";
   return "Simulate";
