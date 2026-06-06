@@ -9,12 +9,7 @@ from fastapi.responses import JSONResponse
 
 import wire_detection.api.deps as deps
 from wire_detection.api.models import NetlistRequest, SimulateRequest
-from wire_detection.core.netlist import (
-    build_netlist,
-    derive_pins_from_obb,
-    discover_pins,
-)
-from wire_detection.core.join_strategies import build as build_join, DEFAULT_STRATEGY
+from wire_detection.core.join_strategies import run_strategy, DEFAULT_STRATEGY
 from wire_detection.core.spice import COMPONENT_NAMES, SpiceGenerator
 from wire_detection.core.simulator import SpiceSimulator
 
@@ -46,7 +41,8 @@ def _build_netlist_data(
     image_path = str(images[img_idx])
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    components_raw = deps.registry.load_component_labels(Path(image_path)) or []
+    components_raw = deps.registry.load_component_labels(
+        Path(image_path), img_wh=(image.shape[1], image.shape[0])) or []
 
     pipeline_result = _run_preset_pipeline(
         gray, preset, params_overrides or {}, image_path=image_path
@@ -71,32 +67,13 @@ def _build_netlist_data(
             "warnings": warnings,
         }
 
-    # Step 1: Derive OBB pins for ALL components (junctions, terminals, transformer, etc.)
-    all_pins = []
-    for ci, comp in enumerate(components_raw):
-        cls_id = comp[0]
-        type_name = COMPONENT_NAMES.get(cls_id, f"cls_{cls_id}")
-        comp_pins = derive_pins_from_obb(ci, comp, type_name)
-        all_pins.extend(comp_pins)
-
-    # Step 2: Get wire-guided positions for SPICE-active components
-    clustered_pins = discover_pins(wires, components_raw)
-
-    # Step 3: Override OBB pin positions with wire-guided positions where available
-    if clustered_pins:
-        pin_overrides: dict[tuple[int, int], tuple[int, int]] = {}
-        for cp in clustered_pins:
-            pin_overrides[(cp.component_idx, cp.pin_idx)] = (cp.x, cp.y)
-        for pin in all_pins:
-            key = (pin.component_idx, pin.pin_idx)
-            if key in pin_overrides:
-                pin.x, pin.y = pin_overrides[key]
-
-    # Step 4: Build netlist with ALL pins, using the default join strategy
-    # (the endpoint-graph join — see core/join_graph.py / docs/join-verification.md).
-    # This is the SAME join the Join Check tab shows for DEFAULT_STRATEGY, so the
-    # netlist, topology graph and SPICE all reflect the improved connectivity.
-    netlist = build_join(DEFAULT_STRATEGY, wires, components_raw, all_pins)
+    # Build the netlist with the default join strategy (the endpoint-graph join —
+    # see core/join_graph.py / docs/join-verification.md). run_strategy builds the
+    # pins (derive_pins_from_obb for all components + discover_pins overrides, or
+    # junction-aware pins) and applies wire extension EXACTLY as the Join Check /
+    # Voltage Map routes do — so the netlist, topology graph and SPICE match those
+    # views for ANY DEFAULT_STRATEGY, not only standard-pin ones.
+    all_pins, netlist = run_strategy(DEFAULT_STRATEGY, wires, components_raw)
     spice_text = gen.generate(components_raw, netlist)
 
     # Step 5: Build response — one entry per component with node assignments

@@ -94,7 +94,8 @@ class TestSpiceGenerator:
         gen = SpiceGenerator()
         result = gen.generate(components, netlist)
         assert "D1" in result
-        assert "D_default" in result
+        # diodes are emitted with a real ngspice model (DMOD), not the placeholder value
+        assert "DMOD" in result
 
     def test_voltage_source(self):
         pins = [
@@ -125,7 +126,10 @@ class TestSpiceGenerator:
         netlist = build_netlist(wires, components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
         result = gen.generate(components, netlist)
-        lines = [l for l in result.split("\n") if l and not l.startswith("*") and not l.startswith(".")]
+        # exclude voltage sources: their tail is `DC <value>` (two tokens), which
+        # breaks the "middle tokens are all nodes" positional assumption used here.
+        lines = [l for l in result.split("\n")
+                 if l and not l.startswith(("*", ".", "V"))]
         for line in lines:
             parts = line.split()
             for part in parts[1:-1]:
