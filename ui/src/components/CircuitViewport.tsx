@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
 import JoinCheckPanel from "./JoinCheckPanel";
@@ -44,50 +44,85 @@ export default function CircuitViewport({
   const [overlayOpacity, setOverlayOpacity] = useState(70);
   const [editingComponent, setEditingComponent] = useState<{ name: string; type: string; x: number; y: number } | null>(null);
 
-  // Zoom/pan state
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  // Excalidraw-style view transform (view tabs only — the Join view owns its
+  // own panel). Two-finger scroll pans; ctrl/cmd or trackpad pinch zooms toward
+  // the cursor; click-drag grabs/pans; double-click resets.
+  const [view, setView] = useState({ scale: 1, x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
-  const panStartRef = useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 });
+  const panStartRef = useRef({ x: 0, y: 0, vx: 0, vy: 0 });
+  const viewRef = useRef(view);
+  viewRef.current = view;
 
   const viewportRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const imgElRef = useRef<HTMLImageElement | null>(null);
   // w/h = rendered (CSS) size, nw/nh = natural (original) image size. Component
   // bbox coords are in NATURAL pixels, so labels must be scaled by w/nw, h/nh —
   // otherwise they drift off the components whenever the image is shown scaled down.
   const [imgSize, setImgSize] = useState({ w: 0, h: 0, nw: 0, nh: 0 });
 
+  const clampScale = (s: number) => Math.max(0.2, Math.min(8, s));
+
   const handleOverlayChange = (overlay: string) => {
     setActiveOverlay(overlay);
     onActiveOverlayChange?.(overlay);
   };
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
+  // Bound as a NON-passive native listener so preventDefault actually stops the
+  // page from scrolling (pan) or the browser from zooming (ctrl/pinch).
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setScale(prev => Math.max(0.5, Math.min(5, prev * delta)));
+    if (e.ctrlKey || e.metaKey) {
+      const rect = wrapperRef.current?.getBoundingClientRect();
+      const dz = Math.max(-25, Math.min(25, e.deltaY));
+      const factor = Math.exp(-dz * 0.01);
+      setView((v) => {
+        const scale = clampScale(v.scale * factor);
+        const k = scale / v.scale;
+        if (!rect) return { ...v, scale };
+        const dx = e.clientX - rect.left;
+        const dy = e.clientY - rect.top;
+        return { scale, x: v.x - dx * (k - 1), y: v.y - dy * (k - 1) };
+      });
+    } else {
+      setView((v) => ({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY }));
+    }
   }, []);
 
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [handleWheel, activeOverlay]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (scale <= 1) return;
+    // grab anywhere to pan; a click with no drag still reaches component labels
     setIsPanning(true);
-    panStartRef.current = { x: e.clientX, y: e.clientY, offsetX: offset.x, offsetY: offset.y };
-  }, [scale, offset]);
+    panStartRef.current = { x: e.clientX, y: e.clientY, vx: viewRef.current.x, vy: viewRef.current.y };
+  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isPanning) return;
     const dx = e.clientX - panStartRef.current.x;
     const dy = e.clientY - panStartRef.current.y;
-    setOffset({ x: panStartRef.current.offsetX + dx, y: panStartRef.current.offsetY + dy });
+    setView((v) => ({ ...v, x: panStartRef.current.vx + dx, y: panStartRef.current.vy + dy }));
   }, [isPanning]);
 
-  const handleMouseUp = useCallback(() => {
-    setIsPanning(false);
-  }, []);
+  const handleMouseUp = useCallback(() => setIsPanning(false), []);
+  const handleDoubleClick = useCallback(() => setView({ scale: 1, x: 0, y: 0 }), []);
 
-  const handleDoubleClick = useCallback(() => {
-    setScale(1);
-    setOffset({ x: 0, y: 0 });
+  const zoomToCenter = useCallback((factor: number) => {
+    const vp = viewportRef.current?.getBoundingClientRect();
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    setView((v) => {
+      const scale = clampScale(v.scale * factor);
+      const k = scale / v.scale;
+      if (!vp || !rect) return { ...v, scale };
+      const dx = vp.left + vp.width / 2 - rect.left;
+      const dy = vp.top + vp.height / 2 - rect.top;
+      return { scale, x: v.x - dx * (k - 1), y: v.y - dy * (k - 1) };
+    });
   }, []);
 
   // Get overlay image based on selection
@@ -146,17 +181,16 @@ export default function CircuitViewport({
     <div
       className="circuit-viewport"
       ref={viewportRef}
-      onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onDoubleClick={handleDoubleClick}
-      style={{ cursor: scale > 1 ? (isPanning ? "grabbing" : "grab") : "default", overflow: "hidden" }}
+      style={{ cursor: isPanning ? "grabbing" : "grab", overflow: "hidden", touchAction: "none" }}
     >
       {displaySrc ? (
         <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ position: "relative", maxWidth: "100%", maxHeight: "100%", transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "0 0", transition: isPanning ? "none" : "transform 0.1s ease-out" }}>
+          <div ref={wrapperRef} style={{ position: "relative", maxWidth: "100%", maxHeight: "100%", transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`, transformOrigin: "0 0", transition: isPanning ? "none" : "transform 0.08s ease-out" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               ref={measureImg}
@@ -236,11 +270,13 @@ export default function CircuitViewport({
               </div>
             )}
           </div>
-          {scale !== 1 && (
-            <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.7)", color: "#fff", padding: "4px 8px", borderRadius: 4, fontSize: 12, fontFamily: "monospace" }}>
-              {Math.round(scale * 100)}%
-            </div>
-          )}
+          {/* Zoom controls — minus / reset% / plus. stopPropagation so the
+              buttons don't start a pan or trigger the reset-on-doubleclick. */}
+          <div className="zoom-ctl" onMouseDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+            <button className="zoom-ctl-btn" title="Zoom out" onClick={() => zoomToCenter(1 / 1.2)}>−</button>
+            <button className="zoom-ctl-pct" title="Reset view (or double-click the image)" onClick={() => setView({ scale: 1, x: 0, y: 0 })}>{Math.round(view.scale * 100)}%</button>
+            <button className="zoom-ctl-btn" title="Zoom in" onClick={() => zoomToCenter(1.2)}>+</button>
+          </div>
         </div>
       ) : (
         <div className="viewport-empty">No image loaded</div>
