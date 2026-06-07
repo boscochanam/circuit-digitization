@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { HomeInitialData } from "@/lib/types";
 import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
@@ -33,30 +33,48 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     setComponentValues((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Convert name-based componentValues to index-based for backend
+  // Frontend stores {"R14": "10k"} but backend expects {"10": "10k"} (component at index 10)
+  const getIndexBasedValues = useCallback((nameValues: Record<string, string>): Record<string, string> => {
+    if (!pipe.result?.components || Object.keys(nameValues).length === 0) return {};
+    const indexValues: Record<string, string> = {};
+    const components = pipe.result.components;
+    for (const [name, value] of Object.entries(nameValues)) {
+      const idx = components.findIndex((c: any) => c.name === name);
+      if (idx >= 0) {
+        indexValues[String(idx)] = value;
+      }
+    }
+    return indexValues;
+  }, [pipe.result?.components]);
+
   // Voltage overlay state
   const [simOverlayUrl, setSimOverlayUrl] = useState<string | null>(null);
   const [voltageActive, setVoltageActive] = useState(false);
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
+  const indexBasedValues = useMemo(() => getIndexBasedValues(componentValues), [componentValues, getIndexBasedValues]);
+
   const sim = useSimulation(
     imgs.imageIdx,
     imgs.dataset,
     pipe.preset,
     currentParams,
-    componentValues,
+    indexBasedValues,
     voltageActive,
   );
 
   const handleRunSimOverlay = useCallback(async () => {
     try {
+      const indexValues = getIndexBasedValues(componentValues);
       const result = await fetchSimOverlayAction(
         imgs.imageIdx,
         imgs.dataset,
         pipe.preset,
         currentParams,
         "graph_rescue",
-        componentValues,
+        indexValues,
       );
       if (result.overlay) {
         setSimOverlayUrl(`data:image/png;base64,${result.overlay}`);
@@ -64,7 +82,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     } catch (e) {
       console.error("Sim overlay failed:", e);
     }
-  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues]);
+  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, getIndexBasedValues]);
 
   useEffect(() => {
     if (voltageActive) {
