@@ -50,10 +50,39 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
   const componentList = (pipe.result?.components ?? []).map((c) => ({
     name: c.name,
-    type: String.fromCharCode(65 + c.class_id) || "?",
+    type: String.fromCharCode(65 + c.class_id) ?? "?",
     value: componentValues[c.name] ?? "",
     position: c.bbox ? { x: (c.bbox[0] + c.bbox[2]) / 2, y: (c.bbox[1] + c.bbox[3]) / 2 } : undefined,
   }));
+
+  // Simulation overlay
+  const simOverlayUrl = sim.nodeVoltages.length > 0
+    ? `/api/sim_overlay` // Would need to generate this - for now use null
+    : null;
+
+  // OCR state
+  const [ocrResults, setOcrResults] = useState<any>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+
+  const handleRunOCR = async () => {
+    setOcrLoading(true);
+    try {
+      const res = await fetch("/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_idx: imgs.imageIdx,
+          dataset: imgs.dataset,
+        }),
+      });
+      const data = await res.json();
+      setOcrResults(data);
+    } catch (e) {
+      console.error("OCR failed:", e);
+    } finally {
+      setOcrLoading(false);
+    }
+  };
 
   const sourceImageUrl = imgs.imageList.length > 0
     ? `/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}`
@@ -99,10 +128,14 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         <CircuitViewport
           sourceImageUrl={sourceImageUrl}
           pipelineResult={pipe.result}
+          simOverlayUrl={null}
+          ocrResults={ocrResults}
           imageIdx={imgs.imageIdx}
           dataset={imgs.dataset}
           preset={pipe.preset}
           params={currentParams}
+          onRunOCR={handleRunOCR}
+          ocrLoading={ocrLoading}
         />
       </div>
 
