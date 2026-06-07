@@ -56,6 +56,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         pipe.preset,
         currentParams,
         "graph_rescue",
+        componentValues,
       );
       if (result.overlay) {
         setSimOverlayUrl(`data:image/png;base64,${result.overlay}`);
@@ -63,7 +64,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     } catch (e) {
       console.error("Sim overlay failed:", e);
     }
-  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams]);
+  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues]);
 
   useEffect(() => {
     if (voltageActive) {
