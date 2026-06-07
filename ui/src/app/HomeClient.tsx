@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { HomeInitialData } from "@/lib/types";
 import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
+import { fetchSimOverlayAction } from "@/app/actions";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
 import RawTab from "@/components/RawTab";
@@ -30,6 +31,10 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     setComponentValues((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Voltage overlay state
+  const [simOverlayUrl, setSimOverlayUrl] = useState<string | null>(null);
+  const [voltageActive, setVoltageActive] = useState(false);
+
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
   const sim = useSimulation(
@@ -38,8 +43,33 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     pipe.preset,
     currentParams,
     componentValues,
-    false,
+    voltageActive,
   );
+
+  const handleRunSimOverlay = useCallback(async () => {
+    try {
+      const result = await fetchSimOverlayAction(
+        imgs.imageIdx,
+        imgs.dataset,
+        pipe.preset,
+        currentParams,
+        "graph_rescue",
+      );
+      if (result.overlay) {
+        setSimOverlayUrl(`data:image/png;base64,${result.overlay}`);
+      }
+    } catch (e) {
+      console.error("Sim overlay failed:", e);
+    }
+  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams]);
+
+  useEffect(() => {
+    if (voltageActive) {
+      handleRunSimOverlay();
+    } else {
+      setSimOverlayUrl(null);
+    }
+  }, [voltageActive, handleRunSimOverlay]);
 
   const { netlist: netlistData, loading: netlistLoading, error: netlistError } = useNetlist(
     imgs.imageIdx,
@@ -55,12 +85,10 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     position: c.bbox ? { x: (c.bbox[0] + c.bbox[2]) / 2, y: (c.bbox[1] + c.bbox[3]) / 2 } : undefined,
   }));
 
-  // Simulation overlay
-  const simOverlayUrl = sim.nodeVoltages.length > 0
-    ? `/api/sim_overlay` // Would need to generate this - for now use null
-    : null;
+  const handleOverlayChange = (overlay: string) => {
+    setVoltageActive(overlay === "voltage");
+  };
 
-  // OCR state
   const [ocrResults, setOcrResults] = useState<any>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
 
@@ -128,7 +156,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         <CircuitViewport
           sourceImageUrl={sourceImageUrl}
           pipelineResult={pipe.result}
-          simOverlayUrl={null}
+          simOverlayUrl={simOverlayUrl}
           ocrResults={ocrResults}
           imageIdx={imgs.imageIdx}
           dataset={imgs.dataset}
@@ -136,6 +164,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           params={currentParams}
           onRunOCR={handleRunOCR}
           ocrLoading={ocrLoading}
+          onActiveOverlayChange={handleOverlayChange}
         />
       </div>
 
