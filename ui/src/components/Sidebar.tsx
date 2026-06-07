@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { PresetMap } from "@/lib/types";
-import type { ComponentEntry } from "@/stores/appStore";
+import type { ComponentEntry } from "@/lib/types";
 import { ParamGroup, ParamSlider } from "@/components/ui-widgets";
 
 interface SidebarProps {

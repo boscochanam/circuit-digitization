@@ -16,7 +16,7 @@ import Sidebar from "@/components/Sidebar";
 import CircuitViewport from "@/components/CircuitViewport";
 import BottomPanel from "@/components/BottomPanel";
 import ImageGrid from "@/components/ImageGrid";
-import type { BottomPanelTab } from "@/stores/appStore";
+import type { BottomPanelTab } from "@/lib/types";
 
 export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const imgs = useImages(initial);
