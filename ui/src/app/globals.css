@@ -221,8 +221,8 @@ html, body { height: 100%; overflow: hidden; }
    column (own scroll, no centering flex). */
 .join-view-host { flex: 1; min-height: 0; overflow: auto; background: var(--grey-light); }
 
-/* View bar (OverlayControls). In global CSS (not styled-jsx) so it's styled on
-   first paint — styled-jsx injects after hydration, which flashed the view bar
+/* View bar (OverlayControls). In global CSS, not styled-jsx, so it is styled on
+   first paint. styled-jsx injects after hydration, which flashed the view bar
    as unstyled plain text on every refresh. */
 .view-bar {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
