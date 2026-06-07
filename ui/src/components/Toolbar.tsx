@@ -12,6 +12,8 @@ interface ToolbarProps {
   onDatasetChange: (ds: string) => void;
   onPresetChange: (preset: string) => void;
   presets: PresetMap;
+  showGrid: boolean;
+  onToggleGrid: () => void;
 }
 
 const DATASETS = ["gt_labels", "hdc", "synthetic"] as const;
@@ -31,6 +33,8 @@ export default function Toolbar({
   onDatasetChange,
   onPresetChange,
   presets,
+  showGrid,
+  onToggleGrid,
 }: ToolbarProps) {
   return (
     <header className="toolbar-root">
@@ -55,6 +59,15 @@ export default function Toolbar({
           &#9654;
         </button>
       </div>
+
+      <button
+        className={`toolbar-nav-btn ${showGrid ? "active" : ""}`}
+        onClick={onToggleGrid}
+        aria-label="Toggle image grid"
+        title="Toggle image grid"
+      >
+        ▦
+      </button>
 
       <div className="toolbar-section">
         <label className="toolbar-label">DS</label>
