@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import ZoomableImage from "./ZoomableImage";
 import OverlayControls from "./OverlayControls";
+import ComponentPopover from "./ComponentPopover";
 
 interface CircuitViewportProps {
   sourceImageUrl?: string;
@@ -16,6 +17,8 @@ interface CircuitViewportProps {
   onRunOCR?: () => void;
   ocrLoading?: boolean;
   onActiveOverlayChange?: (overlay: string) => void;
+  componentValues?: Record<string, string>;
+  onValueChange?: (name: string, value: string) => void;
 }
 
 /**
@@ -39,9 +42,12 @@ export default function CircuitViewport({
   onRunOCR,
   ocrLoading = false,
   onActiveOverlayChange,
+  componentValues = {},
+  onValueChange,
 }: CircuitViewportProps) {
   const [activeOverlay, setActiveOverlay] = useState<string>("none");
   const [overlayOpacity, setOverlayOpacity] = useState(70);
+  const [editingComponent, setEditingComponent] = useState<{ name: string; type: string; x: number; y: number } | null>(null);
 
   const handleOverlayChange = (overlay: string) => {
     setActiveOverlay(overlay);
@@ -109,20 +115,52 @@ export default function CircuitViewport({
             const ocrVal = ocrResults?.components?.find(
               (v: any) => v.type === "text" && Math.abs(v.index - i) < 5
             );
+            const hasOcrValue = !!ocrVal?.value;
+            const hasManualValue = !!componentValues[c.name];
+            const dotColor = hasManualValue ? "var(--blue)" : hasOcrValue ? "var(--success)" : "var(--grey-mid)";
+
+            const handleClick = (e: React.MouseEvent) => {
+              e.stopPropagation();
+              setEditingComponent({ name: c.name, type: c.type, x: cx, y: cy });
+            };
+
             return (
               <div
                 key={i}
-                className="component-label"
+                className="component-label component-label-clickable"
                 style={{ left: `${cx}px`, top: `${cy}px` }}
                 title={`${c.name} (${c.type})`}
+                onClick={handleClick}
               >
+                <span className="component-status-dot" style={{ background: dotColor }} />
                 <span className="comp-name">{c.name}</span>
-                {ocrVal?.value && (
+                {hasManualValue && (
+                  <span className="comp-value">{componentValues[c.name]}</span>
+                )}
+                {!hasManualValue && hasOcrValue && (
                   <span className="comp-value">{ocrVal.value}</span>
                 )}
               </div>
             );
           })}
+
+          {/* Popover for editing component value */}
+          {editingComponent && (
+            <div
+              className="component-popover-anchor"
+              style={{ left: `${editingComponent.x}px`, top: `${editingComponent.y - 40}px` }}
+            >
+              <ComponentPopover
+                name={editingComponent.name}
+                type={editingComponent.type}
+                currentValue={componentValues[editingComponent.name] ?? ocrResults?.components?.find(
+                  (v: any) => v.type === "text" && Math.abs(v.index - components.findIndex((c: any) => c.name === editingComponent.name)) < 5
+                )?.value ?? ""}
+                onSave={(value) => onValueChange?.(editingComponent.name, value)}
+                onClose={() => setEditingComponent(null)}
+              />
+            </div>
+          )}
         </div>
       )}
 
