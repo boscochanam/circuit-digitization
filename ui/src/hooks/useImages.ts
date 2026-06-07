@@ -62,10 +62,13 @@ export function useImages(initial: { images: string[]; datasets: DatasetMap }) {
     }
   }, [viewMode]);
 
-  const handleGridScroll = useCallback(() => {
-    const el = gridScrollRef.current;
+  const handleGridScroll = useCallback((e?: { currentTarget: HTMLElement }) => {
+    // use the scroll event's element — ImageGrid owns its own scroll ref, so the
+    // module-level gridScrollRef was always null and "load more" never fired
+    // (you were stuck on the first page of thumbnails for large datasets).
+    const el = e?.currentTarget ?? gridScrollRef.current;
     if (!el) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
       setGridCount((prev) => Math.min(prev + GRID_PAGE, imageList.length));
     }
   }, [imageList.length]);

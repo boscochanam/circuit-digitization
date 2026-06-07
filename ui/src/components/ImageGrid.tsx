@@ -8,11 +8,13 @@ interface ImageGridProps {
   dataset: string;
   gridCount: number;
   onSelect: (idx: number) => void;
-  onScroll: () => void;
+  onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
+  onClose?: () => void;
 }
 
 /**
- * Thumbnail grid for image selection — shown as a modal overlay.
+ * Thumbnail picker — a centered modal overlay. Scroll loads more thumbnails
+ * (paginated), so large datasets (e.g. HDC 1680) are fully navigable.
  */
 export default function ImageGrid({
   imageList,
@@ -21,43 +23,95 @@ export default function ImageGrid({
   gridCount,
   onSelect,
   onScroll,
+  onClose,
 }: ImageGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const shown = Math.min(gridCount, imageList.length);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      const active = scrollRef.current.querySelector(".grid-thumb-active");
-      if (active) active.scrollIntoView({ block: "nearest" });
-    }
+    const active = scrollRef.current?.querySelector(".grid-thumb-active");
+    active?.scrollIntoView({ block: "nearest" });
   }, [imageIdx]);
 
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", onEsc);
+    return () => document.removeEventListener("keydown", onEsc);
+  }, [onClose]);
+
   return (
-    <div className="image-grid-scroll" ref={scrollRef} onScroll={onScroll}>
-      {imageList.slice(0, gridCount).map((name, i) => (
-        <button
-          key={name}
-          className={`grid-thumb ${i === imageIdx ? "grid-thumb-active" : ""}`}
-          onClick={() => onSelect(i)}
-        >
-          <img
-            src={`/api/thumb?idx=${i}&ds=${dataset}`}
-            alt=""
-            loading="lazy"
-          />
-          <span className="grid-thumb-label">{i + 1}</span>
-        </button>
-      ))}
+    <div className="image-grid-backdrop" onClick={onClose}>
+      <div className="image-grid-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="image-grid-header">
+          <span>{dataset} — {shown} of {imageList.length} shown</span>
+          <button className="image-grid-close" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <div className="image-grid-scroll" ref={scrollRef} onScroll={onScroll}>
+          {imageList.slice(0, gridCount).map((name, i) => (
+            <button
+              key={name + i}
+              className={`grid-thumb ${i === imageIdx ? "grid-thumb-active" : ""}`}
+              onClick={() => onSelect(i)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/api/thumb?idx=${i}&ds=${dataset}`} alt="" loading="lazy" />
+              <span className="grid-thumb-label">{i + 1}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <style jsx>{`
+        .image-grid-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.6);
+          z-index: 100;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+        }
+        .image-grid-modal {
+          background: var(--white);
+          border: 3px solid var(--black);
+          box-shadow: 6px 6px 0 var(--black);
+          width: min(1100px, 92vw);
+          height: min(80vh, 760px);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .image-grid-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 14px;
+          border-bottom: 3px solid var(--black);
+          font-family: var(--font-mono), monospace;
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .image-grid-close {
+          border: 2px solid var(--black);
+          background: var(--white);
+          font-weight: 700;
+          padding: 2px 9px;
+          cursor: pointer;
+          line-height: 1;
+        }
+        .image-grid-close:hover { background: var(--black); color: var(--white); }
         .image-grid-scroll {
+          flex: 1;
+          min-height: 0;
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-          gap: 4px;
-          padding: 8px;
-          max-height: 200px;
+          grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+          gap: 6px;
+          padding: 12px;
           overflow-y: auto;
           background: var(--white);
-          border-bottom: 2px solid var(--black);
         }
         .grid-thumb {
           display: flex;
@@ -69,13 +123,8 @@ export default function ImageGrid({
           background: transparent;
           cursor: pointer;
         }
-        .grid-thumb:hover {
-          border-color: var(--grey-mid);
-        }
-        .grid-thumb-active {
-          border-color: var(--black);
-          background: var(--grey-light);
-        }
+        .grid-thumb:hover { border-color: var(--grey-mid); }
+        .grid-thumb-active { border-color: var(--blue); background: var(--grey-light); }
         .grid-thumb img {
           width: 100%;
           aspect-ratio: 1;

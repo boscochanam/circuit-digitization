@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { HomeInitialData } from "@/lib/types";
 import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
@@ -29,24 +29,20 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const [componentValues, setComponentValues] = useState<Record<string, string>>({});
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
 
+  // The main views (Voltage map + netlist) use the single best join strategy.
+  // Lower-level strategy inspection/comparison lives in its own "Join check"
+  // view (View bar), which sandboxes any strategy without touching these.
+  const joinStrategy = "graph_rescue";
+
   const handleValueChange = (name: string, value: string) => {
     setComponentValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Convert name-based componentValues to index-based for backend
-  // Frontend stores {"R14": "10k"} but backend expects {"10": "10k"} (component at index 10)
-  const getIndexBasedValues = useCallback((nameValues: Record<string, string>): Record<string, string> => {
-    if (!pipe.result?.components || Object.keys(nameValues).length === 0) return {};
-    const indexValues: Record<string, string> = {};
-    const components = pipe.result.components;
-    for (const [name, value] of Object.entries(nameValues)) {
-      const idx = components.findIndex((c: any) => c.name === name);
-      if (idx >= 0) {
-        indexValues[String(idx)] = value;
-      }
-    }
-    return indexValues;
-  }, [pipe.result?.components]);
+  // componentValues is keyed by the component name (e.g. "R107"), which is
+  // exactly the SPICE device name the backend matches overrides against
+  // (spice.py emits `{prefix}{index+1}` and keys value_overrides by that name).
+  // So values are sent through as-is — the old name→index conversion sent array
+  // indices ("106") that never matched "R107", silently dropping every edit.
 
   // Voltage overlay state
   const [simOverlayUrl, setSimOverlayUrl] = useState<string | null>(null);
@@ -54,27 +50,25 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
-  const indexBasedValues = useMemo(() => getIndexBasedValues(componentValues), [componentValues, getIndexBasedValues]);
-
   const sim = useSimulation(
     imgs.imageIdx,
     imgs.dataset,
     pipe.preset,
     currentParams,
-    indexBasedValues,
+    componentValues,
     voltageActive,
+    joinStrategy,
   );
 
   const handleRunSimOverlay = useCallback(async () => {
     try {
-      const indexValues = getIndexBasedValues(componentValues);
       const result = await fetchSimOverlayAction(
         imgs.imageIdx,
         imgs.dataset,
         pipe.preset,
         currentParams,
-        "graph_rescue",
-        indexValues,
+        joinStrategy,
+        componentValues,
       );
       if (result.overlay) {
         setSimOverlayUrl(`data:image/png;base64,${result.overlay}`);
@@ -82,7 +76,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     } catch (e) {
       console.error("Sim overlay failed:", e);
     }
-  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, getIndexBasedValues]);
+  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, joinStrategy]);
 
   useEffect(() => {
     if (voltageActive) {
@@ -97,6 +91,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     imgs.dataset,
     pipe.preset,
     currentParams as Record<string, number>,
+    joinStrategy,
   );
 
   const componentList = (pipe.result?.components ?? []).map((c) => ({
@@ -112,9 +107,18 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
   const [ocrResults, setOcrResults] = useState<any>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
+  // Surface OCR outcome instead of failing silently (no API key / no labels / etc.)
+  const [ocrStatus, setOcrStatus] = useState<{ kind: "success" | "error" | "info"; msg: string } | null>(null);
+
+  useEffect(() => {
+    if (!ocrStatus) return;
+    const t = setTimeout(() => setOcrStatus(null), 7000);
+    return () => clearTimeout(t);
+  }, [ocrStatus]);
 
   const handleRunOCR = async () => {
     setOcrLoading(true);
+    setOcrStatus(null);
     try {
       const res = await fetch("/api/ocr", {
         method: "POST",
@@ -127,6 +131,16 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
       const data = await res.json();
       setOcrResults(data);
 
+      if (data?.error) {
+        // Don't swallow it — tell the user the actual reason and what to do.
+        const msg = /OPENROUTER_API_KEY/i.test(data.error)
+          ? "OCR needs an OPENROUTER_API_KEY set on the backend to read values."
+          : data.error;
+        setOcrStatus({ kind: "error", msg });
+        return;
+      }
+
+      let filled = 0;
       if (data?.components && pipe.result?.components) {
         const newValues: Record<string, string> = {};
         for (const ocrComp of data.components) {
@@ -142,12 +156,19 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
             }
           }
         }
-        if (Object.keys(newValues).length > 0) {
+        filled = Object.keys(newValues).length;
+        if (filled > 0) {
           setComponentValues((prev) => ({ ...prev, ...newValues }));
         }
       }
+      setOcrStatus(
+        filled > 0
+          ? { kind: "success", msg: `Read ${filled} value${filled === 1 ? "" : "s"} from the schematic — see the Values tab.` }
+          : { kind: "info", msg: "OCR ran, but found no printed values to fill." },
+      );
     } catch (e) {
       console.error("OCR failed:", e);
+      setOcrStatus({ kind: "error", msg: "OCR request failed — is the backend running?" });
     } finally {
       setOcrLoading(false);
     }
@@ -163,6 +184,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         <h1 className="header-title">WIRE DETECTION TUNER</h1>
         <span className="header-badge">v0.833</span>
       </header>
+
+      {ocrStatus && (
+        <div className={`ocr-toast ocr-toast-${ocrStatus.kind}`} role="status">
+          <span className="ocr-toast-msg">{ocrStatus.msg}</span>
+          <button className="ocr-toast-x" aria-label="Dismiss" onClick={() => setOcrStatus(null)}>✕</button>
+        </div>
+      )}
 
       <Toolbar
         imageIdx={imgs.imageIdx}
@@ -186,6 +214,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           gridCount={imgs.gridCount}
           onSelect={(i) => { imgs.setImageIdx(i); setShowGrid(false); }}
           onScroll={imgs.handleGridScroll}
+          onClose={() => setShowGrid(false)}
         />
       )}
 

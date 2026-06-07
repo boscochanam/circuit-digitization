@@ -66,6 +66,32 @@ def _find_hdc_label(image_name: str, hdc_base: Path) -> Path | None:
     return None
 
 
+def _find_label_for_image(img_path: Path) -> Path | None:
+    """Locate the Roboflow YOLO-OBB label .txt for an image, machine-independently.
+
+    Roboflow exports lay images/labels out as ``{base}/{split}/images/{name}.jpg``
+    and ``{base}/{split}/labels/{name}.rf.*.txt``, so derive the labels dir from
+    the image's OWN path (…/images -> …/labels) instead of a hardcoded root.
+    Falls back to the HDC_PATH env layout for older deployments.
+    """
+    stem = img_path.stem
+    parent = img_path.parent
+    label_dirs = []
+    if parent.name.lower() == "images":
+        label_dirs.append(parent.parent / "labels")
+    label_dirs.append(parent / "labels")
+    label_dirs.append(parent)  # labels sitting alongside the images
+    for label_dir in label_dirs:
+        for pattern in (f"{stem}.rf.*.txt", f"{stem}*.rf.*.txt", f"{stem}*.txt", f"{stem}.txt"):
+            matches = sorted(label_dir.glob(pattern))
+            if matches:
+                return matches[0]
+    hdc_base = os.environ.get("HDC_PATH")  # legacy explicit root
+    if hdc_base:
+        return _find_hdc_label(stem, Path(hdc_base))
+    return None
+
+
 def _parse_components(text: str, w: int, h: int) -> list:
     comps = []
     for line in text.splitlines():
@@ -144,14 +170,18 @@ def run_ocr(req: OCRRequest):
         return {"error": "could not read image"}
     h, w = gray.shape
 
-    # Find HDC labels
+    # Find the component labels for this image. Derives the labels dir from the
+    # image's own path (machine-independent); see _find_label_for_image.
     image_name = img_path.stem
-    hdc_base = Path(os.environ.get("HDC_PATH", "/home/claw/circuit-digitization/roboflow_test2"))
-    hdc_path = _find_hdc_label(image_name, hdc_base)
-    if hdc_path is None:
-        return {"error": "no component labels found", "components": []}
+    label_path = _find_label_for_image(img_path)
+    if label_path is None:
+        return {
+            "error": f"no component labels (.txt) found for '{image_name}' — "
+                     "OCR needs Roboflow OBB label files in a sibling labels/ dir",
+            "components": [],
+        }
 
-    components = _parse_components(hdc_path.read_text(encoding="utf-8"), w, h)
+    components = _parse_components(label_path.read_text(encoding="utf-8"), w, h)
 
     # Collect value-type components
     api_key = os.environ.get("OPENROUTER_API_KEY", "")

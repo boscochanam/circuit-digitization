@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
+import JoinCheckPanel from "./JoinCheckPanel";
 
 interface CircuitViewportProps {
   sourceImageUrl?: string;
@@ -51,7 +52,10 @@ export default function CircuitViewport({
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const imgElRef = useRef<HTMLImageElement | null>(null);
-  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+  // w/h = rendered (CSS) size, nw/nh = natural (original) image size. Component
+  // bbox coords are in NATURAL pixels, so labels must be scaled by w/nw, h/nh —
+  // otherwise they drift off the components whenever the image is shown scaled down.
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0, nw: 0, nh: 0 });
 
   const handleOverlayChange = (overlay: string) => {
     setActiveOverlay(overlay);
@@ -108,19 +112,39 @@ export default function CircuitViewport({
 
   const components = pipelineResult?.components ?? [];
 
+  // natural→rendered scale so component labels land ON the components
+  const sx = imgSize.nw ? imgSize.w / imgSize.nw : 1;
+  const sy = imgSize.nh ? imgSize.h / imgSize.nh : 1;
+
   /** Only R, C, L, V have SPICE models — only these are value-editable */
   const isEditable = (name: string) => /^[RCLV]/.test(name);
 
-  const onImgLoad = useCallback((img: HTMLImageElement | null) => {
+  const measureImg = useCallback((img: HTMLImageElement | null) => {
     imgElRef.current = img;
     if (img) {
-      setImgSize({ w: img.offsetWidth, h: img.offsetHeight });
+      setImgSize({ w: img.offsetWidth, h: img.offsetHeight, nw: img.naturalWidth, nh: img.naturalHeight });
     }
   }, []);
 
   return (
-    <div 
-      className="circuit-viewport" 
+    <div className="viewport-col">
+      <OverlayControls
+        activeOverlay={activeOverlay}
+        onOverlayChange={handleOverlayChange}
+        overlayOpacity={overlayOpacity}
+        onOpacityChange={setOverlayOpacity}
+        hasPipelineResult={!!pipelineResult}
+        hasSimOverlay={!!simOverlayUrl}
+        onRunOCR={onRunOCR}
+        ocrLoading={ocrLoading}
+      />
+    {activeOverlay === "join" ? (
+      <div className="join-view-host">
+        <JoinCheckPanel imageIdx={imageIdx} dataset={dataset} preset={preset} params={params} />
+      </div>
+    ) : (
+    <div
+      className="circuit-viewport"
       ref={viewportRef}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
@@ -135,7 +159,8 @@ export default function CircuitViewport({
           <div style={{ position: "relative", maxWidth: "100%", maxHeight: "100%", transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "0 0", transition: isPanning ? "none" : "transform 0.1s ease-out" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              ref={onImgLoad}
+              ref={measureImg}
+              onLoad={(e) => measureImg(e.currentTarget)}
               src={displaySrc}
               alt={overlayUrl ? activeOverlay : "Source"}
               style={{
@@ -152,8 +177,8 @@ export default function CircuitViewport({
                 {components.slice(0, 50).map((c: any, i: number) => {
                   if (!c.bbox) return null;
                   const [x1, y1, x2, y2] = c.bbox;
-                  const cx = (x1 + x2) / 2;
-                  const cy = (y1 + y2) / 2;
+                  const cx = ((x1 + x2) / 2) * sx;
+                  const cy = ((y1 + y2) / 2) * sy;
                   const ocrVal = ocrResults?.components?.find(
                     (v: any) => v.type === "text" && Math.abs(v.index - i) < 5
                   );
@@ -164,7 +189,9 @@ export default function CircuitViewport({
                   const editable = isEditable(c.name);
                   const handleClick = (e: React.MouseEvent) => {
                     e.stopPropagation();
-                    setEditingComponent({ name: c.name, type: c.type, x: cx, y: cy });
+                    // pass the SPICE prefix letter (R/C/L/V) as type so the popover's
+                    // placeholder/label resolve (c.type is the long name like "capacitor-unpolarized")
+                    setEditingComponent({ name: c.name, type: c.name.charAt(0), x: cx, y: cy });
                   };
 
                   return (
@@ -219,17 +246,8 @@ export default function CircuitViewport({
         <div className="viewport-empty">No image loaded</div>
       )}
 
-      {/* OCR + Overlay controls (fixed position) */}
-      <OverlayControls
-        activeOverlay={activeOverlay}
-        onOverlayChange={handleOverlayChange}
-        overlayOpacity={overlayOpacity}
-        onOpacityChange={setOverlayOpacity}
-        hasPipelineResult={!!pipelineResult}
-        hasSimOverlay={!!simOverlayUrl}
-        onRunOCR={onRunOCR}
-        ocrLoading={ocrLoading}
-      />
+    </div>
+    )}
     </div>
   );
 }
