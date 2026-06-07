@@ -136,14 +136,154 @@ html, body { height: 100%; overflow: hidden; }
 }
 
 .sidebar-layout {
-  width: 220px;
-  min-width: 220px;
+  width: 260px;
+  min-width: 260px;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--white);
   border-right: 3px solid var(--black);
 }
+
+/* Tabbed sidebar: one concern at a time, each gets the full height */
+.sidebar-tabs {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 3px solid var(--black);
+}
+.sidebar-tab {
+  flex: 1;
+  padding: 9px 4px;
+  background: var(--white);
+  color: var(--grey-dark);
+  border: none;
+  border-right: 1px solid var(--grey-mid);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+.sidebar-tab:last-child { border-right: none; }
+.sidebar-tab:hover:not(.sidebar-tab-active) { background: var(--grey-light); }
+.sidebar-tab-active { background: var(--black); color: var(--white); }
+.sidebar-tab-body { flex: 1; overflow-y: auto; min-height: 0; }
+.sidebar-select {
+  width: 100%;
+  padding: 7px 8px;
+  background: var(--white);
+  color: var(--black);
+  border: 2px solid var(--black);
+  border-radius: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+}
+.sidebar-help { font-size: 11px; line-height: 1.4; color: var(--grey-dark); margin-top: 8px; }
+.sidebar-empty { font-size: 12px; color: var(--grey-dark); padding: 8px 0; }
+
+/* Value editor (Values tab) — editable R/C/L/V rows: dot + name + value box.
+   One consistent row shape; the value box matches the param numeric box. */
+.value-editor { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.value-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 6px; border: 2px solid transparent; cursor: pointer;
+}
+.value-row:hover { background: var(--grey-light); }
+.value-row-active { border-color: var(--blue); background: var(--grey-light); }
+.value-row-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.value-row-name {
+  font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700;
+  min-width: 42px;
+}
+.value-row-input {
+  margin-left: auto; width: 78px; text-align: right;
+  font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700;
+  padding: 4px 7px; background: var(--white); color: var(--black);
+  border: 2px solid var(--black);
+}
+.value-row-input:focus { outline: none; border-color: var(--blue); }
+.value-row-input::placeholder { color: var(--grey-mid); font-weight: 400; }
+/* C/L are open/short at DC, so their value does not move the voltage map. */
+.value-row-tag {
+  font-family: var(--font-mono), monospace; font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.3px; color: var(--grey-dark);
+  border: 1px solid var(--grey-mid); padding: 1px 4px; white-space: nowrap;
+}
+
+.value-others { margin-top: 14px; }
+.value-others > summary {
+  cursor: pointer; font-size: 11px; color: var(--grey-dark);
+  text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;
+}
+.value-others-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.value-others-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono), monospace; font-size: 11px; color: var(--grey-dark);
+  padding: 2px 7px; border: 1px solid var(--grey-mid);
+}
+
+/* Join check view — hosts the dedicated JoinCheckPanel inside the viewport
+   column (own scroll, no centering flex). */
+.join-view-host { flex: 1; min-height: 0; overflow: auto; background: var(--grey-light); }
+
+/* View bar (OverlayControls). In global CSS, not styled-jsx, so it is styled on
+   first paint. styled-jsx injects after hydration, which flashed the view bar
+   as unstyled plain text on every refresh. */
+.view-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--white); border-bottom: 3px solid var(--black);
+  padding: 7px 14px; flex-shrink: 0;
+}
+.view-bar-label {
+  font-family: var(--font-mono), monospace; font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px; color: var(--grey-dark);
+}
+.view-group { display: flex; align-items: center; gap: 4px; }
+.view-sep { width: 1px; height: 18px; background: var(--grey-mid); margin: 0 6px; }
+.view-btn {
+  font-family: var(--font-mono), monospace; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.4px; padding: 6px 11px;
+  background: var(--white); color: var(--black); border: 2px solid var(--black);
+  cursor: pointer; line-height: 1;
+}
+.view-btn:hover:not(:disabled) { background: var(--grey-light); }
+.view-btn.active { background: var(--black); color: var(--white); }
+.view-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.view-opacity {
+  display: flex; align-items: center; gap: 6px; font-size: 10px;
+  font-family: var(--font-mono), monospace;
+}
+.view-opacity label { font-weight: 700; text-transform: uppercase; color: var(--grey-dark); }
+.view-opacity input { width: 90px; }
+.view-opacity span { width: 34px; text-align: right; }
+.ocr-btn {
+  margin-left: auto; font-family: var(--font-mono), monospace; font-size: 11px;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 6px 11px; background: var(--white); color: var(--black);
+  border: 2px solid var(--black); cursor: pointer;
+}
+.ocr-btn:hover:not(:disabled) { background: var(--grey-light); }
+.ocr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* OCR status toast: graceful feedback instead of a silently-failing button. */
+.ocr-toast {
+  position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+  z-index: 80; display: flex; align-items: center; gap: 12px;
+  max-width: min(620px, 92vw); padding: 10px 14px;
+  font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 600;
+  border: 3px solid var(--black); background: var(--white); color: var(--black);
+  box-shadow: 5px 5px 0 var(--black);
+}
+.ocr-toast-success { background: var(--success, #b6f7c1); }
+.ocr-toast-error { background: var(--error, #ffb3b3); }
+.ocr-toast-info { background: var(--grey-light); }
+.ocr-toast-msg { line-height: 1.4; }
+.ocr-toast-x {
+  margin-left: auto; border: 2px solid var(--black); background: var(--white);
+  font-weight: 700; padding: 1px 7px; cursor: pointer; line-height: 1;
+}
+.ocr-toast-x:hover { background: var(--black); color: var(--white); }
 
 @media (max-width: 767px) {
   .sidebar-layout {
@@ -158,6 +298,16 @@ html, body { height: 100%; overflow: hidden; }
   color: var(--grey-dark); margin-bottom: 16px;
 }
 .sidebar-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+
+/* viewport column = the View bar (top) + the image area (fills the rest) */
+.viewport-col {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
 .circuit-viewport {
   flex: 1;
@@ -229,7 +379,7 @@ html, body { height: 100%; overflow: hidden; }
 }
 
 .bottom-panel-open {
-  height: 350px;
+  height: 240px;
 }
 
 .bottom-panel-header {
@@ -276,27 +426,48 @@ html, body { height: 100%; overflow: hidden; }
 
 .preset-desc { font-family: monospace; font-size: 10px; color: var(--grey-dark); margin-top: 8px; }
 
-.param-group { margin-bottom: 16px; }
+.param-group { margin-bottom: 18px; }
 .param-group-title {
   font-size: 9px; text-transform: uppercase; letter-spacing: 3px;
-  margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--black);
+  margin-bottom: 12px; padding-bottom: 4px; border-bottom: 1px solid var(--black);
 }
 
-.param-slider { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
-.param-slider-label { font-size: 12px; font-weight: 600; flex-shrink: 0; width: 100px; }
-
-.param-slider-input {
-  flex: 1; height: 6px; background: var(--black);
-  outline: none; cursor: pointer; -webkit-appearance: none;
+/* Consistent two-line param control: label + typeable box, then a full-width
+   slim slider. Identical proportions on every row, round thumb (not a square). */
+.param-row { margin-bottom: 14px; }
+.param-row-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin-bottom: 6px;
+}
+.param-row-label { font-size: 12px; font-weight: 600; }
+.param-row-box { display: inline-flex; align-items: baseline; gap: 4px; flex-shrink: 0; }
+.param-row-num {
+  width: 58px; text-align: right;
+  font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700;
+  padding: 3px 6px; background: var(--white); color: var(--black);
+  border: 2px solid var(--black);
+}
+.param-row-num:focus { outline: none; border-color: var(--blue); }
+.param-row-unit {
+  font-family: var(--font-mono), monospace; font-size: 11px;
+  color: var(--grey-dark); min-width: 14px;
 }
 
-.param-slider-input::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 24px; height: 24px;
-  background: var(--black); border: 3px solid var(--white);
+.param-range {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; background: var(--grey-mid);
+  outline: none; cursor: pointer; margin: 0;
+}
+.param-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--black); border: 2px solid var(--white);
   box-shadow: 0 0 0 1px var(--black); cursor: pointer;
 }
-
-.param-slider-value { font-family: monospace; font-size: 13px; font-weight: 700; min-width: 50px; text-align: right; }
+.param-range::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--black); border: 2px solid var(--white); cursor: pointer;
+}
 
 .reset-btn {
   width: 100%; font-size: 11px; font-weight: 600;
