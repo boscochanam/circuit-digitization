@@ -15,6 +15,7 @@ import Toolbar from "@/components/Toolbar";
 import Sidebar from "@/components/Sidebar";
 import CircuitViewport from "@/components/CircuitViewport";
 import BottomPanel from "@/components/BottomPanel";
+import ImageGrid from "@/components/ImageGrid";
 import type { BottomPanelTab } from "@/stores/appStore";
 
 export default function HomeClient({ initial }: { initial: HomeInitialData }) {
@@ -22,6 +23,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const pipe = usePipeline(initial, imgs.imageIdx, imgs.dataset, imgs.imageCount);
 
   const [bottomPanelOpen, setBottomPanelOpen] = useState(true);
+  const [showGrid, setShowGrid] = useState(false);
   const [bottomPanelTab, setBottomPanelTab] = useState<BottomPanelTab>("netlist");
 
   const [componentValues, setComponentValues] = useState<Record<string, string>>({});
@@ -133,7 +135,20 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         onDatasetChange={(ds) => imgs.setDataset(ds as Dataset)}
         onPresetChange={pipe.setPreset}
         presets={pipe.presets}
+        showGrid={showGrid}
+        onToggleGrid={() => setShowGrid(!showGrid)}
       />
+
+      {showGrid && (
+        <ImageGrid
+          imageList={imgs.imageList}
+          imageIdx={imgs.imageIdx}
+          dataset={imgs.dataset}
+          gridCount={imgs.gridCount}
+          onSelect={(i) => { imgs.setImageIdx(i); setShowGrid(false); }}
+          onScroll={imgs.handleGridScroll}
+        />
+      )}
 
       <MetricsBar result={pipe.result} preset={pipe.preset} />
 
