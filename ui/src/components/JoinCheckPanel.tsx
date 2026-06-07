@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { fetchJoinOverlayAction, fetchJoinStrategiesAction } from "@/app/actions";
-import ZoomableImage from "./ZoomableImage";
 import type { JoinOverlayResult, JoinStrategy } from "@/lib/types";
 
 /**
@@ -204,10 +203,10 @@ export default function JoinCheckPanel({
           {error && <div className="netlist-warning">{error}</div>}
           {!error && data?.overlay && (
             // eslint-disable-next-line @next/next/no-img-element
-            <ZoomableImage
+            <img
               src={`data:image/png;base64,${data.overlay}`}
               alt="join overlay"
-              maxHeight="70vh"
+              style={{ maxWidth: "100%", maxHeight: "70vh", display: "block" }}
             />
           )}
           {!error && !loading && !data?.overlay && (
