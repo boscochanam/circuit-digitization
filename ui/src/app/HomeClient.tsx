@@ -6,8 +6,7 @@ import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
-import { fetchSimOverlayAction, fetchJoinStrategiesAction } from "@/app/actions";
-import type { JoinStrategy } from "@/lib/types";
+import { fetchSimOverlayAction } from "@/app/actions";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
 import RawTab from "@/components/RawTab";
@@ -30,14 +29,10 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const [componentValues, setComponentValues] = useState<Record<string, string>>({});
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
 
-  // Join strategy (re-added) — drives the netlist/SPICE/voltage join everywhere.
-  const [joinStrategy, setJoinStrategy] = useState<string>("graph_rescue");
-  const [joinStrategies, setJoinStrategies] = useState<JoinStrategy[]>([]);
-  useEffect(() => {
-    fetchJoinStrategiesAction()
-      .then((r) => { setJoinStrategies(r.strategies); if (r.default) setJoinStrategy(r.default); })
-      .catch(() => {});
-  }, []);
+  // The main views (Voltage map + netlist) use the single best join strategy.
+  // Lower-level strategy inspection/comparison lives in its own "Join check"
+  // view (View bar), which sandboxes any strategy without touching these.
+  const joinStrategy = "graph_rescue";
 
   const handleValueChange = (name: string, value: string) => {
     setComponentValues((prev) => ({ ...prev, [name]: value }));
@@ -217,9 +212,6 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           selectedComponent={selectedComponent}
           onComponentSelect={setSelectedComponent}
           onComponentValueChange={handleValueChange}
-          joinStrategy={joinStrategy}
-          joinStrategies={joinStrategies}
-          onJoinStrategyChange={setJoinStrategy}
         />
 
         <CircuitViewport

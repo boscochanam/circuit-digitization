@@ -38,6 +38,7 @@ export default function OverlayControls({
       ],
     },
     { label: "Simulation", items: [{ id: "voltage", label: "Voltage", disabled: !hasPipelineResult }] },
+    { label: "Analysis", items: [{ id: "join", label: "Join check", disabled: !hasPipelineResult }] },
   ];
 
   return (
@@ -60,7 +61,7 @@ export default function OverlayControls({
         </div>
       ))}
 
-      {activeOverlay !== "none" && (
+      {activeOverlay !== "none" && activeOverlay !== "join" && (
         <div className="view-opacity">
           <label>Opacity</label>
           <input
