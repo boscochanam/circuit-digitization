@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
+import JoinCheckPanel from "./JoinCheckPanel";
 
 interface CircuitViewportProps {
   sourceImageUrl?: string;
@@ -137,6 +138,11 @@ export default function CircuitViewport({
         onRunOCR={onRunOCR}
         ocrLoading={ocrLoading}
       />
+    {activeOverlay === "join" ? (
+      <div className="join-view-host">
+        <JoinCheckPanel imageIdx={imageIdx} dataset={dataset} preset={preset} params={params} />
+      </div>
+    ) : (
     <div
       className="circuit-viewport"
       ref={viewportRef}
@@ -241,6 +247,7 @@ export default function CircuitViewport({
       )}
 
     </div>
+    )}
     </div>
   );
 }
