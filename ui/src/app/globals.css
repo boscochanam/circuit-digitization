@@ -227,6 +227,24 @@ html, body { height: 100%; overflow: hidden; }
    column (own scroll, no centering flex). */
 .join-view-host { flex: 1; min-height: 0; overflow: auto; background: var(--grey-light); }
 
+/* Zoom controls overlay for the view tabs (Excalidraw-style: minus / % / plus). */
+.zoom-ctl {
+  position: absolute; bottom: 10px; left: 10px; z-index: 5;
+  display: flex; align-items: stretch;
+  border: 2px solid var(--black); background: var(--white);
+  box-shadow: 3px 3px 0 var(--black); font-family: var(--font-mono), monospace;
+}
+.zoom-ctl-btn, .zoom-ctl-pct {
+  background: var(--white); color: var(--black); border: none; cursor: pointer;
+  font-weight: 700; padding: 4px 0; line-height: 1;
+}
+.zoom-ctl-btn { width: 28px; font-size: 16px; }
+.zoom-ctl-pct {
+  min-width: 52px; font-size: 11px;
+  border-left: 1px solid var(--grey-mid); border-right: 1px solid var(--grey-mid);
+}
+.zoom-ctl-btn:hover, .zoom-ctl-pct:hover { background: var(--grey-light); }
+
 /* View bar (OverlayControls). In global CSS, not styled-jsx, so it is styled on
    first paint. styled-jsx injects after hydration, which flashed the view bar
    as unstyled plain text on every refresh. */
