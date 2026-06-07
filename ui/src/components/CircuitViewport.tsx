@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import ZoomableImage from "./ZoomableImage";
 import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
 
@@ -22,13 +21,8 @@ interface CircuitViewportProps {
 }
 
 /**
- * Main viewport — the actual image with toggleable overlays.
- * 
- * Layers (bottom to top):
- *   1. Source image (always visible)
- *   2. Pipeline overlay (threshold / detected / dilated) — semi-transparent
- *   3. Voltage/current heatmap overlay — semi-transparent
- *   4. Component labels (names + OCR values)
+ * Main viewport — renders a single image (overlay if active, else source)
+ * with component labels on top.
  */
 export default function CircuitViewport({
   sourceImageUrl,
@@ -68,15 +62,6 @@ export default function CircuitViewport({
     });
   }, []);
 
-  const handleImageLoad = useCallback((img: HTMLImageElement) => {
-    imgElRef.current = img;
-    requestAnimationFrame(() => recalcImgRect());
-  }, [recalcImgRect]);
-
-  const handleViewChange = useCallback(() => {
-    requestAnimationFrame(() => recalcImgRect());
-  }, [recalcImgRect]);
-
   useEffect(() => {
     const vp = viewportRef.current;
     if (!vp) return;
@@ -108,6 +93,8 @@ export default function CircuitViewport({
 
   const overlayUrl = getOverlayUrl(activeOverlay);
 
+  const displaySrc = overlayUrl ?? sourceImageUrl ?? null;
+
   const components = pipelineResult?.components ?? [];
 
   const imgScale = imgRect ? imgRect.width / imgRect.naturalWidth : 1;
@@ -116,23 +103,21 @@ export default function CircuitViewport({
 
   return (
     <div className="circuit-viewport" ref={viewportRef}>
-      {/* Source image (base layer) — overlay passed inside ZoomableImage */}
-      {sourceImageUrl ? (
-        <div className="viewport-base">
-          <ZoomableImage
-            src={sourceImageUrl}
-            alt="Source"
-            maxHeight="100%"
-            onImageLoad={handleImageLoad}
-            onViewChange={handleViewChange}
-            overlay={overlayUrl ? (
-              <img
-                src={overlayUrl}
-                alt={activeOverlay}
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-              />
-            ) : undefined}
-            overlayOpacity={overlayOpacity / 100}
+      {displaySrc ? (
+        <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={imgElRef}
+            src={displaySrc}
+            alt={overlayUrl ? activeOverlay : "Source"}
+            onLoad={() => requestAnimationFrame(() => recalcImgRect())}
+            style={{
+              display: "block",
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
+              opacity: overlayUrl ? overlayOpacity / 100 : 1,
+            }}
           />
         </div>
       ) : (
