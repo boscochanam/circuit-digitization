@@ -3,70 +3,16 @@ from __future__ import annotations
 
 import re
 
+from wire_detection.core.component_classes import (
+    COMPONENT_TYPES,
+    PREFIX_MAP,
+    SIMULATABLE_PREFIXES,
+)
 from wire_detection.core.netlist import Netlist
 
-
-COMPONENT_NAMES: dict[int, str] = {
-    0: "and", 1: "antenna", 2: "capacitor-adjustable", 3: "capacitor-polarized",
-    4: "capacitor-unpolarized", 5: "crossover", 6: "crystal", 7: "diac",
-    8: "diode", 9: "diode-light_emitting", 10: "diode-thyrector", 11: "diode-zener",
-    12: "fuse", 13: "gnd", 14: "inductor", 15: "inductor-ferrite",
-    16: "integrated_circuit", 17: "integrated_circuit-ne555",
-    18: "integrated_circuit-voltage_regulator", 19: "junction", 20: "lamp",
-    21: "magnetic", 22: "mechanical", 23: "microphone", 24: "motor",
-    25: "nand", 26: "not", 27: "operational_amplifier", 28: "optocoupler",
-    29: "or", 30: "potentiometer", 31: "probe", 32: "relay",
-    33: "resistor", 34: "resistor-adjustable", 35: "switch",
-    36: "thermistor", 37: "transformer", 38: "transistor",
-    39: "transistor-pnp", 40: "triac", 41: "varistor",
-    42: "voltage_source", 43: "wire", 44: "terminal",
-}
-
-PREFIX_MAP: dict[str, str] = {
-    "resistor": "R",
-    "resistor-adjustable": "R",
-    "capacitor-unpolarized": "C",
-    "capacitor-polarized": "C",
-    "capacitor-adjustable": "C",
-    "inductor": "L",
-    "inductor-ferrite": "L",
-    "diode": "D",
-    "diode-zener": "D",
-    "diode-light_emitting": "D",
-    "diode-thyrector": "D",
-    "diac": "D",
-    "voltage_source": "V",
-    "transistor": "Q",
-    "transistor-pnp": "Q",
-    "integrated_circuit": "U",
-    "integrated_circuit-ne555": "U",
-    "integrated_circuit-voltage_regulator": "U",
-    "operational_amplifier": "U",
-    "and": "U",
-    "nand": "U",
-    "or": "U",
-    "not": "U",
-    "fuse": "F",
-    "lamp": "L",
-    "switch": "S",
-    "relay": "S",
-    "motor": "M",
-    "crystal": "X",
-    "microphone": "U",
-    "optocoupler": "U",
-    "triac": "T",
-    "thermistor": "R",
-    "varistor": "R",
-    "potentiometer": "R",
-    "transformer": "L",
-    "crossover": "X",
-    "antenna": "E",
-    "magnetic": "L",
-    "mechanical": "M",
-    "junction": "J",
-    "terminal": "T",
-    "probe": "P",
-}
+# Backward-compatible alias so existing ``from spice import COMPONENT_NAMES``
+# keeps working.  New code should import COMPONENT_TYPES directly.
+COMPONENT_NAMES = COMPONENT_TYPES
 
 DEFAULT_VALUES: dict[str, str] = {
     "resistor": "1000",
@@ -78,10 +24,12 @@ DEFAULT_VALUES: dict[str, str] = {
     "inductor-ferrite": "1e-3",
     "diode": "D_default",
     "diode-zener": "D_default",
-    "diode-light_emitting": "D_default",
+    "diode-LED": "D_default",
     "diode-thyrector": "D_default",
     "diac": "D_default",
-    "voltage_source": "DC 5",
+    "voltage-DC": "DC 5",
+    "voltage-AC": "AC 5",
+    "voltage-battery": "DC 5",
     "fuse": "1e-3",
     "lamp": "100",
     "crystal": "1e-6",
@@ -94,16 +42,15 @@ DEFAULT_VALUES: dict[str, str] = {
     "mechanical": "1",
     "microphone": "1",
     "transformer": "1",
-    "potentiometer": "1000",
-    "thermistor": "1000",
     "varistor": "1000",
     "crossover": "1",
-    "transistor": "100",
-    "transistor-pnp": "100",
-    "integrated_circuit": "1",
-    "integrated_circuit-ne555": "1",
-    "integrated_circuit-voltage_regulator": "1",
-    "operational_amplifier": "1",
+    "transistor-BJT": "100",
+    "transistor-FET": "100",
+    "IC": "1",
+    "IC-NE555": "1",
+    "IC-voltage-reg": "1",
+    "opamp": "1",
+    "opamp-schmitt": "1",
     "and": "1",
     "nand": "1",
     "or": "1",
@@ -233,38 +180,38 @@ class SpiceGenerator:
                 if a == k:  # self-loop short from over-merge — skip
                     skipped[type_name] = skipped.get(type_name, 0) + 1
                     continue
-                model = "LEDMOD" if type_name == "diode-light_emitting" else "DMOD"
+                model = "LEDMOD" if type_name == "diode-LED" else "DMOD"
                 device_lines.append(f"D{i + 1} {a} {k} {model}")
                 model_lines.add(".model LEDMOD D(Is=1e-14 N=1.5)" if model == "LEDMOD"
                                 else ".model DMOD D(Is=1e-14 N=1)")
-            elif type_name in ("transistor", "transistor-pnp"):
+            elif type_name in ("transistor-BJT", "transistor-FET"):
                 c = pin_nodes[0]
                 b = pin_nodes[1] if len(pin_nodes) > 1 else "0"
                 e = pin_nodes[2] if len(pin_nodes) > 2 else "0"
                 if c == b == e:
                     skipped[type_name] = skipped.get(type_name, 0) + 1
                     continue
-                mdl = "QPNP" if type_name == "transistor-pnp" else "QNPN"
+                mdl = "QPNP" if type_name == "transistor-FET" else "QNPN"
                 device_lines.append(f"Q{i + 1} {c} {b} {e} {mdl}")
                 model_lines.add(".model QPNP PNP(Is=1e-14 Bf=100 Vaf=50)" if mdl == "QPNP"
                                 else ".model QNPN NPN(Is=1e-14 Bf=100 Vaf=50)")
-            elif type_name == "voltage_source":
+            elif type_name in ("voltage-DC", "voltage-AC", "voltage-battery"):
                 p = pin_nodes[0]
                 n = pin_nodes[1] if len(pin_nodes) > 1 else "0"
                 if p == n:
                     skipped[type_name] = skipped.get(type_name, 0) + 1
                     continue
                 spice_name = f"V{i + 1}"
-                if value_overrides and str(i) in value_overrides:
-                    v_val = _parse_value(value_overrides[str(i)])
+                if value_overrides and spice_name in value_overrides:
+                    v_val = _parse_value(value_overrides[spice_name])
                 else:
                     v_val = "5"
                 device_lines.append(f"{spice_name} {p} {n} DC {v_val}")
                 has_vsrc = True
             elif prefix in ("R", "C", "L"):
                 spice_name = f"{prefix}{i + 1}"
-                if value_overrides and str(i) in value_overrides:
-                    value = _parse_value(value_overrides[str(i)])
+                if value_overrides and spice_name in value_overrides:
+                    value = _parse_value(value_overrides[spice_name])
                 else:
                     value = self._get_default_value(type_name)
                 if len(pin_nodes) >= 2 and pin_nodes[0] != pin_nodes[1]:
