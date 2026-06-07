@@ -98,6 +98,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
         <CircuitViewport
           sourceImageUrl={sourceImageUrl}
+          pipelineResult={pipe.result}
           imageIdx={imgs.imageIdx}
           dataset={imgs.dataset}
           preset={pipe.preset}
