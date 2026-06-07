@@ -145,17 +145,44 @@ def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, i
 
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    components = []
+    # Component class names (from Roboflow data.yaml)
+    COMPONENT_TYPES = {
+        0: "and", 1: "antenna", 2: "capacitor-adjustable", 3: "capacitor-polarized",
+        4: "capacitor-unpolarized", 5: "crossover", 6: "crystal", 7: "diac",
+        8: "diode", 9: "diode-LED", 10: "diode-thyrector", 11: "diode-zener",
+        12: "fuse", 13: "gnd", 14: "inductor", 15: "inductor-ferrite",
+        16: "IC", 17: "IC-NE555", 18: "IC-voltage-reg", 19: "junction",
+        20: "lamp", 21: "magnetic", 22: "mechanical", 23: "microphone",
+        24: "motor", 25: "nand", 26: "nor", 27: "not",
+        28: "opamp", 29: "opamp-schmitt", 30: "optical", 31: "optocoupler",
+        32: "or", 33: "probe", 34: "probe-current", 35: "probe-voltage",
+        36: "relay", 37: "resistor", 38: "resistor-adjustable", 39: "resistor-photo",
+        40: "socket", 41: "speaker", 42: "switch", 43: "terminal",
+        44: "text", 45: "thyristor", 46: "transformer", 47: "transistor-BJT",
+        48: "transistor-FET", 49: "transistor-photo", 50: "triac", 51: "unknown",
+        52: "varistor", 53: "voltage-AC", 54: "voltage-battery", 55: "voltage-DC",
+        56: "vss", 57: "xor",
+    }
+    PREFIX_MAP = {
+        "resistor": "R", "capacitor-unpolarized": "C", "capacitor-polarized": "C",
+        "inductor": "L", "diode": "D", "diode-LED": "D", "diode-zener": "D",
+        "transistor-BJT": "Q", "transistor-FET": "Q", "IC": "U",
+        "voltage-DC": "V", "voltage-AC": "V", "voltage-battery": "V",
+        "gnd": "GND", "junction": "J", "terminal": "T", "text": "TXT",
+    }
+
+    # Load raw component labels (tuples used by pipeline processing)
+    comp_labels_raw = []
     if image_path:
         comp_labels = deps.registry.load_component_labels(
             Path(image_path), img_wh=(gray.shape[1], gray.shape[0]))
         if comp_labels:
-            components = comp_labels
+            comp_labels_raw = comp_labels
 
-    if components:
-        occluded = build_component_mask(gray, components, cfg.occlusion_margin)
-        cropped, ox, oy = crop_to_roi(occluded, components, cfg.crop_padding)
-        local_components = shift_components(components, ox, oy)
+    if comp_labels_raw:
+        occluded = build_component_mask(gray, comp_labels_raw, cfg.occlusion_margin)
+        cropped, ox, oy = crop_to_roi(occluded, comp_labels_raw, cfg.crop_padding)
+        local_components = shift_components(comp_labels_raw, ox, oy)
     else:
         cropped, ox, oy = gray, 0, 0
         local_components = []
@@ -174,6 +201,20 @@ def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, i
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (cfg.close_kernel, cfg.close_kernel))
     closed = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
 
+    # Transform raw tuples to frontend-friendly objects for API response
+    components = []
+    for ci, comp in enumerate(comp_labels_raw):
+        cls_id = comp[0]
+        bbox = comp[2]  # (x1, y1, x2, y2)
+        type_name = COMPONENT_TYPES.get(cls_id, f"cls_{cls_id}")
+        prefix = PREFIX_MAP.get(type_name, "X")
+        components.append({
+            "name": f"{prefix}{ci + 1}",
+            "type": type_name,
+            "class_id": cls_id,
+            "bbox": list(bbox),
+        })
+
     return {
         "line_count": len(lines_global),
         "blob_count": len(lines_global),
@@ -183,6 +224,7 @@ def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, i
         "dilated": _img_to_base64(closed),
         "preset": preset_name,
         "lines": lines_global,
+        "components": components,
         "params": {
             "sauvola_k": cfg.sauvola_k,
             "sauvola_window": cfg.sauvola_window,

@@ -1,6 +1,8 @@
 """SPICE netlist generation from circuit netlist data."""
 from __future__ import annotations
 
+import re
+
 from wire_detection.core.netlist import Netlist
 
 
@@ -112,6 +114,47 @@ DEFAULT_VALUES: dict[str, str] = {
     "terminal": "1",
 }
 
+# SI prefix multipliers for value parsing
+_SI_PREFIXES: dict[str, float] = {
+    "t": 1e12, "g": 1e9, "meg": 1e6, "m": 1e-3,
+    "k": 1e3, "u": 1e-6, "n": 1e-9, "p": 1e-12, "f": 1e-15,
+}
+
+
+def _parse_value(raw: str) -> str:
+    """Parse a human-readable value like '10k', '4.7u', '100n', '5V' into a
+    SPICE-compatible numeric string.
+
+    Supports SI suffixes (T/G/Meg/k/m/u/n/p/f), bare numbers, voltage suffix,
+    and already-numeric strings like '1e-6'.
+    """
+    s = raw.strip()
+    if not s:
+        return "1"
+
+    s = re.sub(r"[Vv]$", "", s)
+
+    try:
+        float(s)
+        return s
+    except ValueError:
+        pass
+
+    m = re.match(r"^([0-9]*\.?[0-9]+)\s*([a-zA-Z]+)$", s)
+    if m:
+        num_str, suffix = m.group(1), m.group(2).lower()
+        multiplier = _SI_PREFIXES.get(suffix)
+        if multiplier is not None:
+            try:
+                val = float(num_str) * multiplier
+                if abs(val) < 0.01 or abs(val) >= 1e6:
+                    return f"{val:.6g}"
+                return f"{val:.6f}".rstrip("0").rstrip(".")
+            except (ValueError, OverflowError):
+                pass
+
+    return s
+
 
 class SpiceGenerator:
     def __init__(self, component_names: dict[int, str] | None = None):
@@ -135,6 +178,7 @@ class SpiceGenerator:
         self,
         components: list[tuple[int, list[tuple[int, int]], tuple[int, int, int, int]]] | None = None,
         netlist: Netlist | None = None,
+        value_overrides: dict[str, str] | None = None,
     ) -> str:
         if components is None:
             components = []
@@ -213,11 +257,15 @@ class SpiceGenerator:
                 device_lines.append(f"{self._get_next_name('V')} {p} {n} DC 5")
                 has_vsrc = True
             elif prefix in ("R", "C", "L"):
-                value = self._get_default_value(type_name)
-                if len(pin_nodes) >= 2 and pin_nodes[0] != pin_nodes[1]:
-                    device_lines.append(f"{self._get_next_name(prefix)} {pin_nodes[0]} {pin_nodes[1]} {value}")
+                spice_name = self._get_next_name(prefix)
+                if value_overrides and spice_name in value_overrides:
+                    value = _parse_value(value_overrides[spice_name])
                 else:
-                    device_lines.append(f"{self._get_next_name(prefix)} {pin_nodes[0]} 0 {value}")
+                    value = self._get_default_value(type_name)
+                if len(pin_nodes) >= 2 and pin_nodes[0] != pin_nodes[1]:
+                    device_lines.append(f"{spice_name} {pin_nodes[0]} {pin_nodes[1]} {value}")
+                else:
+                    device_lines.append(f"{spice_name} {pin_nodes[0]} 0 {value}")
             else:
                 # U (IC/opamp/logic), X (subckt), F (fuse), S (switch), M (motor), etc.
                 # — no SPICE model available; skip so the netlist stays runnable.
