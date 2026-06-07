@@ -19,7 +19,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 import wire_detection.api.deps as deps
-from wire_detection.api.models import JoinOverlayRequest
+from wire_detection.api.models import SimOverlayRequest
 from wire_detection.core.join_strategies import run_strategy
 from wire_detection.core.spice import SpiceGenerator
 from wire_detection.core.simulator import SpiceSimulator
@@ -55,7 +55,7 @@ def _err_overlay(gray, msg, color=(90, 160, 255)):
 
 
 @router.post("/api/sim_overlay")
-async def sim_overlay(data: JoinOverlayRequest):
+async def sim_overlay(data: SimOverlayRequest):
     import asyncio
     def _sync():
         from wire_detection.api.routes.process import _run_preset_pipeline_cached
@@ -87,7 +87,7 @@ async def sim_overlay(data: JoinOverlayRequest):
         strategy = data.strategy or "production"
         pins, netlist = run_strategy(strategy, wires, components)
         gen = SpiceGenerator()
-        spice = gen.generate(components, netlist)
+        spice = gen.generate(components, netlist, value_overrides=data.component_values)
         gnd_id = gen._find_gnd_node(components, netlist)
 
         sim = SpiceSimulator()
