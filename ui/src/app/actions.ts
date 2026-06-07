@@ -23,6 +23,7 @@ export async function fetchNetlistAction(
   preset: string,
   params: Record<string, string | number> = {},
   componentValues?: Record<string, string>,
+  strategy?: string | null,
 ): Promise<NetlistResult> {
   return fetchBackend("/api/netlist", {
     method: "POST",
@@ -32,6 +33,7 @@ export async function fetchNetlistAction(
       ds,
       preset,
       params,
+      ...(strategy ? { strategy } : {}),
       ...(componentValues && Object.keys(componentValues).length > 0
         ? { component_values: componentValues }
         : {}),
