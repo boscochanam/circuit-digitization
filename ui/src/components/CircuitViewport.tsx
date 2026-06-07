@@ -15,6 +15,7 @@ interface CircuitViewportProps {
   params?: Record<string, string | number>;
   onRunOCR?: () => void;
   ocrLoading?: boolean;
+  onActiveOverlayChange?: (overlay: string) => void;
 }
 
 /**
@@ -37,9 +38,15 @@ export default function CircuitViewport({
   params = {},
   onRunOCR,
   ocrLoading = false,
+  onActiveOverlayChange,
 }: CircuitViewportProps) {
   const [activeOverlay, setActiveOverlay] = useState<string>("none");
   const [overlayOpacity, setOverlayOpacity] = useState(70);
+
+  const handleOverlayChange = (overlay: string) => {
+    setActiveOverlay(overlay);
+    onActiveOverlayChange?.(overlay);
+  };
 
   // Get overlay image based on selection
   const getOverlayUrl = (type: string): string | null => {
@@ -122,7 +129,7 @@ export default function CircuitViewport({
       {/* OCR + Overlay controls (fixed position) */}
       <OverlayControls
         activeOverlay={activeOverlay}
-        onOverlayChange={setActiveOverlay}
+        onOverlayChange={handleOverlayChange}
         overlayOpacity={overlayOpacity}
         onOpacityChange={setOverlayOpacity}
         hasPipelineResult={!!pipelineResult}
