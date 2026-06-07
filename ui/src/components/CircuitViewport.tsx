@@ -116,7 +116,7 @@ export default function CircuitViewport({
 
   return (
     <div className="circuit-viewport" ref={viewportRef}>
-      {/* Source image (base layer) */}
+      {/* Source image (base layer) — overlay passed inside ZoomableImage */}
       {sourceImageUrl ? (
         <div className="viewport-base">
           <ZoomableImage
@@ -125,24 +125,18 @@ export default function CircuitViewport({
             maxHeight="100%"
             onImageLoad={handleImageLoad}
             onViewChange={handleViewChange}
+            overlay={overlayUrl ? (
+              <img
+                src={overlayUrl}
+                alt={activeOverlay}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
+            ) : undefined}
+            overlayOpacity={overlayOpacity / 100}
           />
         </div>
       ) : (
         <div className="viewport-empty">No image loaded</div>
-      )}
-
-      {/* Pipeline or Voltage overlay (semi-transparent on top of source) */}
-      {overlayUrl && (
-        <div
-          className="viewport-overlay"
-          style={{ opacity: overlayOpacity / 100 }}
-        >
-          <img
-            src={overlayUrl}
-            alt={activeOverlay}
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
-          />
-        </div>
       )}
 
       {/* Component labels overlay */}
