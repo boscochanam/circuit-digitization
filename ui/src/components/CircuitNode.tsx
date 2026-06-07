@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState, useCallback } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 
 export interface CircuitNodeData {
@@ -9,20 +9,68 @@ export interface CircuitNodeData {
   color: string;
   dimmed?: boolean;
   scale?: number;
+  value?: string;
+  onValueChange?: (name: string, value: string) => void;
+  voltage?: number;
+  showVoltage?: boolean;
 }
 
 function CircuitNode(props: NodeProps) {
   const { data: rawData, selected } = props;
-  const { label, typeLabel, color, dimmed, scale = 1 } = rawData as unknown as CircuitNodeData;
+  const {
+    label,
+    typeLabel,
+    color,
+    dimmed,
+    scale = 1,
+    value = "",
+    onValueChange,
+    voltage,
+    showVoltage,
+  } = rawData as unknown as CircuitNodeData;
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
   const baseSize = selected ? 28 : 24;
   const size = Math.round(baseSize * scale);
   const fontSize = Math.round((selected ? 9 : 7) * Math.min(scale, 1.5));
   const borderW = selected ? 2.5 : 1.5;
 
+  const commitValue = useCallback(() => {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed !== value && onValueChange) {
+      onValueChange(label, trimmed);
+    }
+  }, [draft, value, label, onValueChange]);
+
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setDraft(value);
+      setEditing(true);
+    },
+    [value],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        commitValue();
+      } else if (e.key === "Escape") {
+        setDraft(value);
+        setEditing(false);
+      }
+    },
+    [commitValue, value],
+  );
+
   return (
     <div
       style={{
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         width: "100%",
@@ -33,8 +81,26 @@ function CircuitNode(props: NodeProps) {
       }}
     >
       {/* Invisible handles for edge connections */}
-      <Handle type="source" position={Position.Right} style={{ opacity: 0, pointerEvents: "none", background: "transparent", border: "none" }} />
-      <Handle type="target" position={Position.Left} style={{ opacity: 0, pointerEvents: "none", background: "transparent", border: "none" }} />
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{
+          opacity: 0,
+          pointerEvents: "none",
+          background: "transparent",
+          border: "none",
+        }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{
+          opacity: 0,
+          pointerEvents: "none",
+          background: "transparent",
+          border: "none",
+        }}
+      />
 
       {/* Selection glow */}
       {selected && (
@@ -102,8 +168,6 @@ function CircuitNode(props: NodeProps) {
       {selected && (
         <span
           style={{
-            position: "absolute",
-            top: size + 6,
             fontSize: Math.round(9 * scale),
             color: "#f4f4f5",
             fontFamily: "sans-serif",
@@ -111,9 +175,47 @@ function CircuitNode(props: NodeProps) {
             whiteSpace: "nowrap",
             pointerEvents: "none",
             zIndex: 1,
+            marginTop: 2,
           }}
         >
           {typeLabel}
+        </span>
+      )}
+
+      {/* Value display */}
+      {editing ? (
+        <input
+          className="circuit-node-value-input"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={commitValue}
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+          style={{ marginTop: 2 }}
+        />
+      ) : (
+        <span
+          className="circuit-node-value"
+          onDoubleClick={handleDoubleClick}
+          title={value ? `${label} = ${value}` : `Double-click to set value for ${label}`}
+          style={{
+            fontSize: Math.round(9 * scale),
+          }}
+        >
+          {value || "\u00A0"}
+        </span>
+      )}
+
+      {/* Voltage display when simOverlay is active */}
+      {showVoltage && voltage !== undefined && (
+        <span
+          className={`circuit-node-voltage ${voltage > 2.5 ? "circuit-node-voltage-high" : "circuit-node-voltage-low"}`}
+          style={{
+            fontSize: Math.round(8 * scale),
+          }}
+        >
+          {voltage.toFixed(2)}V
         </span>
       )}
     </div>
