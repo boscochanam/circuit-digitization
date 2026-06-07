@@ -1,6 +1,6 @@
 "use client";
 
-import type { BottomPanelTab } from "@/stores/appStore";
+import type { BottomPanelTab } from "@/lib/types";
 
 interface BottomPanelProps {
   activeTab: BottomPanelTab;

@@ -102,3 +102,14 @@ export interface HomeInitialData {
   presets: PresetMap;
   datasets: DatasetMap;
 }
+
+// Bottom-panel tab id.
+export type BottomPanelTab = "netlist" | "warnings" | "raw";
+
+// A component row for the sidebar Values editor.
+export interface ComponentEntry {
+  name: string;
+  type: string;
+  value: string;
+  position?: { x: number; y: number };
+}
