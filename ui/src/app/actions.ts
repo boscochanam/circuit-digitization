@@ -79,11 +79,17 @@ export async function fetchSimOverlayAction(
   preset: string,
   params: Record<string, string | number> = {},
   strategy: string | null = null,
+  componentValues?: Record<string, string>,
 ): Promise<SimOverlayResult> {
   return fetchBackend("/api/sim_overlay", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ img_idx: imgIdx, ds, preset, params, strategy }),
+    body: JSON.stringify({
+      img_idx: imgIdx, ds, preset, params, strategy,
+      ...(componentValues && Object.keys(componentValues).length > 0
+        ? { component_values: componentValues }
+        : {}),
+    }),
   });
 }
 
