@@ -107,6 +107,26 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
       });
       const data = await res.json();
       setOcrResults(data);
+
+      if (data?.components && pipe.result?.components) {
+        const newValues: Record<string, string> = {};
+        for (const ocrComp of data.components) {
+          if (ocrComp.type === "text" && ocrComp.value) {
+            const matchIdx: number = pipe.result.components.findIndex(
+              (c: any, idx: number) => Math.abs(idx - ocrComp.index) < 5
+            );
+            if (matchIdx >= 0) {
+              const compName = pipe.result.components[matchIdx].name;
+              if (!componentValues[compName]) {
+                newValues[compName] = ocrComp.value;
+              }
+            }
+          }
+        }
+        if (Object.keys(newValues).length > 0) {
+          setComponentValues((prev) => ({ ...prev, ...newValues }));
+        }
+      }
     } catch (e) {
       console.error("OCR failed:", e);
     } finally {
@@ -180,6 +200,8 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           onRunOCR={handleRunOCR}
           ocrLoading={ocrLoading}
           onActiveOverlayChange={handleOverlayChange}
+          componentValues={componentValues}
+          onValueChange={handleValueChange}
         />
       </div>
 
