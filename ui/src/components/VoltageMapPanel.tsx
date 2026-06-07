@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { fetchSimOverlayAction, fetchJoinStrategiesAction } from "@/app/actions";
-import ZoomableImage from "./ZoomableImage";
 import type { SimOverlayResult, JoinStrategy } from "@/lib/types";
 
 /**
@@ -89,10 +88,10 @@ export default function VoltageMapPanel({
           {error && <div className="netlist-warning">{error}</div>}
           {!error && data?.overlay && (
             // eslint-disable-next-line @next/next/no-img-element
-            <ZoomableImage
+            <img
               src={`data:image/png;base64,${data.overlay}`}
               alt="voltage map"
-              maxHeight="62vh"
+              style={{ maxWidth: "100%", maxHeight: "62vh", display: "block" }}
             />
           )}
         </div>
