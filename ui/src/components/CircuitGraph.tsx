@@ -25,6 +25,12 @@ interface Props {
   preset: string;
   params?: Record<string, string | number>;
   className?: string;
+  componentValues?: Record<string, string>;
+  onValueChange?: (name: string, value: string) => void;
+  selectedComponent?: string | null;
+  onComponentSelect?: (name: string | null) => void;
+  nodeVoltages?: Array<{ node: string; voltage: number }>;
+  showVoltage?: boolean;
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -119,7 +125,18 @@ function computeLayout(
 const fitViewOpts: FitViewOptions = { padding: 0.25, duration: 200 };
 const nodeTypes = { circuitNode: CircuitNode } as any;
 
-function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
+function InnerCircuitGraph({
+  imageIdx,
+  dataset,
+  preset,
+  params = {},
+  componentValues = {},
+  onValueChange,
+  selectedComponent: externalSelected,
+  onComponentSelect,
+  nodeVoltages,
+  showVoltage,
+}: Props) {
   const rfWrapper = useRef<HTMLDivElement>(null);
   const [rfInstance, setRfInstance] = useState<any>(null);
   const [componentScale, setComponentScale] = useState(1.0);
@@ -127,8 +144,11 @@ function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
   // Managed node/edge change handlers
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null);
   const { netlist, loading, error } = useNetlist(imageIdx, dataset, preset, params as Record<string, number>);
+
+  // Use external selection if provided, otherwise fall back to internal
+  const selectedId = externalSelected !== undefined ? externalSelected : internalSelectedId;
 
   // Managed node/edge change handlers
   const onNodesChange = useCallback((changes: NodeChange[]) => {
@@ -143,7 +163,11 @@ function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
     if (!netlist || !netlist.components || netlist.components.length === 0) {
       setNodes([]);
       setEdges([]);
-      setSelectedId(null);
+      if (onComponentSelect) {
+        onComponentSelect(null);
+      } else {
+        setInternalSelectedId(null);
+      }
       return;
     }
 
@@ -161,6 +185,8 @@ function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
           label: c.name,
           typeLabel: typeLabel(c.type),
           color: getColor(c.type),
+          value: componentValues[c.name] ?? "",
+          onValueChange: onValueChange ?? undefined,
         },
       };
     });
@@ -190,7 +216,11 @@ function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
 
     setNodes(rfNodes);
     setEdges(rfEdges);
-    setSelectedId(null);
+    if (onComponentSelect) {
+      onComponentSelect(null);
+    } else {
+      setInternalSelectedId(null);
+    }
   }, [netlist]);
 
   // Fit view on first load and when scale resets near 1.0
@@ -209,13 +239,22 @@ function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
 
   // Handle node click — toggle selection
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setSelectedId((prev) => (prev === node.id ? null : node.id));
-  }, []);
+    const next = selectedId === node.id ? null : node.id;
+    if (onComponentSelect) {
+      onComponentSelect(next);
+    } else {
+      setInternalSelectedId(next);
+    }
+  }, [selectedId, onComponentSelect]);
 
   // Click on background to deselect
   const onPaneClick = useCallback(() => {
-    setSelectedId(null);
-  }, []);
+    if (onComponentSelect) {
+      onComponentSelect(null);
+    } else {
+      setInternalSelectedId(null);
+    }
+  }, [onComponentSelect]);
 
   // Highlight connected edges & connected nodes on selection
   const nodeHighlight = useMemo(() => {
@@ -270,9 +309,13 @@ function InnerCircuitGraph({ imageIdx, dataset, preset, params = {} }: Props) {
         data: {
           ...n.data,
           dimmed: selectedId !== null && !nodeHighlight.nodeIds.has(n.id),
+          voltage: showVoltage && nodeVoltages
+            ? nodeVoltages.find((v) => v.node === n.id)?.voltage
+            : undefined,
+          showVoltage,
         },
       })),
-    [scaledNodes, selectedId, nodeHighlight],
+    [scaledNodes, selectedId, nodeHighlight, nodeVoltages, showVoltage],
   );
 
   // Loading state
