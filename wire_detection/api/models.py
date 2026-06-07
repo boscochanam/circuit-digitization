@@ -41,7 +41,7 @@ class NetlistRequest(BaseModel):
     ds: str = "gt_labels"
     preset: str = "best_candidate_v4"
     params: dict[str, Any] = {}
-    component_values: dict[str, str] | None = None  # e.g. {"R1": "10k", "C2": "100n"}
+    component_values: dict[str, str] | None = None  # e.g. {"0": "10k", "1": "100n"} (index-based)
 
 
 class SimulateRequest(BaseModel):
@@ -59,7 +59,7 @@ class JoinOverlayRequest(BaseModel):
 
 
 class SimOverlayRequest(JoinOverlayRequest):
-    component_values: dict[str, str] | None = None  # e.g. {"R1": "10k", "C2": "100n"}
+    component_values: dict[str, str] | None = None  # e.g. {"0": "10k", "1": "100n"} (index-based)
 
 
 class NetlistResponse(BaseModel):
