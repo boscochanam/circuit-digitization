@@ -6,7 +6,8 @@ import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
-import { fetchSimOverlayAction } from "@/app/actions";
+import { fetchSimOverlayAction, fetchJoinStrategiesAction } from "@/app/actions";
+import type { JoinStrategy } from "@/lib/types";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
 import RawTab from "@/components/RawTab";
@@ -28,6 +29,15 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
   const [componentValues, setComponentValues] = useState<Record<string, string>>({});
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+
+  // Join strategy (re-added) — drives the netlist/SPICE/voltage join everywhere.
+  const [joinStrategy, setJoinStrategy] = useState<string>("graph_rescue");
+  const [joinStrategies, setJoinStrategies] = useState<JoinStrategy[]>([]);
+  useEffect(() => {
+    fetchJoinStrategiesAction()
+      .then((r) => { setJoinStrategies(r.strategies); if (r.default) setJoinStrategy(r.default); })
+      .catch(() => {});
+  }, []);
 
   const handleValueChange = (name: string, value: string) => {
     setComponentValues((prev) => ({ ...prev, [name]: value }));
@@ -63,6 +73,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     currentParams,
     indexBasedValues,
     voltageActive,
+    joinStrategy,
   );
 
   const handleRunSimOverlay = useCallback(async () => {
@@ -73,7 +84,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         imgs.dataset,
         pipe.preset,
         currentParams,
-        "graph_rescue",
+        joinStrategy,
         indexValues,
       );
       if (result.overlay) {
@@ -82,7 +93,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     } catch (e) {
       console.error("Sim overlay failed:", e);
     }
-  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, getIndexBasedValues]);
+  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, getIndexBasedValues, joinStrategy]);
 
   useEffect(() => {
     if (voltageActive) {
@@ -97,6 +108,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     imgs.dataset,
     pipe.preset,
     currentParams as Record<string, number>,
+    joinStrategy,
   );
 
   const componentList = (pipe.result?.components ?? []).map((c) => ({
@@ -205,6 +217,9 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           selectedComponent={selectedComponent}
           onComponentSelect={setSelectedComponent}
           onComponentValueChange={handleValueChange}
+          joinStrategy={joinStrategy}
+          joinStrategies={joinStrategies}
+          onJoinStrategyChange={setJoinStrategy}
         />
 
         <CircuitViewport
