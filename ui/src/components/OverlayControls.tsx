@@ -30,7 +30,7 @@ export default function OverlayControls({
     { id: "threshold", label: "Threshold", disabled: !hasPipelineResult },
     { id: "detected", label: "Detected", disabled: !hasPipelineResult },
     { id: "dilated", label: "Dilated", disabled: !hasPipelineResult },
-    { id: "voltage", label: "Voltage", disabled: !hasSimOverlay },
+    { id: "voltage", label: "Voltage", disabled: !hasPipelineResult },
   ];
 
   return (
