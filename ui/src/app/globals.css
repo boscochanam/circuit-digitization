@@ -167,6 +167,7 @@ html, body { height: 100%; overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .circuit-viewport img {
@@ -175,16 +176,19 @@ html, body { height: 100%; overflow: hidden; }
 
 /* Bottom panel */
 .bottom-panel {
+  background: var(--white);
+  border-top: 3px solid var(--black);
   display: flex;
   flex-direction: column;
-  height: 200px;
-  border-top: 3px solid var(--black);
-  background: var(--white);
+  height: 36px;
   flex-shrink: 0;
   overflow: hidden;
+  transition: height 0.2s ease;
 }
 
-.bottom-panel-open { height: 400px; }
+.bottom-panel-open {
+  height: 350px;
+}
 
 .bottom-panel-header {
   display: flex; align-items: center;

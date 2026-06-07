@@ -57,30 +57,32 @@ export default function OverlayControls({
       <style jsx>{`
         .overlay-controls {
           position: absolute;
-          bottom: 12px;
-          right: 12px;
+          bottom: 16px;
+          right: 16px;
           display: flex;
           flex-direction: column;
-          gap: 6px;
-          background: rgba(255, 255, 255, 0.95);
-          border: 2px solid var(--black);
-          padding: 8px;
+          gap: 8px;
+          background: var(--white);
+          border: 3px solid var(--black);
+          padding: 12px 16px;
           z-index: 10;
+          box-shadow: 4px 4px 0 var(--black);
+          min-width: 280px;
         }
         .overlay-buttons {
           display: flex;
-          gap: 4px;
+          gap: 6px;
         }
         .overlay-btn {
           font-family: var(--font-mono), monospace;
-          font-size: 10px;
-          font-weight: 600;
+          font-size: 11px;
+          font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          padding: 4px 8px;
+          padding: 8px 12px;
           background: var(--white);
-          color: var(--grey-dark);
-          border: 1px solid var(--black);
+          color: var(--black);
+          border: 2px solid var(--black);
           cursor: pointer;
         }
         .overlay-btn:hover:not(:disabled) {

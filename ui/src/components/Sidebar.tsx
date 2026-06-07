@@ -51,24 +51,7 @@ export default function Sidebar({
 }: SidebarProps) {
   return (
     <aside className="sidebar-layout">
-      {/* ── Pipeline Preset ── */}
-      <div className="sidebar-section">
-        <div className="sidebar-section-label">Pipeline Preset</div>
-        <select
-          value={preset}
-          onChange={(e) => onPresetChange(e.target.value)}
-          className="preset-select"
-        >
-          {Object.entries(presets).map(([key, p]) => (
-            <option key={key} value={key}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        {presets[preset]?.description && (
-          <div className="preset-desc">{presets[preset].description}</div>
-        )}
-      </div>
+      {/* Pipeline preset shown in toolbar — not duplicated here */}
 
       {/* ── Parameters ── */}
       <div className="sidebar-section sidebar-scroll">
