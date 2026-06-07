@@ -7,10 +7,14 @@ import OverlayControls from "./OverlayControls";
 interface CircuitViewportProps {
   sourceImageUrl?: string;
   pipelineResult?: any;
+  simOverlayUrl?: string | null;
+  ocrResults?: any;
   imageIdx?: number;
   dataset?: string;
   preset?: string;
   params?: Record<string, string | number>;
+  onRunOCR?: () => void;
+  ocrLoading?: boolean;
 }
 
 /**
@@ -19,22 +23,27 @@ interface CircuitViewportProps {
  * Layers (bottom to top):
  *   1. Source image (always visible)
  *   2. Pipeline overlay (threshold / detected / dilated) — semi-transparent
- *   3. Component labels (OCR results, bounding boxes)
- *   4. Voltage/current heatmap (simulation)
+ *   3. Voltage/current heatmap overlay — semi-transparent
+ *   4. Component labels (names + OCR values)
  */
 export default function CircuitViewport({
   sourceImageUrl,
   pipelineResult,
+  simOverlayUrl,
+  ocrResults,
   imageIdx = 0,
   dataset = "gt_labels",
   preset = "best_candidate_v4",
   params = {},
+  onRunOCR,
+  ocrLoading = false,
 }: CircuitViewportProps) {
   const [activeOverlay, setActiveOverlay] = useState<string>("none");
   const [overlayOpacity, setOverlayOpacity] = useState(70);
 
   // Get overlay image based on selection
   const getOverlayUrl = (type: string): string | null => {
+    if (type === "voltage") return simOverlayUrl ?? null;
     if (!pipelineResult) return null;
     switch (type) {
       case "threshold":
@@ -49,6 +58,9 @@ export default function CircuitViewport({
   };
 
   const overlayUrl = getOverlayUrl(activeOverlay);
+
+  // Extract component info for labels
+  const components = pipelineResult?.components ?? [];
 
   return (
     <div className="circuit-viewport">
@@ -65,7 +77,7 @@ export default function CircuitViewport({
         <div className="viewport-empty">No image loaded</div>
       )}
 
-      {/* Pipeline overlay (semi-transparent on top of source) */}
+      {/* Pipeline or Voltage overlay (semi-transparent on top of source) */}
       {overlayUrl && (
         <div
           className="viewport-overlay"
@@ -79,13 +91,44 @@ export default function CircuitViewport({
         </div>
       )}
 
-      {/* Overlay controls (fixed position) */}
+      {/* Component labels overlay */}
+      {components.length > 0 && activeOverlay === "none" && (
+        <div className="viewport-labels">
+          {components.slice(0, 50).map((c: any, i: number) => {
+            if (!c.bbox) return null;
+            const [x1, y1, x2, y2] = c.bbox;
+            const cx = ((x1 + x2) / 2);
+            const cy = ((y1 + y2) / 2);
+            const ocrVal = ocrResults?.components?.find(
+              (v: any) => v.type === "text" && Math.abs(v.index - i) < 5
+            );
+            return (
+              <div
+                key={i}
+                className="component-label"
+                style={{ left: `${cx}px`, top: `${cy}px` }}
+                title={`${c.name} (${c.type})`}
+              >
+                <span className="comp-name">{c.name}</span>
+                {ocrVal?.value && (
+                  <span className="comp-value">{ocrVal.value}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* OCR + Overlay controls (fixed position) */}
       <OverlayControls
         activeOverlay={activeOverlay}
         onOverlayChange={setActiveOverlay}
         overlayOpacity={overlayOpacity}
         onOpacityChange={setOverlayOpacity}
         hasPipelineResult={!!pipelineResult}
+        hasSimOverlay={!!simOverlayUrl}
+        onRunOCR={onRunOCR}
+        ocrLoading={ocrLoading}
       />
     </div>
   );
