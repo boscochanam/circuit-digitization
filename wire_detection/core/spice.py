@@ -255,16 +255,16 @@ class SpiceGenerator:
                     skipped[type_name] = skipped.get(type_name, 0) + 1
                     continue
                 spice_name = f"V{i + 1}"
-                if value_overrides and spice_name in value_overrides:
-                    v_val = _parse_value(value_overrides[spice_name])
+                if value_overrides and str(i) in value_overrides:
+                    v_val = _parse_value(value_overrides[str(i)])
                 else:
                     v_val = "5"
                 device_lines.append(f"{spice_name} {p} {n} DC {v_val}")
                 has_vsrc = True
             elif prefix in ("R", "C", "L"):
                 spice_name = f"{prefix}{i + 1}"
-                if value_overrides and spice_name in value_overrides:
-                    value = _parse_value(value_overrides[spice_name])
+                if value_overrides and str(i) in value_overrides:
+                    value = _parse_value(value_overrides[str(i)])
                 else:
                     value = self._get_default_value(type_name)
                 if len(pin_nodes) >= 2 and pin_nodes[0] != pin_nodes[1]:
