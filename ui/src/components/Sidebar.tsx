@@ -120,7 +120,9 @@ export default function Sidebar({
               <>
                 <p className="sidebar-help" style={{ marginTop: 0 }}>
                   Set values for R / C / L / V, then open the <strong>Voltage</strong> view
-                  to simulate. You can also click a component on the image to edit it in place.
+                  to simulate. At the DC operating point only <strong>R</strong> and{" "}
+                  <strong>V</strong> change the map (C / L are tagged <em>no DC</em>). You can
+                  also click a component on the image to edit it in place.
                 </p>
 
                 {editable.length === 0 ? (
@@ -130,14 +132,20 @@ export default function Sidebar({
                     {editable.map((comp) => {
                       const t = comp.name.charAt(0);
                       const color = COMPONENT_TYPE_COLORS[t] ?? "#666666";
+                      // The voltage map is a DC operating point: caps are open and
+                      // inductors short, so only R and V change it. Flag C/L so a
+                      // no-op edit isn't mistaken for a broken feature.
+                      const affectsDC = t === "R" || t === "V";
                       return (
                         <label
                           key={comp.name}
                           className={`value-row ${selectedComponent === comp.name ? "value-row-active" : ""}`}
                           onClick={() => onComponentSelect(comp.name)}
+                          title={affectsDC ? undefined : `${comp.name} is open at DC — its value does not change the voltage map (matters for AC/transient analysis)`}
                         >
                           <span className="value-row-dot" style={{ background: color }} />
                           <span className="value-row-name">{comp.name}</span>
+                          {!affectsDC && <span className="value-row-tag" title="No effect on the DC voltage map">no DC</span>}
                           <input
                             className="value-row-input"
                             value={comp.value}

@@ -204,6 +204,12 @@ html, body { height: 100%; overflow: hidden; }
 }
 .value-row-input:focus { outline: none; border-color: var(--blue); }
 .value-row-input::placeholder { color: var(--grey-mid); font-weight: 400; }
+/* C/L are open/short at DC, so their value does not move the voltage map. */
+.value-row-tag {
+  font-family: var(--font-mono), monospace; font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.3px; color: var(--grey-dark);
+  border: 1px solid var(--grey-mid); padding: 1px 4px; white-space: nowrap;
+}
 
 .value-others { margin-top: 14px; }
 .value-others > summary {
@@ -259,6 +265,25 @@ html, body { height: 100%; overflow: hidden; }
 }
 .ocr-btn:hover:not(:disabled) { background: var(--grey-light); }
 .ocr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* OCR status toast: graceful feedback instead of a silently-failing button. */
+.ocr-toast {
+  position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+  z-index: 80; display: flex; align-items: center; gap: 12px;
+  max-width: min(620px, 92vw); padding: 10px 14px;
+  font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 600;
+  border: 3px solid var(--black); background: var(--white); color: var(--black);
+  box-shadow: 5px 5px 0 var(--black);
+}
+.ocr-toast-success { background: var(--success, #b6f7c1); }
+.ocr-toast-error { background: var(--error, #ffb3b3); }
+.ocr-toast-info { background: var(--grey-light); }
+.ocr-toast-msg { line-height: 1.4; }
+.ocr-toast-x {
+  margin-left: auto; border: 2px solid var(--black); background: var(--white);
+  font-weight: 700; padding: 1px 7px; cursor: pointer; line-height: 1;
+}
+.ocr-toast-x:hover { background: var(--black); color: var(--white); }
 
 @media (max-width: 767px) {
   .sidebar-layout {
