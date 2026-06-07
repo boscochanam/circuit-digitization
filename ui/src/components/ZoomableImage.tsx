@@ -9,6 +9,10 @@ interface ZoomableImageProps {
   className?: string;
   onImageLoad?: (img: HTMLImageElement) => void;
   onViewChange?: () => void;
+  /** Overlay element rendered on top of the source image inside the zoom container. */
+  overlay?: React.ReactNode;
+  /** Opacity for the overlay (0–1). */
+  overlayOpacity?: number;
 }
 
 /**
@@ -22,6 +26,8 @@ export default function ZoomableImage({
   className = "",
   onImageLoad,
   onViewChange,
+  overlay,
+  overlayOpacity = 1,
 }: ZoomableImageProps) {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -96,6 +102,21 @@ export default function ZoomableImage({
           transition: dragging ? "none" : "transform 0.1s ease",
         }}
       />
+      {overlay && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            opacity: overlayOpacity,
+            pointerEvents: "none",
+          }}
+        >
+          {overlay}
+        </div>
+      )}
       {scale !== 1 && (
         <div
           style={{
