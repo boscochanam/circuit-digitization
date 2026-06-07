@@ -1,125 +1,119 @@
 "use client";
 
-import { useState } from "react";
-import type { PipelineOverlay, CircuitOverlay, SimOverlay } from "@/stores/appStore";
-
 interface OverlayControlsProps {
-  pipelineOverlay: PipelineOverlay;
-  onPipelineOverlayChange: (v: PipelineOverlay) => void;
-  circuitOverlay: CircuitOverlay;
-  onCircuitOverlayChange: (v: CircuitOverlay) => void;
-  simOverlay: SimOverlay;
-  onSimOverlayChange: (v: SimOverlay) => void;
-  opacity: number;
-  onOpacityChange: (v: number) => void;
+  activeOverlay: string;
+  onOverlayChange: (overlay: string) => void;
+  overlayOpacity: number;
+  onOpacityChange: (opacity: number) => void;
+  hasPipelineResult: boolean;
 }
 
-const PIPELINE_OPTIONS: { value: PipelineOverlay; label: string }[] = [
-  { value: "none", label: "Off" },
-  { value: "source", label: "Source" },
-  { value: "threshold", label: "Thresh" },
-  { value: "detected", label: "Detect" },
-  { value: "dilated", label: "Dilat" },
-];
-
-const CIRCUIT_OPTIONS: { value: CircuitOverlay; label: string }[] = [
-  { value: "none", label: "Off" },
-  { value: "components", label: "Comps" },
-  { value: "connections", label: "Conn" },
-  { value: "values", label: "Vals" },
-  { value: "all", label: "All" },
-];
-
-const SIM_OPTIONS: { value: SimOverlay; label: string }[] = [
-  { value: "none", label: "Off" },
-  { value: "voltage", label: "Volt" },
-  { value: "current", label: "Curr" },
-];
-
+/**
+ * Overlay controls — floating panel in bottom-right of viewport.
+ * Toggle between pipeline stages and adjust opacity.
+ */
 export default function OverlayControls({
-  pipelineOverlay,
-  onPipelineOverlayChange,
-  circuitOverlay,
-  onCircuitOverlayChange,
-  simOverlay,
-  onSimOverlayChange,
-  opacity,
+  activeOverlay,
+  onOverlayChange,
+  overlayOpacity,
   onOpacityChange,
+  hasPipelineResult,
 }: OverlayControlsProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const overlays = [
+    { id: "none", label: "None", disabled: false },
+    { id: "threshold", label: "Threshold", disabled: !hasPipelineResult },
+    { id: "detected", label: "Detected", disabled: !hasPipelineResult },
+    { id: "dilated", label: "Dilated", disabled: !hasPipelineResult },
+  ];
 
   return (
     <div className="overlay-controls">
-      <button
-        className="overlay-controls-header"
-        onClick={() => setCollapsed(!collapsed)}
-        type="button"
-      >
-        <span className="overlay-controls-title">Overlays</span>
-        <span style={{ fontSize: 10, color: "#71717a" }}>
-          {collapsed ? "▼" : "▲"}
-        </span>
-      </button>
-
-      {!collapsed && (
-        <>
-          <div className="overlay-controls-label">Pipeline</div>
-          <div className="overlay-toggle-group">
-            {PIPELINE_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                className={`overlay-toggle-btn${pipelineOverlay === opt.value ? " overlay-toggle-active" : ""}`}
-                onClick={() => onPipelineOverlayChange(opt.value)}
-                type="button"
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="overlay-controls-label">Circuit</div>
-          <div className="overlay-toggle-group">
-            {CIRCUIT_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                className={`overlay-toggle-btn${circuitOverlay === opt.value ? " overlay-toggle-active" : ""}`}
-                onClick={() => onCircuitOverlayChange(opt.value)}
-                type="button"
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="overlay-controls-label">Sim</div>
-          <div className="overlay-toggle-group">
-            {SIM_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                className={`overlay-toggle-btn${simOverlay === opt.value ? " overlay-toggle-active" : ""}`}
-                onClick={() => onSimOverlayChange(opt.value)}
-                type="button"
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="overlay-opacity-slider">
-            <span className="overlay-opacity-label">α</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={Math.round(opacity * 100)}
-              onChange={(e) => onOpacityChange(parseInt(e.target.value, 10) / 100)}
-            />
-            <span className="overlay-opacity-value">
-              {Math.round(opacity * 100)}%
-            </span>
-          </div>
-        </>
+      <div className="overlay-buttons">
+        {overlays.map((o) => (
+          <button
+            key={o.id}
+            className={`overlay-btn ${activeOverlay === o.id ? "active" : ""}`}
+            disabled={o.disabled}
+            onClick={() => onOverlayChange(o.id)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      {activeOverlay !== "none" && (
+        <div className="overlay-opacity">
+          <label>Opacity</label>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={overlayOpacity}
+            onChange={(e) => onOpacityChange(Number(e.target.value))}
+          />
+          <span>{overlayOpacity}%</span>
+        </div>
       )}
+
+      <style jsx>{`
+        .overlay-controls {
+          position: absolute;
+          bottom: 12px;
+          right: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          background: rgba(255, 255, 255, 0.95);
+          border: 2px solid var(--black);
+          padding: 8px;
+          z-index: 10;
+        }
+        .overlay-buttons {
+          display: flex;
+          gap: 4px;
+        }
+        .overlay-btn {
+          font-family: var(--font-mono), monospace;
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 4px 8px;
+          background: var(--white);
+          color: var(--grey-dark);
+          border: 1px solid var(--black);
+          cursor: pointer;
+        }
+        .overlay-btn:hover:not(:disabled) {
+          background: var(--grey-light);
+        }
+        .overlay-btn.active {
+          background: var(--black);
+          color: var(--white);
+        }
+        .overlay-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+        .overlay-opacity {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 10px;
+          font-family: var(--font-mono), monospace;
+        }
+        .overlay-opacity label {
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+        .overlay-opacity input {
+          flex: 1;
+          width: 80px;
+        }
+        .overlay-opacity span {
+          width: 30px;
+          text-align: right;
+        }
+      `}</style>
     </div>
   );
 }
