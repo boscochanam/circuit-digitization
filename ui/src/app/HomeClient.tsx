@@ -107,9 +107,18 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
   const [ocrResults, setOcrResults] = useState<any>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
+  // Surface OCR outcome instead of failing silently (no API key / no labels / etc.)
+  const [ocrStatus, setOcrStatus] = useState<{ kind: "success" | "error" | "info"; msg: string } | null>(null);
+
+  useEffect(() => {
+    if (!ocrStatus) return;
+    const t = setTimeout(() => setOcrStatus(null), 7000);
+    return () => clearTimeout(t);
+  }, [ocrStatus]);
 
   const handleRunOCR = async () => {
     setOcrLoading(true);
+    setOcrStatus(null);
     try {
       const res = await fetch("/api/ocr", {
         method: "POST",
@@ -122,6 +131,16 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
       const data = await res.json();
       setOcrResults(data);
 
+      if (data?.error) {
+        // Don't swallow it — tell the user the actual reason and what to do.
+        const msg = /OPENROUTER_API_KEY/i.test(data.error)
+          ? "OCR needs an OPENROUTER_API_KEY set on the backend to read values."
+          : data.error;
+        setOcrStatus({ kind: "error", msg });
+        return;
+      }
+
+      let filled = 0;
       if (data?.components && pipe.result?.components) {
         const newValues: Record<string, string> = {};
         for (const ocrComp of data.components) {
@@ -137,12 +156,19 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
             }
           }
         }
-        if (Object.keys(newValues).length > 0) {
+        filled = Object.keys(newValues).length;
+        if (filled > 0) {
           setComponentValues((prev) => ({ ...prev, ...newValues }));
         }
       }
+      setOcrStatus(
+        filled > 0
+          ? { kind: "success", msg: `Read ${filled} value${filled === 1 ? "" : "s"} from the schematic — see the Values tab.` }
+          : { kind: "info", msg: "OCR ran, but found no printed values to fill." },
+      );
     } catch (e) {
       console.error("OCR failed:", e);
+      setOcrStatus({ kind: "error", msg: "OCR request failed — is the backend running?" });
     } finally {
       setOcrLoading(false);
     }
@@ -158,6 +184,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         <h1 className="header-title">WIRE DETECTION TUNER</h1>
         <span className="header-badge">v0.833</span>
       </header>
+
+      {ocrStatus && (
+        <div className={`ocr-toast ocr-toast-${ocrStatus.kind}`} role="status">
+          <span className="ocr-toast-msg">{ocrStatus.msg}</span>
+          <button className="ocr-toast-x" aria-label="Dismiss" onClick={() => setOcrStatus(null)}>✕</button>
+        </div>
+      )}
 
       <Toolbar
         imageIdx={imgs.imageIdx}
