@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import ZoomableImage from "./ZoomableImage";
 import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
@@ -49,6 +49,42 @@ export default function CircuitViewport({
   const [overlayOpacity, setOverlayOpacity] = useState(70);
   const [editingComponent, setEditingComponent] = useState<{ name: string; type: string; x: number; y: number } | null>(null);
 
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const imgElRef = useRef<HTMLImageElement | null>(null);
+  const [imgRect, setImgRect] = useState<{ left: number; top: number; width: number; naturalWidth: number; naturalHeight: number } | null>(null);
+
+  const recalcImgRect = useCallback(() => {
+    const vp = viewportRef.current;
+    const img = imgElRef.current;
+    if (!vp || !img || !img.naturalWidth) return;
+    const vpR = vp.getBoundingClientRect();
+    const imgR = img.getBoundingClientRect();
+    setImgRect({
+      left: imgR.left - vpR.left,
+      top: imgR.top - vpR.top,
+      width: imgR.width,
+      naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+    });
+  }, []);
+
+  const handleImageLoad = useCallback((img: HTMLImageElement) => {
+    imgElRef.current = img;
+    requestAnimationFrame(() => recalcImgRect());
+  }, [recalcImgRect]);
+
+  const handleViewChange = useCallback(() => {
+    requestAnimationFrame(() => recalcImgRect());
+  }, [recalcImgRect]);
+
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const ro = new ResizeObserver(() => recalcImgRect());
+    ro.observe(vp);
+    return () => ro.disconnect();
+  }, [recalcImgRect]);
+
   const handleOverlayChange = (overlay: string) => {
     setActiveOverlay(overlay);
     onActiveOverlayChange?.(overlay);
@@ -72,11 +108,14 @@ export default function CircuitViewport({
 
   const overlayUrl = getOverlayUrl(activeOverlay);
 
-  // Extract component info for labels
   const components = pipelineResult?.components ?? [];
 
+  const imgScale = imgRect ? imgRect.width / imgRect.naturalWidth : 1;
+  const imgOffsetX = imgRect?.left ?? 0;
+  const imgOffsetY = imgRect?.top ?? 0;
+
   return (
-    <div className="circuit-viewport">
+    <div className="circuit-viewport" ref={viewportRef}>
       {/* Source image (base layer) */}
       {sourceImageUrl ? (
         <div className="viewport-base">
@@ -84,6 +123,8 @@ export default function CircuitViewport({
             src={sourceImageUrl}
             alt="Source"
             maxHeight="100%"
+            onImageLoad={handleImageLoad}
+            onViewChange={handleViewChange}
           />
         </div>
       ) : (
@@ -112,6 +153,8 @@ export default function CircuitViewport({
             const [x1, y1, x2, y2] = c.bbox;
             const cx = ((x1 + x2) / 2);
             const cy = ((y1 + y2) / 2);
+            const renderX = cx * imgScale + imgOffsetX;
+            const renderY = cy * imgScale + imgOffsetY;
             const ocrVal = ocrResults?.components?.find(
               (v: any) => v.type === "text" && Math.abs(v.index - i) < 5
             );
@@ -128,7 +171,7 @@ export default function CircuitViewport({
               <div
                 key={i}
                 className="component-label component-label-clickable"
-                style={{ left: `${cx}px`, top: `${cy}px` }}
+                style={{ left: `${renderX}px`, top: `${renderY}px` }}
                 title={`${c.name} (${c.type})`}
                 onClick={handleClick}
               >
@@ -145,10 +188,13 @@ export default function CircuitViewport({
           })}
 
           {/* Popover for editing component value */}
-          {editingComponent && (
+          {editingComponent && (() => {
+            const popX = editingComponent.x * imgScale + imgOffsetX;
+            const popY = editingComponent.y * imgScale + imgOffsetY;
+            return (
             <div
               className="component-popover-anchor"
-              style={{ left: `${editingComponent.x}px`, top: `${editingComponent.y - 40}px` }}
+              style={{ left: `${popX}px`, top: `${popY - 40}px` }}
             >
               <ComponentPopover
                 name={editingComponent.name}
@@ -160,7 +206,8 @@ export default function CircuitViewport({
                 onClose={() => setEditingComponent(null)}
               />
             </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
