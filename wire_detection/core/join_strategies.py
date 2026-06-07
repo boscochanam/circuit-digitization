@@ -24,7 +24,7 @@ from wire_detection.core.netlist import (
 )
 from wire_detection.core.join_graph import build_endpoint_graph
 from wire_detection.core.mapping import TWO_TERMINAL_TYPES
-from wire_detection.core.spice import COMPONENT_NAMES
+from wire_detection.core.component_classes import COMPONENT_TYPES
 
 
 def make_pins(wires, components):
@@ -33,7 +33,7 @@ def make_pins(wires, components):
     (matches the production /api/netlist path)."""
     all_pins = []
     for ci, comp in enumerate(components):
-        tname = COMPONENT_NAMES.get(comp[0], f"cls_{comp[0]}")
+        tname = COMPONENT_TYPES.get(comp[0], f"cls_{comp[0]}")
         all_pins.extend(derive_pins_from_obb(ci, comp, tname))
     clustered = discover_pins(wires, components)
     if clustered:
@@ -121,7 +121,7 @@ def make_pins_junction_aware(wires, components, max_comp_dist=40):
     for p in pins:
         by_comp.setdefault(p.component_idx, []).append(p)
     for ci, comp in enumerate(components):
-        if COMPONENT_NAMES.get(comp[0], "") not in _JUNCTION_TYPES:
+        if COMPONENT_TYPES.get(comp[0], "") not in _JUNCTION_TYPES:
             continue
         x_min, y_min, x_max, y_max = comp[2]
         near = []
@@ -392,7 +392,7 @@ def score_netlist(wires, components, pins, netlist, max_pin_dist=30.0, giant=8):
 
     self_loops = floating = connected = non_inert = 0
     for ci, comp in enumerate(components):
-        tname = COMPONENT_NAMES.get(comp[0], f"cls_{comp[0]}")
+        tname = COMPONENT_TYPES.get(comp[0], f"cls_{comp[0]}")
         my_nodes = [pin_node.get((ci, p.pin_name)) for p in comp_pins.get(ci, [])]
         my_nodes = [n for n in my_nodes if n is not None]
         is_conn = any(len(node_comps.get(n, set())) >= 2 for n in my_nodes)
