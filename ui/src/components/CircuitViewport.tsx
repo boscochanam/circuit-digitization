@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
 
@@ -51,30 +51,7 @@ export default function CircuitViewport({
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const imgElRef = useRef<HTMLImageElement | null>(null);
-  const [imgRect, setImgRect] = useState<{ left: number; top: number; width: number; naturalWidth: number; naturalHeight: number } | null>(null);
-
-  const recalcImgRect = useCallback(() => {
-    const vp = viewportRef.current;
-    const img = imgElRef.current;
-    if (!vp || !img || !img.naturalWidth) return;
-    const vpR = vp.getBoundingClientRect();
-    const imgR = img.getBoundingClientRect();
-    setImgRect({
-      left: imgR.left - vpR.left,
-      top: imgR.top - vpR.top,
-      width: imgR.width,
-      naturalWidth: img.naturalWidth,
-      naturalHeight: img.naturalHeight,
-    });
-  }, []);
-
-  useEffect(() => {
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const ro = new ResizeObserver(() => recalcImgRect());
-    ro.observe(vp);
-    return () => ro.disconnect();
-  }, [recalcImgRect]);
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
 
   const handleOverlayChange = (overlay: string) => {
     setActiveOverlay(overlay);
@@ -131,9 +108,12 @@ export default function CircuitViewport({
 
   const components = pipelineResult?.components ?? [];
 
-  const imgScale = imgRect ? imgRect.width / imgRect.naturalWidth : 1;
-  const imgOffsetX = imgRect?.left ?? 0;
-  const imgOffsetY = imgRect?.top ?? 0;
+  const onImgLoad = useCallback((img: HTMLImageElement | null) => {
+    imgElRef.current = img;
+    if (img) {
+      setImgSize({ w: img.offsetWidth, h: img.offsetHeight });
+    }
+  }, []);
 
   return (
     <div 
@@ -149,13 +129,12 @@ export default function CircuitViewport({
     >
       {displaySrc ? (
         <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center center", transition: isPanning ? "none" : "transform 0.1s ease-out" }}>
+          <div style={{ position: "relative", maxWidth: "100%", maxHeight: "100%", transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "0 0", transition: isPanning ? "none" : "transform 0.1s ease-out" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              ref={imgElRef}
+              ref={onImgLoad}
               src={displaySrc}
               alt={overlayUrl ? activeOverlay : "Source"}
-              onLoad={() => requestAnimationFrame(() => recalcImgRect())}
               style={{
                 display: "block",
                 maxWidth: "100%",
@@ -164,6 +143,67 @@ export default function CircuitViewport({
                 opacity: overlayUrl ? overlayOpacity / 100 : 1,
               }}
             />
+            {/* Labels inside transform wrapper — scale with image */}
+            {components.length > 0 && activeOverlay !== "none" && imgSize.w > 0 && (
+              <div className="viewport-labels" style={{ left: imgElRef.current?.offsetLeft ?? 0, top: imgElRef.current?.offsetTop ?? 0, width: imgSize.w, height: imgSize.h }}>
+                {components.slice(0, 50).map((c: any, i: number) => {
+                  if (!c.bbox) return null;
+                  const [x1, y1, x2, y2] = c.bbox;
+                  const cx = (x1 + x2) / 2;
+                  const cy = (y1 + y2) / 2;
+                  const ocrVal = ocrResults?.components?.find(
+                    (v: any) => v.type === "text" && Math.abs(v.index - i) < 5
+                  );
+                  const hasOcrValue = !!ocrVal?.value;
+                  const hasManualValue = !!componentValues[c.name];
+                  const dotColor = hasManualValue ? "var(--blue)" : hasOcrValue ? "var(--success)" : "var(--grey-mid)";
+
+                  const handleClick = (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    setEditingComponent({ name: c.name, type: c.type, x: cx, y: cy });
+                  };
+
+                  return (
+                    <div
+                      key={i}
+                      className="component-label component-label-clickable"
+                      style={{ left: `${cx}px`, top: `${cy}px` }}
+                      title={`${c.name} (${c.type})`}
+                      onClick={handleClick}
+                    >
+                      <span className="component-status-dot" style={{ background: dotColor }} />
+                      <span className="comp-name">{c.name}</span>
+                      {hasManualValue && (
+                        <span className="comp-value">{componentValues[c.name]}</span>
+                      )}
+                      {!hasManualValue && hasOcrValue && (
+                        <span className="comp-value">{ocrVal.value}</span>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Popover for editing component value */}
+                {editingComponent && (() => {
+                  return (
+                  <div
+                    className="component-popover-anchor"
+                    style={{ left: `${editingComponent.x}px`, top: `${editingComponent.y - 40}px` }}
+                  >
+                    <ComponentPopover
+                      name={editingComponent.name}
+                      type={editingComponent.type}
+                      currentValue={componentValues[editingComponent.name] ?? ocrResults?.components?.find(
+                        (v: any) => v.type === "text" && Math.abs(v.index - components.findIndex((c: any) => c.name === editingComponent.name)) < 5
+                      )?.value ?? ""}
+                      onSave={(value) => onValueChange?.(editingComponent.name, value)}
+                      onClose={() => setEditingComponent(null)}
+                    />
+                  </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
           {scale !== 1 && (
             <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.7)", color: "#fff", padding: "4px 8px", borderRadius: 4, fontSize: 12, fontFamily: "monospace" }}>
@@ -173,72 +213,6 @@ export default function CircuitViewport({
         </div>
       ) : (
         <div className="viewport-empty">No image loaded</div>
-      )}
-
-      {/* Component labels overlay */}
-      {components.length > 0 && activeOverlay !== "none" && (
-        <div className="viewport-labels">
-          {components.slice(0, 50).map((c: any, i: number) => {
-            if (!c.bbox) return null;
-            const [x1, y1, x2, y2] = c.bbox;
-            const cx = ((x1 + x2) / 2);
-            const cy = ((y1 + y2) / 2);
-            const renderX = cx * imgScale + imgOffsetX;
-            const renderY = cy * imgScale + imgOffsetY;
-            const ocrVal = ocrResults?.components?.find(
-              (v: any) => v.type === "text" && Math.abs(v.index - i) < 5
-            );
-            const hasOcrValue = !!ocrVal?.value;
-            const hasManualValue = !!componentValues[c.name];
-            const dotColor = hasManualValue ? "var(--blue)" : hasOcrValue ? "var(--success)" : "var(--grey-mid)";
-
-            const handleClick = (e: React.MouseEvent) => {
-              e.stopPropagation();
-              setEditingComponent({ name: c.name, type: c.type, x: cx, y: cy });
-            };
-
-            return (
-              <div
-                key={i}
-                className="component-label component-label-clickable"
-                style={{ left: `${renderX}px`, top: `${renderY}px` }}
-                title={`${c.name} (${c.type})`}
-                onClick={handleClick}
-              >
-                <span className="component-status-dot" style={{ background: dotColor }} />
-                <span className="comp-name">{c.name}</span>
-                {hasManualValue && (
-                  <span className="comp-value">{componentValues[c.name]}</span>
-                )}
-                {!hasManualValue && hasOcrValue && (
-                  <span className="comp-value">{ocrVal.value}</span>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Popover for editing component value */}
-          {editingComponent && (() => {
-            const popX = editingComponent.x * imgScale + imgOffsetX;
-            const popY = editingComponent.y * imgScale + imgOffsetY;
-            return (
-            <div
-              className="component-popover-anchor"
-              style={{ left: `${popX}px`, top: `${popY - 40}px` }}
-            >
-              <ComponentPopover
-                name={editingComponent.name}
-                type={editingComponent.type}
-                currentValue={componentValues[editingComponent.name] ?? ocrResults?.components?.find(
-                  (v: any) => v.type === "text" && Math.abs(v.index - components.findIndex((c: any) => c.name === editingComponent.name)) < 5
-                )?.value ?? ""}
-                onSave={(value) => onValueChange?.(editingComponent.name, value)}
-                onClose={() => setEditingComponent(null)}
-              />
-            </div>
-            );
-          })()}
-        </div>
       )}
 
       {/* OCR + Overlay controls (fixed position) */}
