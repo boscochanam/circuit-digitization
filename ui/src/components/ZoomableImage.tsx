@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 interface ZoomableImageProps {
   src: string;
   alt: string;
   maxHeight?: string;
   className?: string;
+  onImageLoad?: (img: HTMLImageElement) => void;
+  onViewChange?: () => void;
 }
 
 /**
@@ -18,6 +20,8 @@ export default function ZoomableImage({
   alt,
   maxHeight = "70vh",
   className = "",
+  onImageLoad,
+  onViewChange,
 }: ZoomableImageProps) {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -57,6 +61,10 @@ export default function ZoomableImage({
     setOffset({ x: 0, y: 0 });
   }, []);
 
+  useEffect(() => {
+    onViewChange?.();
+  }, [scale, offset, onViewChange]);
+
   return (
     <div
       className={`zoomable-container ${className}`}
@@ -78,6 +86,7 @@ export default function ZoomableImage({
         src={src}
         alt={alt}
         draggable={false}
+        onLoad={(e) => onImageLoad?.(e.currentTarget as HTMLImageElement)}
         style={{
           display: "block",
           maxWidth: "100%",
