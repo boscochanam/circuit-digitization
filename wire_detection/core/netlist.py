@@ -21,31 +21,35 @@ PIN_DEFINITIONS: dict[str, list[tuple[float, float]]] = {
     "resistor": [(0.0, 0.5), (0.0, -0.5)],
     "capacitor-polarized": [(0.0, 0.5), (0.0, -0.5)],
     "capacitor-unpolarized": [(0.0, 0.5), (0.0, -0.5)],
+    "capacitor-adjustable": [(0.0, 0.5), (0.0, -0.5)],
     "inductor": [(0.0, 0.5), (0.0, -0.5)],
+    "inductor-ferrite": [(0.0, 0.5), (0.0, -0.5)],
     "diode": [(0.0, 0.5), (0.0, -0.5)],
-    "diode-light_emitting": [(0.0, 0.5), (0.0, -0.5)],
+    "diode-LED": [(0.0, 0.5), (0.0, -0.5)],
     "diode-zener": [(0.0, 0.5), (0.0, -0.5)],
+    "diode-thyrector": [(0.0, 0.5), (0.0, -0.5)],
     "fuse": [(0.0, 0.5), (0.0, -0.5)],
     "lamp": [(0.0, 0.5), (0.0, -0.5)],
     "switch": [(0.0, 0.5), (0.0, -0.5)],
-    "thermistor": [(0.0, 0.5), (0.0, -0.5)],
     "varistor": [(0.0, 0.5), (0.0, -0.5)],
-    "potentiometer": [(0.0, 0.5), (0.0, -0.5), (0.5, 0.0)],
     "relay": [(0.0, 0.5), (0.0, -0.5)],
     "transformer": [(0.0, 0.5), (0.0, -0.5)],
     "motor": [(0.0, 0.5), (0.0, -0.5)],
     "microphone": [(0.0, 0.5), (0.0, -0.5)],
     "probe": [(0.0, 0.5), (0.0, -0.5)],
-    "transistor": [(-0.5, 0.0), (0.5, 0.0), (0.0, 0.5)],
-    "transistor-pnp": [(-0.5, 0.0), (0.5, 0.0), (0.0, 0.5)],
-    "operational_amplifier": [(-0.5, 0.3), (-0.5, -0.3), (0.5, 0.0), (0.0, -0.5)],
-    "integrated_circuit": [(-0.5, -0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)],
-    "integrated_circuit-ne555": [(-0.5, -0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)],
-    "integrated_circuit-voltage_regulator": [(-0.5, 0.0), (0.5, 0.0), (0.0, 0.5)],
+    "transistor-BJT": [(-0.5, 0.0), (0.5, 0.0), (0.0, 0.5)],
+    "transistor-FET": [(-0.5, 0.0), (0.5, 0.0), (0.0, 0.5)],
+    "opamp": [(-0.5, 0.3), (-0.5, -0.3), (0.5, 0.0), (0.0, -0.5)],
+    "opamp-schmitt": [(-0.5, 0.3), (-0.5, -0.3), (0.5, 0.0), (0.0, -0.5)],
+    "IC": [(-0.5, -0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)],
+    "IC-NE555": [(-0.5, -0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)],
+    "IC-voltage-reg": [(-0.5, 0.0), (0.5, 0.0), (0.0, 0.5)],
     "junction": [(0.0, 0.0)],
     "terminal": [(0.0, 0.0)],
     "gnd": [(0.0, 0.0)],
-    "voltage_source": [(0.0, 0.5), (0.0, -0.5)],
+    "voltage-DC": [(0.0, 0.5), (0.0, -0.5)],
+    "voltage-AC": [(0.0, 0.5), (0.0, -0.5)],
+    "voltage-battery": [(0.0, 0.5), (0.0, -0.5)],
     "and": [(-0.5, 0.3), (-0.5, -0.3), (0.5, 0.0)],
     "nand": [(-0.5, 0.3), (-0.5, -0.3), (0.5, 0.0)],
     "or": [(-0.5, 0.3), (-0.5, -0.3), (0.5, 0.0)],
@@ -54,13 +58,10 @@ PIN_DEFINITIONS: dict[str, list[tuple[float, float]]] = {
     "crossover": [(0.0, 0.5), (0.0, -0.5)],
     "crystal": [(0.0, 0.5), (0.0, -0.5)],
     "diac": [(0.0, 0.5), (0.0, -0.5)],
-    "diode-thyrector": [(0.0, 0.5), (0.0, -0.5)],
-    "inductor-ferrite": [(0.0, 0.5), (0.0, -0.5)],
     "magnetic": [(0.0, 0.5), (0.0, -0.5)],
     "mechanical": [(0.0, 0.5), (0.0, -0.5)],
     "optocoupler": [(-0.5, 0.0), (0.5, 0.0)],
     "triac": [(-0.5, 0.0), (0.5, 0.0), (0.0, 0.5)],
-    "capacitor-adjustable": [(0.0, 0.5), (0.0, -0.5)],
     "resistor-adjustable": [(0.0, 0.5), (0.0, -0.5), (0.5, 0.0)],
 }
 
@@ -115,12 +116,12 @@ class Netlist:
 
 # Component types that should generate SPICE elements
 SPICE_ACTIVE_TYPES: set[str] = {
-    "resistor", "resistor-adjustable", "thermistor", "varistor",
+    "resistor", "resistor-adjustable", "varistor",
     "capacitor-unpolarized", "capacitor-polarized", "capacitor-adjustable",
     "inductor", "inductor-ferrite",
-    "diode", "diode-zener", "diode-light_emitting", "diode-thyrector", "diac",
-    "voltage_source",
-    "transistor", "transistor-pnp",
+    "diode", "diode-LED", "diode-zener", "diode-thyrector", "diac",
+    "voltage-DC", "voltage-AC", "voltage-battery",
+    "transistor-BJT", "transistor-FET",
     "fuse", "lamp", "crystal",
     "gnd",
 }
@@ -139,7 +140,7 @@ def discover_pins(
     of the bbox, clusters them with DBSCAN, and creates a pin at each cluster center.
     Achieves ~100% wire-endpoint connectivity vs ~30% for static pin definitions.
     """
-    from wire_detection.core.spice import COMPONENT_NAMES as _CNAMES
+    from wire_detection.core.component_classes import COMPONENT_TYPES as _CNAMES
     names = component_names or _CNAMES
     all_pins: list[DiscoveredPin] = []
 
