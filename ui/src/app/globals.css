@@ -8,6 +8,7 @@
   --grey-dark: #888888;
   --error: #FF0000;
   --success: #008000;
+  --blue: #0066CC;
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
 }
@@ -409,3 +410,111 @@ html, body { height: 100%; overflow: hidden; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--grey-light); }
 ::-webkit-scrollbar-thumb { background: var(--black); }
+
+/* Component label status dot */
+.component-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.component-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  position: absolute;
+}
+
+.component-label-clickable {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.component-label-clickable:hover .comp-name {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* Component popover */
+.component-popover-anchor {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.component-popover {
+  background: var(--white);
+  border: 3px solid var(--black);
+  min-width: 180px;
+  box-shadow: 4px 4px 0 var(--black);
+  pointer-events: auto;
+}
+
+.component-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--black);
+  background: var(--grey-light);
+}
+
+.component-popover-name {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.component-popover-type {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--grey-dark);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.component-popover-body {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  align-items: center;
+}
+
+.component-popover-input {
+  flex: 1;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 2px solid var(--black);
+  background: var(--white);
+  outline: none;
+}
+
+.component-popover-input:focus {
+  border-color: var(--blue);
+}
+
+.component-popover-save {
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 12px;
+  background: var(--black);
+  color: var(--white);
+  border: 2px solid var(--black);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.component-popover-save:hover {
+  background: var(--grey-dark);
+}
