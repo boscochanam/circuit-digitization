@@ -21,6 +21,7 @@ export function useSimulation(
   params: Record<string, string | number>,
   componentValues: Record<string, string>,
   enabled: boolean,
+  strategy: string = "graph_rescue",
 ) {
   const [state, setState] = useState<SimulationState>({
     loading: false,
@@ -50,7 +51,7 @@ export function useSimulation(
 
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
-    fetchNetlistAction(imageIdx, dataset, preset, params, componentValues)
+    fetchNetlistAction(imageIdx, dataset, preset, params, componentValues, strategy)
       .then((netlist) => {
         if (controller.signal.aborted) return undefined;
 
@@ -90,7 +91,7 @@ export function useSimulation(
     return () => {
       controller.abort();
     };
-  }, [imageIdx, dataset, preset, params, componentValues, enabled]);
+  }, [imageIdx, dataset, preset, params, componentValues, enabled, strategy]);
 
   return state;
 }

@@ -42,6 +42,7 @@ class NetlistRequest(BaseModel):
     preset: str = "best_candidate_v4"
     params: dict[str, Any] = {}
     component_values: dict[str, str] | None = None  # e.g. {"0": "10k", "1": "100n"} (index-based)
+    strategy: str | None = None     # join strategy name; None = registry default
 
 
 class SimulateRequest(BaseModel):
