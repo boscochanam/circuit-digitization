@@ -234,7 +234,7 @@ class SpiceGenerator:
                     skipped[type_name] = skipped.get(type_name, 0) + 1
                     continue
                 model = "LEDMOD" if type_name == "diode-light_emitting" else "DMOD"
-                device_lines.append(f"{self._get_next_name('D')} {a} {k} {model}")
+                device_lines.append(f"D{i + 1} {a} {k} {model}")
                 model_lines.add(".model LEDMOD D(Is=1e-14 N=1.5)" if model == "LEDMOD"
                                 else ".model DMOD D(Is=1e-14 N=1)")
             elif type_name in ("transistor", "transistor-pnp"):
@@ -245,7 +245,7 @@ class SpiceGenerator:
                     skipped[type_name] = skipped.get(type_name, 0) + 1
                     continue
                 mdl = "QPNP" if type_name == "transistor-pnp" else "QNPN"
-                device_lines.append(f"{self._get_next_name('Q')} {c} {b} {e} {mdl}")
+                device_lines.append(f"Q{i + 1} {c} {b} {e} {mdl}")
                 model_lines.add(".model QPNP PNP(Is=1e-14 Bf=100 Vaf=50)" if mdl == "QPNP"
                                 else ".model QNPN NPN(Is=1e-14 Bf=100 Vaf=50)")
             elif type_name == "voltage_source":
@@ -254,10 +254,15 @@ class SpiceGenerator:
                 if p == n:
                     skipped[type_name] = skipped.get(type_name, 0) + 1
                     continue
-                device_lines.append(f"{self._get_next_name('V')} {p} {n} DC 5")
+                spice_name = f"V{i + 1}"
+                if value_overrides and spice_name in value_overrides:
+                    v_val = _parse_value(value_overrides[spice_name])
+                else:
+                    v_val = "5"
+                device_lines.append(f"{spice_name} {p} {n} DC {v_val}")
                 has_vsrc = True
             elif prefix in ("R", "C", "L"):
-                spice_name = self._get_next_name(prefix)
+                spice_name = f"{prefix}{i + 1}"
                 if value_overrides and spice_name in value_overrides:
                     value = _parse_value(value_overrides[spice_name])
                 else:
