@@ -215,6 +215,7 @@ export default function Sidebar({
           <div className="sidebar-component-list">
             {components.map((comp) => {
               const color = COMPONENT_TYPE_COLORS[comp.type] ?? "#666666";
+              const editable = /^[RCLV]/.test(comp.name);
               return (
                 <button
                   key={comp.name}
@@ -226,15 +227,17 @@ export default function Sidebar({
                     style={{ background: color }}
                   />
                   <span className="sidebar-component-name">{comp.name}</span>
-                  <input
-                    className="sidebar-component-value"
-                    value={comp.value}
-                    onChange={(e) =>
-                      onComponentValueChange(comp.name, e.target.value)
-                    }
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder="--"
-                  />
+                  {editable && (
+                    <input
+                      className="sidebar-component-value"
+                      value={comp.value}
+                      onChange={(e) =>
+                        onComponentValueChange(comp.name, e.target.value)
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="--"
+                    />
+                  )}
                 </button>
               );
             })}

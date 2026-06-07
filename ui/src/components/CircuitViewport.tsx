@@ -108,6 +108,9 @@ export default function CircuitViewport({
 
   const components = pipelineResult?.components ?? [];
 
+  /** Only R, C, L, V have SPICE models — only these are value-editable */
+  const isEditable = (name: string) => /^[RCLV]/.test(name);
+
   const onImgLoad = useCallback((img: HTMLImageElement | null) => {
     imgElRef.current = img;
     if (img) {
@@ -158,6 +161,7 @@ export default function CircuitViewport({
                   const hasManualValue = !!componentValues[c.name];
                   const dotColor = hasManualValue ? "var(--blue)" : hasOcrValue ? "var(--success)" : "var(--grey-mid)";
 
+                  const editable = isEditable(c.name);
                   const handleClick = (e: React.MouseEvent) => {
                     e.stopPropagation();
                     setEditingComponent({ name: c.name, type: c.type, x: cx, y: cy });
@@ -166,10 +170,10 @@ export default function CircuitViewport({
                   return (
                     <div
                       key={i}
-                      className="component-label component-label-clickable"
+                      className={`component-label${editable ? " component-label-clickable" : ""}`}
                       style={{ left: `${cx}px`, top: `${cy}px` }}
                       title={`${c.name} (${c.type})`}
-                      onClick={handleClick}
+                      onClick={editable ? handleClick : undefined}
                     >
                       <span className="component-status-dot" style={{ background: dotColor }} />
                       <span className="comp-name">{c.name}</span>
