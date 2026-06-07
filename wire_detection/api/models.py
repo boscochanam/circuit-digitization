@@ -41,6 +41,7 @@ class NetlistRequest(BaseModel):
     ds: str = "gt_labels"
     preset: str = "best_candidate_v4"
     params: dict[str, Any] = {}
+    component_values: dict[str, str] | None = None  # e.g. {"R1": "10k", "C2": "100n"}
 
 
 class SimulateRequest(BaseModel):

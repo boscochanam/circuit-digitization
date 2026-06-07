@@ -27,6 +27,7 @@ def _build_netlist_data(
     ds: str,
     preset: str,
     params_overrides: dict | None = None,
+    component_values: dict[str, str] | None = None,
 ) -> dict:
     """Build netlist data using endpoint clustering pin discovery."""
     images = deps.registry.list_images(ds)
@@ -74,7 +75,7 @@ def _build_netlist_data(
     # Voltage Map routes do — so the netlist, topology graph and SPICE match those
     # views for ANY DEFAULT_STRATEGY, not only standard-pin ones.
     all_pins, netlist = run_strategy(DEFAULT_STRATEGY, wires, components_raw)
-    spice_text = gen.generate(components_raw, netlist)
+    spice_text = gen.generate(components_raw, netlist, value_overrides=component_values)
 
     # Step 5: Build response — one entry per component with node assignments
     response_nodes: dict[int, dict] = {}
@@ -125,6 +126,7 @@ async def get_netlist(data: NetlistRequest):
             ds=data.ds,
             preset=data.preset,
             params_overrides=data.params,
+            component_values=data.component_values,
         )
         if "error" in result:
             return JSONResponse({"error": result["error"]}, status_code=404)
