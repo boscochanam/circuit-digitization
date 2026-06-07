@@ -50,7 +50,7 @@ export function useSimulation(
 
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
-    fetchNetlistAction(imageIdx, dataset, preset, params)
+    fetchNetlistAction(imageIdx, dataset, preset, params, componentValues)
       .then((netlist) => {
         if (controller.signal.aborted) return undefined;
 

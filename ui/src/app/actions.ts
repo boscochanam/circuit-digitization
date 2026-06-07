@@ -22,11 +22,20 @@ export async function fetchNetlistAction(
   ds: string,
   preset: string,
   params: Record<string, string | number> = {},
+  componentValues?: Record<string, string>,
 ): Promise<NetlistResult> {
   return fetchBackend("/api/netlist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ img_idx: imgIdx, ds, preset, params }),
+    body: JSON.stringify({
+      img_idx: imgIdx,
+      ds,
+      preset,
+      params,
+      ...(componentValues && Object.keys(componentValues).length > 0
+        ? { component_values: componentValues }
+        : {}),
+    }),
   });
 }
 

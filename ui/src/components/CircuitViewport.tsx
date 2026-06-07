@@ -105,7 +105,7 @@ export default function CircuitViewport({
       )}
 
       {/* Component labels overlay */}
-      {components.length > 0 && activeOverlay === "none" && (
+      {components.length > 0 && (
         <div className="viewport-labels">
           {components.slice(0, 50).map((c: any, i: number) => {
             if (!c.bbox) return null;
