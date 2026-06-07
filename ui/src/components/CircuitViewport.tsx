@@ -43,6 +43,12 @@ export default function CircuitViewport({
   const [overlayOpacity, setOverlayOpacity] = useState(70);
   const [editingComponent, setEditingComponent] = useState<{ name: string; type: string; x: number; y: number } | null>(null);
 
+  // Zoom/pan state
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const panStartRef = useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 });
+
   const viewportRef = useRef<HTMLDivElement>(null);
   const imgElRef = useRef<HTMLImageElement | null>(null);
   const [imgRect, setImgRect] = useState<{ left: number; top: number; width: number; naturalWidth: number; naturalHeight: number } | null>(null);
@@ -75,6 +81,34 @@ export default function CircuitViewport({
     onActiveOverlayChange?.(overlay);
   };
 
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setScale(prev => Math.max(0.5, Math.min(5, prev * delta)));
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (scale <= 1) return;
+    setIsPanning(true);
+    panStartRef.current = { x: e.clientX, y: e.clientY, offsetX: offset.x, offsetY: offset.y };
+  }, [scale, offset]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning) return;
+    const dx = e.clientX - panStartRef.current.x;
+    const dy = e.clientY - panStartRef.current.y;
+    setOffset({ x: panStartRef.current.offsetX + dx, y: panStartRef.current.offsetY + dy });
+  }, [isPanning]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  const handleDoubleClick = useCallback(() => {
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
+  }, []);
+
   // Get overlay image based on selection
   const getOverlayUrl = (type: string): string | null => {
     if (type === "voltage") return simOverlayUrl ?? null;
@@ -102,30 +136,47 @@ export default function CircuitViewport({
   const imgOffsetY = imgRect?.top ?? 0;
 
   return (
-    <div className="circuit-viewport" ref={viewportRef}>
+    <div 
+      className="circuit-viewport" 
+      ref={viewportRef}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onDoubleClick={handleDoubleClick}
+      style={{ cursor: scale > 1 ? (isPanning ? "grabbing" : "grab") : "default", overflow: "hidden" }}
+    >
       {displaySrc ? (
         <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            ref={imgElRef}
-            src={displaySrc}
-            alt={overlayUrl ? activeOverlay : "Source"}
-            onLoad={() => requestAnimationFrame(() => recalcImgRect())}
-            style={{
-              display: "block",
-              maxWidth: "100%",
-              maxHeight: "100%",
-              objectFit: "contain",
-              opacity: overlayUrl ? overlayOpacity / 100 : 1,
-            }}
-          />
+          <div style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center center", transition: isPanning ? "none" : "transform 0.1s ease-out" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              ref={imgElRef}
+              src={displaySrc}
+              alt={overlayUrl ? activeOverlay : "Source"}
+              onLoad={() => requestAnimationFrame(() => recalcImgRect())}
+              style={{
+                display: "block",
+                maxWidth: "100%",
+                maxHeight: "100%",
+                objectFit: "contain",
+                opacity: overlayUrl ? overlayOpacity / 100 : 1,
+              }}
+            />
+          </div>
+          {scale !== 1 && (
+            <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.7)", color: "#fff", padding: "4px 8px", borderRadius: 4, fontSize: 12, fontFamily: "monospace" }}>
+              {Math.round(scale * 100)}%
+            </div>
+          )}
         </div>
       ) : (
         <div className="viewport-empty">No image loaded</div>
       )}
 
       {/* Component labels overlay */}
-      {components.length > 0 && (
+      {components.length > 0 && activeOverlay !== "none" && (
         <div className="viewport-labels">
           {components.slice(0, 50).map((c: any, i: number) => {
             if (!c.bbox) return null;
