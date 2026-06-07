@@ -135,8 +135,8 @@ html, body { height: 100%; overflow: hidden; }
 }
 
 .sidebar-layout {
-  width: 280px;
-  min-width: 280px;
+  width: 220px;
+  min-width: 220px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
