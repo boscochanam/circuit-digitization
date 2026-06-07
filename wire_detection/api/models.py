@@ -58,6 +58,10 @@ class JoinOverlayRequest(BaseModel):
     strategy: str | None = None     # join strategy name; None = production default
 
 
+class SimOverlayRequest(JoinOverlayRequest):
+    component_values: dict[str, str] | None = None  # e.g. {"R1": "10k", "C2": "100n"}
+
+
 class NetlistResponse(BaseModel):
     nodes: list[dict[str, Any]]
     components: list[dict[str, Any]]
