@@ -225,7 +225,7 @@ def _compute_component_currents(components, netlist, volts, spice_text, result):
         # Get voltages at each pin's net
         node_voltages = []
         for nid in net_ids[:2]:  # Take first two pins (anode/cathode)
-            key = f"n{nid}" if nid != 0 else "0"
+            key = f"n{nid}"
             v = volts.get(key, volts.get(str(nid), 0.0))
             node_voltages.append(v)
 
