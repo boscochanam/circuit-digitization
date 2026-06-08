@@ -28,7 +28,7 @@ from fastapi.responses import JSONResponse
 import wire_detection.api.deps as deps
 from wire_detection.api.models import SimOverlayRequest
 from wire_detection.core.join_strategies import run_strategy
-from wire_detection.core.connection_overrides import load_overrides, apply_overrides_to_netlist
+from wire_detection.core.connection_overrides import load_overrides, apply_overrides_to_netlist, wires_with_removes
 from wire_detection.core.spice import SpiceGenerator
 from wire_detection.core.simulator import SpiceSimulator
 from wire_detection.core.component_classes import PREFIX_MAP, COMPONENT_TYPES
@@ -303,8 +303,10 @@ async def current_overlay(data: SimOverlayRequest):
             )
 
         strategy = data.strategy or "production"
+        _overrides = load_overrides(data.ds, data.img_idx)
+        wires = wires_with_removes(wires, _overrides)
         pins, netlist = run_strategy(strategy, wires, components)
-        netlist = apply_overrides_to_netlist(netlist, components, load_overrides(data.ds, data.img_idx))
+        netlist = apply_overrides_to_netlist(netlist, components, _overrides)
         gen = SpiceGenerator()
         spice = gen.generate(components, netlist, value_overrides=data.component_values)
 
