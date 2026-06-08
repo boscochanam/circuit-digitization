@@ -53,6 +53,7 @@ interface CircuitViewportProps {
   onJoin?: (sourceEndpoint: string, targetEndpoint: string) => void;
   onDisconnect?: (endpointKey: string) => void;
   onResetOverrides?: () => void;
+  resetSignal?: number;
 }
 
 /**
@@ -102,6 +103,7 @@ export default function CircuitViewport({
   onJoin,
   onDisconnect,
   onResetOverrides,
+  resetSignal = 0,
 }: CircuitViewportProps) {
   const [activeOverlay, setActiveOverlay] = useState<string>("none");
   const [overlayOpacity, setOverlayOpacity] = useState(70);
@@ -187,6 +189,13 @@ export default function CircuitViewport({
       return { scale, x: v.x - dx * (k - 1), y: v.y - dy * (k - 1) };
     });
   }, []);
+
+  // Reset the image zoom/pan when the header "Reset view" button fires.
+  const firstResetRef = useRef(true);
+  useEffect(() => {
+    if (firstResetRef.current) { firstResetRef.current = false; return; }
+    setView({ scale: 1, x: 0, y: 0 });
+  }, [resetSignal]);
 
   // Get overlay image based on selection
   const getOverlayUrl = (type: string): string | null => {

@@ -121,8 +121,8 @@ html, body { height: 100%; overflow: hidden; }
 }
 
 .sidebar-layout {
-  width: 260px;
-  min-width: 260px;
+  width: var(--sidebar-w, 260px);
+  min-width: var(--sidebar-w, 260px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -362,12 +362,32 @@ html, body { height: 100%; overflow: hidden; }
   height: 36px;
   flex-shrink: 0;
   overflow: hidden;
-  transition: height 0.2s ease;
 }
 
 .bottom-panel-open {
-  height: 240px;
+  height: var(--bottom-h, 240px);
 }
+
+/* Panel resize handles — drag to shrink the sidebar / bottom panel. */
+.col-resize {
+  width: 6px; flex-shrink: 0; cursor: col-resize; align-self: stretch;
+  background: var(--black); opacity: 0.12;
+}
+.bp-resize {
+  height: 6px; flex-shrink: 0; cursor: row-resize;
+  background: var(--black); opacity: 0.12;
+}
+.col-resize:hover, .bp-resize:hover { opacity: 0.4; }
+
+/* Header right group + reset-view button */
+.header-right { display: flex; align-items: center; gap: 12px; }
+.reset-view-btn {
+  font-family: var(--font-mono), monospace; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 5px 11px; background: transparent; color: var(--white);
+  border: 2px solid var(--white); cursor: pointer; white-space: nowrap;
+}
+.reset-view-btn:hover { background: var(--white); color: var(--black); }
 
 .bottom-panel-header {
   display: flex; align-items: center;

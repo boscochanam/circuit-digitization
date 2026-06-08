@@ -7,6 +7,7 @@ interface BottomPanelProps {
   onTabChange: (tab: string) => void;
   isOpen: boolean;
   onToggle: () => void;
+  onResizeStart?: (e: React.MouseEvent) => void;
   children: React.ReactNode;
 }
 
@@ -22,10 +23,14 @@ export default function BottomPanel({
   onTabChange,
   isOpen,
   onToggle,
+  onResizeStart,
   children,
 }: BottomPanelProps) {
   return (
     <div className={`bottom-panel ${isOpen ? "bottom-panel-open" : ""}`}>
+      {isOpen && onResizeStart && (
+        <div className="bp-resize" onMouseDown={onResizeStart} title="Drag to resize the panel" />
+      )}
       <div className="bottom-panel-header">
         <div className="bottom-panel-tabs">
           {TABS.map((tab) => (
