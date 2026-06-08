@@ -20,10 +20,227 @@ from fastapi.responses import JSONResponse
 
 import wire_detection.api.deps as deps
 from wire_detection.api.models import JoinOverlayRequest, PathRequest
+from wire_detection.api.models import OverrideRequest
+from wire_detection.core.connection_overrides import (
+    load_overrides,
+    save_overrides,
+    validate_override_key,
+    validate_reassign_target,
+)
 from wire_detection.core.join_strategies import DEFAULT_STRATEGY, run_strategy
 from wire_detection.core.spice import COMPONENT_NAMES
 
 router = APIRouter()
+
+import re as _re
+_ENDPOINT_RE = _re.compile(r"^wire_(\d+)_ep(1|2)$")
+
+
+def apply_overrides(
+    wires: list,
+    components_raw: list,
+    all_pins: list,
+    netlist,
+    overrides: dict,
+) -> tuple[list[dict], list[dict], list[dict]]:
+    """Apply connection overrides (reassign → remove → join) to topology data.
+
+    Returns updated (topo_wires, topo_pins, topo_nodes).
+
+    Internally tracks per-endpoint node assignments so that operations work
+    at the ``wire_<idx>_ep<1|2>`` granularity.
+    """
+    from wire_detection.core.netlist import NetNode, Netlist
+
+    # ── Build per-endpoint → node_id lookup ──
+    # Also build reverse: (wire_idx, ep_num) → node_id and wire_idx → [node_ids]
+    ep_to_node: dict[str, int | None] = {}
+    _ep_to_node_ids: dict[tuple[int, int], set[int]] = {}  # (wire_idx, ep_num) → {node_ids}
+    for node in netlist.nodes:
+        for wi in node.wires:
+            # Each wire belongs to one node; both endpoints share that node
+            # but we track per-endpoint for override flexibility
+            for ep in (1, 2):
+                key = f"wire_{wi}_ep{ep}"
+                ep_to_node[key] = node.node_id
+                _ep_to_node_ids.setdefault((wi, ep), set()).add(node.node_id)
+
+    # ── Build per-endpoint → pin lookup ──
+    # Map (component_idx, pin_name) → node_id for quick reference
+    pin_node: dict[tuple[int, str], int | None] = dict(netlist.pin_to_node)
+
+    # Also build a lookup: component_name → component_idx from all_pins
+    # and node_id → set of pins in that node
+    node_pins: dict[int, list] = {}
+    node_wire_idxs: dict[int, list[int]] = {}
+    for node in netlist.nodes:
+        node_pins[node.node_id] = list(node.pins)
+        node_wire_idxs[node.node_id] = list(node.wires)
+
+    # ── Phase 1: Reassign ──
+    reassign = overrides.get("reassign", {})
+    for ep_key, target in reassign.items():
+        m = _ENDPOINT_RE.match(ep_key)
+        if m is None:
+            continue
+        wire_idx = int(m.group(1))
+        ep_num = int(m.group(2))
+
+        # Find target node via component name + pin name
+        comp_name = target.get("component", "")
+        pin_name = target.get("pin", "")
+        target_node_id: int | None = None
+
+        # Look up component_idx from the topo_pins list (component_name format "R2" etc.)
+        # We need to find the matching component and its pin
+        from wire_detection.core.component_classes import PREFIX_MAP
+        for ci, comp in enumerate(components_raw):
+            cls_id = comp[0]
+            type_name = COMPONENT_NAMES.get(cls_id, f"cls_{cls_id}")
+            prefix = PREFIX_MAP.get(type_name) or "X"
+            cname = f"{prefix}{ci + 1}"
+            if cname == comp_name:
+                # Found the component — now find its pin
+                key = (ci, pin_name)
+                target_node_id = pin_node.get(key)
+                break
+
+        if target_node_id is None:
+            continue  # can't resolve target, skip
+
+        # Remove endpoint from its current node
+        old_node_id = ep_to_node.get(ep_key)
+        if old_node_id is not None and old_node_id in node_wire_idxs:
+            # Only remove wire from old node if BOTH endpoints are leaving
+            # Actually for reassign we're just moving one endpoint's association
+            # The wire stays in its current node (wire assignment stays),
+            # but we update ep_to_node
+            pass
+
+        # Update endpoint → node mapping
+        ep_to_node[ep_key] = target_node_id
+
+    # ── Phase 2: Remove ──
+    remove_keys = overrides.get("remove", [])
+    for ep_key in remove_keys:
+        if ep_key in ep_to_node:
+            # Remove endpoint from its current node's pin tracking
+            old_node_id = ep_to_node[ep_key]
+            ep_to_node[ep_key] = None  # disconnected
+
+    # ── Phase 3: Join ──
+    join_pairs = overrides.get("join", [])
+    for pair in join_pairs:
+        if len(pair) != 2:
+            continue
+        key_a, key_b = pair[0], pair[1]
+
+        node_a = ep_to_node.get(key_a)
+        node_b = ep_to_node.get(key_b)
+
+        if node_a is None or node_b is None:
+            continue  # can't join a disconnected endpoint
+        if node_a == node_b:
+            continue  # already same node
+
+        # Merge: move everything from smaller node into larger node
+        if node_a > node_b:
+            node_a, node_b = node_b, node_a
+            key_a, key_b = key_b, key_a
+
+        # node_a is smaller (or equal), node_b is larger — merge node_a into node_b
+        # Move all wires from node_a → node_b
+        for wi in node_wire_idxs.get(node_a, []):
+            if wi not in node_wire_idxs.get(node_b, []):
+                node_wire_idxs.setdefault(node_b, []).append(wi)
+            # Update all endpoint → node mappings for this wire
+            for ep in (1, 2):
+                k = f"wire_{wi}_ep{ep}"
+                if ep_to_node.get(k) == node_a:
+                    ep_to_node[k] = node_b
+
+        # Move all pins from node_a → node_b
+        for pin in node_pins.get(node_a, []):
+            node_pins.setdefault(node_b, []).append(pin)
+            # Update pin_node mapping
+            pin_key = (pin.component_idx, pin.pin_name)
+            if pin_node.get(pin_key) == node_a:
+                pin_node[pin_key] = node_b
+
+        # Clear node_a
+        node_wire_idxs[node_a] = []
+        node_pins[node_a] = []
+
+    # ── Rebuild topo_wires ──
+    topo_wires = []
+    for wi, (ep1, ep2) in enumerate(wires):
+        # Wire's primary node is determined by the endpoints
+        # If both endpoints agree, use that node; if they differ, use the
+        # endpoint with more associations (or ep1 as tiebreaker)
+        n1 = ep_to_node.get(f"wire_{wi}_ep1")
+        n2 = ep_to_node.get(f"wire_{wi}_ep2")
+        if n1 == n2:
+            wire_node = n1
+        elif n1 is not None and n2 is None:
+            wire_node = n1
+        elif n2 is not None and n1 is None:
+            wire_node = n2
+        else:
+            # Both different — pick ep1's node as primary
+            wire_node = n1
+        topo_wires.append({
+            "idx": wi,
+            "ep1": list(ep1),
+            "ep2": list(ep2),
+            "node_id": wire_node,
+        })
+
+    # ── Rebuild topo_pins ──
+    topo_pins = []
+    for p in all_pins:
+        key = (p.component_idx, p.pin_name)
+        node_id = pin_node.get(key)
+        comp = components_raw[p.component_idx]
+        comp_type = COMPONENT_NAMES.get(comp[0], f"cls_{comp[0]}")
+        from wire_detection.core.component_classes import PREFIX_MAP
+        prefix = PREFIX_MAP.get(comp_type) or "X"
+        topo_pins.append({
+            "x": p.x,
+            "y": p.y,
+            "component_idx": p.component_idx,
+            "component_name": f"{prefix}{p.component_idx + 1}",
+            "pin_name": p.pin_name,
+            "node_id": node_id,
+        })
+
+    # ── Rebuild topo_nodes ──
+    # Collect all non-empty nodes
+    active_node_ids = set()
+    for node_id, wires_list in node_wire_idxs.items():
+        if wires_list:
+            active_node_ids.add(node_id)
+    for node_id, pins_list in node_pins.items():
+        if pins_list:
+            active_node_ids.add(node_id)
+
+    topo_nodes = []
+    for nid in sorted(active_node_ids):
+        wires_list = node_wire_idxs.get(nid, [])
+        pins_list = node_pins.get(nid, [])
+        comp_idxs = {p.component_idx for p in pins_list}
+        topo_nodes.append({
+            "node_id": nid,
+            "wire_count": len(wires_list),
+            "pin_count": len(pins_list),
+            "component_count": len(comp_idxs),
+        })
+
+    return topo_wires, topo_pins, topo_nodes
+
+
+# Re-export for apply_overrides
+import re as _re
+_ENDPOINT_RE = _re.compile(r"^wire_(\d+)_ep(1|2)$")
 
 
 def _build_topology_data(
@@ -146,6 +363,20 @@ def _build_topology_data(
             "component_count": len(pin_component_idxs),
         })
 
+    # ── Apply overrides if any ──
+    overrides = load_overrides(ds, img_idx)
+    if overrides.get("reassign") or overrides.get("join") or overrides.get("remove"):
+        topo_wires, topo_pins, topo_nodes = apply_overrides(
+            wires, components_raw, all_pins, netlist, overrides
+        )
+        # Rebuild component node_ids from overridden pins
+        comp_node_ids2: dict[int, set[int]] = {}
+        for p_info in topo_pins:
+            if p_info["node_id"] is not None:
+                comp_node_ids2.setdefault(p_info["component_idx"], set()).add(p_info["node_id"])
+        for comp in topo_components:
+            comp["node_ids"] = sorted(comp_node_ids2.get(comp["idx"], set()))
+
     return {
         "wires": topo_wires,
         "pins": topo_pins,
@@ -179,6 +410,101 @@ async def topology(data: JoinOverlayRequest):
 
     return await asyncio.get_event_loop().run_in_executor(None, _sync)
 
+
+@router.get("/api/topology/overrides")
+async def get_overrides(idx: int, ds: str = "gt_labels"):
+    """Return the current overrides dict for a given image."""
+    import asyncio
+
+    def _sync():
+        return JSONResponse(load_overrides(ds, idx))
+
+    return await asyncio.get_event_loop().run_in_executor(None, _sync)
+
+
+@router.post("/api/topology/overrides")
+async def save_override(data: OverrideRequest):
+    """Validate and save overrides, then return the updated topology."""
+    import asyncio
+
+    def _sync():
+        # Build topology data to validate against
+        topo = _build_topology_data(
+            img_idx=data.img_idx,
+            ds=data.dataset,
+            preset="best_candidate_v4",
+        )
+        if "error" in topo:
+            return JSONResponse({"error": topo["error"]}, status_code=404)
+
+        overrides = data.overrides
+
+        # Validate reassign keys
+        reassign = overrides.get("reassign", {})
+        for ep_key, target in reassign.items():
+            err = validate_override_key(ep_key, topo["wires"], topo["components"])
+            if err:
+                return JSONResponse({"error": err}, status_code=400)
+            err = validate_reassign_target(target, topo["components"])
+            if err:
+                return JSONResponse({"error": err}, status_code=400)
+
+        # Validate join keys
+        for i, pair in enumerate(overrides.get("join", [])):
+            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                return JSONResponse(
+                    {"error": f"join[{i}] must be a 2-element list"},
+                    status_code=400,
+                )
+            for ep_key in pair:
+                err = validate_override_key(ep_key, topo["wires"], topo["components"])
+                if err:
+                    return JSONResponse({"error": err}, status_code=400)
+
+        # Validate remove keys
+        for ep_key in overrides.get("remove", []):
+            err = validate_override_key(ep_key, topo["wires"], topo["components"])
+            if err:
+                return JSONResponse({"error": err}, status_code=400)
+
+        # Save to disk
+        try:
+            save_overrides(data.dataset, data.img_idx, overrides)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+
+        # Rebuild topology with the saved overrides
+        updated = _build_topology_data(
+            img_idx=data.img_idx,
+            ds=data.dataset,
+            preset="best_candidate_v4",
+        )
+        if "error" in updated:
+            return JSONResponse({"error": updated["error"]}, status_code=404)
+        return JSONResponse(updated)
+
+    return await asyncio.get_event_loop().run_in_executor(None, _sync)
+
+
+@router.delete("/api/topology/overrides")
+async def delete_overrides(idx: int, ds: str = "gt_labels"):
+    """Clear overrides for an image (save empty overrides) and return updated topology."""
+    import asyncio
+
+    def _sync():
+        empty = {"reassign": {}, "join": [], "remove": []}
+        save_overrides(ds, idx, empty)
+
+        topo = _build_topology_data(
+            img_idx=idx,
+            ds=ds,
+            preset="best_candidate_v4",
+        )
+        if "error" in topo:
+            return JSONResponse({"error": topo["error"]}, status_code=404)
+        return JSONResponse(topo)
+
+    return await asyncio.get_event_loop().run_in_executor(None, _sync)
 
 @router.post("/api/path")
 async def trace_path(data: PathRequest):

@@ -1,7 +1,7 @@
 "use server";
 
 import { fetchBackend } from "@/lib/api";
-import type { PipelineResult, NetlistResult, JoinOverlayResult, JoinStrategy, SimOverlayResult, CurrentOverlayResult, TopologyResult, PathResult } from "@/lib/types";
+import type { PipelineResult, NetlistResult, JoinOverlayResult, JoinStrategy, SimOverlayResult, CurrentOverlayResult, TopologyResult, PathResult, ConnectionOverrides } from "@/lib/types";
 
 export async function listImagesAction(ds: string): Promise<string[]> {
   const data = await fetchBackend<string[]>(`/api/list?ds=${encodeURIComponent(ds)}`);
@@ -169,5 +169,35 @@ export async function fetchPathAction(
       from_component: fromComponent,
       to_component: toComponent,
     }),
+  });
+}
+
+export async function fetchOverridesAction(
+  idx: number,
+  ds: string,
+): Promise<ConnectionOverrides> {
+  return fetchBackend(`/api/topology/overrides?idx=${idx}&ds=${ds}`);
+}
+
+export async function saveOverridesAction(
+  idx: number,
+  ds: string,
+  overrides: ConnectionOverrides,
+): Promise<TopologyResult> {
+  // Backend returns topology directly (not wrapped in OverrideResponse)
+  const res = await fetchBackend<TopologyResult>("/api/topology/overrides", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dataset: ds, img_idx: idx, overrides }),
+  });
+  return res;
+}
+
+export async function clearOverridesAction(
+  idx: number,
+  ds: string,
+): Promise<TopologyResult> {
+  return fetchBackend(`/api/topology/overrides?idx=${idx}&ds=${ds}`, {
+    method: "DELETE",
   });
 }
