@@ -5,7 +5,7 @@ import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
 import JoinCheckPanel from "./JoinCheckPanel";
 import TopologyOverlay from "./TopologyOverlay";
-import type { TopologyResult } from "@/lib/types";
+import type { TopologyResult, PathResult } from "@/lib/types";
 
 interface CircuitViewportProps {
   sourceImageUrl?: string;
@@ -29,6 +29,10 @@ interface CircuitViewportProps {
   selectedComponent?: string | null;
   onNodeSelect?: (nodeId: number | null) => void;
   onComponentSelect?: (name: string | null) => void;
+  pathStart?: string | null;
+  pathEnd?: string | null;
+  pathData?: PathResult | null;
+  onPathClick?: (name: string) => void;
   showWires?: boolean;
   showPins?: boolean;
   showComponents?: boolean;
@@ -62,6 +66,10 @@ export default function CircuitViewport({
   selectedComponent = null,
   onNodeSelect,
   onComponentSelect,
+  pathStart = null,
+  pathEnd = null,
+  pathData = null,
+  onPathClick,
   showWires = true,
   showPins = true,
   showComponents = true,
@@ -322,11 +330,23 @@ export default function CircuitViewport({
                   selectedNode={selectedNode ?? null}
                   selectedComponent={selectedComponent ?? null}
                   onWireClick={(nodeId) => onNodeSelect?.(nodeId)}
-                  onComponentClick={(name) => onComponentSelect?.(name)}
+                  onComponentClick={(name, shiftKey) => {
+                    if (shiftKey) {
+                      onPathClick?.(name);
+                    } else {
+                      onComponentSelect?.(name);
+                    }
+                  }}
                   onBackgroundClick={() => {
                     onNodeSelect?.(null);
                     onComponentSelect?.(null);
+                    if (onPathClick) {
+                      onPathClick(""); // clear path
+                    }
                   }}
+                  pathStart={pathStart}
+                  pathEnd={pathEnd}
+                  pathData={pathData}
                   showWires={showWires}
                   showPins={showPins}
                   showComponents={showComponents}

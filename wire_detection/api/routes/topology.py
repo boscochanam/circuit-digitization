@@ -19,7 +19,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 import wire_detection.api.deps as deps
-from wire_detection.api.models import JoinOverlayRequest
+from wire_detection.api.models import JoinOverlayRequest, PathRequest
 from wire_detection.core.join_strategies import DEFAULT_STRATEGY, run_strategy
 from wire_detection.core.spice import COMPONENT_NAMES
 
@@ -176,5 +176,93 @@ async def topology(data: JoinOverlayRequest):
         if "error" in result:
             return JSONResponse({"error": result["error"]}, status_code=404)
         return JSONResponse(result)
+
+    return await asyncio.get_event_loop().run_in_executor(None, _sync)
+
+
+@router.post("/api/path")
+async def trace_path(data: PathRequest):
+    import asyncio
+
+    def _sync():
+        result = _build_topology_data(
+            img_idx=data.img_idx,
+            ds=data.ds,
+            preset=data.preset,
+            params_overrides=data.params,
+            strategy=data.strategy,
+        )
+        if "error" in result:
+            return JSONResponse({"error": result["error"], "path": [], "warnings": [result["error"]]}, status_code=404)
+
+        components = result.get("components", [])
+        warnings: list[str] = []
+
+        # Build adjacency: component name → node_ids
+        comp_to_nodes: dict[str, list[int]] = {}
+        for comp in components:
+            comp_to_nodes[comp["name"]] = comp.get("node_ids", [])
+
+        # Build adjacency: node_id → set of component names
+        node_to_comps: dict[int, set[str]] = {}
+        for comp in components:
+            for nid in comp.get("node_ids", []):
+                node_to_comps.setdefault(nid, set()).add(comp["name"])
+
+        from_name = data.from_component
+        to_name = data.to_component
+
+        if from_name not in comp_to_nodes:
+            warnings.append(f"Component '{from_name}' not found")
+            return JSONResponse({"path": [], "warnings": warnings})
+        if to_name not in comp_to_nodes:
+            warnings.append(f"Component '{to_name}' not found")
+            return JSONResponse({"path": [], "warnings": warnings})
+        if from_name == to_name:
+            warnings.append("Start and end components are the same")
+            return JSONResponse({"path": [], "warnings": warnings})
+
+        # BFS through bipartite graph: component ↔ node
+        from collections import deque
+
+        queue: deque[tuple[str, list[dict]]] = deque()
+        queue.append((from_name, [{"type": "component", "name": from_name, "node_ids": sorted(comp_to_nodes[from_name])}]))
+        visited_comps: set[str] = {from_name}
+        visited_nodes: set[int] = set()
+
+        while queue:
+            current_name, path = queue.popleft()
+
+            for nid in comp_to_nodes.get(current_name, []):
+                if nid in visited_nodes:
+                    continue
+                visited_nodes.add(nid)
+
+                node_step = {
+                    "type": "node",
+                    "node_id": nid,
+                    "components": sorted(node_to_comps.get(nid, set())),
+                }
+
+                for neighbor_name in sorted(node_to_comps.get(nid, set())):
+                    if neighbor_name in visited_comps:
+                        continue
+                    if neighbor_name == to_name:
+                        full_path = path + [node_step, {
+                            "type": "component",
+                            "name": neighbor_name,
+                            "node_ids": sorted(comp_to_nodes[neighbor_name]),
+                        }]
+                        return JSONResponse({"path": full_path, "warnings": warnings})
+                    visited_comps.add(neighbor_name)
+                    comp_step = {
+                        "type": "component",
+                        "name": neighbor_name,
+                        "node_ids": sorted(comp_to_nodes[neighbor_name]),
+                    }
+                    queue.append((neighbor_name, path + [node_step, comp_step]))
+
+        warnings.append(f"No path found between '{from_name}' and '{to_name}'")
+        return JSONResponse({"path": [], "warnings": warnings})
 
     return await asyncio.get_event_loop().run_in_executor(None, _sync)

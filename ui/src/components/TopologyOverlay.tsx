@@ -1,7 +1,6 @@
 "use client";
 
-import type { TopologyResult } from "@/lib/types";
-
+import type { TopologyResult, PathResult, PathStep } from "@/lib/types";
 const NODE_COLORS = [
   "#e6194b", "#3cb44b", "#4363d8", "#f58231", "#911eb4", "#42d4f4",
   "#f032e6", "#bfef45", "#fabed4", "#469990", "#dcbeff", "#9A6324",
@@ -16,7 +15,7 @@ interface TopologyOverlayProps {
   selectedNode: number | null;
   selectedComponent: string | null;
   onWireClick: (nodeId: number) => void;
-  onComponentClick: (name: string) => void;
+  onComponentClick: (name: string, shiftKey: boolean) => void;
   onBackgroundClick: () => void;
   showWires: boolean;
   showPins: boolean;
@@ -24,6 +23,10 @@ interface TopologyOverlayProps {
   onToggleWires?: () => void;
   onTogglePins?: () => void;
   onToggleComponents?: () => void;
+  // Path tracing
+  pathStart?: string | null;
+  pathEnd?: string | null;
+  pathData?: PathResult | null;
 }
 
 /**
@@ -48,7 +51,25 @@ export default function TopologyOverlay({
   onToggleWires,
   onTogglePins,
   onToggleComponents,
+  pathStart = null,
+  pathEnd = null,
+  pathData = null,
 }: TopologyOverlayProps) {
+  // Build sets of components and nodes that are part of the path
+  const pathComponentNames = new Set<string>();
+  const pathNodeIds = new Set<number>();
+  const pathActive = pathData && pathData.path.length > 0;
+
+  if (pathActive && pathData) {
+    for (const step of pathData.path) {
+      if (step.type === "component" && step.name) {
+        pathComponentNames.add(step.name);
+      } else if (step.type === "node" && step.node_id !== undefined) {
+        pathNodeIds.add(step.node_id);
+      }
+    }
+  }
+
   // Use percentage sizing so the SVG fills its container div (which is already
   // sized to the displayed image dimensions). Coordinates are pre-scaled by
   // scaleX/scaleY so they map correctly regardless of SVG intrinsic size.
@@ -73,7 +94,21 @@ export default function TopologyOverlay({
         {showWires &&
           topology.wires.map((wire) => {
             const color = NODE_COLORS[(wire.node_id ?? 0) % NODE_COLORS.length];
+            const nodeInPath = wire.node_id !== null && pathNodeIds.has(wire.node_id);
             const dimmed = selectedNode !== null && wire.node_id !== selectedNode;
+
+            let strokeColor = color;
+            let strokeW = 2;
+            let opacity = dimmed ? 0.15 : 0.8;
+
+            if (pathActive && nodeInPath) {
+              strokeColor = "#FFD700";
+              strokeW = 3;
+              opacity = 1;
+            } else if (pathActive && !nodeInPath) {
+              opacity = 0.08;
+            }
+
             return (
               <line
                 key={`w-${wire.idx}`}
@@ -81,9 +116,9 @@ export default function TopologyOverlay({
                 y1={wire.ep1[1] * scaleY}
                 x2={wire.ep2[0] * scaleX}
                 y2={wire.ep2[1] * scaleY}
-                stroke={color}
-                strokeWidth={2}
-                opacity={dimmed ? 0.15 : 0.8}
+                stroke={strokeColor}
+                strokeWidth={strokeW}
+                opacity={opacity}
                 style={{ pointerEvents: "all", cursor: "pointer" }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -97,15 +132,27 @@ export default function TopologyOverlay({
         {showPins &&
           topology.pins.map((pin, i) => {
             const color = NODE_COLORS[(pin.node_id ?? 0) % NODE_COLORS.length];
+            const nodeInPath = pin.node_id !== null && pathNodeIds.has(pin.node_id);
             const dimmed = selectedNode !== null && pin.node_id !== selectedNode;
+
+            let pinColor = color;
+            let opacity = dimmed ? 0.15 : 1;
+
+            if (pathActive && nodeInPath) {
+              pinColor = "#FFD700";
+              opacity = 1;
+            } else if (pathActive && !nodeInPath) {
+              opacity = 0.08;
+            }
+
             return (
               <circle
                 key={`p-${i}`}
                 cx={pin.x * scaleX}
                 cy={pin.y * scaleY}
                 r={3}
-                fill={color}
-                opacity={dimmed ? 0.15 : 1}
+                fill={pinColor}
+                opacity={opacity}
                 style={{ pointerEvents: "all", cursor: "pointer" }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -122,6 +169,36 @@ export default function TopologyOverlay({
             const dimmed =
               selectedComponent !== null && comp.name !== selectedComponent;
             const [x1, y1, x2, y2] = comp.bbox;
+
+            const inPath = pathComponentNames.has(comp.name);
+            const isStart = comp.name === pathStart;
+            const isEnd = comp.name === pathEnd;
+
+            let rectColor = color;
+            let rectFill = color;
+            let fillOpacity = dimmed ? 0.03 : 0.15;
+            let strokeOpacity = dimmed ? 0.1 : 1;
+            let strokeWidth = 1.5;
+
+            if (pathActive && inPath) {
+              if (isStart) {
+                rectColor = "#22c55e"; // green for start
+                rectFill = "#22c55e";
+              } else if (isEnd) {
+                rectColor = "#ef4444"; // red for end
+                rectFill = "#ef4444";
+              } else {
+                rectColor = "#FFD700"; // gold for intermediate
+                rectFill = "#FFD700";
+              }
+              fillOpacity = 0.3;
+              strokeOpacity = 1;
+              strokeWidth = 3;
+            } else if (pathActive && !inPath) {
+              fillOpacity = 0.02;
+              strokeOpacity = 0.08;
+            }
+
             return (
               <rect
                 key={`c-${comp.name}`}
@@ -129,15 +206,15 @@ export default function TopologyOverlay({
                 y={y1 * scaleY}
                 width={(x2 - x1) * scaleX}
                 height={(y2 - y1) * scaleY}
-                fill={color}
-                fillOpacity={dimmed ? 0.03 : 0.15}
-                stroke={color}
-                strokeWidth={1.5}
-                strokeOpacity={dimmed ? 0.1 : 1}
+                fill={rectFill}
+                fillOpacity={fillOpacity}
+                stroke={rectColor}
+                strokeWidth={strokeWidth}
+                strokeOpacity={strokeOpacity}
                 style={{ pointerEvents: "all", cursor: "pointer" }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onComponentClick(comp.name);
+                  onComponentClick(comp.name, e.shiftKey);
                 }}
               />
             );
@@ -202,6 +279,49 @@ export default function TopologyOverlay({
           Components
         </label>
       </div>
+
+      {/* Path status indicator */}
+      {pathActive && (
+        <div
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            display: "flex",
+            gap: 6,
+            alignItems: "center",
+            background: "rgba(0,0,0,0.8)",
+            borderRadius: 6,
+            padding: "4px 10px",
+            fontSize: 12,
+            color: "#FFD700",
+            userSelect: "none",
+          }}
+        >
+          🔗 Path: {pathStart} → {pathEnd}
+        </div>
+      )}
+
+      {pathStart && !pathEnd && (
+        <div
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            display: "flex",
+            gap: 6,
+            alignItems: "center",
+            background: "rgba(0,0,0,0.8)",
+            borderRadius: 6,
+            padding: "4px 10px",
+            fontSize: 12,
+            color: "#22c55e",
+            userSelect: "none",
+          }}
+        >
+          📍 Start: {pathStart} — Shift+click an end component
+        </div>
+      )}
     </div>
   );
 }

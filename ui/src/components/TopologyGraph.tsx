@@ -17,7 +17,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useState } from "react";
-import type { TopologyResult, TopoComponent } from "@/lib/types";
+import type { TopologyResult, TopoComponent, PathResult } from "@/lib/types";
 
 /* ── Props ── */
 interface TopologyGraphProps {
@@ -26,6 +26,11 @@ interface TopologyGraphProps {
   selectedComponent: string | null;
   onNodeSelect: (nodeId: number | null) => void;
   onComponentSelect: (name: string | null) => void;
+  // Path tracing
+  pathStart?: string | null;
+  pathEnd?: string | null;
+  pathData?: PathResult | null;
+  onPathClick?: (name: string) => void;
 }
 
 /* ── Color map by component type ── */
@@ -69,8 +74,31 @@ function CircuitNode({
     type: string;
     color: string;
     dimmed: boolean;
+    pathInPath?: boolean;
+    pathStart?: boolean;
+    pathEnd?: boolean;
   };
   const size = 44;
+
+  let borderColor = "rgba(255,255,255,0.25)";
+  let boxBg = "0 1px 3px rgba(0,0,0,0.3)";
+
+  if (d.pathInPath) {
+    if (d.pathStart) {
+      borderColor = "#22c55e";
+      boxBg = "0 0 14px 4px #22c55e66";
+    } else if (d.pathEnd) {
+      borderColor = "#ef4444";
+      boxBg = "0 0 14px 4px #ef444466";
+    } else {
+      borderColor = "#FFD700";
+      boxBg = "0 0 12px 4px #FFD70066";
+    }
+  } else if (selected) {
+    borderColor = "#fff";
+    boxBg = `0 0 12px 4px ${d.color}88`;
+  }
+
   return (
     <>
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
@@ -80,24 +108,24 @@ function CircuitNode({
           width: size,
           height: size,
           borderRadius: "50%",
-          background: d.color,
+          background: d.pathInPath
+            ? (d.pathStart ? "#22c55e" : d.pathEnd ? "#ef4444" : "#FFD700")
+            : d.color,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          border: selected
-            ? "2.5px solid #fff"
-            : "1.5px solid rgba(255,255,255,0.25)",
-          boxShadow: selected
-            ? `0 0 12px 4px ${d.color}88`
+          border: `${selected || d.pathInPath ? 2.5 : 1.5}px solid ${borderColor}`,
+          boxShadow: selected || d.pathInPath
+            ? boxBg
             : "0 1px 3px rgba(0,0,0,0.3)",
           opacity: d.dimmed ? 0.3 : 1,
-          transition: "opacity 0.2s, box-shadow 0.2s",
+          transition: "opacity 0.2s, box-shadow 0.2s, border 0.2s",
           cursor: "pointer",
         }}
       >
         <span
           style={{
-            color: "#fff",
+            color: d.pathInPath ? "#000" : "#fff",
             fontSize: 9,
             fontWeight: 700,
             lineHeight: 1,
@@ -135,7 +163,26 @@ export default function TopologyGraph({
   topology,
   selectedComponent,
   onComponentSelect,
+  pathStart = null,
+  pathEnd = null,
+  pathData = null,
+  onPathClick,
 }: TopologyGraphProps) {
+  // Build set of path component names for quick lookup
+  const pathComponentNames = useMemo(() => {
+    const names = new Set<string>();
+    if (pathData && pathData.path.length > 0) {
+      for (const step of pathData.path) {
+        if (step.type === "component" && step.name) {
+          names.add(step.name);
+        }
+      }
+    }
+    return names;
+  }, [pathData]);
+
+  const hasPath = pathComponentNames.size > 0;
+
   /* Build React Flow nodes from topology components */
   const initialNodes: Node[] = useMemo(() => {
     const { components } = topology;
@@ -229,37 +276,48 @@ export default function TopologyGraph({
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
 
-  // Update dimming when selection changes
+  // Update dimming and path highlighting when selection changes
   const displayNodes = useMemo(() => {
-    if (!selectedComponent) {
-      return nodes.map((n) => ({
-        ...n,
-        data: { ...(n.data as object), dimmed: false },
-      }));
-    }
-    // Find the selected component's node_ids
-    const selComp = topology.components.find(
-      (c) => c.name === selectedComponent,
-    );
-    const connectedNodeIds = new Set(selComp?.node_ids ?? []);
-    // Find all component idxs connected to the same netlist nodes
-    const connectedCompIdxs = new Set<number>();
-    if (selComp) connectedCompIdxs.add(selComp.idx);
-    for (const c of topology.components) {
-      for (const nid of c.node_ids) {
-        if (connectedNodeIds.has(nid)) connectedCompIdxs.add(c.idx);
+    const hasSelection = selectedComponent !== null;
+    const hasPathNodes = hasPath;
+
+    return nodes.map((n) => {
+      const d = n.data as unknown as { componentIdx: number; label: string };
+      const name = d.label;
+      const inPath = pathComponentNames.has(name);
+      const isStart = name === pathStart;
+      const isEnd = name === pathEnd;
+
+      let dimmed = false;
+      if (hasSelection && !hasPathNodes) {
+        // Selection mode: dim non-connected
+        const selComp = topology.components.find((c) => c.name === selectedComponent);
+        const connectedNodeIds = new Set(selComp?.node_ids ?? []);
+        const connectedCompIdxs = new Set<number>();
+        if (selComp) connectedCompIdxs.add(selComp.idx);
+        for (const c of topology.components) {
+          for (const nid of c.node_ids) {
+            if (connectedNodeIds.has(nid)) connectedCompIdxs.add(c.idx);
+          }
+        }
+        dimmed = !connectedCompIdxs.has(d.componentIdx);
+      } else if (hasPathNodes && !inPath) {
+        // Path mode: dim non-path components
+        dimmed = true;
       }
-    }
-    return nodes.map((n) => ({
-      ...n,
-      data: {
-        ...(n.data as object),
-        dimmed: !connectedCompIdxs.has(
-          (n.data as unknown as { componentIdx: number }).componentIdx,
-        ),
-      },
-    }));
-  }, [nodes, selectedComponent, topology]);
+
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          dimmed,
+          pathInPath: hasPathNodes && inPath,
+          pathStart: isStart,
+          pathEnd: isEnd,
+        },
+      };
+    });
+  }, [nodes, selectedComponent, topology, pathComponentNames, hasPath, pathStart, pathEnd]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -278,9 +336,13 @@ export default function TopologyGraph({
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       const d = node.data as unknown as { label: string };
-      onComponentSelect(d.label);
+      if (onPathClick && _.shiftKey) {
+        onPathClick(d.label);
+      } else {
+        onComponentSelect(d.label);
+      }
     },
-    [onComponentSelect],
+    [onComponentSelect, onPathClick],
   );
 
   const onPaneClick = useCallback(() => {
@@ -306,6 +368,39 @@ export default function TopologyGraph({
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
+      {/* Path status bar */}
+      {hasPath && (
+        <div
+          style={{
+            padding: "4px 10px",
+            background: "#1e293b",
+            borderBottom: "1px solid #334155",
+            fontSize: 12,
+            color: "#FFD700",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          🔗 Path: {pathStart} → {pathEnd}
+        </div>
+      )}
+      {pathStart && !pathEnd && (
+        <div
+          style={{
+            padding: "4px 10px",
+            background: "#1e293b",
+            borderBottom: "1px solid #334155",
+            fontSize: 12,
+            color: "#22c55e",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          📍 Start: {pathStart} — Shift+click an end component
+        </div>
+      )}
       <ReactFlow
         nodes={displayNodes}
         edges={edges}
