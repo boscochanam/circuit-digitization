@@ -97,6 +97,16 @@ export interface SimOverlayResult {
   warnings: string[];
 }
 
+export interface CurrentOverlayResult {
+  overlay: string; // base64 PNG (current heatmap)
+  available: boolean;
+  component_currents: Array<{ name: string; current: number }>;
+  imin?: number;
+  imax?: number;
+  warnings: string[];
+  spice_netlist?: string;
+}
+
 export interface HomeInitialData {
   images: string[];
   presets: PresetMap;

@@ -6,7 +6,7 @@ import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
-import { fetchSimOverlayAction } from "@/app/actions";
+import { fetchSimOverlayAction, fetchCurrentOverlayAction } from "@/app/actions";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
 import RawTab from "@/components/RawTab";
@@ -48,6 +48,10 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const [simOverlayUrl, setSimOverlayUrl] = useState<string | null>(null);
   const [voltageActive, setVoltageActive] = useState(false);
 
+  // Current overlay state
+  const [currentOverlayUrl, setCurrentOverlayUrl] = useState<string | null>(null);
+  const [currentActive, setCurrentActive] = useState(false);
+
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
   const sim = useSimulation(
@@ -86,6 +90,33 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     }
   }, [voltageActive, handleRunSimOverlay]);
 
+  // Current overlay fetch
+  const handleRunCurrentOverlay = useCallback(async () => {
+    try {
+      const result = await fetchCurrentOverlayAction(
+        imgs.imageIdx,
+        imgs.dataset,
+        pipe.preset,
+        currentParams,
+        joinStrategy,
+        componentValues,
+      );
+      if (result.overlay) {
+        setCurrentOverlayUrl(`data:image/png;base64,${result.overlay}`);
+      }
+    } catch (e) {
+      console.error("Current overlay failed:", e);
+    }
+  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, joinStrategy]);
+
+  useEffect(() => {
+    if (currentActive) {
+      handleRunCurrentOverlay();
+    } else {
+      setCurrentOverlayUrl(null);
+    }
+  }, [currentActive, handleRunCurrentOverlay]);
+
   const { netlist: netlistData, loading: netlistLoading, error: netlistError } = useNetlist(
     imgs.imageIdx,
     imgs.dataset,
@@ -103,6 +134,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
   const handleOverlayChange = (overlay: string) => {
     setVoltageActive(overlay === "voltage");
+    setCurrentActive(overlay === "current");
   };
 
   const [ocrResults, setOcrResults] = useState<any>(null);
@@ -240,6 +272,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           sourceImageUrl={sourceImageUrl}
           pipelineResult={pipe.result}
           simOverlayUrl={simOverlayUrl}
+          currentOverlayUrl={currentOverlayUrl}
           ocrResults={ocrResults}
           imageIdx={imgs.imageIdx}
           dataset={imgs.dataset}
