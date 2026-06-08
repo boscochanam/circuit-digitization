@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { HomeInitialData } from "@/lib/types";
 import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
@@ -426,11 +426,42 @@ export default function HomeClient({
     ? `/api/thumb?idx=${imgs.imageIdx}&ds=${imgs.dataset}`
     : undefined;
 
+  // ── Resizable panels — drag to shrink the sidebar / bottom panel so the image
+  // gets more room. Growth is capped (the image stays the priority). ──
+  const DEFAULT_SIDEBAR = 260, DEFAULT_BOTTOM = 240;
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR);
+  const [bottomHeight, setBottomHeight] = useState(DEFAULT_BOTTOM);
+  const [resetSignal, setResetSignal] = useState(0);
+  const dragRef = useRef<{ axis: "x" | "y"; start: number; size: number } | null>(null);
+
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      if (d.axis === "x") {
+        setSidebarWidth(Math.max(150, Math.min(380, d.size + (e.clientX - d.start))));
+      } else {
+        setBottomHeight(Math.max(80, Math.min(Math.round(window.innerHeight * 0.6), d.size - (e.clientY - d.start))));
+      }
+    };
+    const up = () => { dragRef.current = null; document.body.style.cursor = ""; document.body.style.userSelect = ""; };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
+  }, []);
+
+  const startSidebarResize = (e: React.MouseEvent) => { dragRef.current = { axis: "x", start: e.clientX, size: sidebarWidth }; document.body.style.cursor = "col-resize"; document.body.style.userSelect = "none"; };
+  const startBottomResize = (e: React.MouseEvent) => { dragRef.current = { axis: "y", start: e.clientY, size: bottomHeight }; document.body.style.cursor = "row-resize"; document.body.style.userSelect = "none"; };
+  const handleResetView = () => { setSidebarWidth(DEFAULT_SIDEBAR); setBottomHeight(DEFAULT_BOTTOM); setResetSignal((s) => s + 1); };
+
   return (
-    <div className="app-shell">
+    <div className="app-shell" style={{ "--sidebar-w": `${sidebarWidth}px`, "--bottom-h": `${bottomHeight}px` } as React.CSSProperties}>
       <header className="header">
         <h1 className="header-title">WIRE DETECTION TUNER</h1>
-        <span className="header-badge">v0.833</span>
+        <div className="header-right">
+          <button className="reset-view-btn" onClick={handleResetView} title="Reset panel sizes & image zoom/pan">⟳ Reset view</button>
+          <span className="header-badge">v0.833</span>
+        </div>
       </header>
 
       {ocrStatus && (
@@ -484,6 +515,8 @@ export default function HomeClient({
           onComponentValueChange={handleValueChange}
         />
 
+        <div className="col-resize" onMouseDown={startSidebarResize} title="Drag to resize the sidebar" />
+
         <CircuitViewport
           sourceImageUrl={sourceImageUrl}
           pipelineResult={pipe.result}
@@ -527,6 +560,7 @@ export default function HomeClient({
           onJoin={handleJoin}
           onDisconnect={handleDisconnect}
           onResetOverrides={handleResetOverrides}
+          resetSignal={resetSignal}
         />
       </div>
 
@@ -535,6 +569,7 @@ export default function HomeClient({
         onTabChange={(tab) => setBottomPanelTab(tab as BottomPanelTab)}
         isOpen={bottomPanelOpen}
         onToggle={() => setBottomPanelOpen(!bottomPanelOpen)}
+        onResizeStart={startBottomResize}
       >
         {bottomPanelTab === "netlist" && (
           <NetlistTab
