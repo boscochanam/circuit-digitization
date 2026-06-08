@@ -2,6 +2,8 @@ export interface PipelineResult {
   line_count: number;
   blob_count: number;
   elapsed_ms: number;
+  image_width: number;
+  image_height: number;
   overlay: string;
   threshold: string;
   dilated: string;

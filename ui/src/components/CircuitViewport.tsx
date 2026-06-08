@@ -177,9 +177,13 @@ export default function CircuitViewport({
 
   const components = pipelineResult?.components ?? [];
 
-  // natural→rendered scale so component labels land ON the components
-  const sx = imgSize.nw ? imgSize.w / imgSize.nw : 1;
-  const sy = imgSize.nh ? imgSize.h / imgSize.nh : 1;
+  // natural→rendered scale so component labels land ON the components.
+  // Coordinates are in original image space (704×704 etc.) but the displayed
+  // image is a thumbnail (300×300). Use original dimensions from pipeline result.
+  const origW = pipelineResult?.image_width ?? imgSize.nw;
+  const origH = pipelineResult?.image_height ?? imgSize.nh;
+  const sx = origW ? imgSize.w / origW : 1;
+  const sy = origH ? imgSize.h / origH : 1;
 
   /** Only R, C, L, V have SPICE models — only these are value-editable */
   const isEditable = (name: string) => /^[RCLV]/.test(name);
