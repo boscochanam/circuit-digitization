@@ -301,27 +301,36 @@ export default function CircuitViewport({
             )}
             {/* Topology overlay — replaces labels when active */}
             {activeOverlay === "topology" && topology && imgSize.w > 0 && (
-              <TopologyOverlay
-                topology={topology}
-                imgWidth={imgSize.nw}
-                imgHeight={imgSize.nh}
-                scaleX={sx}
-                scaleY={sy}
-                selectedNode={selectedNode ?? null}
-                selectedComponent={selectedComponent ?? null}
-                onWireClick={(nodeId) => onNodeSelect?.(nodeId)}
-                onComponentClick={(name) => onComponentSelect?.(name)}
-                onBackgroundClick={() => {
-                  onNodeSelect?.(null);
-                  onComponentSelect?.(null);
-                }}
-                showWires={showWires}
-                showPins={showPins}
-                showComponents={showComponents}
-                onToggleWires={onToggleWires}
-                onTogglePins={onTogglePins}
-                onToggleComponents={onToggleComponents}
-              />
+              <div style={{
+                position: "absolute",
+                left: imgElRef.current?.offsetLeft ?? 0,
+                top: imgElRef.current?.offsetTop ?? 0,
+                width: imgSize.w,
+                height: imgSize.h,
+                overflow: "hidden",
+              }}>
+                <TopologyOverlay
+                  topology={topology}
+                  imgWidth={imgSize.nw}
+                  imgHeight={imgSize.nh}
+                  scaleX={sx}
+                  scaleY={sy}
+                  selectedNode={selectedNode ?? null}
+                  selectedComponent={selectedComponent ?? null}
+                  onWireClick={(nodeId) => onNodeSelect?.(nodeId)}
+                  onComponentClick={(name) => onComponentSelect?.(name)}
+                  onBackgroundClick={() => {
+                    onNodeSelect?.(null);
+                    onComponentSelect?.(null);
+                  }}
+                  showWires={showWires}
+                  showPins={showPins}
+                  showComponents={showComponents}
+                  onToggleWires={onToggleWires}
+                  onTogglePins={onTogglePins}
+                  onToggleComponents={onToggleComponents}
+                />
+              </div>
             )}
           </div>
           {/* Zoom controls — minus / reset% / plus. stopPropagation so the
