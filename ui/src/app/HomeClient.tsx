@@ -12,6 +12,7 @@ import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
 import RawTab from "@/components/RawTab";
 import { MetricsBar } from "@/components/ui-widgets";
+import TopologyGraph from "@/components/TopologyGraph";
 import Toolbar from "@/components/Toolbar";
 import Sidebar from "@/components/Sidebar";
 import CircuitViewport from "@/components/CircuitViewport";
@@ -373,6 +374,15 @@ export default function HomeClient({
         )}
         {bottomPanelTab === "raw" && (
           <RawTab result={pipe.result} />
+        )}
+        {bottomPanelTab === "graph" && topology && (
+          <TopologyGraph
+            topology={topology}
+            selectedNode={topoSelectedNode}
+            selectedComponent={topoSelectedComponent}
+            onNodeSelect={setTopoSelectedNode}
+            onComponentSelect={setTopoSelectedComponent}
+          />
         )}
       </BottomPanel>
 

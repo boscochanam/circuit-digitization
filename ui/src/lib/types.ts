@@ -116,7 +116,7 @@ export interface HomeInitialData {
 }
 
 // Bottom-panel tab id.
-export type BottomPanelTab = "netlist" | "warnings" | "raw";
+export type BottomPanelTab = "netlist" | "warnings" | "raw" | "graph";
 
 // A component row for the sidebar Values editor.
 export interface ComponentEntry {
