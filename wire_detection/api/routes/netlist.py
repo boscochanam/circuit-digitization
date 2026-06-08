@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 import wire_detection.api.deps as deps
 from wire_detection.api.models import NetlistRequest, SimulateRequest
 from wire_detection.core.join_strategies import run_strategy, DEFAULT_STRATEGY
+from wire_detection.core.connection_overrides import load_overrides, apply_overrides_to_netlist
 from wire_detection.core.spice import COMPONENT_NAMES, SpiceGenerator
 from wire_detection.core.simulator import SpiceSimulator
 
@@ -76,6 +77,9 @@ def _build_netlist_data(
     # Voltage Map routes do — so the netlist, topology graph and SPICE match those
     # views for ANY DEFAULT_STRATEGY, not only standard-pin ones.
     all_pins, netlist = run_strategy(strategy or DEFAULT_STRATEGY, wires, components_raw)
+    # Bake manual connection overrides into the netlist so SPICE — and therefore
+    # the netlist/voltage/current sims — reflect them, not just the topology view.
+    netlist = apply_overrides_to_netlist(netlist, components_raw, load_overrides(ds, img_idx))
     spice_text = gen.generate(components_raw, netlist, value_overrides=component_values)
 
     # Step 5: Build response — one entry per component with node assignments
