@@ -4,6 +4,8 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
 import JoinCheckPanel from "./JoinCheckPanel";
+import TopologyOverlay from "./TopologyOverlay";
+import type { TopologyResult, PathResult } from "@/lib/types";
 
 interface CircuitViewportProps {
   sourceImageUrl?: string;
@@ -20,6 +22,23 @@ interface CircuitViewportProps {
   onActiveOverlayChange?: (overlay: string) => void;
   componentValues?: Record<string, string>;
   onValueChange?: (name: string, value: string) => void;
+  // Topology overlay
+  topology?: TopologyResult | null;
+  topologyLoading?: boolean;
+  selectedNode?: number | null;
+  selectedComponent?: string | null;
+  onNodeSelect?: (nodeId: number | null) => void;
+  onComponentSelect?: (name: string | null) => void;
+  pathStart?: string | null;
+  pathEnd?: string | null;
+  pathData?: PathResult | null;
+  onPathClick?: (name: string) => void;
+  showWires?: boolean;
+  showPins?: boolean;
+  showComponents?: boolean;
+  onToggleWires?: () => void;
+  onTogglePins?: () => void;
+  onToggleComponents?: () => void;
 }
 
 /**
@@ -41,6 +60,22 @@ export default function CircuitViewport({
   onActiveOverlayChange,
   componentValues = {},
   onValueChange,
+  topology = null,
+  topologyLoading = false,
+  selectedNode = null,
+  selectedComponent = null,
+  onNodeSelect,
+  onComponentSelect,
+  pathStart = null,
+  pathEnd = null,
+  pathData = null,
+  onPathClick,
+  showWires = true,
+  showPins = true,
+  showComponents = true,
+  onToggleWires,
+  onTogglePins,
+  onToggleComponents,
 }: CircuitViewportProps) {
   const [activeOverlay, setActiveOverlay] = useState<string>("none");
   const [overlayOpacity, setOverlayOpacity] = useState(70);
@@ -150,9 +185,13 @@ export default function CircuitViewport({
 
   const components = pipelineResult?.components ?? [];
 
-  // natural→rendered scale so component labels land ON the components
-  const sx = imgSize.nw ? imgSize.w / imgSize.nw : 1;
-  const sy = imgSize.nh ? imgSize.h / imgSize.nh : 1;
+  // natural→rendered scale so component labels land ON the components.
+  // Coordinates are in original image space (704×704 etc.) but the displayed
+  // image is a thumbnail (300×300). Use original dimensions from pipeline result.
+  const origW = pipelineResult?.image_width ?? imgSize.nw;
+  const origH = pipelineResult?.image_height ?? imgSize.nh;
+  const sx = origW ? imgSize.w / origW : 1;
+  const sy = origH ? imgSize.h / origH : 1;
 
   /** Only R, C, L, V have SPICE models — only these are value-editable */
   const isEditable = (name: string) => /^[RCLV]/.test(name);
@@ -270,6 +309,51 @@ export default function CircuitViewport({
                   </div>
                   );
                 })()}
+              </div>
+            )}
+            {/* Topology overlay — replaces labels when active */}
+            {activeOverlay === "topology" && topology && imgSize.w > 0 && (
+              <div style={{
+                position: "absolute",
+                left: imgElRef.current?.offsetLeft ?? 0,
+                top: imgElRef.current?.offsetTop ?? 0,
+                width: imgSize.w,
+                height: imgSize.h,
+                overflow: "hidden",
+              }}>
+                <TopologyOverlay
+                  topology={topology}
+                  imgWidth={imgSize.nw}
+                  imgHeight={imgSize.nh}
+                  scaleX={sx}
+                  scaleY={sy}
+                  selectedNode={selectedNode ?? null}
+                  selectedComponent={selectedComponent ?? null}
+                  onWireClick={(nodeId) => onNodeSelect?.(nodeId)}
+                  onComponentClick={(name, shiftKey) => {
+                    if (shiftKey) {
+                      onPathClick?.(name);
+                    } else {
+                      onComponentSelect?.(name);
+                    }
+                  }}
+                  onBackgroundClick={() => {
+                    onNodeSelect?.(null);
+                    onComponentSelect?.(null);
+                    if (onPathClick) {
+                      onPathClick(""); // clear path
+                    }
+                  }}
+                  pathStart={pathStart}
+                  pathEnd={pathEnd}
+                  pathData={pathData}
+                  showWires={showWires}
+                  showPins={showPins}
+                  showComponents={showComponents}
+                  onToggleWires={onToggleWires}
+                  onTogglePins={onTogglePins}
+                  onToggleComponents={onToggleComponents}
+                />
               </div>
             )}
           </div>

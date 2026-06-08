@@ -194,6 +194,8 @@ def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, i
         "line_count": len(lines_global),
         "blob_count": len(lines_global),
         "elapsed_ms": elapsed_ms,
+        "image_width": gray.shape[1],
+        "image_height": gray.shape[0],
         "overlay": _img_to_base64(overlay),
         "threshold": _img_to_base64(bw),
         "dilated": _img_to_base64(closed),

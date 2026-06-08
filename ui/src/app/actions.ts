@@ -1,7 +1,7 @@
 "use server";
 
 import { fetchBackend } from "@/lib/api";
-import type { PipelineResult, NetlistResult, JoinOverlayResult, JoinStrategy, SimOverlayResult, CurrentOverlayResult } from "@/lib/types";
+import type { PipelineResult, NetlistResult, JoinOverlayResult, JoinStrategy, SimOverlayResult, CurrentOverlayResult, TopologyResult, PathResult } from "@/lib/types";
 
 export async function listImagesAction(ds: string): Promise<string[]> {
   const data = await fetchBackend<string[]>(`/api/list?ds=${encodeURIComponent(ds)}`);
@@ -125,5 +125,49 @@ export async function runPipelineAction(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ img_idx: imgIdx, ds, params, preset }),
+  });
+}
+
+export async function fetchTopologyAction(
+  imgIdx: number,
+  ds: string,
+  preset: string,
+  params: Record<string, string | number> = {},
+  strategy: string | null = null,
+): Promise<TopologyResult> {
+  return fetchBackend("/api/topology", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      img_idx: imgIdx,
+      ds,
+      preset,
+      params,
+      ...(strategy ? { strategy } : {}),
+    }),
+  });
+}
+
+export async function fetchPathAction(
+  imgIdx: number,
+  ds: string,
+  preset: string,
+  params: Record<string, string | number>,
+  strategy: string | null,
+  fromComponent: string,
+  toComponent: string,
+): Promise<PathResult> {
+  return fetchBackend("/api/path", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      img_idx: imgIdx,
+      ds,
+      preset,
+      params,
+      ...(strategy ? { strategy } : {}),
+      from_component: fromComponent,
+      to_component: toComponent,
+    }),
   });
 }

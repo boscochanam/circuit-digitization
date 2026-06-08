@@ -41,7 +41,10 @@ export default function OverlayControls({
       { id: "voltage", label: "Voltage", disabled: !hasPipelineResult },
       { id: "current", label: "Current", disabled: !hasPipelineResult },
     ] },
-    { label: "Analysis", items: [{ id: "join", label: "Join check", disabled: !hasPipelineResult }] },
+    { label: "Analysis", items: [
+      { id: "join", label: "Join check", disabled: !hasPipelineResult },
+      { id: "topology", label: "Topology", disabled: !hasPipelineResult },
+    ] },
   ];
 
   return (

@@ -6,11 +6,13 @@ import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
-import { fetchSimOverlayAction, fetchCurrentOverlayAction } from "@/app/actions";
+import { fetchSimOverlayAction, fetchCurrentOverlayAction, fetchTopologyAction, fetchPathAction } from "@/app/actions";
+import type { TopologyResult, PathResult } from "@/lib/types";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
 import RawTab from "@/components/RawTab";
 import { MetricsBar } from "@/components/ui-widgets";
+import TopologyGraph from "@/components/TopologyGraph";
 import Toolbar from "@/components/Toolbar";
 import Sidebar from "@/components/Sidebar";
 import CircuitViewport from "@/components/CircuitViewport";
@@ -71,6 +73,22 @@ export default function HomeClient({
   // Current overlay state
   const [currentOverlayUrl, setCurrentOverlayUrl] = useState<string | null>(null);
   const [currentActive, setCurrentActive] = useState(false);
+
+  // Topology overlay state
+  const [topologyActive, setTopologyActive] = useState(false);
+  const [topology, setTopology] = useState<TopologyResult | null>(null);
+  const [topologyLoading, setTopologyLoading] = useState(false);
+  const [topoSelectedNode, setTopoSelectedNode] = useState<number | null>(null);
+  const [topoSelectedComponent, setTopoSelectedComponent] = useState<string | null>(null);
+  const [showWires, setShowWires] = useState(true);
+  const [showPins, setShowPins] = useState(true);
+  const [showComponents, setShowComponents] = useState(true);
+
+  // Path tracing state
+  const [pathStart, setPathStart] = useState<string | null>(null);
+  const [pathEnd, setPathEnd] = useState<string | null>(null);
+  const [pathData, setPathData] = useState<PathResult | null>(null);
+  const [pathLoading, setPathLoading] = useState(false);
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
@@ -137,6 +155,60 @@ export default function HomeClient({
     }
   }, [currentActive, handleRunCurrentOverlay]);
 
+  // Topology fetch
+  useEffect(() => {
+    if (!topologyActive) {
+      setTopology(null);
+      setTopoSelectedNode(null);
+      setTopoSelectedComponent(null);
+      return;
+    }
+    let cancelled = false;
+    setTopologyLoading(true);
+    fetchTopologyAction(imgs.imageIdx, imgs.dataset, pipe.preset, currentParams as Record<string, string | number>, joinStrategy)
+      .then((result) => {
+        if (!cancelled) setTopology(result);
+      })
+      .catch((e) => {
+        console.error("Topology fetch failed:", e);
+        if (!cancelled) setTopology(null);
+      })
+      .finally(() => {
+        if (!cancelled) setTopologyLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [topologyActive, imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, joinStrategy]);
+
+  // Path tracing: fetch path when both start and end are set
+  useEffect(() => {
+    if (!pathStart || !pathEnd) {
+      setPathData(null);
+      return;
+    }
+    if (pathStart === pathEnd) {
+      setPathData({ path: [], warnings: ["Start and end components are the same"] });
+      return;
+    }
+    let cancelled = false;
+    setPathLoading(true);
+    fetchPathAction(
+      imgs.imageIdx, imgs.dataset, pipe.preset,
+      currentParams as Record<string, string | number>,
+      joinStrategy, pathStart, pathEnd,
+    )
+      .then((result) => { if (!cancelled) setPathData(result); })
+      .catch((e) => { console.error("Path fetch failed:", e); if (!cancelled) setPathData(null); })
+      .finally(() => { if (!cancelled) setPathLoading(false); });
+    return () => { cancelled = true; };
+  }, [pathStart, pathEnd, imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, joinStrategy]);
+
+  // Clear path when image changes
+  useEffect(() => {
+    setPathStart(null);
+    setPathEnd(null);
+    setPathData(null);
+  }, [imgs.imageIdx, imgs.dataset]);
+
   const { netlist: netlistData, loading: netlistLoading, error: netlistError } = useNetlist(
     imgs.imageIdx,
     imgs.dataset,
@@ -155,7 +227,31 @@ export default function HomeClient({
   const handleOverlayChange = (overlay: string) => {
     setVoltageActive(overlay === "voltage");
     setCurrentActive(overlay === "current");
+    setTopologyActive(overlay === "topology");
   };
+
+  // Handle shift+click for path selection (called from CircuitViewport)
+  const handlePathClick = useCallback((name: string) => {
+    if (!pathStart) {
+      setPathStart(name);
+      setPathEnd(null);
+      setPathData(null);
+    } else if (!pathEnd) {
+      if (name === pathStart) {
+        // Clicking same component clears path
+        setPathStart(null);
+        setPathEnd(null);
+        setPathData(null);
+      } else {
+        setPathEnd(name);
+      }
+    } else {
+      // Both set, start new selection
+      setPathStart(name);
+      setPathEnd(null);
+      setPathData(null);
+    }
+  }, [pathStart, pathEnd]);
 
   const [ocrResults, setOcrResults] = useState<any>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
@@ -303,6 +399,22 @@ export default function HomeClient({
           onActiveOverlayChange={handleOverlayChange}
           componentValues={componentValues}
           onValueChange={handleValueChange}
+          topology={topology}
+          topologyLoading={topologyLoading}
+          selectedNode={topoSelectedNode}
+          selectedComponent={topoSelectedComponent}
+          onNodeSelect={setTopoSelectedNode}
+          onComponentSelect={setTopoSelectedComponent}
+          pathStart={pathStart}
+          pathEnd={pathEnd}
+          pathData={pathData}
+          onPathClick={handlePathClick}
+          showWires={showWires}
+          showPins={showPins}
+          showComponents={showComponents}
+          onToggleWires={() => setShowWires((v) => !v)}
+          onTogglePins={() => setShowPins((v) => !v)}
+          onToggleComponents={() => setShowComponents((v) => !v)}
         />
       </div>
 
@@ -325,6 +437,19 @@ export default function HomeClient({
         )}
         {bottomPanelTab === "raw" && (
           <RawTab result={pipe.result} />
+        )}
+        {bottomPanelTab === "graph" && topology && (
+          <TopologyGraph
+            topology={topology}
+            selectedNode={topoSelectedNode}
+            selectedComponent={topoSelectedComponent}
+            onNodeSelect={setTopoSelectedNode}
+            onComponentSelect={setTopoSelectedComponent}
+            pathStart={pathStart}
+            pathEnd={pathEnd}
+            pathData={pathData}
+            onPathClick={handlePathClick}
+          />
         )}
       </BottomPanel>
 
