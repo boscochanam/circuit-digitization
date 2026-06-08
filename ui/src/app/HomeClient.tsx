@@ -185,6 +185,10 @@ export default function HomeClient({
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
+  // Re-fetch netlist/sim/overlays when connection-editor overrides change so the
+  // SPICE / voltage / current reflect the manual wire->component assignments.
+  const overridesKey = JSON.stringify(overrides);
+
   const sim = useSimulation(
     imgs.imageIdx,
     imgs.dataset,
@@ -193,6 +197,7 @@ export default function HomeClient({
     componentValues,
     voltageActive,
     joinStrategy,
+    overridesKey,
   );
 
   const handleRunSimOverlay = useCallback(async () => {
@@ -211,7 +216,7 @@ export default function HomeClient({
     } catch (e) {
       console.error("Sim overlay failed:", e);
     }
-  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, joinStrategy]);
+  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, joinStrategy, overridesKey]);
 
   useEffect(() => {
     if (voltageActive) {
@@ -238,7 +243,7 @@ export default function HomeClient({
     } catch (e) {
       console.error("Current overlay failed:", e);
     }
-  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, joinStrategy]);
+  }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, joinStrategy, overridesKey]);
 
   useEffect(() => {
     if (currentActive) {
@@ -309,6 +314,7 @@ export default function HomeClient({
     pipe.preset,
     currentParams as Record<string, number>,
     joinStrategy,
+    overridesKey,
   );
 
   const componentList = (pipe.result?.components ?? []).map((c) => ({
