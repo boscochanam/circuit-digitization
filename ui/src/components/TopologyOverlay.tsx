@@ -259,6 +259,19 @@ export default function TopologyOverlay({
         style={{ pointerEvents: "none" }}
         onClick={onBackgroundClick}
       >
+        {/* Background click target — first child so it doesn't intercept children */}
+        <rect
+          x={0}
+          y={0}
+          width="100%"
+          height="100%"
+          fill="transparent"
+          style={{ pointerEvents: "all", cursor: "default" }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onBackgroundClick();
+          }}
+        />
         {/* Wires */}
         {showWires &&
           topology.wires.map((wire) => {
@@ -311,12 +324,12 @@ export default function TopologyOverlay({
                     />
                   );
                 })()}
-                {/* Endpoint 1 — invisible click target */}
+                      {/* Endpoint 1 — visible click target */}
                 <circle
                   cx={wire.ep1[0] * scaleX}
                   cy={wire.ep1[1] * scaleY}
-                  r={6}
-                  fill={editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? "rgba(255,215,0,0.2)" : "transparent"}
+                  r={8}
+                  fill={editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.35)"}
                   stroke={editMode === "join" ? `wire_${wire.idx}_ep1` === joinSource ? "#FFD700" : "rgba(255,255,255,0.6)" : "transparent"}
                   strokeWidth={editMode === "join" ? 1 : 0}
                   style={{
@@ -366,12 +379,12 @@ export default function TopologyOverlay({
                       style={{ pointerEvents: "none" }}
                       />
                       )}
-                      {/* Endpoint 2 — invisible click target */}
+                      {/* Endpoint 2 — visible click target */}
                 <circle
                   cx={wire.ep2[0] * scaleX}
                   cy={wire.ep2[1] * scaleY}
-                  r={6}
-                  fill={editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? "rgba(255,215,0,0.2)" : "transparent"}
+                  r={8}
+                  fill={editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.35)"}
                   stroke={editMode === "join" ? `wire_${wire.idx}_ep2` === joinSource ? "#FFD700" : "rgba(255,255,255,0.6)" : "transparent"}
                   strokeWidth={editMode === "join" ? 1 : 0}
                   style={{
@@ -536,19 +549,7 @@ export default function TopologyOverlay({
             );
           })}
 
-        {/* Background click target — must be last so it doesn't intercept children */}
-        <rect
-          x={0}
-          y={0}
-          width="100%"
-          height="100%"
-          fill="transparent"
-          style={{ pointerEvents: "all", cursor: "default" }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onBackgroundClick();
-          }}
-        />
+
       </svg>
 
       {/* Endpoint edit panel — main view (action buttons) */}
