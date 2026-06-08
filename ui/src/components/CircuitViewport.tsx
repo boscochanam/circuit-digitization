@@ -9,6 +9,7 @@ interface CircuitViewportProps {
   sourceImageUrl?: string;
   pipelineResult?: any;
   simOverlayUrl?: string | null;
+  currentOverlayUrl?: string | null;
   ocrResults?: any;
   imageIdx?: number;
   dataset?: string;
@@ -29,6 +30,7 @@ export default function CircuitViewport({
   sourceImageUrl,
   pipelineResult,
   simOverlayUrl,
+  currentOverlayUrl,
   ocrResults,
   imageIdx = 0,
   dataset = "gt_labels",
@@ -128,6 +130,7 @@ export default function CircuitViewport({
   // Get overlay image based on selection
   const getOverlayUrl = (type: string): string | null => {
     if (type === "voltage") return simOverlayUrl ?? null;
+    if (type === "current") return currentOverlayUrl ?? null;
     if (!pipelineResult) return null;
     switch (type) {
       case "threshold":
