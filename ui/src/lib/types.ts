@@ -2,6 +2,8 @@ export interface PipelineResult {
   line_count: number;
   blob_count: number;
   elapsed_ms: number;
+  image_width: number;
+  image_height: number;
   overlay: string;
   threshold: string;
   dilated: string;
@@ -114,7 +116,7 @@ export interface HomeInitialData {
 }
 
 // Bottom-panel tab id.
-export type BottomPanelTab = "netlist" | "warnings" | "raw";
+export type BottomPanelTab = "netlist" | "warnings" | "raw" | "graph";
 
 // A component row for the sidebar Values editor.
 export interface ComponentEntry {
@@ -122,4 +124,58 @@ export interface ComponentEntry {
   type: string;
   value: string;
   position?: { x: number; y: number };
+}
+
+// ── Topology (interactive wire/component visualization) ──
+
+export interface TopoWire {
+  idx: number;
+  ep1: [number, number];
+  ep2: [number, number];
+  node_id: number | null;
+}
+
+export interface TopoPin {
+  x: number;
+  y: number;
+  component_idx: number;
+  component_name: string;
+  pin_name: string;
+  node_id: number | null;
+}
+
+export interface TopoComponent {
+  idx: number;
+  name: string;
+  type: string;
+  bbox: [number, number, number, number];
+  node_ids: number[];
+}
+
+export interface TopoNode {
+  node_id: number;
+  wire_count: number;
+  pin_count: number;
+  component_count: number;
+}
+
+export interface TopologyResult {
+  wires: TopoWire[];
+  pins: TopoPin[];
+  components: TopoComponent[];
+  nodes: TopoNode[];
+  warnings: string[];
+}
+
+export interface PathStep {
+  type: "component" | "node";
+  name?: string;
+  node_id?: number;
+  node_ids?: number[];
+  components?: string[];
+}
+
+export interface PathResult {
+  path: PathStep[];
+  warnings: string[];
 }
