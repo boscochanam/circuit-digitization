@@ -343,6 +343,13 @@ async def current_overlay(data: SimOverlayRequest):
             components, netlist, volts, spice, result
         )
 
+        # Threshold numerical noise from ngspice rshunt (sub-nA currents)
+        _NOISE_FLOOR = 1e-9
+        comp_currents = {
+            k: (0.0 if abs(v) < _NOISE_FLOOR else v)
+            for k, v in comp_currents.items()
+        }
+
         # Find current range
         i_vals = [abs(v) for v in comp_currents.values() if v > 0]
         imin = 0.0
