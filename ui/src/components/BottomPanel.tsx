@@ -14,6 +14,7 @@ const TABS: { value: BottomPanelTab; label: string }[] = [
   { value: "netlist", label: "Netlist" },
   { value: "warnings", label: "Warnings" },
   { value: "raw", label: "Raw" },
+  { value: "graph", label: "Graph" },
 ];
 
 export default function BottomPanel({
