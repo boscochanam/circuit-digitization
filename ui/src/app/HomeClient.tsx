@@ -6,7 +6,8 @@ import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
-import { fetchSimOverlayAction, fetchCurrentOverlayAction } from "@/app/actions";
+import { fetchSimOverlayAction, fetchCurrentOverlayAction, fetchTopologyAction } from "@/app/actions";
+import type { TopologyResult } from "@/lib/types";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
 import RawTab from "@/components/RawTab";
@@ -71,6 +72,16 @@ export default function HomeClient({
   // Current overlay state
   const [currentOverlayUrl, setCurrentOverlayUrl] = useState<string | null>(null);
   const [currentActive, setCurrentActive] = useState(false);
+
+  // Topology overlay state
+  const [topologyActive, setTopologyActive] = useState(false);
+  const [topology, setTopology] = useState<TopologyResult | null>(null);
+  const [topologyLoading, setTopologyLoading] = useState(false);
+  const [topoSelectedNode, setTopoSelectedNode] = useState<number | null>(null);
+  const [topoSelectedComponent, setTopoSelectedComponent] = useState<string | null>(null);
+  const [showWires, setShowWires] = useState(true);
+  const [showPins, setShowPins] = useState(true);
+  const [showComponents, setShowComponents] = useState(true);
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
@@ -137,6 +148,30 @@ export default function HomeClient({
     }
   }, [currentActive, handleRunCurrentOverlay]);
 
+  // Topology fetch
+  useEffect(() => {
+    if (!topologyActive) {
+      setTopology(null);
+      setTopoSelectedNode(null);
+      setTopoSelectedComponent(null);
+      return;
+    }
+    let cancelled = false;
+    setTopologyLoading(true);
+    fetchTopologyAction(imgs.imageIdx, imgs.dataset, pipe.preset, currentParams as Record<string, string | number>, joinStrategy)
+      .then((result) => {
+        if (!cancelled) setTopology(result);
+      })
+      .catch((e) => {
+        console.error("Topology fetch failed:", e);
+        if (!cancelled) setTopology(null);
+      })
+      .finally(() => {
+        if (!cancelled) setTopologyLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [topologyActive, imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, joinStrategy]);
+
   const { netlist: netlistData, loading: netlistLoading, error: netlistError } = useNetlist(
     imgs.imageIdx,
     imgs.dataset,
@@ -155,6 +190,7 @@ export default function HomeClient({
   const handleOverlayChange = (overlay: string) => {
     setVoltageActive(overlay === "voltage");
     setCurrentActive(overlay === "current");
+    setTopologyActive(overlay === "topology");
   };
 
   const [ocrResults, setOcrResults] = useState<any>(null);
@@ -303,6 +339,18 @@ export default function HomeClient({
           onActiveOverlayChange={handleOverlayChange}
           componentValues={componentValues}
           onValueChange={handleValueChange}
+          topology={topology}
+          topologyLoading={topologyLoading}
+          selectedNode={topoSelectedNode}
+          selectedComponent={topoSelectedComponent}
+          onNodeSelect={setTopoSelectedNode}
+          onComponentSelect={setTopoSelectedComponent}
+          showWires={showWires}
+          showPins={showPins}
+          showComponents={showComponents}
+          onToggleWires={() => setShowWires((v) => !v)}
+          onTogglePins={() => setShowPins((v) => !v)}
+          onToggleComponents={() => setShowComponents((v) => !v)}
         />
       </div>
 

@@ -123,3 +123,44 @@ export interface ComponentEntry {
   value: string;
   position?: { x: number; y: number };
 }
+
+// ── Topology (interactive wire/component visualization) ──
+
+export interface TopoWire {
+  idx: number;
+  ep1: [number, number];
+  ep2: [number, number];
+  node_id: number | null;
+}
+
+export interface TopoPin {
+  x: number;
+  y: number;
+  component_idx: number;
+  component_name: string;
+  pin_name: string;
+  node_id: number | null;
+}
+
+export interface TopoComponent {
+  idx: number;
+  name: string;
+  type: string;
+  bbox: [number, number, number, number];
+  node_ids: number[];
+}
+
+export interface TopoNode {
+  node_id: number;
+  wire_count: number;
+  pin_count: number;
+  component_count: number;
+}
+
+export interface TopologyResult {
+  wires: TopoWire[];
+  pins: TopoPin[];
+  components: TopoComponent[];
+  nodes: TopoNode[];
+  warnings: string[];
+}
