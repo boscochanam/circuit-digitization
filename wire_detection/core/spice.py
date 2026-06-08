@@ -267,6 +267,10 @@ class SpiceGenerator:
                 for n in ns:
                     sourced_roots.add(_find(n))
 
+        # Re-resolve roots after all unions — earlier _find() calls may have
+        # returned a root that later unions changed (union-find root mutation).
+        sourced_roots = {_find(r) for r in sourced_roots}
+
         island_nodes: dict[str, list[str]] = _dd(list)
         for n in list(_parent.keys()):
             island_nodes[_find(n)].append(n)
