@@ -6,9 +6,13 @@ const GRID_PAGE = 60;
 
 export type Dataset = "gt_labels" | "hdc" | "synthetic";
 
-export function useImages(initial: { images: string[]; datasets: DatasetMap }) {
-  const [dataset, setDataset] = useState<Dataset>("gt_labels");
-  const [imageIdx, setImageIdx] = useState(0);
+export function useImages(
+  initial: { images: string[]; datasets: DatasetMap },
+  initialIdx: number = 0,
+  initialDs: string = "gt_labels",
+) {
+  const [dataset, setDataset] = useState<Dataset>(initialDs as Dataset);
+  const [imageIdx, setImageIdx] = useState(Math.min(initialIdx, initial.images.length - 1));
   const [imageList, setImageList] = useState<string[]>(initial.images);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [listLoading, setListLoading] = useState(false);

@@ -18,9 +18,29 @@ import BottomPanel from "@/components/BottomPanel";
 import ImageGrid from "@/components/ImageGrid";
 import type { BottomPanelTab } from "@/lib/types";
 
-export default function HomeClient({ initial }: { initial: HomeInitialData }) {
-  const imgs = useImages(initial);
+export default function HomeClient({
+  initial,
+  initialIdx = 0,
+  initialDs = "gt_labels",
+}: {
+  initial: HomeInitialData;
+  initialIdx?: number;
+  initialDs?: string;
+}) {
+  const imgs = useImages(initial, initialIdx, initialDs);
   const pipe = usePipeline(initial, imgs.imageIdx, imgs.dataset, imgs.imageCount);
+
+  // Sync URL query params when navigating images
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("idx", String(imgs.imageIdx));
+    if (imgs.dataset !== "gt_labels") {
+      url.searchParams.set("ds", imgs.dataset);
+    } else {
+      url.searchParams.delete("ds");
+    }
+    window.history.replaceState(null, "", url.toString());
+  }, [imgs.imageIdx, imgs.dataset]);
 
   const [bottomPanelOpen, setBottomPanelOpen] = useState(true);
   const [showGrid, setShowGrid] = useState(false);

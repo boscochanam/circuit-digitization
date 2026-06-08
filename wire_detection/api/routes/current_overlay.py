@@ -87,22 +87,82 @@ def _err_overlay(gray, msg, color=(90, 160, 255)):
     return c
 
 
-def _build_component_names(components):
-    """Build component index → SPICE name mapping (mirrors SpiceGenerator naming).
+def _build_component_names(components, spice_text="", netlist=None):
+    """Build component index → SPICE name mapping.
 
-    Components are tuples: (class_id, polygon_vertices, bbox).
-    Returns dict: component_index -> spice_name (e.g., {0: "R1", 1: "C1", ...}).
+    If spice_text is provided, parse device names directly from it (most accurate).
+    Otherwise, mirror SpiceGenerator naming by only counting emittable prefixes.
     """
+    if spice_text and netlist is not None:
+        return _parse_spice_names(spice_text, components, netlist)
+    EMITTABLE = {"R", "C", "L", "V", "D", "Q"}
     prefix_counters: dict[str, int] = {}
     names: dict[int, str] = {}
     for i, comp in enumerate(components):
         cls_id = comp[0]
         type_name = COMPONENT_TYPES.get(cls_id, f"cls_{cls_id}")
         prefix = PREFIX_MAP.get(type_name)
-        if prefix is None:
+        if prefix is None or prefix not in EMITTABLE:
             continue
         prefix_counters[prefix] = prefix_counters.get(prefix, 0) + 1
         names[i] = f"{prefix}{prefix_counters[prefix]}"
+    return names
+
+
+def _parse_spice_names(spice_text, components, netlist):
+    """Parse SPICE device lines and match to component indices via netlist nodes.
+
+    Uses node connectivity: SPICE line 'R8 N2 N7 1000' means R8 connects nodes
+    N2 and N7. We find the component whose pins connect to those same netlist nodes.
+    """
+    import re as _re
+    from wire_detection.core.component_classes import COMPONENT_TYPES as _CT
+
+    # Parse SPICE device lines
+    spice_devices: dict[str, list[str]] = {}
+    for line in spice_text.split("\n"):
+        line = line.strip()
+        if not line or line.startswith(".") or line.startswith("*"):
+            continue
+        m = _re.match(r"^([RCVLQD]\d+)\s+(.+)", line)
+        if m:
+            spice_devices[m.group(1)] = m.group(2).split()
+
+    # Build node_id → set of component_indices from the netlist
+    node_comps: dict[int, set[int]] = {}
+    for node in netlist.nodes:
+        for pin in node.pins:
+            node_comps.setdefault(node.node_id, set()).add(pin.component_idx)
+
+    # For each SPICE device, find which component connects to its nodes
+    names: dict[int, str] = {}
+    for dev_name, dev_nodes in spice_devices.items():
+        # Convert node names (N2, 0) to netlist node_ids
+        dev_node_ids = set()
+        for n in dev_nodes:
+            n_lower = n.lower()
+            if n_lower == "0":
+                dev_node_ids.add(0)  # ground
+            elif n_lower.startswith("n"):
+                try:
+                    dev_node_ids.add(int(n_lower[1:]))
+                except ValueError:
+                    pass
+
+        if not dev_node_ids:
+            continue
+
+        # Find components connected to ALL these nodes
+        candidate_counts: dict[int, int] = {}
+        for nid in dev_node_ids:
+            for ci in node_comps.get(nid, set()):
+                candidate_counts[ci] = candidate_counts.get(ci, 0) + 1
+
+        # The component connected to the most nodes of this device is the match
+        if candidate_counts:
+            best_ci = max(candidate_counts, key=lambda k: candidate_counts[k])
+            names[best_ci] = dev_name
+
     return names
 
 
@@ -116,7 +176,7 @@ def _compute_component_currents(components, netlist, volts, spice_text, result):
     comp_currents: dict[str, float] = {}
 
     # Build component index → SPICE name mapping
-    comp_names = _build_component_names(components)
+    comp_names = _build_component_names(components, spice_text, netlist)
     # Reverse: spice_name → index
     name_to_idx = {v: k for k, v in comp_names.items()}
 
@@ -291,7 +351,7 @@ async def current_overlay(data: SimOverlayRequest):
         # Build wire → current mapping (wire inherits max current of connected components)
         wire_currents: dict[int, float] = {}
         # Build component names for drawing + wire mapping
-        comp_names = _build_component_names(components)
+        comp_names = _build_component_names(components, spice, netlist)
         for node in netlist.nodes:
             # Find components connected to this node (by SPICE name)
             connected_comps = [comp_names.get(p.component_idx) for p in node.pins]
