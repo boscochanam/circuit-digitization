@@ -73,6 +73,12 @@ class SimOverlayRequest(JoinOverlayRequest):
     component_values: dict[str, str] | None = None  # e.g. {"0": "10k", "1": "100n"} (index-based)
 
 
+class OverrideRequest(BaseModel):
+    dataset: str = "gt_labels"
+    img_idx: int
+    overrides: dict
+
+
 class NetlistResponse(BaseModel):
     nodes: list[dict[str, Any]]
     components: list[dict[str, Any]]
