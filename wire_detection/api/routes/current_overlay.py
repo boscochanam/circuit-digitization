@@ -121,10 +121,14 @@ def _compute_component_currents(components, netlist, volts, spice_text, result):
     name_to_idx = {v: k for k, v in comp_names.items()}
 
     # Build comp_name → net_ids mapping from netlist
+    # pin.component_idx is the index into the components list;
+    # comp_names maps index → SPICE name (e.g. "R3")
     comp_nets: dict[str, list[int]] = {}
     for node in netlist.nodes:
         for pin in node.pins:
-            comp_nets.setdefault(pin.component, []).append(node.node_id)
+            spice_name = comp_names.get(pin.component_idx)
+            if spice_name:
+                comp_nets.setdefault(spice_name, []).append(node.node_id)
 
     # Extract component values from SPICE netlist
     # Lines like: R1 n1 n2 1000  or  V1 n1 0 DC 5
@@ -286,21 +290,21 @@ async def current_overlay(data: SimOverlayRequest):
 
         # Build wire → current mapping (wire inherits max current of connected components)
         wire_currents: dict[int, float] = {}
+        # Build component names for drawing + wire mapping
+        comp_names = _build_component_names(components)
         for node in netlist.nodes:
-            # Find components connected to this node
-            connected_comps = [p.component for p in node.pins]
+            # Find components connected to this node (by SPICE name)
+            connected_comps = [comp_names.get(p.component_idx) for p in node.pins]
             max_i = 0.0
             for cn in connected_comps:
-                max_i = max(max_i, abs(comp_currents.get(cn, 0.0)))
+                if cn:
+                    max_i = max(max_i, abs(comp_currents.get(cn, 0.0)))
             for wi in node.wires:
                 if 0 <= wi < len(wires):
                     wire_currents[wi] = max(wire_currents.get(wi, 0.0), max_i)
 
         # Draw overlay
         canvas = _dim(gray)
-
-        # Build component names for drawing
-        comp_names = _build_component_names(components)
 
         # Draw components as filled rectangles colored by current
         GREY = (120, 120, 120)
@@ -336,7 +340,9 @@ async def current_overlay(data: SimOverlayRequest):
         for node in netlist.nodes:
             ci = 0.0
             for p in node.pins:
-                ci = max(ci, abs(comp_currents.get(p.component, 0.0)))
+                cn = comp_names.get(p.component_idx)
+                if cn:
+                    ci = max(ci, abs(comp_currents.get(cn, 0.0)))
             col = _current_color(ci, imin, imax) if ci > 0 else GREY
             for p in node.pins:
                 cv2.circle(canvas, (p.x, p.y), 4, col, -1, cv2.LINE_AA)
