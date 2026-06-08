@@ -139,6 +139,48 @@ def validate_reassign_target(target: dict, components: list) -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# Disconnect (remove) — applied to the WIRES, before the join runs
+# ---------------------------------------------------------------------------
+
+# Far-off coordinate: a "removed" wire bridges nothing during the join, while its
+# index stays valid (reassign/join keys reference wire indices).
+_DEGENERATE_EP = (-100000, -100000)
+
+
+def removed_wire_indices(overrides: dict) -> set:
+    """Wire indices that have at least one removed endpoint."""
+    out = set()
+    for key in overrides.get("remove", []) or []:
+        m = _ENDPOINT_RE.match(key) if isinstance(key, str) else None
+        if m:
+            out.add(int(m.group(1)))
+    return out
+
+
+def wires_with_removes(wires, overrides):
+    """Return a copy of *wires* where any wire with a removed endpoint is replaced
+    by a degenerate, off-canvas segment.
+
+    A disconnect must take effect BEFORE the join runs (so the net actually
+    splits), but simply dropping the wire would shift every later wire's index and
+    break the ``wire_<idx>_ep<n>`` keys that reassign/join rely on. Substituting a
+    degenerate segment keeps indices stable while making the wire join nothing.
+
+    NOTE: a wire endpoint can also seed a discovered pin, so degenerating it can
+    drop that pin. Acceptable for a manual, visible, undoable disconnect — but see
+    the tracking issue for the topology-vs-sim consistency discussion.
+    """
+    idxs = removed_wire_indices(overrides)
+    if not idxs:
+        return wires
+    out = list(wires)
+    for wi in idxs:
+        if 0 <= wi < len(out):
+            out[wi] = (_DEGENERATE_EP, _DEGENERATE_EP)
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Apply overrides to the core netlist (so SPICE / voltage / current reflect them)
 # ---------------------------------------------------------------------------
 
