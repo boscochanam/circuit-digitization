@@ -306,13 +306,30 @@ async def current_overlay(data: SimOverlayRequest):
         # Draw overlay
         canvas = _dim(gray)
 
+        # When all currents are zero, fall back to component-type coloring
+        # so the circuit structure is still visible
+        has_any_current = any(v > 0 for v in comp_currents.values())
+        _TYPE_COLORS = {
+            "R": (80, 200, 80),    # green — resistor
+            "C": (200, 160, 60),   # blue-ish — capacitor
+            "L": (200, 200, 80),   # cyan — inductor
+            "V": (80, 80, 220),    # red — voltage source
+            "D": (60, 200, 200),   # yellow — diode
+            "Q": (180, 120, 220),  # purple — transistor
+        }
+
         # Draw components as filled rectangles colored by current
         GREY = (120, 120, 120)
         for i, comp in enumerate(components):
             x1, y1, x2, y2 = comp[2]
             comp_name = comp_names.get(i, "?")
             ci = abs(comp_currents.get(comp_name, 0.0))
-            col = _current_color(ci, imin, imax) if ci > 0 else GREY
+            if ci > 0:
+                col = _current_color(ci, imin, imax)
+            elif not has_any_current:
+                col = _TYPE_COLORS.get(comp_name[0], GREY)
+            else:
+                col = GREY
             cv2.rectangle(canvas, (x1, y1), (x2, y2), col, -1)
             cv2.rectangle(canvas, (x1, y1), (x2, y2), (40, 40, 40), 1)
 
@@ -330,10 +347,15 @@ async def current_overlay(data: SimOverlayRequest):
                     label = f"{ci * 1e9:.1f}nA"
                 _put(canvas, label, (cx - 15, cy + 4), col, 0.35)
 
-        # Draw wires colored by current
+        # Draw wires colored by current (or type when no current)
         for wi, col_i in wire_currents.items():
             if 0 <= wi < len(wires):
-                col = _current_color(col_i, imin, imax) if col_i > 0 else GREY
+                if col_i > 0:
+                    col = _current_color(col_i, imin, imax)
+                elif not has_any_current:
+                    col = (160, 160, 160)  # light grey for wires in type-color mode
+                else:
+                    col = GREY
                 cv2.line(canvas, wires[wi][0], wires[wi][1], col, 2, cv2.LINE_AA)
 
         # Draw pins
@@ -343,15 +365,24 @@ async def current_overlay(data: SimOverlayRequest):
                 cn = comp_names.get(p.component_idx)
                 if cn:
                     ci = max(ci, abs(comp_currents.get(cn, 0.0)))
-            col = _current_color(ci, imin, imax) if ci > 0 else GREY
+            if ci > 0:
+                col = _current_color(ci, imin, imax)
+            elif not has_any_current:
+                col = (180, 180, 180)  # light grey pins in type-color mode
+            else:
+                col = GREY
             for p in node.pins:
                 cv2.circle(canvas, (p.x, p.y), 4, col, -1, cv2.LINE_AA)
                 cv2.circle(canvas, (p.x, p.y), 4, (15, 15, 15), 1, cv2.LINE_AA)
 
         # Header + colorbar
+        if has_any_current:
+            header = f"DC currents  {_fmt_current(imin)} .. {_fmt_current(imax)}   [{strategy}]  grey = no current"
+        else:
+            header = f"Component types (no DC current)   [{strategy}]  R=green C=blue L=cyan V=red D=yellow"
         _put(
             canvas,
-            f"DC currents  {_fmt_current(imin)} .. {_fmt_current(imax)}   [{strategy}]  grey = no current",
+            header,
             (8, 16),
             (235, 235, 235),
             0.40,
