@@ -117,6 +117,16 @@ export default function TopologyOverlay({
     return "#888";
   }, [overrides.join]);
 
+  // Resolve a "wire_<idx>_ep<n>" key to its [x, y] image coordinate (for drawing
+  // the join links between paired endpoints).
+  const endpointCoord = useCallback((key: string): [number, number] | null => {
+    const m = key.match(/^wire_(\d+)_ep(\d)$/);
+    if (!m || !topology) return null;
+    const w = topology.wires.find((w) => w.idx === parseInt(m[1], 10));
+    if (!w) return null;
+    return m[2] === "1" ? w.ep1 : w.ep2;
+  }, [topology]);
+
   // Build sets of components and nodes that are part of the path
   const pathComponentNames = new Set<string>();
   const pathNodeIds = new Set<number>();
@@ -434,6 +444,36 @@ export default function TopologyOverlay({
                       style={{ pointerEvents: "none" }}
                       />
                       )}
+              </g>
+            );
+          })}
+
+        {/* Manual join links — a dashed line between joined endpoints, so a join
+            reads as an actual connection across the image, not just two matching
+            rings you have to hunt for. Colour matches the endpoints' join rings. */}
+        {showWires &&
+          overrides.join.map((pair, i) => {
+            const a = endpointCoord(pair[0]);
+            const b = endpointCoord(pair[1]);
+            if (!a || !b) return null;
+            const color = JOIN_RING_COLORS[i % JOIN_RING_COLORS.length];
+            const mx = ((a[0] + b[0]) / 2) * scaleX;
+            const my = ((a[1] + b[1]) / 2) * scaleY;
+            return (
+              <g key={`join-link-${i}`} style={{ pointerEvents: "none" }}>
+                <line
+                  x1={a[0] * scaleX}
+                  y1={a[1] * scaleY}
+                  x2={b[0] * scaleX}
+                  y2={b[1] * scaleY}
+                  stroke={color}
+                  strokeWidth={2.5}
+                  strokeDasharray="6 4"
+                  opacity={0.95}
+                />
+                <circle cx={mx} cy={my} r={7} fill={color} opacity={0.9} />
+                <text x={mx} y={my + 3} textAnchor="middle" fontSize={9} fontWeight={700}
+                  fill="#000" style={{ pointerEvents: "none" }}>⤬</text>
               </g>
             );
           })}
