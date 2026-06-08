@@ -179,3 +179,16 @@ export interface PathResult {
   path: PathStep[];
   warnings: string[];
 }
+
+// ── Connection Editor Overrides ──
+
+export interface ConnectionOverrides {
+  reassign: Record<string, { component: string; pin: string }>;
+  join: [string, string][];
+  remove: string[];
+}
+
+export interface OverrideResponse {
+  overrides: ConnectionOverrides;
+  topology: TopologyResult;
+}
