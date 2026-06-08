@@ -1,7 +1,7 @@
 "use server";
 
 import { fetchBackend } from "@/lib/api";
-import type { PipelineResult, NetlistResult, JoinOverlayResult, JoinStrategy, SimOverlayResult } from "@/lib/types";
+import type { PipelineResult, NetlistResult, JoinOverlayResult, JoinStrategy, SimOverlayResult, CurrentOverlayResult } from "@/lib/types";
 
 export async function listImagesAction(ds: string): Promise<string[]> {
   const data = await fetchBackend<string[]>(`/api/list?ds=${encodeURIComponent(ds)}`);
@@ -84,6 +84,26 @@ export async function fetchSimOverlayAction(
   componentValues?: Record<string, string>,
 ): Promise<SimOverlayResult> {
   return fetchBackend("/api/sim_overlay", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      img_idx: imgIdx, ds, preset, params, strategy,
+      ...(componentValues && Object.keys(componentValues).length > 0
+        ? { component_values: componentValues }
+        : {}),
+    }),
+  });
+}
+
+export async function fetchCurrentOverlayAction(
+  imgIdx: number,
+  ds: string,
+  preset: string,
+  params: Record<string, string | number> = {},
+  strategy: string | null = null,
+  componentValues?: Record<string, string>,
+): Promise<CurrentOverlayResult> {
+  return fetchBackend("/api/current_overlay", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
