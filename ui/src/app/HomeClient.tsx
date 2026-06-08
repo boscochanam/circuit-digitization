@@ -6,8 +6,8 @@ import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
-import { fetchSimOverlayAction, fetchCurrentOverlayAction, fetchTopologyAction } from "@/app/actions";
-import type { TopologyResult } from "@/lib/types";
+import { fetchSimOverlayAction, fetchCurrentOverlayAction, fetchTopologyAction, fetchPathAction } from "@/app/actions";
+import type { TopologyResult, PathResult } from "@/lib/types";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
 import RawTab from "@/components/RawTab";
@@ -83,6 +83,12 @@ export default function HomeClient({
   const [showWires, setShowWires] = useState(true);
   const [showPins, setShowPins] = useState(true);
   const [showComponents, setShowComponents] = useState(true);
+
+  // Path tracing state
+  const [pathStart, setPathStart] = useState<string | null>(null);
+  const [pathEnd, setPathEnd] = useState<string | null>(null);
+  const [pathData, setPathData] = useState<PathResult | null>(null);
+  const [pathLoading, setPathLoading] = useState(false);
 
   const currentParams = pipe.isLegacy ? pipe.params : pipe.presetParams;
 
@@ -173,6 +179,36 @@ export default function HomeClient({
     return () => { cancelled = true; };
   }, [topologyActive, imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, joinStrategy]);
 
+  // Path tracing: fetch path when both start and end are set
+  useEffect(() => {
+    if (!pathStart || !pathEnd) {
+      setPathData(null);
+      return;
+    }
+    if (pathStart === pathEnd) {
+      setPathData({ path: [], warnings: ["Start and end components are the same"] });
+      return;
+    }
+    let cancelled = false;
+    setPathLoading(true);
+    fetchPathAction(
+      imgs.imageIdx, imgs.dataset, pipe.preset,
+      currentParams as Record<string, string | number>,
+      joinStrategy, pathStart, pathEnd,
+    )
+      .then((result) => { if (!cancelled) setPathData(result); })
+      .catch((e) => { console.error("Path fetch failed:", e); if (!cancelled) setPathData(null); })
+      .finally(() => { if (!cancelled) setPathLoading(false); });
+    return () => { cancelled = true; };
+  }, [pathStart, pathEnd, imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, joinStrategy]);
+
+  // Clear path when image changes
+  useEffect(() => {
+    setPathStart(null);
+    setPathEnd(null);
+    setPathData(null);
+  }, [imgs.imageIdx, imgs.dataset]);
+
   const { netlist: netlistData, loading: netlistLoading, error: netlistError } = useNetlist(
     imgs.imageIdx,
     imgs.dataset,
@@ -193,6 +229,29 @@ export default function HomeClient({
     setCurrentActive(overlay === "current");
     setTopologyActive(overlay === "topology");
   };
+
+  // Handle shift+click for path selection (called from CircuitViewport)
+  const handlePathClick = useCallback((name: string) => {
+    if (!pathStart) {
+      setPathStart(name);
+      setPathEnd(null);
+      setPathData(null);
+    } else if (!pathEnd) {
+      if (name === pathStart) {
+        // Clicking same component clears path
+        setPathStart(null);
+        setPathEnd(null);
+        setPathData(null);
+      } else {
+        setPathEnd(name);
+      }
+    } else {
+      // Both set, start new selection
+      setPathStart(name);
+      setPathEnd(null);
+      setPathData(null);
+    }
+  }, [pathStart, pathEnd]);
 
   const [ocrResults, setOcrResults] = useState<any>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
@@ -346,6 +405,10 @@ export default function HomeClient({
           selectedComponent={topoSelectedComponent}
           onNodeSelect={setTopoSelectedNode}
           onComponentSelect={setTopoSelectedComponent}
+          pathStart={pathStart}
+          pathEnd={pathEnd}
+          pathData={pathData}
+          onPathClick={handlePathClick}
           showWires={showWires}
           showPins={showPins}
           showComponents={showComponents}
@@ -382,6 +445,10 @@ export default function HomeClient({
             selectedComponent={topoSelectedComponent}
             onNodeSelect={setTopoSelectedNode}
             onComponentSelect={setTopoSelectedComponent}
+            pathStart={pathStart}
+            pathEnd={pathEnd}
+            pathData={pathData}
+            onPathClick={handlePathClick}
           />
         )}
       </BottomPanel>

@@ -59,6 +59,16 @@ class JoinOverlayRequest(BaseModel):
     strategy: str | None = None     # join strategy name; None = production default
 
 
+class PathRequest(BaseModel):
+    img_idx: int
+    ds: str = "gt_labels"
+    preset: str = "best_candidate_v4"
+    params: dict = {}
+    strategy: str | None = None
+    from_component: str  # e.g. "V1"
+    to_component: str    # e.g. "R3"
+
+
 class SimOverlayRequest(JoinOverlayRequest):
     component_values: dict[str, str] | None = None  # e.g. {"0": "10k", "1": "100n"} (index-based)
 

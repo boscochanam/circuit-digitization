@@ -166,3 +166,16 @@ export interface TopologyResult {
   nodes: TopoNode[];
   warnings: string[];
 }
+
+export interface PathStep {
+  type: "component" | "node";
+  name?: string;
+  node_id?: number;
+  node_ids?: number[];
+  components?: string[];
+}
+
+export interface PathResult {
+  path: PathStep[];
+  warnings: string[];
+}
