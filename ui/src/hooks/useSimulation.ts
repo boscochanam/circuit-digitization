@@ -22,6 +22,9 @@ export function useSimulation(
   componentValues: Record<string, string>,
   enabled: boolean,
   strategy: string = "graph_rescue",
+  // Re-run the sim when connection-editor overrides change (backend rebuilds the
+  // netlist with them).
+  overridesKey: string = "",
 ) {
   const [state, setState] = useState<SimulationState>({
     loading: false,
@@ -91,7 +94,7 @@ export function useSimulation(
     return () => {
       controller.abort();
     };
-  }, [imageIdx, dataset, preset, params, componentValues, enabled, strategy]);
+  }, [imageIdx, dataset, preset, params, componentValues, enabled, strategy, overridesKey]);
 
   return state;
 }
