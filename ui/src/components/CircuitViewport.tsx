@@ -4,6 +4,8 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
 import JoinCheckPanel from "./JoinCheckPanel";
+import TopologyOverlay from "./TopologyOverlay";
+import type { TopologyResult } from "@/lib/types";
 
 interface CircuitViewportProps {
   sourceImageUrl?: string;
@@ -20,6 +22,19 @@ interface CircuitViewportProps {
   onActiveOverlayChange?: (overlay: string) => void;
   componentValues?: Record<string, string>;
   onValueChange?: (name: string, value: string) => void;
+  // Topology overlay
+  topology?: TopologyResult | null;
+  topologyLoading?: boolean;
+  selectedNode?: number | null;
+  selectedComponent?: string | null;
+  onNodeSelect?: (nodeId: number | null) => void;
+  onComponentSelect?: (name: string | null) => void;
+  showWires?: boolean;
+  showPins?: boolean;
+  showComponents?: boolean;
+  onToggleWires?: () => void;
+  onTogglePins?: () => void;
+  onToggleComponents?: () => void;
 }
 
 /**
@@ -41,6 +56,18 @@ export default function CircuitViewport({
   onActiveOverlayChange,
   componentValues = {},
   onValueChange,
+  topology = null,
+  topologyLoading = false,
+  selectedNode = null,
+  selectedComponent = null,
+  onNodeSelect,
+  onComponentSelect,
+  showWires = true,
+  showPins = true,
+  showComponents = true,
+  onToggleWires,
+  onTogglePins,
+  onToggleComponents,
 }: CircuitViewportProps) {
   const [activeOverlay, setActiveOverlay] = useState<string>("none");
   const [overlayOpacity, setOverlayOpacity] = useState(70);
@@ -271,6 +298,30 @@ export default function CircuitViewport({
                   );
                 })()}
               </div>
+            )}
+            {/* Topology overlay — replaces labels when active */}
+            {activeOverlay === "topology" && topology && imgSize.w > 0 && (
+              <TopologyOverlay
+                topology={topology}
+                imgWidth={imgSize.nw}
+                imgHeight={imgSize.nh}
+                scaleX={sx}
+                scaleY={sy}
+                selectedNode={selectedNode ?? null}
+                selectedComponent={selectedComponent ?? null}
+                onWireClick={(nodeId) => onNodeSelect?.(nodeId)}
+                onComponentClick={(name) => onComponentSelect?.(name)}
+                onBackgroundClick={() => {
+                  onNodeSelect?.(null);
+                  onComponentSelect?.(null);
+                }}
+                showWires={showWires}
+                showPins={showPins}
+                showComponents={showComponents}
+                onToggleWires={onToggleWires}
+                onTogglePins={onTogglePins}
+                onToggleComponents={onToggleComponents}
+              />
             )}
           </div>
           {/* Zoom controls — minus / reset% / plus. stopPropagation so the
