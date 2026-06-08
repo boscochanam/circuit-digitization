@@ -6,8 +6,8 @@ import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
-import { fetchSimOverlayAction, fetchCurrentOverlayAction, fetchTopologyAction, fetchPathAction } from "@/app/actions";
-import type { TopologyResult, PathResult } from "@/lib/types";
+import { fetchSimOverlayAction, fetchCurrentOverlayAction, fetchTopologyAction, fetchPathAction, fetchOverridesAction, saveOverridesAction, clearOverridesAction } from "@/app/actions";
+import type { TopologyResult, PathResult, ConnectionOverrides } from "@/lib/types";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
 import RawTab from "@/components/RawTab";
@@ -83,6 +83,99 @@ export default function HomeClient({
   const [showWires, setShowWires] = useState(true);
   const [showPins, setShowPins] = useState(true);
   const [showComponents, setShowComponents] = useState(true);
+
+  // Endpoint selection state
+  const [selectedEndpoint, setSelectedEndpoint] = useState<string | null>(null);
+
+  // Edit mode and overrides state
+  const [editMode, setEditMode] = useState<"reassign" | "join" | "disconnect" | null>(null);
+  const [joinSource, setJoinSource] = useState<string | null>(null);
+  const [overrides, setOverrides] = useState<ConnectionOverrides>({ reassign: {}, join: [], remove: [] });
+
+  const handleEndpointClick = useCallback((endpointKey: string, shiftKey: boolean) => {
+    if (shiftKey) {
+      // Shift+click reserved for join mode (future)
+      return;
+    }
+    setEditMode(null);
+    setSelectedEndpoint((prev) => (prev === endpointKey ? null : endpointKey));
+  }, []);
+
+  // Load overrides when image changes
+  useEffect(() => {
+    fetchOverridesAction(imgs.imageIdx, imgs.dataset)
+      .then(setOverrides)
+      .catch(() => setOverrides({ reassign: {}, join: [], remove: [] }));
+    // Reset edit mode and selections
+    setEditMode(null);
+    setJoinSource(null);
+    setSelectedEndpoint(null);
+  }, [imgs.imageIdx, imgs.dataset]);
+
+  // Action handlers for endpoint editing (reassign, join, disconnect)
+  const handleReassign = useCallback(async (endpointKey: string, componentName: string, pinName: string) => {
+    const newOverrides: ConnectionOverrides = {
+      ...overrides,
+      reassign: {
+        ...overrides.reassign,
+        [endpointKey]: { component: componentName, pin: pinName },
+      },
+    };
+    try {
+      const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides);
+      setOverrides(newOverrides);
+      setTopology(updatedTopology);
+      setEditMode(null);
+      setSelectedEndpoint(null);
+    } catch (e) {
+      console.error("Reassign failed:", e);
+    }
+  }, [overrides, imgs.imageIdx, imgs.dataset]);
+
+  const handleJoin = useCallback(async (sourceEndpoint: string, targetEndpoint: string) => {
+    const newOverrides: ConnectionOverrides = {
+      ...overrides,
+      join: [...overrides.join, [sourceEndpoint, targetEndpoint]],
+    };
+    try {
+      const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides);
+      setOverrides(newOverrides);
+      setTopology(updatedTopology);
+      setEditMode(null);
+      setJoinSource(null);
+      setSelectedEndpoint(null);
+    } catch (e) {
+      console.error("Join failed:", e);
+    }
+  }, [overrides, imgs.imageIdx, imgs.dataset]);
+
+  const handleDisconnect = useCallback(async (endpointKey: string) => {
+    const newOverrides: ConnectionOverrides = {
+      ...overrides,
+      remove: [...overrides.remove, endpointKey],
+    };
+    try {
+      const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides);
+      setOverrides(newOverrides);
+      setTopology(updatedTopology);
+      setEditMode(null);
+      setSelectedEndpoint(null);
+    } catch (e) {
+      console.error("Disconnect failed:", e);
+    }
+  }, [overrides, imgs.imageIdx, imgs.dataset]);
+
+  const handleResetOverrides = useCallback(async () => {
+    try {
+      const updatedTopology = await clearOverridesAction(imgs.imageIdx, imgs.dataset);
+      setOverrides({ reassign: {}, join: [], remove: [] });
+      setTopology(updatedTopology);
+      setSelectedEndpoint(null);
+      setEditMode(null);
+    } catch (e) {
+      console.error("Reset overrides failed:", e);
+    }
+  }, [imgs.imageIdx, imgs.dataset]);
 
   // Path tracing state
   const [pathStart, setPathStart] = useState<string | null>(null);
@@ -161,6 +254,7 @@ export default function HomeClient({
       setTopology(null);
       setTopoSelectedNode(null);
       setTopoSelectedComponent(null);
+      setSelectedEndpoint(null);
       return;
     }
     let cancelled = false;
@@ -415,6 +509,18 @@ export default function HomeClient({
           onToggleWires={() => setShowWires((v) => !v)}
           onTogglePins={() => setShowPins((v) => !v)}
           onToggleComponents={() => setShowComponents((v) => !v)}
+          selectedEndpoint={selectedEndpoint}
+          onEndpointClick={handleEndpointClick}
+          onEndpointClear={() => setSelectedEndpoint(null)}
+          editMode={editMode}
+          onSetEditMode={setEditMode}
+          joinSource={joinSource}
+          onSetJoinSource={setJoinSource}
+          overrides={overrides}
+          onReassign={handleReassign}
+          onJoin={handleJoin}
+          onDisconnect={handleDisconnect}
+          onResetOverrides={handleResetOverrides}
         />
       </div>
 

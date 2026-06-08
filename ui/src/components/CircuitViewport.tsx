@@ -5,7 +5,8 @@ import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
 import JoinCheckPanel from "./JoinCheckPanel";
 import TopologyOverlay from "./TopologyOverlay";
-import type { TopologyResult, PathResult } from "@/lib/types";
+import type { TopologyResult, PathResult, ConnectionOverrides } from "@/lib/types";
+import type { EditMode } from "./TopologyOverlay";
 
 interface CircuitViewportProps {
   sourceImageUrl?: string;
@@ -39,6 +40,19 @@ interface CircuitViewportProps {
   onToggleWires?: () => void;
   onTogglePins?: () => void;
   onToggleComponents?: () => void;
+  // Endpoint selection & edit mode
+  selectedEndpoint?: string | null;
+  onEndpointClick?: (endpointKey: string, shiftKey: boolean) => void;
+  onEndpointClear?: () => void;
+  editMode?: EditMode;
+  onSetEditMode?: (mode: EditMode) => void;
+  joinSource?: string | null;
+  onSetJoinSource?: (key: string | null) => void;
+  overrides?: ConnectionOverrides;
+  onReassign?: (endpointKey: string, componentName: string, pinName: string) => void;
+  onJoin?: (sourceEndpoint: string, targetEndpoint: string) => void;
+  onDisconnect?: (endpointKey: string) => void;
+  onResetOverrides?: () => void;
 }
 
 /**
@@ -76,6 +90,18 @@ export default function CircuitViewport({
   onToggleWires,
   onTogglePins,
   onToggleComponents,
+  selectedEndpoint = null,
+  onEndpointClick,
+  onEndpointClear,
+  editMode = null,
+  onSetEditMode,
+  joinSource = null,
+  onSetJoinSource,
+  overrides = { reassign: {}, join: [], remove: [] },
+  onReassign,
+  onJoin,
+  onDisconnect,
+  onResetOverrides,
 }: CircuitViewportProps) {
   const [activeOverlay, setActiveOverlay] = useState<string>("none");
   const [overlayOpacity, setOverlayOpacity] = useState(70);
@@ -340,6 +366,9 @@ export default function CircuitViewport({
                   onBackgroundClick={() => {
                     onNodeSelect?.(null);
                     onComponentSelect?.(null);
+                    onEndpointClear?.();
+                    onSetJoinSource?.(null);
+                    onSetEditMode?.(null);
                     if (onPathClick) {
                       onPathClick(""); // clear path
                     }
@@ -353,7 +382,18 @@ export default function CircuitViewport({
                   onToggleWires={onToggleWires}
                   onTogglePins={onTogglePins}
                   onToggleComponents={onToggleComponents}
-                />
+                  selectedEndpoint={selectedEndpoint}
+                  onEndpointClick={onEndpointClick}
+                  editMode={editMode}
+                  onSetEditMode={onSetEditMode}
+                  joinSource={joinSource}
+                  onSetJoinSource={onSetJoinSource}
+                  overrides={overrides}
+                  onReassign={onReassign}
+                  onJoin={onJoin}
+                  onDisconnect={onDisconnect}
+                  onResetOverrides={onResetOverrides}
+                  />
               </div>
             )}
           </div>

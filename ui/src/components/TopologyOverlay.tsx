@@ -1,10 +1,13 @@
 "use client";
 
-import type { TopologyResult, PathResult, PathStep } from "@/lib/types";
+import { useMemo, useEffect, useCallback } from "react";
+import type { TopologyResult, PathResult, PathStep, ConnectionOverrides } from "@/lib/types";
 const NODE_COLORS = [
   "#e6194b", "#3cb44b", "#4363d8", "#f58231", "#911eb4", "#42d4f4",
   "#f032e6", "#bfef45", "#fabed4", "#469990", "#dcbeff", "#9A6324",
 ];
+
+export type EditMode = "reassign" | "join" | "disconnect" | null;
 
 interface TopologyOverlayProps {
   topology: TopologyResult;
@@ -27,6 +30,19 @@ interface TopologyOverlayProps {
   pathStart?: string | null;
   pathEnd?: string | null;
   pathData?: PathResult | null;
+  // Endpoint selection & edit mode
+  selectedEndpoint?: string | null; // e.g. "wire_3_ep2"
+  onEndpointClick?: (endpointKey: string, shiftKey: boolean) => void;
+  editMode?: EditMode;
+  onSetEditMode?: (mode: EditMode) => void;
+  joinSource?: string | null;
+  onSetJoinSource?: (key: string | null) => void;
+  // Overrides actions
+  overrides?: ConnectionOverrides;
+  onReassign?: (endpointKey: string, componentName: string, pinName: string) => void;
+  onJoin?: (sourceEndpoint: string, targetEndpoint: string) => void;
+  onDisconnect?: (endpointKey: string) => void;
+  onResetOverrides?: () => void;
 }
 
 /**
@@ -54,7 +70,53 @@ export default function TopologyOverlay({
   pathStart = null,
   pathEnd = null,
   pathData = null,
+  selectedEndpoint = null,
+  onEndpointClick,
+  editMode = null,
+  onSetEditMode,
+  joinSource = null,
+  onSetJoinSource,
+  overrides = { reassign: {}, join: [], remove: [] },
+  onReassign,
+  onJoin,
+  onDisconnect,
+  onResetOverrides,
 }: TopologyOverlayProps) {
+  // Escape key to exit edit mode / join mode
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (editMode === "join") {
+          onSetJoinSource?.(null);
+          onSetEditMode?.(null);
+        } else if (editMode) {
+          onSetEditMode?.(null);
+        }
+      }
+    };
+    if (editMode) {
+      window.addEventListener("keydown", handler);
+      return () => window.removeEventListener("keydown", handler);
+    }
+  }, [editMode, onSetEditMode, onSetJoinSource]);
+
+  // Helper functions for override visual indicators
+  const isReassigned = useCallback((key: string) => key in overrides.reassign, [overrides.reassign]);
+  const isRemoved = useCallback((key: string) => overrides.remove.includes(key), [overrides.remove]);
+  const isJoined = useCallback((key: string) => overrides.join.some(pair => pair.includes(key)), [overrides.join]);
+  const totalOverrides = Object.keys(overrides.reassign).length + overrides.remove.length + overrides.join.length;
+
+  // Generate a consistent color for join rings based on the pair
+  const JOIN_RING_COLORS = ["#22c55e", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
+  const getJoinColor = useCallback((endpointKey: string) => {
+    for (let i = 0; i < overrides.join.length; i++) {
+      if (overrides.join[i].includes(endpointKey)) {
+        return JOIN_RING_COLORS[i % JOIN_RING_COLORS.length];
+      }
+    }
+    return "#888";
+  }, [overrides.join]);
+
   // Build sets of components and nodes that are part of the path
   const pathComponentNames = new Set<string>();
   const pathNodeIds = new Set<number>();
@@ -69,6 +131,113 @@ export default function TopologyOverlay({
       }
     }
   }
+
+  // Button style for the edit panel
+  const btnStyle = useMemo(
+    () => ({
+      background: "rgba(255,255,255,0.1)",
+      border: "1px solid rgba(255,255,255,0.2)",
+      borderRadius: 4,
+      color: "#fff",
+      padding: "3px 8px",
+      fontSize: 11,
+      cursor: "pointer" as const,
+    }),
+    [],
+  );
+
+  const cancelBtnStyle = useMemo(
+    () => ({
+      background: "rgba(255,255,255,0.05)",
+      border: "1px solid rgba(255,255,255,0.15)",
+      borderRadius: 4,
+      color: "#aaa",
+      padding: "3px 8px",
+      fontSize: 11,
+      cursor: "pointer" as const,
+    }),
+    [],
+  );
+
+  // Parse selected endpoint to get wire index and endpoint number
+  const selectedWireIdx = useMemo(() => {
+    if (!selectedEndpoint) return null;
+    const m = selectedEndpoint.match(/^wire_(\d+)_ep(\d)$/);
+    return m ? parseInt(m[1], 10) : null;
+  }, [selectedEndpoint]);
+
+  const selectedEpNum = useMemo(() => {
+    if (!selectedEndpoint) return null;
+    const m = selectedEndpoint.match(/^wire_(\d+)_ep(\d)$/);
+    return m ? parseInt(m[2], 10) : null;
+  }, [selectedEndpoint]);
+
+  // Find the selected wire
+  const selectedWire = useMemo(() => {
+    if (selectedWireIdx === null || !topology) return null;
+    return topology.wires.find((w) => w.idx === selectedWireIdx) ?? null;
+  }, [topology, selectedWireIdx]);
+
+  // Get endpoint coordinates for the selected endpoint
+  const selectedEpCoords = useMemo(() => {
+    if (!selectedWire || selectedEpNum === null) return null;
+    return selectedEpNum === 1 ? selectedWire.ep1 : selectedWire.ep2;
+  }, [selectedWire, selectedEpNum]);
+
+  // Find which pin/node/component this endpoint connects to
+  const endpointInfo = useMemo(() => {
+    if (!selectedEpCoords || !topology || selectedWireIdx === null) {
+      return {
+        nodeId: null as number | null,
+        pinName: null as string | null,
+        componentName: null as string | null,
+      };
+    }
+    const [epx, epy] = selectedEpCoords;
+    const TOLERANCE = 5;
+
+    // Check if any pin matches this endpoint
+    for (const pin of topology.pins) {
+      if (
+        Math.abs(pin.x - epx) <= TOLERANCE &&
+        Math.abs(pin.y - epy) <= TOLERANCE
+      ) {
+        // Find component that contains this pin (by bbox containment)
+        for (const comp of topology.components) {
+          const [x1, y1, x2, y2] = comp.bbox;
+          if (epx >= x1 && epx <= x2 && epy >= y1 && epy <= y2) {
+            return {
+              nodeId: pin.node_id,
+              pinName: `pin (${Math.round(pin.x)},${Math.round(pin.y)})`,
+              componentName: comp.name,
+            };
+          }
+        }
+        return {
+          nodeId: pin.node_id,
+          pinName: `pin (${Math.round(pin.x)},${Math.round(pin.y)})`,
+          componentName: null,
+        };
+      }
+    }
+
+    // Fall back to wire's node_id and find component containing endpoint
+    const wire = topology.wires.find((w) => w.idx === selectedWireIdx);
+    if (wire) {
+      for (const comp of topology.components) {
+        const [x1, y1, x2, y2] = comp.bbox;
+        if (epx >= x1 && epx <= x2 && epy >= y1 && epy <= y2) {
+          return {
+            nodeId: wire.node_id,
+            pinName: null,
+            componentName: comp.name,
+          };
+        }
+      }
+      return { nodeId: wire.node_id, pinName: null, componentName: null };
+    }
+    return { nodeId: null, pinName: null, componentName: null };
+  }, [topology, selectedEpCoords, selectedWireIdx]);
 
   // Use percentage sizing so the SVG fills its container div (which is already
   // sized to the displayed image dimensions). Coordinates are pre-scaled by
@@ -93,11 +262,13 @@ export default function TopologyOverlay({
         {/* Wires */}
         {showWires &&
           topology.wires.map((wire) => {
-            const color = NODE_COLORS[(wire.node_id ?? 0) % NODE_COLORS.length];
-            const nodeInPath = wire.node_id !== null && pathNodeIds.has(wire.node_id);
+            const wireColor =
+              NODE_COLORS[(wire.node_id ?? 0) % NODE_COLORS.length];
+            const nodeInPath =
+              wire.node_id !== null && pathNodeIds.has(wire.node_id);
             const dimmed = selectedNode !== null && wire.node_id !== selectedNode;
 
-            let strokeColor = color;
+            let strokeColor = wireColor;
             let strokeW = 2;
             let opacity = dimmed ? 0.15 : 0.8;
 
@@ -109,31 +280,175 @@ export default function TopologyOverlay({
               opacity = 0.08;
             }
 
+            // Highlight wire if its endpoint is selected
+            const isEndpointSelected = selectedWireIdx === wire.idx;
+            if (isEndpointSelected) {
+              strokeW = 3;
+              opacity = 1;
+            }
+
             return (
-              <line
-                key={`w-${wire.idx}`}
-                x1={wire.ep1[0] * scaleX}
-                y1={wire.ep1[1] * scaleY}
-                x2={wire.ep2[0] * scaleX}
-                y2={wire.ep2[1] * scaleY}
-                stroke={strokeColor}
-                strokeWidth={strokeW}
-                opacity={opacity}
-                style={{ pointerEvents: "all", cursor: "pointer" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (wire.node_id !== null) onWireClick(wire.node_id);
-                }}
-              />
+              <g key={`w-${wire.idx}`}>
+                {(() => {
+                  const ep1Key = `wire_${wire.idx}_ep1`;
+                  const ep2Key = `wire_${wire.idx}_ep2`;
+                  const wireDashed = isRemoved(ep1Key) || isRemoved(ep2Key);
+                  return (
+                    <line
+                      x1={wire.ep1[0] * scaleX}
+                      y1={wire.ep1[1] * scaleY}
+                      x2={wire.ep2[0] * scaleX}
+                      y2={wire.ep2[1] * scaleY}
+                      stroke={strokeColor}
+                      strokeWidth={strokeW}
+                      opacity={opacity}
+                      strokeDasharray={wireDashed ? "6 3" : undefined}
+                      style={{ pointerEvents: "all", cursor: "pointer" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (wire.node_id !== null) onWireClick(wire.node_id);
+                      }}
+                    />
+                  );
+                })()}
+                {/* Endpoint 1 — invisible click target */}
+                <circle
+                  cx={wire.ep1[0] * scaleX}
+                  cy={wire.ep1[1] * scaleY}
+                  r={6}
+                  fill={editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? "rgba(255,215,0,0.2)" : "transparent"}
+                  stroke={editMode === "join" ? `wire_${wire.idx}_ep1` === joinSource ? "#FFD700" : "rgba(255,255,255,0.6)" : "transparent"}
+                  strokeWidth={editMode === "join" ? 1 : 0}
+                  style={{
+                    pointerEvents: "all",
+                    cursor: editMode === "join" ? "pointer" : "pointer",
+                    opacity: editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? 0.5 : 1,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (editMode === "join" && joinSource) {
+                      const targetKey = `wire_${wire.idx}_ep1`;
+                      if (targetKey !== joinSource) onJoin?.(joinSource, targetKey);
+                    } else {
+                      onEndpointClick?.(`wire_${wire.idx}_ep1`, e.shiftKey);
+                      }
+                      }}
+                      />
+                      {/* Endpoint 1 — override indicators */}
+                      {isReassigned(`wire_${wire.idx}_ep1`) && (
+                      <text
+                      x={wire.ep1[0] * scaleX + 6}
+                      y={wire.ep1[1] * scaleY - 6}
+                      fill="#FFD700"
+                      fontSize={10}
+                      style={{ pointerEvents: "none" }}
+                      >♦</text>
+                      )}
+                      {isRemoved(`wire_${wire.idx}_ep1`) && (
+                      <circle
+                      cx={wire.ep1[0] * scaleX}
+                      cy={wire.ep1[1] * scaleY}
+                      r={4}
+                      fill="#888"
+                      stroke="#666"
+                      strokeWidth={1}
+                      style={{ pointerEvents: "none" }}
+                      />
+                      )}
+                      {isJoined(`wire_${wire.idx}_ep1`) && (
+                      <circle
+                      cx={wire.ep1[0] * scaleX}
+                      cy={wire.ep1[1] * scaleY}
+                      r={8}
+                      fill="none"
+                      stroke={getJoinColor(`wire_${wire.idx}_ep1`)}
+                      strokeWidth={2}
+                      style={{ pointerEvents: "none" }}
+                      />
+                      )}
+                      {/* Endpoint 2 — invisible click target */}
+                <circle
+                  cx={wire.ep2[0] * scaleX}
+                  cy={wire.ep2[1] * scaleY}
+                  r={6}
+                  fill={editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? "rgba(255,215,0,0.2)" : "transparent"}
+                  stroke={editMode === "join" ? `wire_${wire.idx}_ep2` === joinSource ? "#FFD700" : "rgba(255,255,255,0.6)" : "transparent"}
+                  strokeWidth={editMode === "join" ? 1 : 0}
+                  style={{
+                    pointerEvents: "all",
+                    cursor: editMode === "join" ? "pointer" : "pointer",
+                    opacity: editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? 0.5 : 1,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (editMode === "join" && joinSource) {
+                      const targetKey = `wire_${wire.idx}_ep2`;
+                      if (targetKey !== joinSource) onJoin?.(joinSource, targetKey);
+                    } else {
+                      onEndpointClick?.(`wire_${wire.idx}_ep2`, e.shiftKey);
+                      }
+                      }}
+                      />
+                      {/* Endpoint 2 — override indicators */}
+                      {isReassigned(`wire_${wire.idx}_ep2`) && (
+                      <text
+                      x={wire.ep2[0] * scaleX + 6}
+                      y={wire.ep2[1] * scaleY - 6}
+                      fill="#FFD700"
+                      fontSize={10}
+                      style={{ pointerEvents: "none" }}
+                      >♦</text>
+                      )}
+                      {isRemoved(`wire_${wire.idx}_ep2`) && (
+                      <circle
+                      cx={wire.ep2[0] * scaleX}
+                      cy={wire.ep2[1] * scaleY}
+                      r={4}
+                      fill="#888"
+                      stroke="#666"
+                      strokeWidth={1}
+                      style={{ pointerEvents: "none" }}
+                      />
+                      )}
+                      {isJoined(`wire_${wire.idx}_ep2`) && (
+                      <circle
+                      cx={wire.ep2[0] * scaleX}
+                      cy={wire.ep2[1] * scaleY}
+                      r={8}
+                      fill="none"
+                      stroke={getJoinColor(`wire_${wire.idx}_ep2`)}
+                      strokeWidth={2}
+                      style={{ pointerEvents: "none" }}
+                      />
+                      )}
+              </g>
             );
           })}
+
+        {/* Selected endpoint marker */}
+        {showWires && selectedEpCoords && (
+          <circle
+            cx={selectedEpCoords[0] * scaleX}
+            cy={selectedEpCoords[1] * scaleY}
+            r={5}
+            fill={
+              NODE_COLORS[((selectedWire?.node_id ?? 0) % NODE_COLORS.length)]
+            }
+            stroke="#fff"
+            strokeWidth={2}
+            style={{ pointerEvents: "none" }}
+          />
+        )}
 
         {/* Pins */}
         {showPins &&
           topology.pins.map((pin, i) => {
-            const color = NODE_COLORS[(pin.node_id ?? 0) % NODE_COLORS.length];
-            const nodeInPath = pin.node_id !== null && pathNodeIds.has(pin.node_id);
-            const dimmed = selectedNode !== null && pin.node_id !== selectedNode;
+            const color =
+              NODE_COLORS[(pin.node_id ?? 0) % NODE_COLORS.length];
+            const nodeInPath =
+              pin.node_id !== null && pathNodeIds.has(pin.node_id);
+            const dimmed =
+              selectedNode !== null && pin.node_id !== selectedNode;
 
             let pinColor = color;
             let opacity = dimmed ? 0.15 : 1;
@@ -165,7 +480,8 @@ export default function TopologyOverlay({
         {/* Components */}
         {showComponents &&
           topology.components.map((comp) => {
-            const color = NODE_COLORS[(comp.node_ids[0] ?? 0) % NODE_COLORS.length];
+            const color =
+              NODE_COLORS[(comp.node_ids[0] ?? 0) % NODE_COLORS.length];
             const dimmed =
               selectedComponent !== null && comp.name !== selectedComponent;
             const [x1, y1, x2, y2] = comp.bbox;
@@ -235,6 +551,212 @@ export default function TopologyOverlay({
         />
       </svg>
 
+      {/* Endpoint edit panel — main view (action buttons) */}
+      {selectedEndpoint && selectedEpCoords && !editMode && (
+        <div
+          style={{
+            position: "absolute",
+            left: selectedEpCoords[0] * scaleX + 10,
+            top: selectedEpCoords[1] * scaleY - 60,
+            background: "rgba(20, 20, 30, 0.95)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 8,
+            padding: "8px 12px",
+            color: "#fff",
+            fontSize: 12,
+            zIndex: 100,
+            minWidth: 180,
+            pointerEvents: "all",
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+            {selectedEndpoint}
+          </div>
+          <div style={{ color: "#aaa", marginBottom: 8 }}>
+            {endpointInfo.nodeId !== null && `Node ${endpointInfo.nodeId}`}
+            {endpointInfo.componentName &&
+              ` — ${endpointInfo.componentName}`}
+            {endpointInfo.pinName && `.${endpointInfo.pinName}`}
+            {!endpointInfo.nodeId &&
+              !endpointInfo.componentName &&
+              !endpointInfo.pinName && (
+                <span style={{ color: "#666" }}>Unconnected endpoint</span>
+              )}
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              onClick={() => onSetEditMode?.("reassign")}
+              style={btnStyle}
+            >
+              Reassign
+            </button>
+            <button
+              onClick={() => {
+                onSetEditMode?.("join");
+                onSetJoinSource?.(selectedEndpoint);
+              }}
+              style={btnStyle}
+            >
+              Join…
+            </button>
+            <button
+              onClick={() => onSetEditMode?.("disconnect")}
+              style={btnStyle}
+            >
+              Disconnect
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reassign panel — pin selector */}
+      {selectedEndpoint && selectedEpCoords && editMode === "reassign" && (
+        <div
+          style={{
+            position: "absolute",
+            left: selectedEpCoords[0] * scaleX + 10,
+            top: selectedEpCoords[1] * scaleY - 60,
+            background: "rgba(20, 20, 30, 0.95)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 8,
+            padding: "8px 12px",
+            color: "#fff",
+            fontSize: 12,
+            zIndex: 100,
+            minWidth: 180,
+            maxWidth: 260,
+            pointerEvents: "all",
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>Reassign endpoint</div>
+          <div style={{ maxHeight: 200, overflowY: "auto" }}>
+            {topology.components.map((comp) => (
+              <div key={comp.name}>
+                <div style={{ color: "#888", fontSize: 10, marginTop: 4 }}>
+                  {comp.name} ({comp.type})
+                </div>
+                {topology.pins
+                  .filter((p) => p.component_name === comp.name)
+                  .map((pin) => {
+                    const isCurrent =
+                      endpointInfo.componentName === comp.name &&
+                      pin.node_id === endpointInfo.nodeId;
+                    return (
+                      <div
+                        key={`${comp.name}.${pin.pin_name}`}
+                        onClick={() => {
+                          onReassign?.(selectedEndpoint, comp.name, pin.pin_name);
+                          onSetEditMode?.(null);
+                        }}
+                        style={{
+                          padding: "2px 8px",
+                          cursor: "pointer",
+                          borderRadius: 3,
+                          background: isCurrent
+                            ? "rgba(255,215,0,0.2)"
+                            : "transparent",
+                          fontSize: 11,
+                        }}
+                      >
+                        {pin.pin_name} (Node {pin.node_id})
+                        {isCurrent && (
+                          <span style={{ color: "#FFD700", marginLeft: 4 }}>●</span>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => onSetEditMode?.(null)}
+            style={{ ...cancelBtnStyle, marginTop: 6 }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Join mode panel */}
+      {selectedEndpoint && selectedEpCoords && editMode === "join" && (
+        <div
+          style={{
+            position: "absolute",
+            left: selectedEpCoords[0] * scaleX + 10,
+            top: selectedEpCoords[1] * scaleY - 60,
+            background: "rgba(20, 20, 30, 0.95)",
+            border: "1px solid rgba(255,215,0,0.3)",
+            borderRadius: 8,
+            padding: "8px 12px",
+            color: "#fff",
+            fontSize: 12,
+            zIndex: 100,
+            minWidth: 180,
+            pointerEvents: "all",
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Join mode</div>
+          <div style={{ color: "#aaa", fontSize: 11, marginBottom: 8 }}>
+            Click another endpoint to join with {joinSource}
+          </div>
+          <button
+            onClick={() => {
+              onSetJoinSource?.(null);
+              onSetEditMode?.(null);
+            }}
+            style={cancelBtnStyle}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Disconnect confirmation panel */}
+      {selectedEndpoint && selectedEpCoords && editMode === "disconnect" && (
+        <div
+          style={{
+            position: "absolute",
+            left: selectedEpCoords[0] * scaleX + 10,
+            top: selectedEpCoords[1] * scaleY - 60,
+            background: "rgba(20, 20, 30, 0.95)",
+            border: "1px solid rgba(220,50,50,0.3)",
+            borderRadius: 8,
+            padding: "8px 12px",
+            color: "#fff",
+            fontSize: 12,
+            zIndex: 100,
+            minWidth: 180,
+            pointerEvents: "all",
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Disconnect endpoint</div>
+          <div style={{ color: "#aaa", fontSize: 11, marginBottom: 8 }}>
+            Remove {selectedEndpoint} from Node {endpointInfo.nodeId}?
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              onClick={() => {
+                onDisconnect?.(selectedEndpoint);
+                onSetEditMode?.(null);
+              }}
+              style={{
+                ...btnStyle,
+                background: "rgba(220,50,50,0.3)",
+                border: "1px solid rgba(220,50,50,0.5)",
+              }}
+            >
+              Disconnect
+            </button>
+            <button
+              onClick={() => onSetEditMode?.(null)}
+              style={cancelBtnStyle}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Control bar — top-right corner */}
       <div
         style={{
@@ -278,6 +800,35 @@ export default function TopologyOverlay({
           />
           Components
         </label>
+        {totalOverrides > 0 && (
+          <span style={{
+            background: "#FFD700",
+            color: "#000",
+            borderRadius: 10,
+            padding: "1px 6px",
+            fontSize: 10,
+            fontWeight: 600,
+            lineHeight: "16px",
+          }}>
+            {totalOverrides} override{totalOverrides !== 1 ? "s" : ""}
+          </span>
+        )}
+        {totalOverrides > 0 && (
+          <button
+            onClick={onResetOverrides}
+            style={{
+              background: "rgba(220,50,50,0.3)",
+              border: "1px solid rgba(220,50,50,0.5)",
+              borderRadius: 4,
+              color: "#fff",
+              padding: "2px 8px",
+              fontSize: 11,
+              cursor: "pointer",
+            }}
+          >
+            Reset
+          </button>
+        )}
       </div>
 
       {/* Path status indicator */}
