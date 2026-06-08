@@ -136,3 +136,109 @@ def validate_reassign_target(target: dict, components: list) -> str | None:
             )
 
     return None
+
+
+# ---------------------------------------------------------------------------
+# Apply overrides to the core netlist (so SPICE / voltage / current reflect them)
+# ---------------------------------------------------------------------------
+
+def apply_overrides_to_netlist(netlist, components_raw, overrides):
+    """Bake connection overrides into the core ``Netlist`` so the generated SPICE
+    — and therefore the netlist, voltage and current simulations — reflect manual
+    wire→component assignments, not just the topology *view*.
+
+    ``reassign`` and ``join`` are applied as node MERGES (union-find): exactly the
+    "connect this wire's net to that component pin / to that other wire" intent.
+    This covers the common "auto-join missed a connection" case (the stated goal:
+    assign wire nodes to components).
+
+    ``remove`` (splitting a node) is intentionally NOT propagated here — it needs
+    the node's internal connectivity recomputed without the removed wire, which is
+    a larger change. Reassign/join are the additive "assign/connect" operations.
+
+    Returns a NEW ``Netlist`` (the input is left untouched). No-op if there are no
+    reassign/join overrides.
+    """
+    from wire_detection.core.netlist import NetNode, Netlist
+    from wire_detection.core.component_classes import PREFIX_MAP
+    from wire_detection.core.spice import COMPONENT_NAMES
+
+    reassign = overrides.get("reassign", {}) or {}
+    join = overrides.get("join", []) or []
+    if not reassign and not join:
+        return netlist
+
+    # wire index -> its node id (from the current join result)
+    wire_to_node: dict[int, int] = {}
+    for node in netlist.nodes:
+        for wi in node.wires:
+            wire_to_node[wi] = node.node_id
+
+    pin_to_node = dict(netlist.pin_to_node)
+
+    # SPICE component name ("R2") -> component index, matching spice.py naming.
+    name_to_idx: dict[str, int] = {}
+    for ci, comp in enumerate(components_raw):
+        type_name = COMPONENT_NAMES.get(comp[0], f"cls_{comp[0]}")
+        prefix = PREFIX_MAP.get(type_name) or "X"
+        name_to_idx[f"{prefix}{ci + 1}"] = ci
+
+    # ── union-find over node ids (smaller id stays root for stable node names) ──
+    parent: dict[int, int] = {node.node_id: node.node_id for node in netlist.nodes}
+
+    def find(x: int) -> int:
+        root = x
+        while parent.get(root, root) != root:
+            root = parent[root]
+        while parent.get(x, x) != root:  # path compression
+            parent[x], x = root, parent[x]
+        return root
+
+    def union(a: int, b: int) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            lo, hi = (ra, rb) if ra < rb else (rb, ra)
+            parent[hi] = lo
+
+    def _ep_wire(key) -> int | None:
+        m = _ENDPOINT_RE.match(key) if isinstance(key, str) else None
+        return int(m.group(1)) if m else None
+
+    # reassign: connect the wire's net to the target component pin's net
+    for ep_key, target in reassign.items():
+        wi = _ep_wire(ep_key)
+        if wi is None:
+            continue
+        src = wire_to_node.get(wi)
+        ci = name_to_idx.get((target or {}).get("component", ""))
+        if ci is None:
+            continue
+        tgt = pin_to_node.get((ci, (target or {}).get("pin", "")))
+        if src is not None and tgt is not None:
+            union(src, tgt)
+
+    # join: connect two wires' nets
+    for pair in join:
+        if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+            continue
+        wa, wb = _ep_wire(pair[0]), _ep_wire(pair[1])
+        if wa is None or wb is None:
+            continue
+        na, nb = wire_to_node.get(wa), wire_to_node.get(wb)
+        if na is not None and nb is not None:
+            union(na, nb)
+
+    # ── rebuild the netlist with merged nodes ──
+    merged: dict[int, NetNode] = {}
+    for node in netlist.nodes:
+        root = find(node.node_id)
+        dst = merged.get(root)
+        if dst is None:
+            dst = merged[root] = NetNode(node_id=root, pins=[], wires=[])
+        dst.pins.extend(node.pins)
+        dst.wires.extend(node.wires)
+
+    out = Netlist()
+    out.nodes = list(merged.values())
+    out.pin_to_node = {key: find(nid) for key, nid in pin_to_node.items()}
+    return out
