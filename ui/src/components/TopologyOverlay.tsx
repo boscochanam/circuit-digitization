@@ -49,9 +49,9 @@ export default function TopologyOverlay({
   onTogglePins,
   onToggleComponents,
 }: TopologyOverlayProps) {
-  const svgWidth = imgWidth * scaleX;
-  const svgHeight = imgHeight * scaleY;
-
+  // Use percentage sizing so the SVG fills its container div (which is already
+  // sized to the displayed image dimensions). Coordinates are pre-scaled by
+  // scaleX/scaleY so they map correctly regardless of SVG intrinsic size.
   return (
     <div
       style={{
@@ -64,8 +64,8 @@ export default function TopologyOverlay({
       }}
     >
       <svg
-        width={svgWidth}
-        height={svgHeight}
+        width="100%"
+        height="100%"
         style={{ pointerEvents: "none" }}
         onClick={onBackgroundClick}
       >
@@ -147,8 +147,8 @@ export default function TopologyOverlay({
         <rect
           x={0}
           y={0}
-          width={svgWidth}
-          height={svgHeight}
+          width="100%"
+          height="100%"
           fill="transparent"
           style={{ pointerEvents: "all", cursor: "default" }}
           onClick={(e) => {
