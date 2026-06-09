@@ -3,9 +3,12 @@ import { fetchBackend } from "@/lib/api";
 import type { HomeInitialData } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-async function loadInitialData(): Promise<HomeInitialData> {
+async function loadInitialData(ds: string): Promise<HomeInitialData> {
   const [images, presets, datasets] = await Promise.all([
-    fetchBackend<string[]>("/api/list?ds=gt_labels"),
+    // Fetch the image list for the REQUESTED dataset, not always gt_labels.
+    // Otherwise a deep link like ?ds=hdc loaded the 94-image gt_labels list and
+    // clamped the index to it, so most of HDC's ~1680 images were unreachable.
+    fetchBackend<string[]>(`/api/list?ds=${encodeURIComponent(ds)}`),
     fetchBackend<HomeInitialData["presets"]>("/api/presets"),
     fetchBackend<HomeInitialData["datasets"]>("/api/datasets"),
   ]);
@@ -26,7 +29,7 @@ export default async function Page({
   const initialDs = params.ds || "gt_labels";
   let initial: HomeInitialData;
   try {
-    initial = await loadInitialData();
+    initial = await loadInitialData(initialDs);
   } catch (err) {
     console.error("Failed to load initial data from backend:", err);
     initial = { images: [], presets: {}, datasets: {} };
