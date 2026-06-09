@@ -1,5 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { fetchNetlistAction, runSimulationAction } from "@/app/actions";
+import { fetchBackend } from "@/lib/api";
+import type { NetlistResult } from "@/lib/types";
+
+interface SimRunResult {
+  success: boolean;
+  node_voltages?: Array<{ node: string; voltage: number }>;
+  branch_currents?: Array<{ source: string; current: number }>;
+  error?: string;
+}
 
 interface SimulationState {
   loading: boolean;
@@ -54,14 +62,31 @@ export function useSimulation(
 
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
-    fetchNetlistAction(imageIdx, dataset, preset, params, componentValues, strategy)
+    // Fetch client-side (not via server actions). On image navigation several
+    // server actions fire at once and Next serializes them — one can hang and
+    // never resolve, freezing the voltage/current readout. Direct fetches
+    // (same-origin /api -> backend) with the AbortController always settle.
+    fetchBackend<NetlistResult>("/api/netlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        img_idx: imageIdx, ds: dataset, preset, params, strategy,
+        ...(Object.keys(componentValues).length > 0 ? { component_values: componentValues } : {}),
+      }),
+      signal: controller.signal,
+    })
       .then((netlist) => {
         if (controller.signal.aborted) return undefined;
 
         const spice = netlist.spice_netlist;
         setState((prev) => ({ ...prev, spiceNetlist: spice }));
 
-        return runSimulationAction(spice);
+        return fetchBackend<SimRunResult>("/api/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ spice_text: spice }),
+          signal: controller.signal,
+        });
       })
       .then((result) => {
         if (controller.signal.aborted) return;

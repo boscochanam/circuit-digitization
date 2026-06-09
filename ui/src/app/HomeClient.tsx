@@ -6,7 +6,8 @@ import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
-import { fetchSimOverlayAction, fetchCurrentOverlayAction, fetchPathAction, fetchOverridesAction, saveOverridesAction, clearOverridesAction } from "@/app/actions";
+import { fetchPathAction, fetchOverridesAction, saveOverridesAction, clearOverridesAction } from "@/app/actions";
+import { fetchBackend } from "@/lib/api";
 import type { TopologyResult, PathResult, ConnectionOverrides } from "@/lib/types";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
@@ -200,21 +201,31 @@ export default function HomeClient({
     overridesKey,
   );
 
+  // Overlays are fetched client-side (not via server actions) with an
+  // AbortController, for the same reason as the topology/netlist fetches: on
+  // navigation Next serializes the burst of server actions and one can hang,
+  // which froze the voltage/current heatmap on the previous image.
+  const simOverlayAbortRef = useRef<AbortController | null>(null);
   const handleRunSimOverlay = useCallback(async () => {
+    simOverlayAbortRef.current?.abort();
+    const controller = new AbortController();
+    simOverlayAbortRef.current = controller;
     try {
-      const result = await fetchSimOverlayAction(
-        imgs.imageIdx,
-        imgs.dataset,
-        pipe.preset,
-        currentParams,
-        joinStrategy,
-        componentValues,
-      );
-      if (result.overlay) {
+      const result = await fetchBackend<{ overlay?: string }>("/api/sim_overlay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          img_idx: imgs.imageIdx, ds: imgs.dataset, preset: pipe.preset,
+          params: currentParams, strategy: joinStrategy,
+          ...(Object.keys(componentValues).length > 0 ? { component_values: componentValues } : {}),
+        }),
+        signal: controller.signal,
+      });
+      if (!controller.signal.aborted && result.overlay) {
         setSimOverlayUrl(`data:image/png;base64,${result.overlay}`);
       }
     } catch (e) {
-      console.error("Sim overlay failed:", e);
+      if (!controller.signal.aborted) console.error("Sim overlay failed:", e);
     }
   }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, joinStrategy, overridesKey]);
 
@@ -227,21 +238,27 @@ export default function HomeClient({
   }, [voltageActive, handleRunSimOverlay]);
 
   // Current overlay fetch
+  const currentOverlayAbortRef = useRef<AbortController | null>(null);
   const handleRunCurrentOverlay = useCallback(async () => {
+    currentOverlayAbortRef.current?.abort();
+    const controller = new AbortController();
+    currentOverlayAbortRef.current = controller;
     try {
-      const result = await fetchCurrentOverlayAction(
-        imgs.imageIdx,
-        imgs.dataset,
-        pipe.preset,
-        currentParams,
-        joinStrategy,
-        componentValues,
-      );
-      if (result.overlay) {
+      const result = await fetchBackend<{ overlay?: string }>("/api/current_overlay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          img_idx: imgs.imageIdx, ds: imgs.dataset, preset: pipe.preset,
+          params: currentParams, strategy: joinStrategy,
+          ...(Object.keys(componentValues).length > 0 ? { component_values: componentValues } : {}),
+        }),
+        signal: controller.signal,
+      });
+      if (!controller.signal.aborted && result.overlay) {
         setCurrentOverlayUrl(`data:image/png;base64,${result.overlay}`);
       }
     } catch (e) {
-      console.error("Current overlay failed:", e);
+      if (!controller.signal.aborted) console.error("Current overlay failed:", e);
     }
   }, [imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, componentValues, joinStrategy, overridesKey]);
 
