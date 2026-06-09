@@ -6,7 +6,7 @@ import { useImages, type Dataset } from "@/hooks/useImages";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useSimulation } from "@/hooks/useSimulation";
 import { useNetlist } from "@/hooks/useNetlist";
-import { fetchSimOverlayAction, fetchCurrentOverlayAction, fetchTopologyAction, fetchPathAction, fetchOverridesAction, saveOverridesAction, clearOverridesAction } from "@/app/actions";
+import { fetchSimOverlayAction, fetchCurrentOverlayAction, fetchPathAction, fetchOverridesAction, saveOverridesAction, clearOverridesAction } from "@/app/actions";
 import type { TopologyResult, PathResult, ConnectionOverrides } from "@/lib/types";
 import NetlistTab from "@/components/NetlistTab";
 import WarningsTab from "@/components/WarningsTab";
@@ -262,20 +262,39 @@ export default function HomeClient({
       setSelectedEndpoint(null);
       return;
     }
-    let cancelled = false;
+    // Fetch client-side (not via a server action). Several server actions fire
+    // at once on image navigation, and Next serializes them — the topology one
+    // could get stuck behind the others and never resolve, leaving the overlay
+    // showing the previous image's wires until you toggled the view. A direct
+    // fetch (same-origin /api is rewritten to the backend) with an AbortController
+    // always settles and lets the latest request win.
+    let active = true;
+    const ctrl = new AbortController();
     setTopologyLoading(true);
-    fetchTopologyAction(imgs.imageIdx, imgs.dataset, pipe.preset, currentParams as Record<string, string | number>, joinStrategy)
-      .then((result) => {
-        if (!cancelled) setTopology(result);
+    fetch("/api/topology", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        img_idx: imgs.imageIdx,
+        ds: imgs.dataset,
+        preset: pipe.preset,
+        params: currentParams,
+        ...(joinStrategy ? { strategy: joinStrategy } : {}),
+      }),
+      signal: ctrl.signal,
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`topology ${r.status}`);
+        return r.json() as Promise<TopologyResult>;
       })
+      .then((result) => { if (active) setTopology(result); })
       .catch((e) => {
+        if (!active || e?.name === "AbortError") return;
         console.error("Topology fetch failed:", e);
-        if (!cancelled) setTopology(null);
+        setTopology(null);
       })
-      .finally(() => {
-        if (!cancelled) setTopologyLoading(false);
-      });
-    return () => { cancelled = true; };
+      .finally(() => { if (active) setTopologyLoading(false); });
+    return () => { active = false; ctrl.abort(); };
   }, [topologyActive, imgs.imageIdx, imgs.dataset, pipe.preset, currentParams, joinStrategy]);
 
   // Path tracing: fetch path when both start and end are set
