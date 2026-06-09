@@ -5,6 +5,7 @@ import OverlayControls from "./OverlayControls";
 import ComponentPopover from "./ComponentPopover";
 import JoinCheckPanel from "./JoinCheckPanel";
 import TopologyOverlay from "./TopologyOverlay";
+import ConnectionEditorPanel, { type TopoHighlight } from "./ConnectionEditorPanel";
 import type { TopologyResult, PathResult, ConnectionOverrides } from "@/lib/types";
 import type { EditMode } from "./TopologyOverlay";
 
@@ -108,6 +109,8 @@ export default function CircuitViewport({
   const [activeOverlay, setActiveOverlay] = useState<string>("none");
   const [overlayOpacity, setOverlayOpacity] = useState(70);
   const [editingComponent, setEditingComponent] = useState<{ name: string; type: string; x: number; y: number } | null>(null);
+  // Hover-link between the Connection editor panel and the topology diagram.
+  const [topoHighlight, setTopoHighlight] = useState<TopoHighlight | null>(null);
 
   // Excalidraw-style view transform (view tabs only — the Join view owns its
   // own panel). Two-finger scroll pans; ctrl/cmd or trackpad pinch zooms toward
@@ -236,6 +239,24 @@ export default function CircuitViewport({
     if (img) {
       setImgSize({ w: img.offsetWidth, h: img.offsetHeight, nw: img.naturalWidth, nh: img.naturalHeight });
     }
+  }, []);
+
+  // Re-measure the image's rendered size when the window/container is resized,
+  // so the overlays (component labels, topology wires/pins) keep matching the
+  // image instead of drifting when the screen is shrunk or maximised. Observe the
+  // stable viewport container (always mounted) and re-read the image each time.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      const img = imgElRef.current;
+      if (!img) return;
+      setImgSize((s) => (s.w === img.offsetWidth && s.h === img.offsetHeight
+        ? s
+        : { ...s, w: img.offsetWidth, h: img.offsetHeight }));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   return (
@@ -402,6 +423,7 @@ export default function CircuitViewport({
                   onJoin={onJoin}
                   onDisconnect={onDisconnect}
                   onResetOverrides={onResetOverrides}
+                  highlight={topoHighlight}
                   />
               </div>
             )}
@@ -413,6 +435,22 @@ export default function CircuitViewport({
             <button className="zoom-ctl-pct" title="Reset view (or double-click the image)" onClick={() => setView({ scale: 1, x: 0, y: 0 })}>{Math.round(view.scale * 100)}%</button>
             <button className="zoom-ctl-btn" title="Zoom in" onClick={() => zoomToCenter(1.2)}>+</button>
           </div>
+          {activeOverlay === "topology" && topology && (
+            <ConnectionEditorPanel
+              topology={topology}
+              selectedEndpoint={selectedEndpoint ?? null}
+              overrides={overrides}
+              editMode={editMode ?? null}
+              joinSource={joinSource ?? null}
+              onSetEditMode={(m) => onSetEditMode?.(m)}
+              onSetJoinSource={(k) => onSetJoinSource?.(k)}
+              onReassign={(ek, cn, pn) => onReassign?.(ek, cn, pn)}
+              onDisconnect={(ek) => onDisconnect?.(ek)}
+              onResetOverrides={() => onResetOverrides?.()}
+              onClearSelection={() => onEndpointClear?.()}
+              onHighlight={setTopoHighlight}
+            />
+          )}
         </div>
       ) : (
         <div className="viewport-empty">No image loaded</div>
