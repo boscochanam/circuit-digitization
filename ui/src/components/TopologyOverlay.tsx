@@ -43,6 +43,8 @@ interface TopologyOverlayProps {
   onJoin?: (sourceEndpoint: string, targetEndpoint: string) => void;
   onDisconnect?: (endpointKey: string) => void;
   onResetOverrides?: () => void;
+  // Component/pin to flash when hovering a row in the Connection editor panel.
+  highlight?: { component?: string; pin?: [number, number] } | null;
 }
 
 /**
@@ -81,24 +83,29 @@ export default function TopologyOverlay({
   onJoin,
   onDisconnect,
   onResetOverrides,
+  highlight = null,
 }: TopologyOverlayProps) {
-  // Escape key to exit edit mode / join mode
+  // The floating edit popovers are superseded by the docked Connection editor
+  // panel (rendered by CircuitViewport); kept but disabled here.
+  const showFloatingPanels: boolean = false;
+  // Escape: back out of the flow — first exit edit mode, then deselect.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (editMode === "join") {
-          onSetJoinSource?.(null);
-          onSetEditMode?.(null);
-        } else if (editMode) {
-          onSetEditMode?.(null);
-        }
+      if (e.key !== "Escape") return;
+      if (editMode === "join") {
+        onSetJoinSource?.(null);
+        onSetEditMode?.(null);
+      } else if (editMode) {
+        onSetEditMode?.(null);
+      } else if (selectedEndpoint) {
+        onBackgroundClick();
       }
     };
-    if (editMode) {
+    if (editMode || selectedEndpoint) {
       window.addEventListener("keydown", handler);
       return () => window.removeEventListener("keydown", handler);
     }
-  }, [editMode, onSetEditMode, onSetJoinSource]);
+  }, [editMode, selectedEndpoint, onSetEditMode, onSetJoinSource, onBackgroundClick]);
 
   // Helper functions for override visual indicators
   const isReassigned = useCallback((key: string) => key in overrides.reassign, [overrides.reassign]);
@@ -126,6 +133,29 @@ export default function TopologyOverlay({
     if (!w) return null;
     return m[2] === "1" ? w.ep1 : w.ep2;
   }, [topology]);
+
+  // Node ids that include at least one component pin. A wire NOT on one of these
+  // is "floating" — not connected to any component (the thing the editor fixes).
+  const connectedNodeIds = useMemo(
+    () => new Set(topology.nodes.filter((n) => n.component_count > 0).map((n) => n.node_id)),
+    [topology.nodes],
+  );
+
+  // Dead-end nets: a node that touches exactly one component. Every pin on it is
+  // an "island" — a terminal not tied to any *other* component. These are the
+  // connections that actually need fixing (the join leaves no truly floating
+  // wires, but it does leave plenty of single-component dead-ends on messy
+  // hand-drawn images). We ring those pins amber so they're easy to find.
+  const deadEndNodeIds = useMemo(
+    () => new Set(topology.nodes.filter((n) => n.component_count === 1).map((n) => n.node_id)),
+    [topology.nodes],
+  );
+  // Only real, electrical terminals count — text labels carry their own isolated
+  // pins (and would all read as "dead-ends"), so exclude them.
+  const electricalNames = useMemo(
+    () => new Set(topology.components.filter((c) => c.type !== "text").map((c) => c.name)),
+    [topology.components],
+  );
 
   // Build sets of components and nodes that are part of the path
   const pathComponentNames = new Set<string>();
@@ -290,9 +320,11 @@ export default function TopologyOverlay({
             const nodeInPath =
               wire.node_id !== null && pathNodeIds.has(wire.node_id);
             const dimmed = selectedNode !== null && wire.node_id !== selectedNode;
+            // Floating wire: its net touches no component pin — flag it in red.
+            const unconnected = wire.node_id === null || !connectedNodeIds.has(wire.node_id);
 
-            let strokeColor = wireColor;
-            let strokeW = 2;
+            let strokeColor = unconnected ? "#ef4444" : wireColor;
+            let strokeW = unconnected ? 2.5 : 2;
             let opacity = dimmed ? 0.15 : 0.8;
 
             if (pathActive && nodeInPath) {
@@ -303,10 +335,12 @@ export default function TopologyOverlay({
               opacity = 0.08;
             }
 
-            // Highlight wire if its endpoint is selected
+            // Highlight wire if its endpoint is selected — bright cyan so the
+            // selected wire is unmistakable against the node-coloured ones.
             const isEndpointSelected = selectedWireIdx === wire.idx;
             if (isEndpointSelected) {
-              strokeW = 3;
+              strokeColor = "#22d3ee";
+              strokeW = 3.5;
               opacity = 1;
             }
 
@@ -315,7 +349,7 @@ export default function TopologyOverlay({
                 {(() => {
                   const ep1Key = `wire_${wire.idx}_ep1`;
                   const ep2Key = `wire_${wire.idx}_ep2`;
-                  const wireDashed = isRemoved(ep1Key) || isRemoved(ep2Key);
+                  const wireDashed = isRemoved(ep1Key) || isRemoved(ep2Key) || unconnected;
                   return (
                     <line
                       x1={wire.ep1[0] * scaleX}
@@ -334,19 +368,13 @@ export default function TopologyOverlay({
                     />
                   );
                 })()}
-                      {/* Endpoint 1 — visible click target */}
+                {/* Endpoint 1 — large invisible hit target + clear marker */}
                 <circle
                   cx={wire.ep1[0] * scaleX}
                   cy={wire.ep1[1] * scaleY}
-                  r={8}
-                  fill={editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.35)"}
-                  stroke={editMode === "join" ? `wire_${wire.idx}_ep1` === joinSource ? "#FFD700" : "rgba(255,255,255,0.6)" : "transparent"}
-                  strokeWidth={editMode === "join" ? 1 : 0}
-                  style={{
-                    pointerEvents: "all",
-                    cursor: editMode === "join" ? "pointer" : "pointer",
-                    opacity: editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? 0.5 : 1,
-                  }}
+                  r={11}
+                  fill="transparent"
+                  style={{ pointerEvents: "all", cursor: "pointer" }}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (editMode === "join" && joinSource) {
@@ -354,9 +382,19 @@ export default function TopologyOverlay({
                       if (targetKey !== joinSource) onJoin?.(joinSource, targetKey);
                     } else {
                       onEndpointClick?.(`wire_${wire.idx}_ep1`, e.shiftKey);
-                      }
-                      }}
-                      />
+                    }
+                  }}
+                />
+                <circle
+                  cx={wire.ep1[0] * scaleX}
+                  cy={wire.ep1[1] * scaleY}
+                  r={4.5}
+                  fill={editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? "#FFD700" : "#ffffff"}
+                  stroke={editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? "#FFD700" : "#15151f"}
+                  strokeWidth={1.5}
+                  opacity={0.92}
+                  style={{ pointerEvents: "none" }}
+                />
                       {/* Endpoint 1 — override indicators */}
                       {isReassigned(`wire_${wire.idx}_ep1`) && (
                       <text
@@ -389,19 +427,13 @@ export default function TopologyOverlay({
                       style={{ pointerEvents: "none" }}
                       />
                       )}
-                      {/* Endpoint 2 — visible click target */}
+                {/* Endpoint 2 — large invisible hit target + clear marker */}
                 <circle
                   cx={wire.ep2[0] * scaleX}
                   cy={wire.ep2[1] * scaleY}
-                  r={8}
-                  fill={editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.35)"}
-                  stroke={editMode === "join" ? `wire_${wire.idx}_ep2` === joinSource ? "#FFD700" : "rgba(255,255,255,0.6)" : "transparent"}
-                  strokeWidth={editMode === "join" ? 1 : 0}
-                  style={{
-                    pointerEvents: "all",
-                    cursor: editMode === "join" ? "pointer" : "pointer",
-                    opacity: editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? 0.5 : 1,
-                  }}
+                  r={11}
+                  fill="transparent"
+                  style={{ pointerEvents: "all", cursor: "pointer" }}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (editMode === "join" && joinSource) {
@@ -409,9 +441,19 @@ export default function TopologyOverlay({
                       if (targetKey !== joinSource) onJoin?.(joinSource, targetKey);
                     } else {
                       onEndpointClick?.(`wire_${wire.idx}_ep2`, e.shiftKey);
-                      }
-                      }}
-                      />
+                    }
+                  }}
+                />
+                <circle
+                  cx={wire.ep2[0] * scaleX}
+                  cy={wire.ep2[1] * scaleY}
+                  r={4.5}
+                  fill={editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? "#FFD700" : "#ffffff"}
+                  stroke={editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? "#FFD700" : "#15151f"}
+                  strokeWidth={1.5}
+                  opacity={0.92}
+                  style={{ pointerEvents: "none" }}
+                />
                       {/* Endpoint 2 — override indicators */}
                       {isReassigned(`wire_${wire.idx}_ep2`) && (
                       <text
@@ -478,19 +520,12 @@ export default function TopologyOverlay({
             );
           })}
 
-        {/* Selected endpoint marker */}
+        {/* Selected endpoint marker — bright cyan halo so it's unmistakable */}
         {showWires && selectedEpCoords && (
-          <circle
-            cx={selectedEpCoords[0] * scaleX}
-            cy={selectedEpCoords[1] * scaleY}
-            r={5}
-            fill={
-              NODE_COLORS[((selectedWire?.node_id ?? 0) % NODE_COLORS.length)]
-            }
-            stroke="#fff"
-            strokeWidth={2}
-            style={{ pointerEvents: "none" }}
-          />
+          <g style={{ pointerEvents: "none" }}>
+            <circle cx={selectedEpCoords[0] * scaleX} cy={selectedEpCoords[1] * scaleY} r={13} fill="none" stroke="#22d3ee" strokeWidth={2.5} opacity={0.95} />
+            <circle cx={selectedEpCoords[0] * scaleX} cy={selectedEpCoords[1] * scaleY} r={6} fill="#22d3ee" stroke="#ffffff" strokeWidth={2} />
+          </g>
         )}
 
         {/* Pins */}
@@ -513,20 +548,40 @@ export default function TopologyOverlay({
               opacity = 0.08;
             }
 
+            // Island terminal: this pin's net touches only its own component
+            // (and it's a real electrical part, not a text label).
+            const floating =
+              pin.node_id !== null &&
+              deadEndNodeIds.has(pin.node_id) &&
+              electricalNames.has(pin.component_name);
+
             return (
-              <circle
-                key={`p-${i}`}
-                cx={pin.x * scaleX}
-                cy={pin.y * scaleY}
-                r={3}
-                fill={pinColor}
-                opacity={opacity}
-                style={{ pointerEvents: "all", cursor: "pointer" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (pin.node_id !== null) onWireClick(pin.node_id);
-                }}
-              />
+              <g key={`p-${i}`}>
+                {floating && (
+                  <circle
+                    cx={pin.x * scaleX}
+                    cy={pin.y * scaleY}
+                    r={6.5}
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    opacity={Math.max(opacity, 0.55)}
+                    style={{ pointerEvents: "none" }}
+                  />
+                )}
+                <circle
+                  cx={pin.x * scaleX}
+                  cy={pin.y * scaleY}
+                  r={3}
+                  fill={pinColor}
+                  opacity={opacity}
+                  style={{ pointerEvents: "all", cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (pin.node_id !== null) onWireClick(pin.node_id);
+                  }}
+                />
+              </g>
             );
           })}
 
@@ -589,11 +644,26 @@ export default function TopologyOverlay({
             );
           })}
 
+        {/* Hover highlight driven by the Connection editor panel */}
+        {highlight?.component && (() => {
+          const comp = topology.components.find((c) => c.name === highlight.component);
+          if (!comp) return null;
+          const [x1, y1, x2, y2] = comp.bbox;
+          return (
+            <rect x={x1 * scaleX} y={y1 * scaleY} width={(x2 - x1) * scaleX} height={(y2 - y1) * scaleY}
+              fill="#22d3ee" fillOpacity={0.18} stroke="#22d3ee" strokeWidth={3} rx={2}
+              style={{ pointerEvents: "none" }} />
+          );
+        })()}
+        {highlight?.pin && (
+          <circle cx={highlight.pin[0] * scaleX} cy={highlight.pin[1] * scaleY} r={9}
+            fill="none" stroke="#22d3ee" strokeWidth={3} style={{ pointerEvents: "none" }} />
+        )}
 
       </svg>
 
       {/* Endpoint edit panel — main view (action buttons) */}
-      {selectedEndpoint && selectedEpCoords && !editMode && (
+      {showFloatingPanels && selectedEndpoint && selectedEpCoords && !editMode && (
         <div
           style={{
             position: "absolute",
@@ -651,7 +721,7 @@ export default function TopologyOverlay({
       )}
 
       {/* Reassign panel — pin selector */}
-      {selectedEndpoint && selectedEpCoords && editMode === "reassign" && (
+      {showFloatingPanels && selectedEndpoint && selectedEpCoords && editMode === "reassign" && (
         <div
           style={{
             position: "absolute",
@@ -719,7 +789,7 @@ export default function TopologyOverlay({
       )}
 
       {/* Join mode panel */}
-      {selectedEndpoint && selectedEpCoords && editMode === "join" && (
+      {showFloatingPanels && selectedEndpoint && selectedEpCoords && editMode === "join" && (
         <div
           style={{
             position: "absolute",
@@ -753,7 +823,7 @@ export default function TopologyOverlay({
       )}
 
       {/* Disconnect confirmation panel */}
-      {selectedEndpoint && selectedEpCoords && editMode === "disconnect" && (
+      {showFloatingPanels && selectedEndpoint && selectedEpCoords && editMode === "disconnect" && (
         <div
           style={{
             position: "absolute",
