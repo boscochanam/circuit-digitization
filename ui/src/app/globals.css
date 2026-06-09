@@ -220,6 +220,70 @@ html, body { height: 100%; overflow: hidden; }
 }
 .zoom-ctl-btn:hover, .zoom-ctl-pct:hover { background: var(--grey-light); }
 
+/* Connection editor — a dedicated panel docked right in the Topology view; the
+   roomy surface for the reassign / join / disconnect flow (replaces the cramped
+   floating popovers). */
+.conn-editor {
+  position: absolute; top: 8px; right: 8px; bottom: 8px; z-index: 20;
+  width: 290px; max-width: 46%; display: flex; flex-direction: column;
+  background: var(--white); border: 3px solid var(--black);
+  box-shadow: 4px 4px 0 var(--black);
+  font-family: var(--font-mono), monospace; font-size: 12px; color: var(--black);
+}
+.conn-editor-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px; border-bottom: 3px solid var(--black); flex-shrink: 0;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;
+}
+.conn-reset {
+  font-family: var(--font-mono), monospace; font-size: 10px; font-weight: 700;
+  border: 2px solid var(--black); background: var(--white); padding: 2px 7px; cursor: pointer;
+}
+.conn-reset:hover { background: var(--error, #ffb3b3); }
+.conn-body { padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.conn-hint { font-size: 11px; line-height: 1.45; color: var(--grey-dark); margin: 0; }
+.conn-sub { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--grey-dark); }
+.conn-cur { border: 2px solid var(--black); padding: 6px 8px; }
+.conn-cur-info { font-size: 11px; color: var(--grey-dark); margin-top: 2px; }
+.conn-floating { color: #b8860b; font-weight: 700; }
+.conn-floating-note {
+  font-size: 11px; line-height: 1.45; color: var(--grey-dark);
+  border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.08); padding: 6px 8px;
+}
+.conn-tag { font-size: 10px; color: var(--blue); margin-top: 3px; }
+.conn-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+.conn-btn {
+  font-family: var(--font-mono), monospace; font-size: 11px; font-weight: 700;
+  border: 2px solid var(--black); background: var(--white); color: var(--black);
+  padding: 5px 9px; cursor: pointer;
+}
+.conn-btn:hover { background: var(--black); color: var(--white); }
+.conn-btn-danger:hover { background: #d33; color: var(--white); border-color: #d33; }
+.conn-cancel { align-self: flex-start; margin-top: 4px; }
+.conn-targets {
+  display: flex; flex-direction: column; gap: 6px; max-height: 44vh; overflow-y: auto;
+  border: 1px solid var(--grey-mid); padding: 6px;
+}
+.conn-comp { font-weight: 700; font-size: 11px; margin-bottom: 2px; }
+.conn-type { font-weight: 400; font-size: 9px; color: var(--grey-dark); text-transform: uppercase; }
+.conn-pin {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%;
+  text-align: left; border: 1px solid transparent; background: transparent;
+  padding: 3px 6px; cursor: pointer; font-family: var(--font-mono), monospace; color: var(--black);
+}
+.conn-pin:hover { background: var(--grey-light); border-color: var(--black); }
+.conn-pin-cur { background: rgba(34, 211, 238, 0.14); }
+.conn-pin-name { font-size: 11px; font-weight: 700; }
+.conn-pin-meta { font-size: 9px; color: var(--grey-dark); }
+.conn-cur-mark { color: var(--blue); font-weight: 700; }
+.conn-overrides { display: flex; flex-direction: column; gap: 2px; }
+.conn-ov-row { font-size: 10px; color: var(--grey-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conn-deselect {
+  font-family: var(--font-mono), monospace; font-size: 10px; color: var(--grey-dark);
+  background: transparent; border: none; text-decoration: underline; cursor: pointer;
+  align-self: flex-start; padding: 0; margin-top: 2px;
+}
+
 /* View bar (OverlayControls). In global CSS, not styled-jsx, so it is styled on
    first paint. styled-jsx injects after hydration, which flashed the view bar
    as unstyled plain text on every refresh. */
