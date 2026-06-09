@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { fetchNetlistAction } from "@/app/actions";
+import { useState, useEffect } from "react";
+import { fetchBackend } from "@/lib/api";
 import type { NetlistResult } from "@/lib/types";
 
 /**
@@ -19,35 +19,38 @@ export function useNetlist(
   const [netlist, setNetlist] = useState<NetlistResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fetchIdRef = useRef(0);
 
   const key = JSON.stringify({ imageIdx, dataset, preset, params, strategy, overridesKey });
-  // start empty so the FIRST run fetches (previously seeded with `key`, which made
-  // the mount effect early-return → the netlist panel never loaded until a change).
-  const prevKeyRef = useRef<string>("");
 
   useEffect(() => {
-    if (key === prevKeyRef.current) return;
-    prevKeyRef.current = key;
-
-    const id = ++fetchIdRef.current;
+    // Fetch client-side (not via a server action). Several server actions fire at
+    // once on image navigation and Next serializes them — one can be left hanging,
+    // which left this panel stuck on its loading spinner forever. A direct fetch
+    // (same-origin /api is rewritten to the backend) with an AbortController always
+    // settles and lets the latest request win.
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
 
-    fetchNetlistAction(imageIdx, dataset, preset, params, undefined, strategy)
+    fetchBackend<NetlistResult>("/api/netlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ img_idx: imageIdx, ds: dataset, preset, params, strategy }),
+      signal: controller.signal,
+    })
       .then((result) => {
-        if (id === fetchIdRef.current) {
-          setNetlist(result);
-          setLoading(false);
-        }
+        setNetlist(result);
+        setLoading(false);
       })
       .catch((err) => {
-        if (id === fetchIdRef.current) {
-          setError(err instanceof Error ? err.message : "Netlist fetch failed");
-          setLoading(false);
-        }
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : "Netlist fetch failed");
+        setLoading(false);
       });
-  }, [key, imageIdx, dataset, preset, params, strategy, overridesKey]);
+    return () => controller.abort();
+    // `key` is the JSON of every input below, so it captures all the deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   return { netlist, loading, error };
 }
