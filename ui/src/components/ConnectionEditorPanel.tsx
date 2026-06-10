@@ -20,6 +20,7 @@ interface Props {
   onReassign: (endpointKey: string, componentName: string, pinName: string) => void;
   onDisconnect: (endpointKey: string) => void;
   onResetOverrides: () => void;
+  onUpdateOverrides: (next: ConnectionOverrides) => void;
   onClearSelection: () => void;
   onHighlight: (h: TopoHighlight | null) => void;
 }
@@ -39,6 +40,7 @@ export default function ConnectionEditorPanel({
   onReassign,
   onDisconnect,
   onResetOverrides,
+  onUpdateOverrides,
   onClearSelection,
   onHighlight,
 }: Props) {
@@ -156,13 +158,38 @@ export default function ConnectionEditorPanel({
             <div className="conn-overrides">
               <div className="conn-sub">Manual edits</div>
               {Object.entries(overrides.reassign).map(([k, v]) => (
-                <div key={k} className="conn-ov-row">↪ {k} → {v.component}.{v.pin}</div>
+                <div key={k} className="conn-ov-row">
+                  <span>↪ {k} → {v.component}.{v.pin}</span>
+                  <button
+                    className="conn-ov-undo"
+                    title="Undo this edit"
+                    onClick={() => {
+                      const reassign = { ...overrides.reassign };
+                      delete reassign[k];
+                      onUpdateOverrides({ ...overrides, reassign });
+                    }}
+                  >↺</button>
+                </div>
               ))}
               {overrides.join.map((p, i) => (
-                <div key={`j${i}`} className="conn-ov-row">⤬ {p[0]} ↔ {p[1]}</div>
+                <div key={`j${i}`} className="conn-ov-row">
+                  <span>⤬ {p[0]} ↔ {p[1]}</span>
+                  <button
+                    className="conn-ov-undo"
+                    title="Undo this edit"
+                    onClick={() => onUpdateOverrides({ ...overrides, join: overrides.join.filter((_, idx) => idx !== i) })}
+                  >↺</button>
+                </div>
               ))}
               {overrides.remove.map((k) => (
-                <div key={k} className="conn-ov-row">✕ {k} disconnected</div>
+                <div key={k} className="conn-ov-row">
+                  <span>✕ {k} disconnected</span>
+                  <button
+                    className="conn-ov-undo"
+                    title="Undo this edit"
+                    onClick={() => onUpdateOverrides({ ...overrides, remove: overrides.remove.filter((x) => x !== k) })}
+                  >↺</button>
+                </div>
               ))}
             </div>
           )}

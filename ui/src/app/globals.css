@@ -287,8 +287,18 @@ html, body { height: 100%; overflow: hidden; }
 .conn-pin-name { font-size: 11px; font-weight: 700; }
 .conn-pin-meta { font-size: 9px; color: var(--grey-dark); }
 .conn-cur-mark { color: var(--blue); font-weight: 700; }
-.conn-overrides { display: flex; flex-direction: column; gap: 2px; }
-.conn-ov-row { font-size: 10px; color: var(--grey-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conn-overrides { display: flex; flex-direction: column; gap: 3px; }
+.conn-ov-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  font-size: 10px; color: var(--grey-dark);
+}
+.conn-ov-row > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conn-ov-undo {
+  flex-shrink: 0; font-size: 12px; line-height: 1; cursor: pointer;
+  border: 1px solid var(--grey-mid); background: var(--white); color: var(--grey-dark);
+  padding: 1px 5px;
+}
+.conn-ov-undo:hover { border-color: var(--black); color: var(--black); background: var(--grey-light); }
 .conn-deselect {
   font-family: var(--font-mono), monospace; font-size: 10px; color: var(--grey-dark);
   background: transparent; border: none; text-decoration: underline; cursor: pointer;
