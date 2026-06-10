@@ -178,6 +178,23 @@ export default function HomeClient({
     }
   }, [imgs.imageIdx, imgs.dataset]);
 
+  // Replace the whole override set (used by the panel's per-edit "undo this" — it
+  // computes the reduced set). Clears on disk when nothing's left so a single
+  // undo of the last edit fully resets, matching the Reset button.
+  const handleUpdateOverrides = useCallback(async (next: ConnectionOverrides) => {
+    const empty =
+      Object.keys(next.reassign).length === 0 && next.join.length === 0 && next.remove.length === 0;
+    try {
+      const updatedTopology = empty
+        ? await clearOverridesAction(imgs.imageIdx, imgs.dataset)
+        : await saveOverridesAction(imgs.imageIdx, imgs.dataset, next);
+      setOverrides(empty ? { reassign: {}, join: [], remove: [] } : next);
+      setTopology(updatedTopology);
+    } catch (e) {
+      console.error("Update overrides failed:", e);
+    }
+  }, [imgs.imageIdx, imgs.dataset]);
+
   // Path tracing state
   const [pathStart, setPathStart] = useState<string | null>(null);
   const [pathEnd, setPathEnd] = useState<string | null>(null);
@@ -596,6 +613,7 @@ export default function HomeClient({
           onJoin={handleJoin}
           onDisconnect={handleDisconnect}
           onResetOverrides={handleResetOverrides}
+          onUpdateOverrides={handleUpdateOverrides}
           resetSignal={resetSignal}
         />
       </div>
