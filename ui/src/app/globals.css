@@ -268,7 +268,11 @@ html, body { height: 100%; overflow: hidden; }
 .conn-btn-danger:hover { background: #d33; color: var(--white); border-color: #d33; }
 .conn-cancel { align-self: flex-start; margin-top: 4px; }
 .conn-targets {
-  display: flex; flex-direction: column; gap: 6px; max-height: 44vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 6px;
+  /* Floor so the list stays usable even when the rest of the panel is tall (a
+     selected endpoint on a big net wraps to many lines); the panel body scrolls
+     for the overflow. Cap so it never eats the whole panel. */
+  min-height: 140px; max-height: 44vh; overflow-y: auto;
   border: 1px solid var(--grey-mid); padding: 6px;
 }
 .conn-comp { font-weight: 700; font-size: 11px; margin-bottom: 2px; }

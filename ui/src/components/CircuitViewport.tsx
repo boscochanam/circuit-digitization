@@ -139,6 +139,11 @@ export default function CircuitViewport({
   // Bound as a NON-passive native listener so preventDefault actually stops the
   // page from scrolling (pan) or the browser from zooming (ctrl/pinch).
   const handleWheel = useCallback((e: WheelEvent) => {
+    // Docked panels with their own scroll (the connection editor's pin list) sit
+    // inside the viewport, so their wheel events bubble here. Don't hijack those
+    // for pan/zoom — let them scroll natively (otherwise the list only moved by
+    // dragging the scrollbar).
+    if ((e.target as Element | null)?.closest?.(".conn-editor")) return;
     e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
       const rect = wrapperRef.current?.getBoundingClientRect();
