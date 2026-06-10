@@ -267,9 +267,23 @@ html, body { height: 100%; overflow: hidden; }
   font-size: 11px; line-height: 1.45; color: var(--grey-dark);
   border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.08); padding: 6px 8px;
 }
+.conn-problems-section {
+  display: flex; flex-direction: column; gap: 6px;
+  border-top: 2px solid var(--grey-light); padding-top: 8px;
+}
+.conn-problem-group { display: flex; flex-direction: column; gap: 4px; }
+.conn-problem-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--grey-dark);
+}
+.conn-problem-count {
+  background: #f59e0b; color: #000; font-weight: 700;
+  font-size: 9px; padding: 1px 5px; line-height: 1.4;
+}
 .conn-problems {
-  display: flex; flex-direction: column; gap: 2px;
-  max-height: 180px; overflow-y: auto; margin-top: 6px;
+  display: flex; flex-direction: column; gap: 3px;
+  max-height: 180px; overflow-y: auto;
 }
 .conn-problem-row {
   display: flex; align-items: center; justify-content: space-between; gap: 6px;
