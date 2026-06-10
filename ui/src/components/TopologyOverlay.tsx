@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useCallback } from "react";
+import { useMemo, useEffect, useCallback, useState } from "react";
 import type { TopologyResult, PathResult, PathStep, ConnectionOverrides } from "@/lib/types";
 const NODE_COLORS = [
   "#e6194b", "#3cb44b", "#4363d8", "#f58231", "#911eb4", "#42d4f4",
@@ -85,6 +85,10 @@ export default function TopologyOverlay({
   onResetOverrides,
   highlight = null,
 }: TopologyOverlayProps) {
+  // ── Net highlighting state ──
+  const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
+  const [tracedNodeId, setTracedNodeId] = useState<number | null>(null);
+
   // The floating edit popovers are superseded by the docked Connection editor
   // panel (rendered by CircuitViewport); kept but disabled here.
   const showFloatingPanels: boolean = false;
@@ -97,15 +101,17 @@ export default function TopologyOverlay({
         onSetEditMode?.(null);
       } else if (editMode) {
         onSetEditMode?.(null);
+      } else if (tracedNodeId !== null) {
+        setTracedNodeId(null);
       } else if (selectedEndpoint) {
         onBackgroundClick();
       }
     };
-    if (editMode || selectedEndpoint) {
+    if (editMode || selectedEndpoint || tracedNodeId !== null) {
       window.addEventListener("keydown", handler);
       return () => window.removeEventListener("keydown", handler);
     }
-  }, [editMode, selectedEndpoint, onSetEditMode, onSetJoinSource, onBackgroundClick]);
+  }, [editMode, selectedEndpoint, tracedNodeId, onSetEditMode, onSetJoinSource, onBackgroundClick]);
 
   // Helper functions for override visual indicators
   const isReassigned = useCallback((key: string) => key in overrides.reassign, [overrides.reassign]);
@@ -150,6 +156,59 @@ export default function TopologyOverlay({
     () => new Set(topology.nodes.filter((n) => n.component_count === 1).map((n) => n.node_id)),
     [topology.nodes],
   );
+
+  // Map: node_id → wire count (for showing net size on edges)
+  const nodeWireCount = useMemo(
+    () => new Map(topology.nodes.map((n) => [n.node_id, n.wire_count])),
+    [topology.nodes],
+  );
+
+  // Map: component name → { total pins, connected pins } (for completeness %)
+  const componentCompleteness = useMemo(() => {
+    const elec = new Set(topology.components.filter((c) => c.type !== "text").map((c) => c.name));
+    const pinCounts = new Map<string, { total: number; connected: number }>();
+    for (const p of topology.pins) {
+      if (!elec.has(p.component_name)) continue;
+      const cur = pinCounts.get(p.component_name) ?? { total: 0, connected: 0 };
+      cur.total++;
+      if (p.node_id !== null && deadEndNodeIds.has(p.node_id)) {
+        // dead-end = not connected to other components
+      } else if (p.node_id !== null) {
+        cur.connected++;
+      }
+      pinCounts.set(p.component_name, cur);
+    }
+    return pinCounts;
+  }, [topology.pins, topology.components, deadEndNodeIds]);
+
+  // Check if an endpoint is "connected" — either its wire is on a multi-component
+  // net, or it's near a pin that is, or it's inside a component bbox with one.
+  const isEndpointConnected = useCallback((wireIdx: number, epNum: 1 | 2): boolean => {
+    const wire = topology.wires.find((w) => w.idx === wireIdx);
+    if (!wire) return false;
+
+    // Fast path: if the wire itself is on a multi-component net, both endpoints are connected
+    if (wire.node_id !== null && !deadEndNodeIds.has(wire.node_id)) return true;
+
+    const [x, y] = epNum === 1 ? wire.ep1 : wire.ep2;
+    const TOLERANCE = 8;
+    for (const pin of topology.pins) {
+      if (Math.abs(pin.x - x) <= TOLERANCE && Math.abs(pin.y - y) <= TOLERANCE) {
+        if (pin.node_id !== null && !deadEndNodeIds.has(pin.node_id)) {
+          return true;
+        }
+      }
+    }
+    for (const comp of topology.components) {
+      const [x1, y1, x2, y2] = comp.bbox;
+      if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
+        for (const nid of comp.node_ids) {
+          if (nid !== null && !deadEndNodeIds.has(nid)) return true;
+        }
+      }
+    }
+    return false;
+  }, [topology, deadEndNodeIds]);
   // Only real, electrical terminals count — text labels carry their own isolated
   // pins (and would all read as "dead-ends"), so exclude them.
   const electricalNames = useMemo(
@@ -222,6 +281,12 @@ export default function TopologyOverlay({
     }),
     [],
   );
+
+  const handleBackgroundClick = useCallback(() => {
+    setTracedNodeId(null);
+    setHoveredNodeId(null);
+    onBackgroundClick();
+  }, [onBackgroundClick]);
 
   // Parse selected endpoint to get wire index and endpoint number
   const selectedWireIdx = useMemo(() => {
@@ -321,7 +386,7 @@ export default function TopologyOverlay({
         width="100%"
         height="100%"
         style={{ pointerEvents: "none" }}
-        onClick={onBackgroundClick}
+        onClick={handleBackgroundClick}
       >
         {/* Background click target — first child so it doesn't intercept children */}
         <rect
@@ -333,7 +398,7 @@ export default function TopologyOverlay({
           style={{ pointerEvents: "all", cursor: "default" }}
           onClick={(e) => {
             e.stopPropagation();
-            onBackgroundClick();
+            handleBackgroundClick();
           }}
         />
         {/* Wires */}
@@ -347,9 +412,25 @@ export default function TopologyOverlay({
             // Floating wire: its net touches no component pin — flag it in red.
             const unconnected = wire.node_id === null || !connectedNodeIds.has(wire.node_id);
 
+            const isHighlighted = (hoveredNodeId !== null || tracedNodeId !== null)
+              && wire.node_id !== null
+              && wire.node_id === (tracedNodeId ?? hoveredNodeId);
+            const netDimmed = (hoveredNodeId !== null || tracedNodeId !== null)
+              && !isHighlighted
+              && !pathActive;
+
             let strokeColor = unconnected ? "#ef4444" : wireColor;
             let strokeW = unconnected ? 2.5 : 2;
-            let opacity = dimmed ? 0.15 : 0.8;
+            let opacity = (dimmed || netDimmed) ? 0.12 : 0.8;
+
+            // Thicker stroke for nets with more wires
+            const wireCount = wire.node_id !== null ? (nodeWireCount.get(wire.node_id) ?? 1) : 1;
+            if (wireCount > 2) strokeW = Math.min(2 + wireCount * 0.3, 5);
+
+            if (isHighlighted) {
+              strokeW = Math.max(strokeW, 3);
+              opacity = 1;
+            }
 
             if (pathActive && nodeInPath) {
               strokeColor = "#FFD700";
@@ -368,30 +449,55 @@ export default function TopologyOverlay({
               opacity = 1;
             }
 
+            const ep1Connected = isEndpointConnected(wire.idx, 1);
+            const ep2Connected = isEndpointConnected(wire.idx, 2);
+
             return (
               <g key={`w-${wire.idx}`}>
                 {(() => {
                   const ep1Key = `wire_${wire.idx}_ep1`;
                   const ep2Key = `wire_${wire.idx}_ep2`;
                   const wireDashed = isRemoved(ep1Key) || isRemoved(ep2Key) || unconnected;
+                  const mx = (wire.ep1[0] + wire.ep2[0]) / 2 * scaleX;
+                  const my = (wire.ep1[1] + wire.ep2[1]) / 2 * scaleY;
                   return (
-                    <line
-                      x1={wire.ep1[0] * scaleX}
-                      y1={wire.ep1[1] * scaleY}
-                      x2={wire.ep2[0] * scaleX}
-                      y2={wire.ep2[1] * scaleY}
-                      stroke={strokeColor}
-                      strokeWidth={strokeW}
-                      opacity={opacity}
-                      strokeDasharray={wireDashed ? "6 3" : undefined}
-                      style={{ pointerEvents: "all", cursor: "pointer" }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (wire.node_id !== null) onWireClick(wire.node_id);
-                      }}
-                    >
-                      <title>{`Wire ${wire.idx} — ${netLabel(wire.node_id)}`}</title>
-                    </line>
+                    <>
+                      <line
+                        x1={wire.ep1[0] * scaleX}
+                        y1={wire.ep1[1] * scaleY}
+                        x2={wire.ep2[0] * scaleX}
+                        y2={wire.ep2[1] * scaleY}
+                        stroke={strokeColor}
+                        strokeWidth={strokeW}
+                        opacity={opacity}
+                        strokeDasharray={wireDashed ? "6 3" : undefined}
+                        style={{ pointerEvents: "all", cursor: "pointer" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (wire.node_id !== null) {
+                            setTracedNodeId(wire.node_id === tracedNodeId ? null : wire.node_id);
+                            onWireClick(wire.node_id);
+                          }
+                        }}
+                        onMouseEnter={() => wire.node_id !== null && setHoveredNodeId(wire.node_id)}
+                        onMouseLeave={() => setHoveredNodeId(null)}
+                      >
+                        <title>{`Wire ${wire.idx} — ${netLabel(wire.node_id)}${wireCount > 1 ? ` (${wireCount} wires)` : ""}`}</title>
+                      </line>
+                      {wireCount > 1 && !unconnected && (
+                        <text
+                          x={mx}
+                          y={my - 4}
+                          textAnchor="middle"
+                          fontSize={8}
+                          fill={strokeColor}
+                          opacity={Math.max(opacity, 0.6)}
+                          style={{ pointerEvents: "none" }}
+                        >
+                          {wireCount}
+                        </text>
+                      )}
+                    </>
                   );
                 })()}
                 {/* Endpoint 1 — large invisible hit target + clear marker */}
@@ -413,11 +519,12 @@ export default function TopologyOverlay({
                 >
                   <title>{`Endpoint wire ${wire.idx} ep1 — ${netLabel(wire.node_id)} · click to edit`}</title>
                 </circle>
+                {/* Endpoint 1 — connection status dot (green=connected, red=dangling) */}
                 <circle
                   cx={wire.ep1[0] * scaleX}
                   cy={wire.ep1[1] * scaleY}
                   r={4.5}
-                  fill={editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? "#FFD700" : "#ffffff"}
+                  fill={isRemoved(`wire_${wire.idx}_ep1`) ? "#666" : ep1Connected ? "#22c55e" : "#ef4444"}
                   stroke={editMode === "join" && `wire_${wire.idx}_ep1` === joinSource ? "#FFD700" : "#15151f"}
                   strokeWidth={1.5}
                   opacity={0.92}
@@ -474,11 +581,12 @@ export default function TopologyOverlay({
                 >
                   <title>{`Endpoint wire ${wire.idx} ep2 — ${netLabel(wire.node_id)} · click to edit`}</title>
                 </circle>
+                {/* Endpoint 2 — connection status dot (green=connected, red=dangling) */}
                 <circle
                   cx={wire.ep2[0] * scaleX}
                   cy={wire.ep2[1] * scaleY}
                   r={4.5}
-                  fill={editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? "#FFD700" : "#ffffff"}
+                  fill={isRemoved(`wire_${wire.idx}_ep2`) ? "#666" : ep2Connected ? "#22c55e" : "#ef4444"}
                   stroke={editMode === "join" && `wire_${wire.idx}_ep2` === joinSource ? "#FFD700" : "#15151f"}
                   strokeWidth={1.5}
                   opacity={0.92}
@@ -655,30 +763,51 @@ export default function TopologyOverlay({
               strokeOpacity = 0.08;
             }
 
+            const completeness = componentCompleteness.get(comp.name);
+            const pct = completeness && completeness.total > 0
+              ? Math.round((completeness.connected / completeness.total) * 100)
+              : null;
+            const isFullyConnected = pct === 100;
+            const isPartiallyConnected = pct !== null && pct > 0 && pct < 100;
+
             return (
-              <rect
-                key={`c-${comp.name}`}
-                x={x1 * scaleX}
-                y={y1 * scaleY}
-                width={(x2 - x1) * scaleX}
-                height={(y2 - y1) * scaleY}
-                fill={rectFill}
-                fillOpacity={fillOpacity}
-                stroke={rectColor}
-                strokeWidth={strokeWidth}
-                strokeOpacity={strokeOpacity}
-                style={{ pointerEvents: "all", cursor: "pointer" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onComponentClick(comp.name, e.shiftKey);
-                }}
-              >
-                <title>{`${comp.name} (${comp.type})${
-                  comp.node_ids.filter((n) => n !== null).length
-                    ? ` — Node ${comp.node_ids.filter((n) => n !== null).join(", ")}`
-                    : ""
-                }`}</title>
-              </rect>
+              <g key={`c-${comp.name}`}>
+                <rect
+                  x={x1 * scaleX}
+                  y={y1 * scaleY}
+                  width={(x2 - x1) * scaleX}
+                  height={(y2 - y1) * scaleY}
+                  fill={rectFill}
+                  fillOpacity={fillOpacity}
+                  stroke={rectColor}
+                  strokeWidth={strokeWidth}
+                  strokeOpacity={strokeOpacity}
+                  style={{ pointerEvents: "all", cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onComponentClick(comp.name, e.shiftKey);
+                  }}
+                >
+                  <title>{`${comp.name} (${comp.type})${
+                    comp.node_ids.filter((n) => n !== null).length
+                      ? ` — Node ${comp.node_ids.filter((n) => n !== null).join(", ")}`
+                      : ""
+                  }${pct !== null ? ` — ${pct}% connected` : ""}`}</title>
+                </rect>
+                {pct !== null && comp.type !== "text" && (
+                  <text
+                    x={(x1 + (x2 - x1) / 2) * scaleX}
+                    y={(y2 + 12) * scaleY}
+                    textAnchor="middle"
+                    fontSize={9}
+                    fontWeight={600}
+                    fill={isFullyConnected ? "#22c55e" : isPartiallyConnected ? "#f59e0b" : "#ef4444"}
+                    style={{ pointerEvents: "none" }}
+                  >
+                    {pct}%
+                  </text>
+                )}
+              </g>
             );
           })}
 
