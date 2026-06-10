@@ -30,18 +30,32 @@ from wire_detection.core.component_classes import COMPONENT_TYPES
 def make_pins(wires, components):
     """Pin set shared by every strategy: static OBB pins for ALL components,
     with positions overridden by DBSCAN endpoint-clustered pins where available
-    (matches the production /api/netlist path)."""
+    (matches the production /api/netlist path).
+
+    Only overrides an OBB pin when a DBSCAN cluster is within 15px of that
+    pin's position — prevents self-loops from clusters on the same side of a
+    component, and prevents short circuits from overlapping bboxes.
+    """
     all_pins = []
     for ci, comp in enumerate(components):
         tname = COMPONENT_TYPES.get(comp[0], f"cls_{comp[0]}")
         all_pins.extend(derive_pins_from_obb(ci, comp, tname))
     clustered = discover_pins(wires, components)
     if clustered:
-        ov = {(cp.component_idx, cp.pin_idx): (cp.x, cp.y) for cp in clustered}
-        for p in all_pins:
-            k = (p.component_idx, p.pin_idx)
-            if k in ov:
-                p.x, p.y = ov[k]
+        obb_positions = {(p.component_idx, p.pin_idx): (p.x, p.y) for p in all_pins}
+        claimed_positions: set[tuple[int, int]] = set()
+        for cp in clustered:
+            k = (cp.component_idx, cp.pin_idx)
+            obb_pos = obb_positions.get(k)
+            if obb_pos is None:
+                continue
+            dist = math.hypot(cp.x - obb_pos[0], cp.y - obb_pos[1])
+            if dist <= 15 and (cp.x, cp.y) not in claimed_positions:
+                claimed_positions.add((cp.x, cp.y))
+                for p in all_pins:
+                    if (p.component_idx, p.pin_idx) == k:
+                        p.x, p.y = cp.x, cp.y
+                        break
     return all_pins
 
 # component types that legitimately touch only one net (not "floating" errors)

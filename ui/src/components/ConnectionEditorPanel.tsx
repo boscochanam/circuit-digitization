@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import type { TopologyResult, ConnectionOverrides } from "@/lib/types";
 import type { EditMode } from "./TopologyOverlay";
 
@@ -24,11 +24,26 @@ interface Props {
   onClearSelection: () => void;
   onHighlight: (h: TopoHighlight | null) => void;
   onSelectComponent: (name: string | null) => void;
+  onQuickFix?: (endpointKey: string, componentName: string, pinName: string) => void;
 }
 
 const EP_RE = /^wire_(\d+)_ep(\d)$/;
-// Electrically meaningful reassign targets — drop text labels (you can't wire to a label).
 const isElectrical = (type: string) => type !== "text";
+
+function parseOverrides(text: string): { ok: true; data: ConnectionOverrides } | { ok: false; error: string } {
+  try {
+    const parsed = JSON.parse(text);
+    if (typeof parsed !== "object" || parsed === null) return { ok: false, error: "Expected a JSON object" };
+    if (!("reassign" in parsed) || !("join" in parsed) || !("remove" in parsed))
+      return { ok: false, error: "Missing required keys: reassign, join, remove" };
+    if (typeof parsed.reassign !== "object") return { ok: false, error: "'reassign' must be an object" };
+    if (!Array.isArray(parsed.join)) return { ok: false, error: "'join' must be an array" };
+    if (!Array.isArray(parsed.remove)) return { ok: false, error: "'remove' must be an array" };
+    return { ok: true, data: parsed as ConnectionOverrides };
+  } catch (e) {
+    return { ok: false, error: `Invalid JSON: ${e instanceof Error ? e.message : e}` };
+  }
+}
 
 export default function ConnectionEditorPanel({
   topology,
@@ -45,13 +60,41 @@ export default function ConnectionEditorPanel({
   onClearSelection,
   onHighlight,
   onSelectComponent,
+  onQuickFix,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
-  // Re-open automatically when an endpoint gets selected — you collapsed it to
-  // see the diagram, and selecting something means you want the editor back.
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const [legendOpen, setLegendOpen] = useState(false);
+
   useEffect(() => {
     if (selectedEndpoint) setCollapsed(false);
   }, [selectedEndpoint]);
+
+  useEffect(() => {
+    if (!copySuccess) return;
+    const t = setTimeout(() => setCopySuccess(false), 2000);
+    return () => clearTimeout(t);
+  }, [copySuccess]);
+
+  const handleCopy = useCallback(() => {
+    const json = JSON.stringify(overrides, null, 2);
+    navigator.clipboard.writeText(json).then(() => setCopySuccess(true));
+  }, [overrides]);
+
+  const handleImport = useCallback(() => {
+    const result = parseOverrides(importText);
+    if (!result.ok) {
+      setImportError(result.error);
+      return;
+    }
+    onUpdateOverrides(result.data);
+    setImportOpen(false);
+    setImportText("");
+    setImportError(null);
+  }, [importText, onUpdateOverrides]);
 
   const totalOverrides =
     Object.keys(overrides.reassign).length + overrides.join.length + overrides.remove.length;
@@ -127,6 +170,36 @@ export default function ConnectionEditorPanel({
       ? []
       : (nodeMembers.get(nodeId) ?? []).filter((n) => n !== exclude);
 
+  const findNearestPin = useCallback((endpointKey: string): { componentName: string; pinName: string } | null => {
+    const m = endpointKey.match(EP_RE);
+    if (!m) return null;
+    const wire = topology.wires.find((w) => w.idx === parseInt(m[1], 10));
+    if (!wire) return null;
+    const [x, y] = m[2] === "1" ? wire.ep1 : wire.ep2;
+
+    const deadEnd = new Set(
+      topology.nodes.filter((n) => n.component_count === 1).map((n) => n.node_id),
+    );
+
+    let bestDist = Infinity;
+    let bestPin: { componentName: string; pinName: string } | null = null;
+
+    for (const pin of topology.pins) {
+      if (pin.node_id !== null && deadEnd.has(pin.node_id)) continue;
+      const w = topology.wires.find((ww) => ww.idx === parseInt(m[1], 10));
+      if (w && pin.node_id === w.node_id) continue;
+
+      const dist = Math.sqrt((pin.x - x) ** 2 + (pin.y - y) ** 2);
+      if (dist < bestDist && dist < 50) {
+        bestDist = dist;
+        bestPin = { componentName: pin.component_name, pinName: pin.pin_name };
+      }
+    }
+    return bestPin;
+  }, [topology]);
+
+  const nearestPin = selectedEndpoint ? findNearestPin(selectedEndpoint) : null;
+
   if (collapsed) {
     return (
       <button
@@ -145,6 +218,20 @@ export default function ConnectionEditorPanel({
       <div className="conn-editor-head">
         <span>Connection editor</span>
         <span style={{ display: "flex", gap: 6 }}>
+          <button
+            className="conn-reset"
+            onClick={handleCopy}
+            title="Copy overrides as JSON to clipboard"
+          >
+            {copySuccess ? "Copied!" : "Copy"}
+          </button>
+          <button
+            className="conn-reset"
+            onClick={() => { setImportOpen(!importOpen); setImportText(JSON.stringify(overrides, null, 2)); setImportError(null); }}
+            title="Import overrides from JSON"
+          >
+            Import
+          </button>
           {totalOverrides > 0 && (
             <button className="conn-reset" onClick={onResetOverrides} title="Clear all manual overrides">
               Reset {totalOverrides}
@@ -153,9 +240,62 @@ export default function ConnectionEditorPanel({
           {selectedEndpoint && (
             <button className="conn-reset" onClick={onClearSelection} title="Deselect (Esc)">✕</button>
           )}
+          <button className="conn-reset" onClick={() => setLegendOpen(!legendOpen)} title="What the colours, dots and rings mean">ⓘ</button>
           <button className="conn-reset" onClick={() => setCollapsed(true)} title="Collapse panel (free the diagram)">–</button>
         </span>
       </div>
+
+      {legendOpen && (
+        <div className="conn-legend">
+          <div className="conn-sub">What you&apos;re looking at</div>
+          <div className="conn-legend-row">
+            <span className="conn-legend-swatch">
+              <svg width="34" height="10" aria-hidden>
+                <rect x="0" width="10" height="10" fill="#e6194b" /><rect x="12" width="10" height="10" fill="#3cb44b" /><rect x="24" width="10" height="10" fill="#4363d8" />
+              </svg>
+            </span>
+            <span>Each <strong>colour</strong> is one electrical net — same colour = same node.</span>
+          </div>
+          <div className="conn-legend-row">
+            <span className="conn-legend-swatch"><svg width="14" height="14" aria-hidden><circle cx="7" cy="7" r="4.5" fill="#22c55e" /></svg></span>
+            <span><strong>Green</strong> wire-end dot — connected to a multi-component net.</span>
+          </div>
+          <div className="conn-legend-row">
+            <span className="conn-legend-swatch"><svg width="14" height="14" aria-hidden><circle cx="7" cy="7" r="4.5" fill="#ef4444" /></svg></span>
+            <span><strong>Red</strong> wire-end dot — dangling. Click it, then <strong>⚡ Quick Fix</strong> to auto-connect.</span>
+          </div>
+          <div className="conn-legend-row">
+            <span className="conn-legend-swatch"><svg width="14" height="14" aria-hidden><circle cx="7" cy="7" r="5" fill="none" stroke="#f59e0b" strokeWidth="2" /></svg></span>
+            <span><strong>Amber ring</strong> on a pin — a component terminal not wired to anything else (turn on the Pins layer).</span>
+          </div>
+          <p className="conn-hint" style={{ marginTop: 4 }}>
+            Click a white endpoint dot to <strong>Connect / Join / Disconnect</strong>; hover any wire or pin to read its net.
+          </p>
+        </div>
+      )}
+
+      {importOpen && (
+        <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--grey-mid)" }}>
+          <div className="conn-sub">Import overrides (JSON)</div>
+          <textarea
+            value={importText}
+            onChange={(e) => { setImportText(e.target.value); setImportError(null); }}
+            style={{
+              width: "100%", minHeight: 120, fontFamily: "monospace", fontSize: 11,
+              background: "var(--white)", color: "var(--black)", border: "1px solid var(--black)",
+              borderRadius: 0, padding: 6, resize: "vertical",
+            }}
+            placeholder='{"reassign": {}, "join": [], "remove": []}'
+          />
+          {importError && (
+            <div style={{ color: "var(--error)", fontSize: 11, marginTop: 4 }}>{importError}</div>
+          )}
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            <button className="conn-btn" onClick={handleImport}>Apply</button>
+            <button className="conn-btn conn-cancel" onClick={() => { setImportOpen(false); setImportError(null); }}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       {!selectedEndpoint || !sel ? (
         <div className="conn-body">
@@ -267,6 +407,16 @@ export default function ConnectionEditorPanel({
               <button className="conn-btn" title="Attach this endpoint to a component pin — their nets merge into one node" onClick={() => onSetEditMode("reassign")}>Connect</button>
               <button className="conn-btn" title="Connect this endpoint to another wire endpoint — their nets merge into one node" onClick={() => { onSetEditMode("join"); onSetJoinSource(selectedEndpoint); }}>Join…</button>
               <button className="conn-btn conn-btn-danger" title="Detach this endpoint from its net" onClick={() => onDisconnect(selectedEndpoint)}>Disconnect</button>
+              {nearestPin && onQuickFix && (
+                <button
+                  className="conn-btn conn-btn-quickfix"
+                  title={`Auto-connect to nearest pin: ${nearestPin.componentName}.${nearestPin.pinName}`}
+                  onClick={() => onQuickFix(selectedEndpoint, nearestPin.componentName, nearestPin.pinName)}
+                  style={{ background: "rgba(34,197,94,0.2)", borderColor: "rgba(34,197,94,0.5)" }}
+                >
+                  ⚡ Quick Fix
+                </button>
+              )}
             </div>
           )}
 

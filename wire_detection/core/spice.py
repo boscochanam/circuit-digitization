@@ -158,12 +158,23 @@ class SpiceGenerator:
             type_name = self._get_type_name(comp[0])
             if type_name == "gnd":
                 continue
+            if type_name == "switch":
+                pin_nodes: list[str] = []
+                for pin_idx in range(50):
+                    key = (i, pin_idx)
+                    if key in pin_map:
+                        pin_nodes.append(node_remap.get(pin_map[key], f"N{pin_map[key]}"))
+                    else:
+                        break
+                if len(pin_nodes) >= 2 and pin_nodes[0] != pin_nodes[1]:
+                    device_lines.append(f"R{i + 1} {pin_nodes[0]} {pin_nodes[1]} 0.001")
+                continue
             prefix = self._get_prefix(type_name)
             if prefix is None:
                 skipped[type_name] = skipped.get(type_name, 0) + 1
                 continue
 
-            pin_nodes: list[str] = []
+            pin_nodes = []
             for pin_idx in range(50):
                 key = (i, pin_idx)
                 if key in pin_map:

@@ -37,6 +37,21 @@ component **pin** whose net touches no *other* component (a dead-end). Those are
 ringed amber. Text-label pins are excluded — they each sit on their own isolated
 node and would otherwise all read as dead-ends.
 
+## Topology signals (what the dots / rings / colours mean)
+The connection editor's **ⓘ** button opens an in-app legend. In code:
+- **Net colour** — every wire/pin is coloured by its node id (`NODE_COLORS`);
+  same colour = same electrical net.
+- **Green / red wire-end dots** (`isEndpointConnected` in `TopologyOverlay`) —
+  green if the wire's endpoint sits on a multi-component net, red if it
+  dangles / dead-ends. Red is the **⚡ Quick Fix** target (auto-connect to the
+  nearest good pin within 50px).
+- **Amber pin rings** — a component pin whose net touches no *other* component
+  (the dead-end signal above). Drawn in the pins layer, so they only show when
+  Pins is on (see #40).
+- The dots and the rings are two **overlapping** "needs connecting" signals at
+  different granularity (wire endpoint vs component pin); keep them consistent if
+  you change one, and prefer extending Quick Fix over adding a third signal.
+
 ## Datasets
 `?ds=` + `?idx=` deep-link the dataset/image. The image list per dataset comes
 from the backend `/api/list?ds=...`; load it for the *requested* dataset (HDC
