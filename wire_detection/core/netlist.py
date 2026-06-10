@@ -139,10 +139,14 @@ def discover_pins(
     For each SPICE-active component, collects wire endpoints within max_comp_dist
     of the bbox, clusters them with DBSCAN, and creates a pin at each cluster center.
     Achieves ~100% wire-endpoint connectivity vs ~30% for static pin definitions.
+
+    Rejects pin positions that collide with pins already assigned to OTHER
+    components (within 5px) to prevent short circuits from overlapping bboxes.
     """
     from wire_detection.core.component_classes import COMPONENT_TYPES as _CNAMES
     names = component_names or _CNAMES
     all_pins: list[DiscoveredPin] = []
+    claimed_positions: set[tuple[int, int]] = set()
 
     for ci, comp in enumerate(components):
         cls_id, vertices, bbox = comp
@@ -153,7 +157,6 @@ def discover_pins(
 
         x_min, y_min, x_max, y_max = bbox
 
-        # Collect nearby wire endpoints
         nearby = []
         for ep1, ep2 in wires:
             for ep in (ep1, ep2):
@@ -168,24 +171,30 @@ def discover_pins(
 
         pts = np.array(nearby)
         if len(pts) == 1:
-            all_pins.append(DiscoveredPin(
-                component_idx=ci, component_name=type_name,
-                pin_idx=len([p for p in all_pins if p.component_idx == ci]),
-                x=int(pts[0, 0]), y=int(pts[0, 1]),
-                rel_x=0.0, rel_y=0.0,
-            ))
+            px, py = int(pts[0, 0]), int(pts[0, 1])
+            if (px, py) not in claimed_positions:
+                claimed_positions.add((px, py))
+                all_pins.append(DiscoveredPin(
+                    component_idx=ci, component_name=type_name,
+                    pin_idx=len([p for p in all_pins if p.component_idx == ci]),
+                    x=px, y=py,
+                    rel_x=0.0, rel_y=0.0,
+                ))
         else:
             clustering = DBSCAN(eps=cluster_radius, min_samples=1).fit(pts)
             for label in set(clustering.labels_):
                 if label == -1:
                     continue
                 cpts = pts[clustering.labels_ == label]
-                all_pins.append(DiscoveredPin(
-                    component_idx=ci, component_name=type_name,
-                    pin_idx=len([p for p in all_pins if p.component_idx == ci]),
-                    x=int(np.mean(cpts[:, 0])), y=int(np.mean(cpts[:, 1])),
-                    rel_x=0.0, rel_y=0.0,
-                ))
+                px, py = int(np.mean(cpts[:, 0])), int(np.mean(cpts[:, 1]))
+                if (px, py) not in claimed_positions:
+                    claimed_positions.add((px, py))
+                    all_pins.append(DiscoveredPin(
+                        component_idx=ci, component_name=type_name,
+                        pin_idx=len([p for p in all_pins if p.component_idx == ci]),
+                        x=px, y=py,
+                        rel_x=0.0, rel_y=0.0,
+                    ))
 
     return all_pins
 
@@ -199,17 +208,36 @@ def derive_pins_from_obb(
     component: tuple[int, list[tuple[int, int]], tuple[int, int, int, int]],
     component_name: str,
 ) -> list[ComponentPin]:
-    """Derive pin locations from OBB geometry."""
+    """Derive pin locations from OBB geometry.
+
+    For 2-terminal components, pins are placed at the ENDS of the component
+    (left/right for horizontal, top/bottom for vertical) based on bbox aspect ratio.
+    This ensures pins align with wire endpoints that connect to component ends.
+    """
     cls_id, vertices, bbox = component
-    pin_defs = PIN_DEFINITIONS.get(component_name, [(0.0, 0.5), (0.0, -0.5)])
+    x_min, y_min, x_max, y_max = bbox
+    width = x_max - x_min
+    height = y_max - y_min
+
+    two_terminal = {"resistor", "capacitor-polarized", "capacitor-unpolarized",
+                    "capacitor-adjustable", "inductor", "inductor-ferrite",
+                    "diode", "diode-LED", "diode-zener", "diode-thyrector",
+                    "fuse", "lamp", "switch", "varistor", "relay", "transformer",
+                    "motor", "crossover", "crystal"}
+    if component_name in two_terminal:
+        if width > height:
+            pin_defs = [(-0.5, 0.0), (0.5, 0.0)]
+        else:
+            pin_defs = [(0.0, 0.5), (0.0, -0.5)]
+    else:
+        pin_defs = PIN_DEFINITIONS.get(component_name, [(0.0, 0.5), (0.0, -0.5)])
 
     pins = []
     for pin_idx, (rel_x, rel_y) in enumerate(pin_defs):
-        x_min, y_min, x_max, y_max = bbox
         x_center = (x_min + x_max) / 2
         y_center = (y_min + y_max) / 2
-        x_half = (x_max - x_min) / 2
-        y_half = (y_max - y_min) / 2
+        x_half = width / 2
+        y_half = height / 2
 
         x = int(x_center + rel_x * x_half)
         y = int(y_center - rel_y * y_half)

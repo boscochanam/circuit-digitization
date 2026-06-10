@@ -8,17 +8,18 @@ services:
     volumes:
       # HDC components (symlinked in-repo)
       - ./roboflow_test2:/data/hdc:ro
-      # Also mount at original path for OCR endpoint
-      - /home/claw/circuit-digitization/roboflow_test2:/home/claw/circuit-digitization/roboflow_test2:ro
       # GT wire labels — set GT_LABELS_PATH in .env (required for GT Labels dataset)
       - ${GT_LABELS_PATH:-./data/gt_labels}:/data/gt_labels:ro
       # Optional extra datasets
       - ${HAND_DRAWN_PATH:-./roboflow_test}:/data/hand_drawn:ro
       # Writable: synthetic data generated on first boot
       - synthetic_data:/data/synthetic
+      # Writable: connection overrides persist across restarts
+      - ./wire_detection/overrides:/app/wire_detection/overrides
     environment:
       DATASETS_YAML: /app/wire_detection/config/datasets.docker.yaml
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OVERRIDES_ROOT: /app/wire_detection/overrides
     healthcheck:
       test:
         [

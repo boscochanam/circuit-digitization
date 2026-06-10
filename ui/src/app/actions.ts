@@ -183,12 +183,13 @@ export async function saveOverridesAction(
   idx: number,
   ds: string,
   overrides: ConnectionOverrides,
+  preset: string = "best_candidate_v4",
 ): Promise<TopologyResult> {
   // Backend returns topology directly (not wrapped in OverrideResponse)
   const res = await fetchBackend<TopologyResult>("/api/topology/overrides", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ dataset: ds, img_idx: idx, overrides }),
+    body: JSON.stringify({ dataset: ds, img_idx: idx, overrides, preset }),
   });
   return res;
 }

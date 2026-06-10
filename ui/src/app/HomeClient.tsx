@@ -123,15 +123,16 @@ export default function HomeClient({
       },
     };
     try {
-      const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides);
+      const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides, pipe.preset);
       setOverrides(newOverrides);
       setTopology(updatedTopology);
       setEditMode(null);
       setSelectedEndpoint(null);
     } catch (e) {
-      console.error("Reassign failed:", e);
+      const msg = e instanceof Error ? e.message : "Failed to save override";
+      setOverrideError(msg);
     }
-  }, [overrides, imgs.imageIdx, imgs.dataset]);
+  }, [overrides, imgs.imageIdx, imgs.dataset, pipe.preset]);
 
   const handleJoin = useCallback(async (sourceEndpoint: string, targetEndpoint: string) => {
     const newOverrides: ConnectionOverrides = {
@@ -139,16 +140,17 @@ export default function HomeClient({
       join: [...overrides.join, [sourceEndpoint, targetEndpoint]],
     };
     try {
-      const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides);
+      const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides, pipe.preset);
       setOverrides(newOverrides);
       setTopology(updatedTopology);
       setEditMode(null);
       setJoinSource(null);
       setSelectedEndpoint(null);
     } catch (e) {
-      console.error("Join failed:", e);
+      const msg = e instanceof Error ? e.message : "Failed to save override";
+      setOverrideError(msg);
     }
-  }, [overrides, imgs.imageIdx, imgs.dataset]);
+  }, [overrides, imgs.imageIdx, imgs.dataset, pipe.preset]);
 
   const handleDisconnect = useCallback(async (endpointKey: string) => {
     const newOverrides: ConnectionOverrides = {
@@ -156,15 +158,16 @@ export default function HomeClient({
       remove: [...overrides.remove, endpointKey],
     };
     try {
-      const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides);
+      const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides, pipe.preset);
       setOverrides(newOverrides);
       setTopology(updatedTopology);
       setEditMode(null);
       setSelectedEndpoint(null);
     } catch (e) {
-      console.error("Disconnect failed:", e);
+      const msg = e instanceof Error ? e.message : "Failed to save override";
+      setOverrideError(msg);
     }
-  }, [overrides, imgs.imageIdx, imgs.dataset]);
+  }, [overrides, imgs.imageIdx, imgs.dataset, pipe.preset]);
 
   const handleResetOverrides = useCallback(async () => {
     try {
@@ -187,13 +190,14 @@ export default function HomeClient({
     try {
       const updatedTopology = empty
         ? await clearOverridesAction(imgs.imageIdx, imgs.dataset)
-        : await saveOverridesAction(imgs.imageIdx, imgs.dataset, next);
+        : await saveOverridesAction(imgs.imageIdx, imgs.dataset, next, pipe.preset);
       setOverrides(empty ? { reassign: {}, join: [], remove: [] } : next);
       setTopology(updatedTopology);
     } catch (e) {
-      console.error("Update overrides failed:", e);
+      const msg = e instanceof Error ? e.message : "Failed to update overrides";
+      setOverrideError(msg);
     }
-  }, [imgs.imageIdx, imgs.dataset]);
+  }, [imgs.imageIdx, imgs.dataset, pipe.preset]);
 
   // Path tracing state
   const [pathStart, setPathStart] = useState<string | null>(null);
@@ -410,12 +414,20 @@ export default function HomeClient({
   const [ocrLoading, setOcrLoading] = useState(false);
   // Surface OCR outcome instead of failing silently (no API key / no labels / etc.)
   const [ocrStatus, setOcrStatus] = useState<{ kind: "success" | "error" | "info"; msg: string } | null>(null);
+  // Surface override save errors (previously silently swallowed)
+  const [overrideError, setOverrideError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ocrStatus) return;
     const t = setTimeout(() => setOcrStatus(null), 7000);
     return () => clearTimeout(t);
   }, [ocrStatus]);
+
+  useEffect(() => {
+    if (!overrideError) return;
+    const t = setTimeout(() => setOverrideError(null), 7000);
+    return () => clearTimeout(t);
+  }, [overrideError]);
 
   const handleRunOCR = async () => {
     setOcrLoading(true);
@@ -524,6 +536,13 @@ export default function HomeClient({
         </div>
       )}
 
+      {overrideError && (
+        <div className="ocr-toast ocr-toast-error" role="status">
+          <span className="ocr-toast-msg">{overrideError}</span>
+          <button className="ocr-toast-x" aria-label="Dismiss" onClick={() => setOverrideError(null)}>✕</button>
+        </div>
+      )}
+
       <Toolbar
         imageIdx={imgs.imageIdx}
         imageCount={imgs.imageCount}
@@ -614,6 +633,7 @@ export default function HomeClient({
           onDisconnect={handleDisconnect}
           onResetOverrides={handleResetOverrides}
           onUpdateOverrides={handleUpdateOverrides}
+          onQuickFix={handleReassign}
           resetSignal={resetSignal}
         />
       </div>
