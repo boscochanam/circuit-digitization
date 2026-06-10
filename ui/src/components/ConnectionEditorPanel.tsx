@@ -45,17 +45,22 @@ export default function ConnectionEditorPanel({
   const totalOverrides =
     Object.keys(overrides.reassign).length + overrides.join.length + overrides.remove.length;
 
-  // node_id -> component names on that node (so we can show what each pin connects to)
+  // node_id -> component names on that node (so we can show what each pin connects
+  // to). Text labels are excluded — they aren't electrical connections, so listing
+  // them as net members made unconnected pins look connected.
   const nodeMembers = useMemo(() => {
+    const elec = new Set(
+      topology.components.filter((c) => isElectrical(c.type)).map((c) => c.name),
+    );
     const m = new Map<number, string[]>();
     for (const p of topology.pins) {
-      if (p.node_id === null) continue;
+      if (p.node_id === null || !elec.has(p.component_name)) continue;
       const arr = m.get(p.node_id) ?? [];
       if (!arr.includes(p.component_name)) arr.push(p.component_name);
       m.set(p.node_id, arr);
     }
     return m;
-  }, [topology.pins]);
+  }, [topology.pins, topology.components]);
 
   // Selected endpoint -> its coords + current node/pin
   const sel = useMemo(() => {
@@ -92,6 +97,19 @@ export default function ConnectionEditorPanel({
     ).length;
   }, [topology.pins, topology.nodes, topology.components]);
 
+  // At-a-glance overview: how many real parts and how many distinct nets they
+  // form (text-label pins excluded so the net count reflects the actual circuit).
+  const stats = useMemo(() => {
+    const elec = new Set(
+      topology.components.filter((c) => isElectrical(c.type)).map((c) => c.name),
+    );
+    const nets = new Set<number>();
+    for (const p of topology.pins) {
+      if (p.node_id !== null && elec.has(p.component_name)) nets.add(p.node_id);
+    }
+    return { parts: elec.size, nets: nets.size };
+  }, [topology.components, topology.pins]);
+
   const membersOf = (nodeId: number | null | undefined, exclude?: string) =>
     nodeId === null || nodeId === undefined
       ? []
@@ -115,8 +133,16 @@ export default function ConnectionEditorPanel({
 
       {!selectedEndpoint || !sel ? (
         <div className="conn-body">
+          <div className="conn-overview">
+            <span><strong>{stats.parts}</strong> parts</span>
+            <span><strong>{stats.nets}</strong> nets</span>
+            {unconnectedCount > 0 && (
+              <span className="conn-floating"><strong>{unconnectedCount}</strong> unconnected</span>
+            )}
+          </div>
           <p className="conn-hint">
-            Click a wire endpoint (the white dots) on the diagram to edit its connection.
+            Each colour on the diagram is one electrical net. Click a wire endpoint (the white
+            dots) to edit its connection, or hover any wire/pin to read its net.
           </p>
           {unconnectedCount > 0 && (
             <div className="conn-floating-note">
@@ -146,6 +172,7 @@ export default function ConnectionEditorPanel({
           <div className="conn-sub">Selected endpoint</div>
           <div className="conn-cur">
             <strong>{selectedEndpoint}</strong>
+            {sel.pin && <span className="conn-near"> · near {sel.pin.component_name}</span>}
             <div className="conn-cur-info">
               {sel.nodeId !== null && sel.nodeId !== undefined ? (
                 <>
