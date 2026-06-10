@@ -171,23 +171,31 @@ export default function ConnectionEditorPanel({
             dots) to edit its connection, or hover any wire/pin to read its net.
           </p>
           {unconnectedCount > 0 && (
-            <div className="conn-floating-note">
-              <strong className="conn-floating">{unconnectedCount}</strong> component{" "}
-              {unconnectedCount === 1 ? "pin isn't" : "pins aren't"} wired to anything else —
-              ringed <span className="conn-floating">amber</span> on the diagram. Hover a row to
-              find it, click to focus, then wire up the nearby endpoint.
-              <div className="conn-problems">
-                {floatingPins.map((p, i) => (
-                  <button
-                    key={`${p.component_name}-${p.pin_name}-${i}`}
-                    className="conn-problem-row"
-                    onMouseEnter={() => onHighlight({ component: p.component_name, pin: [p.x, p.y] })}
-                    onClick={() => onSelectComponent(p.component_name)}
-                  >
-                    <span className="conn-problem-name">{p.component_name}.{p.pin_name}</span>
-                    <span className="conn-problem-meta">Node {p.node_id}</span>
-                  </button>
-                ))}
+            <div className="conn-problems-section">
+              <div className="conn-sub">Needs attention</div>
+              <div className="conn-floating-note">
+                <strong className="conn-floating">{unconnectedCount}</strong> component{" "}
+                {unconnectedCount === 1 ? "pin isn't" : "pins aren't"} wired to anything else —
+                ringed <span className="conn-floating">amber</span> on the diagram. Hover a row to
+                find it, click to focus, then wire up the nearby endpoint.
+              </div>
+              <div className="conn-problem-group">
+                <div className="conn-problem-label">
+                  Unconnected terminals <span className="conn-problem-count">{unconnectedCount}</span>
+                </div>
+                <div className="conn-problems">
+                  {floatingPins.map((p, i) => (
+                    <button
+                      key={`${p.component_name}-${p.pin_name}-${i}`}
+                      className="conn-problem-row"
+                      onMouseEnter={() => onHighlight({ component: p.component_name, pin: [p.x, p.y] })}
+                      onClick={() => onSelectComponent(p.component_name)}
+                    >
+                      <span className="conn-problem-name">{p.component_name}.{p.pin_name}</span>
+                      <span className="conn-problem-meta">Node {p.node_id}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
