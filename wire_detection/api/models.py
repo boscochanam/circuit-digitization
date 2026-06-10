@@ -77,6 +77,7 @@ class OverrideRequest(BaseModel):
     dataset: str = "gt_labels"
     img_idx: int
     overrides: dict
+    preset: str = "best_candidate_v4"
 
 
 class NetlistResponse(BaseModel):

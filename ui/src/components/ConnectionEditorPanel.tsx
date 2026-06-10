@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import type { TopologyResult, ConnectionOverrides } from "@/lib/types";
 import type { EditMode } from "./TopologyOverlay";
 
@@ -27,8 +27,22 @@ interface Props {
 }
 
 const EP_RE = /^wire_(\d+)_ep(\d)$/;
-// Electrically meaningful reassign targets — drop text labels (you can't wire to a label).
 const isElectrical = (type: string) => type !== "text";
+
+function parseOverrides(text: string): { ok: true; data: ConnectionOverrides } | { ok: false; error: string } {
+  try {
+    const parsed = JSON.parse(text);
+    if (typeof parsed !== "object" || parsed === null) return { ok: false, error: "Expected a JSON object" };
+    if (!("reassign" in parsed) || !("join" in parsed) || !("remove" in parsed))
+      return { ok: false, error: "Missing required keys: reassign, join, remove" };
+    if (typeof parsed.reassign !== "object") return { ok: false, error: "'reassign' must be an object" };
+    if (!Array.isArray(parsed.join)) return { ok: false, error: "'join' must be an array" };
+    if (!Array.isArray(parsed.remove)) return { ok: false, error: "'remove' must be an array" };
+    return { ok: true, data: parsed as ConnectionOverrides };
+  } catch (e) {
+    return { ok: false, error: `Invalid JSON: ${e instanceof Error ? e.message : e}` };
+  }
+}
 
 export default function ConnectionEditorPanel({
   topology,
@@ -47,11 +61,37 @@ export default function ConnectionEditorPanel({
   onSelectComponent,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
-  // Re-open automatically when an endpoint gets selected — you collapsed it to
-  // see the diagram, and selecting something means you want the editor back.
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+
   useEffect(() => {
     if (selectedEndpoint) setCollapsed(false);
   }, [selectedEndpoint]);
+
+  useEffect(() => {
+    if (!copySuccess) return;
+    const t = setTimeout(() => setCopySuccess(false), 2000);
+    return () => clearTimeout(t);
+  }, [copySuccess]);
+
+  const handleCopy = useCallback(() => {
+    const json = JSON.stringify(overrides, null, 2);
+    navigator.clipboard.writeText(json).then(() => setCopySuccess(true));
+  }, [overrides]);
+
+  const handleImport = useCallback(() => {
+    const result = parseOverrides(importText);
+    if (!result.ok) {
+      setImportError(result.error);
+      return;
+    }
+    onUpdateOverrides(result.data);
+    setImportOpen(false);
+    setImportText("");
+    setImportError(null);
+  }, [importText, onUpdateOverrides]);
 
   const totalOverrides =
     Object.keys(overrides.reassign).length + overrides.join.length + overrides.remove.length;
@@ -145,6 +185,20 @@ export default function ConnectionEditorPanel({
       <div className="conn-editor-head">
         <span>Connection editor</span>
         <span style={{ display: "flex", gap: 6 }}>
+          <button
+            className="conn-reset"
+            onClick={handleCopy}
+            title="Copy overrides as JSON to clipboard"
+          >
+            {copySuccess ? "Copied!" : "Copy"}
+          </button>
+          <button
+            className="conn-reset"
+            onClick={() => { setImportOpen(!importOpen); setImportText(JSON.stringify(overrides, null, 2)); setImportError(null); }}
+            title="Import overrides from JSON"
+          >
+            Import
+          </button>
           {totalOverrides > 0 && (
             <button className="conn-reset" onClick={onResetOverrides} title="Clear all manual overrides">
               Reset {totalOverrides}
@@ -156,6 +210,29 @@ export default function ConnectionEditorPanel({
           <button className="conn-reset" onClick={() => setCollapsed(true)} title="Collapse panel (free the diagram)">–</button>
         </span>
       </div>
+
+      {importOpen && (
+        <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--grey-mid)" }}>
+          <div className="conn-sub">Import overrides (JSON)</div>
+          <textarea
+            value={importText}
+            onChange={(e) => { setImportText(e.target.value); setImportError(null); }}
+            style={{
+              width: "100%", minHeight: 120, fontFamily: "monospace", fontSize: 11,
+              background: "var(--white)", color: "var(--black)", border: "1px solid var(--black)",
+              borderRadius: 0, padding: 6, resize: "vertical",
+            }}
+            placeholder='{"reassign": {}, "join": [], "remove": []}'
+          />
+          {importError && (
+            <div style={{ color: "var(--error)", fontSize: 11, marginTop: 4 }}>{importError}</div>
+          )}
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            <button className="conn-btn" onClick={handleImport}>Apply</button>
+            <button className="conn-btn conn-cancel" onClick={() => { setImportOpen(false); setImportError(null); }}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       {!selectedEndpoint || !sel ? (
         <div className="conn-body">
