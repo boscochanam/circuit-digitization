@@ -18,7 +18,7 @@ interface Props {
   onSetEditMode: (m: EditMode) => void;
   onSetJoinSource: (k: string | null) => void;
   onReassign: (endpointKey: string, componentName: string, pinName: string) => void;
-  onConnectPins: (a: PinRef, b: PinRef) => void;
+  onConnectPins: (refs: PinRef[]) => void;
   onDisconnect: (endpointKey: string) => void;
   onResetOverrides: () => void;
   onUpdateOverrides: (next: ConnectionOverrides) => void;
@@ -107,14 +107,28 @@ export default function ConnectionEditorPanel({
     const elec = new Set(topology.components.filter((c) => isElectrical(c.type)).map((c) => c.name));
     return topology.pins
       .filter((p) => elec.has(p.component_name))
-      .map((p) => ({ component: p.component_name, pin: p.pin_name, node_id: p.node_id }));
+      .map((p) => ({ component: p.component_name, pin: p.pin_name, node_id: p.node_id, x: p.x, y: p.y }));
   }, [topology.pins, topology.components]);
 
-  const [pinA, setPinA] = useState("");
-  const [pinB, setPinB] = useState("");
   const parsePinKey = (k: string): PinRef | null => {
     const i = k.lastIndexOf(".");
     return i < 0 ? null : { component: k.slice(0, i), pin: k.slice(i + 1) };
+  };
+
+  // Searchable, multi-select pin connector — type to filter, click to add pins,
+  // then connect them all onto one node (handles the 2-pin case and N-pin nets).
+  const [pinQuery, setPinQuery] = useState("");
+  const [selectedPins, setSelectedPins] = useState<string[]>([]);
+  const filteredPins = useMemo(() => {
+    const q = pinQuery.trim().toLowerCase();
+    return electricalPins
+      .map((p) => ({ ...p, key: `${p.component}.${p.pin}` }))
+      .filter((p) => !selectedPins.includes(p.key) && (!q || p.key.toLowerCase().includes(q)))
+      .slice(0, 12);
+  }, [electricalPins, pinQuery, selectedPins]);
+  const pinCoord = (key: string): [number, number] | null => {
+    const p = electricalPins.find((pp) => `${pp.component}.${pp.pin}` === key);
+    return p ? [p.x, p.y] : null;
   };
 
   // node_id -> component names on that node (so we can show what each pin connects
@@ -181,6 +195,36 @@ export default function ConnectionEditorPanel({
       if (p.node_id !== null && elec.has(p.component_name)) nets.add(p.node_id);
     }
     return { parts: elec.size, nets: nets.size };
+  }, [topology.components, topology.pins]);
+
+  // Circuit completeness — how many separate connected pieces the electrical
+  // parts form (a finished circuit is ONE piece with the source wired in). Tells
+  // you when you're done connecting, not just how many pins are loose.
+  const completeness = useMemo(() => {
+    const elec = topology.components.filter((c) => isElectrical(c.type));
+    const idx = new Map(elec.map((c, i) => [c.name, i]));
+    const parent = elec.map((_, i) => i);
+    const find = (x: number): number => {
+      while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+      return x;
+    };
+    const nodeComps = new Map<number, string[]>();
+    for (const p of topology.pins) {
+      if (p.node_id === null || !idx.has(p.component_name)) continue;
+      (nodeComps.get(p.node_id) ?? nodeComps.set(p.node_id, []).get(p.node_id)!).push(p.component_name);
+    }
+    for (const comps of nodeComps.values()) {
+      const a = idx.get(comps[0])!;
+      for (let i = 1; i < comps.length; i++) parent[find(a)] = find(idx.get(comps[i])!);
+    }
+    const sizeByRoot = new Map<number, number>();
+    elec.forEach((_, i) => { const r = find(i); sizeByRoot.set(r, (sizeByRoot.get(r) ?? 0) + 1); });
+    const pieces = sizeByRoot.size;
+    const sources = elec.filter((c) => c.type.includes("voltage"));
+    const sourceWired =
+      sources.length > 0 &&
+      sources.some((s) => (sizeByRoot.get(find(idx.get(s.name)!)) ?? 1) > 1);
+    return { pieces, hasSource: sources.length > 0, sourceWired };
   }, [topology.components, topology.pins]);
 
   const membersOf = (nodeId: number | null | undefined, exclude?: string) =>
@@ -324,41 +368,68 @@ export default function ConnectionEditorPanel({
               <span className="conn-floating"><strong>{unconnectedCount}</strong> unconnected</span>
             )}
           </div>
+          {(() => {
+            const complete = completeness.pieces === 1 && completeness.sourceWired;
+            const reason = !completeness.hasSource
+              ? "no source detected"
+              : !completeness.sourceWired
+                ? "source not wired in"
+                : `${completeness.pieces} separate pieces`;
+            return (
+              <div className={`conn-complete ${complete ? "conn-complete-ok" : "conn-complete-warn"}`}>
+                {complete ? "✓ One connected circuit — ready to simulate" : `⚠ Incomplete — ${reason}`}
+              </div>
+            );
+          })()}
           <p className="conn-hint">
             Each colour on the diagram is one electrical net. Click a wire endpoint (the white
             dots) to edit its connection, or hover any wire/pin to read its net.
           </p>
 
           <div className="conn-connect-pins">
-            <div className="conn-sub">Connect two pins (no wire needed)</div>
-            <select className="conn-pin-select" value={pinA} onChange={(e) => setPinA(e.target.value)}>
-              <option value="">Pin A…</option>
-              {electricalPins.map((p) => (
-                <option key={`a-${p.component}.${p.pin}`} value={`${p.component}.${p.pin}`}>
-                  {p.component}.{p.pin}{p.node_id !== null ? ` · Node ${p.node_id}` : ""}
-                </option>
-              ))}
-            </select>
-            <select className="conn-pin-select" value={pinB} onChange={(e) => setPinB(e.target.value)}>
-              <option value="">Pin B…</option>
-              {electricalPins.map((p) => (
-                <option key={`b-${p.component}.${p.pin}`} value={`${p.component}.${p.pin}`}>
-                  {p.component}.{p.pin}{p.node_id !== null ? ` · Node ${p.node_id}` : ""}
-                </option>
-              ))}
-            </select>
+            <div className="conn-sub">Connect pins (no wire needed)</div>
+            {selectedPins.length > 0 && (
+              <div className="conn-pin-chips">
+                {selectedPins.map((k) => (
+                  <span key={k} className="conn-pin-chip" onMouseEnter={() => { const c = pinCoord(k); const r = parsePinKey(k); if (c && r) onHighlight({ component: r.component, pin: c }); }}>
+                    {k}
+                    <button onClick={() => setSelectedPins((s) => s.filter((x) => x !== k))} title="Remove">✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <input
+              className="conn-pin-search"
+              placeholder="Search a pin (e.g. V11.pin0)…"
+              value={pinQuery}
+              onChange={(e) => setPinQuery(e.target.value)}
+            />
+            {pinQuery && filteredPins.length > 0 && (
+              <div className="conn-pin-list">
+                {filteredPins.map((p) => (
+                  <button
+                    key={p.key}
+                    className="conn-pin-opt"
+                    onMouseEnter={() => onHighlight({ component: p.component, pin: [p.x, p.y] })}
+                    onClick={() => { setSelectedPins((s) => [...s, p.key]); setPinQuery(""); }}
+                  >
+                    <span>{p.key}</span>
+                    <span className="conn-pin-opt-meta">{p.node_id !== null ? `Node ${p.node_id}` : "—"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <button
               className="conn-btn"
-              disabled={!pinA || !pinB || pinA === pinB}
+              disabled={selectedPins.length < 2}
               onClick={() => {
-                const a = parsePinKey(pinA);
-                const b = parsePinKey(pinB);
-                if (a && b) { onConnectPins(a, b); setPinA(""); setPinB(""); }
+                const refs = selectedPins.map(parsePinKey).filter(Boolean) as PinRef[];
+                if (refs.length >= 2) { onConnectPins(refs); setSelectedPins([]); setPinQuery(""); }
               }}
             >
-              Connect pins
+              Connect {selectedPins.length >= 2 ? `${selectedPins.length} pins` : "pins"}
             </button>
-            <p className="conn-hint">Merges the two pins&apos; nets into one node — for parts the detector left unwired.</p>
+            <p className="conn-hint">Adds the chosen pins to one electrical node — for parts the detector left unwired. Pick 2 or more.</p>
           </div>
 
           {unconnectedCount > 0 && (

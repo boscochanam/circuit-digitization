@@ -51,7 +51,7 @@ interface CircuitViewportProps {
   onSetJoinSource?: (key: string | null) => void;
   overrides?: ConnectionOverrides;
   onReassign?: (endpointKey: string, componentName: string, pinName: string) => void;
-  onConnectPins?: (a: { component: string; pin: string }, b: { component: string; pin: string }) => void;
+  onConnectPins?: (refs: { component: string; pin: string }[]) => void;
   onJoin?: (sourceEndpoint: string, targetEndpoint: string) => void;
   onDisconnect?: (endpointKey: string) => void;
   onResetOverrides?: () => void;
@@ -456,7 +456,7 @@ export default function CircuitViewport({
               onSetEditMode={(m) => onSetEditMode?.(m)}
               onSetJoinSource={(k) => onSetJoinSource?.(k)}
               onReassign={(ek, cn, pn) => onReassign?.(ek, cn, pn)}
-              onConnectPins={(a, b) => onConnectPins?.(a, b)}
+              onConnectPins={(refs) => onConnectPins?.(refs)}
               onDisconnect={(ek) => onDisconnect?.(ek)}
               onResetOverrides={() => onResetOverrides?.()}
               onUpdateOverrides={(next) => onUpdateOverrides?.(next)}
