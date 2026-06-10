@@ -108,17 +108,36 @@ def apply_overrides(
         if target_node_id is None:
             continue  # can't resolve target, skip
 
-        # Remove endpoint from its current node
         old_node_id = ep_to_node.get(ep_key)
-        if old_node_id is not None and old_node_id in node_wire_idxs:
-            # Only remove wire from old node if BOTH endpoints are leaving
-            # Actually for reassign we're just moving one endpoint's association
-            # The wire stays in its current node (wire assignment stays),
-            # but we update ep_to_node
-            pass
+        if old_node_id is None or old_node_id == target_node_id:
+            # Already on target node or no old node — just update mapping
+            ep_to_node[ep_key] = target_node_id
+            continue
+
+        # Merge old_node into target_node (same logic as the join phase).
+        # This ensures the wire's old net and the target pin's net become one
+        # electrical node, so the topology reflects the connection.
+        src, dst = (old_node_id, target_node_id) if old_node_id < target_node_id else (target_node_id, old_node_id)
+
+        for wi in node_wire_idxs.get(src, []):
+            if wi not in node_wire_idxs.get(dst, []):
+                node_wire_idxs.setdefault(dst, []).append(wi)
+            for ep in (1, 2):
+                k = f"wire_{wi}_ep{ep}"
+                if ep_to_node.get(k) == src:
+                    ep_to_node[k] = dst
+
+        for pin in node_pins.get(src, []):
+            node_pins.setdefault(dst, []).append(pin)
+            pin_key = (pin.component_idx, pin.pin_name)
+            if pin_node.get(pin_key) == src:
+                pin_node[pin_key] = dst
+
+        node_wire_idxs[src] = []
+        node_pins[src] = []
 
         # Update endpoint → node mapping
-        ep_to_node[ep_key] = target_node_id
+        ep_to_node[ep_key] = dst
 
     # ── Phase 2: Remove ──
     remove_keys = overrides.get("remove", [])
