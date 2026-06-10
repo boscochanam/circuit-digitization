@@ -230,6 +230,16 @@ html, body { height: 100%; overflow: hidden; }
   box-shadow: 4px 4px 0 var(--black);
   font-family: var(--font-mono), monospace; font-size: 12px; color: var(--black);
 }
+/* Collapsed state — a small tab in the corner so the diagram is fully visible. */
+.conn-collapsed {
+  position: absolute; top: 8px; right: 8px; z-index: 20;
+  font-family: var(--font-mono), monospace; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  background: var(--white); color: var(--black);
+  border: 3px solid var(--black); box-shadow: 4px 4px 0 var(--black);
+  padding: 6px 10px; cursor: pointer;
+}
+.conn-collapsed:hover { background: var(--black); color: var(--white); }
 .conn-editor-head {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 8px 10px; border-bottom: 3px solid var(--black); flex-shrink: 0;
