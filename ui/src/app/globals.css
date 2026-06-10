@@ -270,6 +270,18 @@ html, body { height: 100%; overflow: hidden; }
 }
 .conn-overview strong { color: var(--black); font-family: var(--font-mono), monospace; }
 .conn-near { font-size: 11px; font-weight: 400; color: var(--grey-dark); }
+/* Panel-based pin <-> pin connector (no wire needed) — for fragmented circuits. */
+.conn-connect-pins {
+  display: flex; flex-direction: column; gap: 6px;
+  border: 2px solid var(--black); background: var(--grey-light); padding: 8px;
+}
+.conn-pin-select {
+  font-family: var(--font-mono), monospace; font-size: 11px;
+  border: 2px solid var(--black); background: var(--white); color: var(--black);
+  padding: 4px 6px; width: 100%;
+}
+.conn-connect-pins .conn-btn:disabled { opacity: 0.4; cursor: default; }
+.conn-connect-pins .conn-btn:disabled:hover { background: var(--white); color: var(--black); }
 .conn-sub { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--grey-dark); }
 .conn-cur { border: 2px solid var(--black); padding: 6px 8px; }
 .conn-cur-info { font-size: 11px; color: var(--grey-dark); margin-top: 2px; }

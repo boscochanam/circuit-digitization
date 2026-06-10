@@ -190,6 +190,45 @@ def apply_overrides(
         node_wire_idxs[node_a] = []
         node_pins[node_a] = []
 
+    # ── Phase 4: Merge (pin <-> pin, no wire needed) ──
+    # The manual fix for fragmented detections: connect two component pins
+    # directly. Resolves each pin to its node and merges, same as the join phase.
+    from wire_detection.core.component_classes import PREFIX_MAP as _PREFIX_MAP
+
+    def _resolve_pin_node(ref):
+        comp_name = (ref or {}).get("component", "")
+        pin_name = (ref or {}).get("pin", "")
+        for ci, comp in enumerate(components_raw):
+            type_name = COMPONENT_NAMES.get(comp[0], f"cls_{comp[0]}")
+            prefix = _PREFIX_MAP.get(type_name) or "X"
+            if f"{prefix}{ci + 1}" == comp_name:
+                return pin_node.get((ci, pin_name))
+        return None
+
+    for pair in overrides.get("merge", []):
+        if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+            continue
+        node_a = _resolve_pin_node(pair[0])
+        node_b = _resolve_pin_node(pair[1])
+        if node_a is None or node_b is None or node_a == node_b:
+            continue
+        if node_a > node_b:
+            node_a, node_b = node_b, node_a
+        for wi in node_wire_idxs.get(node_a, []):
+            if wi not in node_wire_idxs.get(node_b, []):
+                node_wire_idxs.setdefault(node_b, []).append(wi)
+            for ep in (1, 2):
+                k = f"wire_{wi}_ep{ep}"
+                if ep_to_node.get(k) == node_a:
+                    ep_to_node[k] = node_b
+        for pin in node_pins.get(node_a, []):
+            node_pins.setdefault(node_b, []).append(pin)
+            pin_key = (pin.component_idx, pin.pin_name)
+            if pin_node.get(pin_key) == node_a:
+                pin_node[pin_key] = node_b
+        node_wire_idxs[node_a] = []
+        node_pins[node_a] = []
+
     # ── Rebuild topo_wires ──
     topo_wires = []
     for wi, (ep1, ep2) in enumerate(wires):
@@ -384,7 +423,7 @@ def _build_topology_data(
 
     # ── Apply overrides if any ──
     overrides = load_overrides(ds, img_idx)
-    if overrides.get("reassign") or overrides.get("join") or overrides.get("remove"):
+    if overrides.get("reassign") or overrides.get("join") or overrides.get("remove") or overrides.get("merge"):
         topo_wires, topo_pins, topo_nodes = apply_overrides(
             wires, components_raw, all_pins, netlist, overrides
         )
