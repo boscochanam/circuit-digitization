@@ -67,6 +67,7 @@ export default function ConnectionEditorPanel({
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
+  const [legendOpen, setLegendOpen] = useState(false);
 
   useEffect(() => {
     if (selectedEndpoint) setCollapsed(false);
@@ -239,9 +240,39 @@ export default function ConnectionEditorPanel({
           {selectedEndpoint && (
             <button className="conn-reset" onClick={onClearSelection} title="Deselect (Esc)">✕</button>
           )}
+          <button className="conn-reset" onClick={() => setLegendOpen(!legendOpen)} title="What the colours, dots and rings mean">ⓘ</button>
           <button className="conn-reset" onClick={() => setCollapsed(true)} title="Collapse panel (free the diagram)">–</button>
         </span>
       </div>
+
+      {legendOpen && (
+        <div className="conn-legend">
+          <div className="conn-sub">What you&apos;re looking at</div>
+          <div className="conn-legend-row">
+            <span className="conn-legend-swatch">
+              <svg width="34" height="10" aria-hidden>
+                <rect x="0" width="10" height="10" fill="#e6194b" /><rect x="12" width="10" height="10" fill="#3cb44b" /><rect x="24" width="10" height="10" fill="#4363d8" />
+              </svg>
+            </span>
+            <span>Each <strong>colour</strong> is one electrical net — same colour = same node.</span>
+          </div>
+          <div className="conn-legend-row">
+            <span className="conn-legend-swatch"><svg width="14" height="14" aria-hidden><circle cx="7" cy="7" r="4.5" fill="#22c55e" /></svg></span>
+            <span><strong>Green</strong> wire-end dot — connected to a multi-component net.</span>
+          </div>
+          <div className="conn-legend-row">
+            <span className="conn-legend-swatch"><svg width="14" height="14" aria-hidden><circle cx="7" cy="7" r="4.5" fill="#ef4444" /></svg></span>
+            <span><strong>Red</strong> wire-end dot — dangling. Click it, then <strong>⚡ Quick Fix</strong> to auto-connect.</span>
+          </div>
+          <div className="conn-legend-row">
+            <span className="conn-legend-swatch"><svg width="14" height="14" aria-hidden><circle cx="7" cy="7" r="5" fill="none" stroke="#f59e0b" strokeWidth="2" /></svg></span>
+            <span><strong>Amber ring</strong> on a pin — a component terminal not wired to anything else (turn on the Pins layer).</span>
+          </div>
+          <p className="conn-hint" style={{ marginTop: 4 }}>
+            Click a white endpoint dot to <strong>Connect / Join / Disconnect</strong>; hover any wire or pin to read its net.
+          </p>
+        </div>
+      )}
 
       {importOpen && (
         <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--grey-mid)" }}>

@@ -240,6 +240,17 @@ html, body { height: 100%; overflow: hidden; }
   padding: 6px 10px; cursor: pointer;
 }
 .conn-collapsed:hover { background: var(--black); color: var(--white); }
+/* Info legend (ⓘ) — explains the topology signals so the dots/rings/colours read clearly. */
+.conn-legend {
+  padding: 8px 12px; border-bottom: 3px solid var(--black);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.conn-legend-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 11px; line-height: 1.4; color: var(--grey-dark);
+}
+.conn-legend-row strong { color: var(--black); }
+.conn-legend-swatch { flex-shrink: 0; display: inline-flex; align-items: center; padding-top: 1px; }
 .conn-editor-head {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 8px 10px; border-bottom: 3px solid var(--black); flex-shrink: 0;
