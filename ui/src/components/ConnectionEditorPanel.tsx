@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { TopologyResult, ConnectionOverrides } from "@/lib/types";
 import type { EditMode } from "./TopologyOverlay";
 
@@ -44,6 +44,13 @@ export default function ConnectionEditorPanel({
   onClearSelection,
   onHighlight,
 }: Props) {
+  const [collapsed, setCollapsed] = useState(false);
+  // Re-open automatically when an endpoint gets selected — you collapsed it to
+  // see the diagram, and selecting something means you want the editor back.
+  useEffect(() => {
+    if (selectedEndpoint) setCollapsed(false);
+  }, [selectedEndpoint]);
+
   const totalOverrides =
     Object.keys(overrides.reassign).length + overrides.join.length + overrides.remove.length;
 
@@ -117,6 +124,19 @@ export default function ConnectionEditorPanel({
       ? []
       : (nodeMembers.get(nodeId) ?? []).filter((n) => n !== exclude);
 
+  if (collapsed) {
+    return (
+      <button
+        className="conn-collapsed"
+        onClick={() => setCollapsed(false)}
+        onMouseDown={(e) => e.stopPropagation()}
+        title="Show connection editor"
+      >
+        ‹ Editor{totalOverrides > 0 ? ` · ${totalOverrides}` : ""}
+      </button>
+    );
+  }
+
   return (
     <div className="conn-editor" onMouseLeave={() => onHighlight(null)} onMouseDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
       <div className="conn-editor-head">
@@ -130,6 +150,7 @@ export default function ConnectionEditorPanel({
           {selectedEndpoint && (
             <button className="conn-reset" onClick={onClearSelection} title="Deselect (Esc)">✕</button>
           )}
+          <button className="conn-reset" onClick={() => setCollapsed(true)} title="Collapse panel (free the diagram)">–</button>
         </span>
       </div>
 
