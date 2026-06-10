@@ -54,6 +54,7 @@ interface CircuitViewportProps {
   onJoin?: (sourceEndpoint: string, targetEndpoint: string) => void;
   onDisconnect?: (endpointKey: string) => void;
   onResetOverrides?: () => void;
+  onUpdateOverrides?: (next: ConnectionOverrides) => void;
   resetSignal?: number;
 }
 
@@ -104,6 +105,7 @@ export default function CircuitViewport({
   onJoin,
   onDisconnect,
   onResetOverrides,
+  onUpdateOverrides,
   resetSignal = 0,
 }: CircuitViewportProps) {
   const [activeOverlay, setActiveOverlay] = useState<string>("none");
@@ -452,6 +454,7 @@ export default function CircuitViewport({
               onReassign={(ek, cn, pn) => onReassign?.(ek, cn, pn)}
               onDisconnect={(ek) => onDisconnect?.(ek)}
               onResetOverrides={() => onResetOverrides?.()}
+              onUpdateOverrides={(next) => onUpdateOverrides?.(next)}
               onClearSelection={() => onEndpointClear?.()}
               onHighlight={setTopoHighlight}
             />
