@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
-import type { TopologyResult, ConnectionOverrides } from "@/lib/types";
+import type { TopologyResult, ConnectionOverrides, PinRef } from "@/lib/types";
 import type { EditMode } from "./TopologyOverlay";
 
 export interface TopoHighlight {
@@ -18,6 +18,7 @@ interface Props {
   onSetEditMode: (m: EditMode) => void;
   onSetJoinSource: (k: string | null) => void;
   onReassign: (endpointKey: string, componentName: string, pinName: string) => void;
+  onConnectPins: (a: PinRef, b: PinRef) => void;
   onDisconnect: (endpointKey: string) => void;
   onResetOverrides: () => void;
   onUpdateOverrides: (next: ConnectionOverrides) => void;
@@ -54,6 +55,7 @@ export default function ConnectionEditorPanel({
   onSetEditMode,
   onSetJoinSource,
   onReassign,
+  onConnectPins,
   onDisconnect,
   onResetOverrides,
   onUpdateOverrides,
@@ -97,7 +99,23 @@ export default function ConnectionEditorPanel({
   }, [importText, onUpdateOverrides]);
 
   const totalOverrides =
-    Object.keys(overrides.reassign).length + overrides.join.length + overrides.remove.length;
+    Object.keys(overrides.reassign).length + overrides.join.length + overrides.remove.length +
+    (overrides.merge?.length ?? 0);
+
+  // All electrical pins, for the panel-based pin <-> pin connector.
+  const electricalPins = useMemo(() => {
+    const elec = new Set(topology.components.filter((c) => isElectrical(c.type)).map((c) => c.name));
+    return topology.pins
+      .filter((p) => elec.has(p.component_name))
+      .map((p) => ({ component: p.component_name, pin: p.pin_name, node_id: p.node_id }));
+  }, [topology.pins, topology.components]);
+
+  const [pinA, setPinA] = useState("");
+  const [pinB, setPinB] = useState("");
+  const parsePinKey = (k: string): PinRef | null => {
+    const i = k.lastIndexOf(".");
+    return i < 0 ? null : { component: k.slice(0, i), pin: k.slice(i + 1) };
+  };
 
   // node_id -> component names on that node (so we can show what each pin connects
   // to). Text labels are excluded — they aren't electrical connections, so listing
@@ -310,6 +328,39 @@ export default function ConnectionEditorPanel({
             Each colour on the diagram is one electrical net. Click a wire endpoint (the white
             dots) to edit its connection, or hover any wire/pin to read its net.
           </p>
+
+          <div className="conn-connect-pins">
+            <div className="conn-sub">Connect two pins (no wire needed)</div>
+            <select className="conn-pin-select" value={pinA} onChange={(e) => setPinA(e.target.value)}>
+              <option value="">Pin A…</option>
+              {electricalPins.map((p) => (
+                <option key={`a-${p.component}.${p.pin}`} value={`${p.component}.${p.pin}`}>
+                  {p.component}.{p.pin}{p.node_id !== null ? ` · Node ${p.node_id}` : ""}
+                </option>
+              ))}
+            </select>
+            <select className="conn-pin-select" value={pinB} onChange={(e) => setPinB(e.target.value)}>
+              <option value="">Pin B…</option>
+              {electricalPins.map((p) => (
+                <option key={`b-${p.component}.${p.pin}`} value={`${p.component}.${p.pin}`}>
+                  {p.component}.{p.pin}{p.node_id !== null ? ` · Node ${p.node_id}` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              className="conn-btn"
+              disabled={!pinA || !pinB || pinA === pinB}
+              onClick={() => {
+                const a = parsePinKey(pinA);
+                const b = parsePinKey(pinB);
+                if (a && b) { onConnectPins(a, b); setPinA(""); setPinB(""); }
+              }}
+            >
+              Connect pins
+            </button>
+            <p className="conn-hint">Merges the two pins&apos; nets into one node — for parts the detector left unwired.</p>
+          </div>
+
           {unconnectedCount > 0 && (
             <div className="conn-problems-section">
               <div className="conn-sub">Needs attention</div>
@@ -373,6 +424,16 @@ export default function ConnectionEditorPanel({
                     className="conn-ov-undo"
                     title="Undo this edit"
                     onClick={() => onUpdateOverrides({ ...overrides, remove: overrides.remove.filter((x) => x !== k) })}
+                  >↺</button>
+                </div>
+              ))}
+              {(overrides.merge ?? []).map((p, i) => (
+                <div key={`m${i}`} className="conn-ov-row">
+                  <span>⊕ {p[0].component}.{p[0].pin} ↔ {p[1].component}.{p[1].pin}</span>
+                  <button
+                    className="conn-ov-undo"
+                    title="Undo this edit"
+                    onClick={() => onUpdateOverrides({ ...overrides, merge: (overrides.merge ?? []).filter((_, idx) => idx !== i) })}
                   >↺</button>
                 </div>
               ))}
