@@ -23,6 +23,7 @@ interface Props {
   onUpdateOverrides: (next: ConnectionOverrides) => void;
   onClearSelection: () => void;
   onHighlight: (h: TopoHighlight | null) => void;
+  onSelectComponent: (name: string | null) => void;
 }
 
 const EP_RE = /^wire_(\d+)_ep(\d)$/;
@@ -43,6 +44,7 @@ export default function ConnectionEditorPanel({
   onUpdateOverrides,
   onClearSelection,
   onHighlight,
+  onSelectComponent,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   // Re-open automatically when an endpoint gets selected — you collapsed it to
@@ -94,7 +96,7 @@ export default function ConnectionEditorPanel({
   // component, i.e. not wired to anything else. The join leaves essentially no
   // truly floating wires, but it does leave these dead-ends — they're the real
   // "not connected" signal worth surfacing (ringed amber on the diagram).
-  const unconnectedCount = useMemo(() => {
+  const floatingPins = useMemo(() => {
     const elec = new Set(
       topology.components.filter((c) => isElectrical(c.type)).map((c) => c.name),
     );
@@ -103,8 +105,9 @@ export default function ConnectionEditorPanel({
     );
     return topology.pins.filter(
       (p) => p.node_id !== null && deadEnd.has(p.node_id) && elec.has(p.component_name),
-    ).length;
+    );
   }, [topology.pins, topology.nodes, topology.components]);
+  const unconnectedCount = floatingPins.length;
 
   // At-a-glance overview: how many real parts and how many distinct nets they
   // form (text-label pins excluded so the net count reflects the actual circuit).
@@ -171,8 +174,21 @@ export default function ConnectionEditorPanel({
             <div className="conn-floating-note">
               <strong className="conn-floating">{unconnectedCount}</strong> component{" "}
               {unconnectedCount === 1 ? "pin isn't" : "pins aren't"} wired to anything else —
-              ringed <span className="conn-floating">amber</span> on the diagram (turn on the Pins
-              layer). Click a nearby endpoint to connect it.
+              ringed <span className="conn-floating">amber</span> on the diagram. Hover a row to
+              find it, click to focus, then wire up the nearby endpoint.
+              <div className="conn-problems">
+                {floatingPins.map((p, i) => (
+                  <button
+                    key={`${p.component_name}-${p.pin_name}-${i}`}
+                    className="conn-problem-row"
+                    onMouseEnter={() => onHighlight({ component: p.component_name, pin: [p.x, p.y] })}
+                    onClick={() => onSelectComponent(p.component_name)}
+                  >
+                    <span className="conn-problem-name">{p.component_name}.{p.pin_name}</span>
+                    <span className="conn-problem-meta">Node {p.node_id}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {totalOverrides > 0 && (

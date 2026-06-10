@@ -457,6 +457,7 @@ export default function CircuitViewport({
               onUpdateOverrides={(next) => onUpdateOverrides?.(next)}
               onClearSelection={() => onEndpointClear?.()}
               onHighlight={setTopoHighlight}
+              onSelectComponent={(n) => onComponentSelect?.(n)}
             />
           )}
         </div>
