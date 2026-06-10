@@ -24,6 +24,7 @@ interface Props {
   onClearSelection: () => void;
   onHighlight: (h: TopoHighlight | null) => void;
   onSelectComponent: (name: string | null) => void;
+  onQuickFix?: (endpointKey: string, componentName: string, pinName: string) => void;
 }
 
 const EP_RE = /^wire_(\d+)_ep(\d)$/;
@@ -59,6 +60,7 @@ export default function ConnectionEditorPanel({
   onClearSelection,
   onHighlight,
   onSelectComponent,
+  onQuickFix,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -166,6 +168,36 @@ export default function ConnectionEditorPanel({
     nodeId === null || nodeId === undefined
       ? []
       : (nodeMembers.get(nodeId) ?? []).filter((n) => n !== exclude);
+
+  const findNearestPin = useCallback((endpointKey: string): { componentName: string; pinName: string } | null => {
+    const m = endpointKey.match(EP_RE);
+    if (!m) return null;
+    const wire = topology.wires.find((w) => w.idx === parseInt(m[1], 10));
+    if (!wire) return null;
+    const [x, y] = m[2] === "1" ? wire.ep1 : wire.ep2;
+
+    const deadEnd = new Set(
+      topology.nodes.filter((n) => n.component_count === 1).map((n) => n.node_id),
+    );
+
+    let bestDist = Infinity;
+    let bestPin: { componentName: string; pinName: string } | null = null;
+
+    for (const pin of topology.pins) {
+      if (pin.node_id !== null && deadEnd.has(pin.node_id)) continue;
+      const w = topology.wires.find((ww) => ww.idx === parseInt(m[1], 10));
+      if (w && pin.node_id === w.node_id) continue;
+
+      const dist = Math.sqrt((pin.x - x) ** 2 + (pin.y - y) ** 2);
+      if (dist < bestDist && dist < 50) {
+        bestDist = dist;
+        bestPin = { componentName: pin.component_name, pinName: pin.pin_name };
+      }
+    }
+    return bestPin;
+  }, [topology]);
+
+  const nearestPin = selectedEndpoint ? findNearestPin(selectedEndpoint) : null;
 
   if (collapsed) {
     return (
@@ -344,6 +376,16 @@ export default function ConnectionEditorPanel({
               <button className="conn-btn" title="Attach this endpoint to a component pin — their nets merge into one node" onClick={() => onSetEditMode("reassign")}>Connect</button>
               <button className="conn-btn" title="Connect this endpoint to another wire endpoint — their nets merge into one node" onClick={() => { onSetEditMode("join"); onSetJoinSource(selectedEndpoint); }}>Join…</button>
               <button className="conn-btn conn-btn-danger" title="Detach this endpoint from its net" onClick={() => onDisconnect(selectedEndpoint)}>Disconnect</button>
+              {nearestPin && onQuickFix && (
+                <button
+                  className="conn-btn conn-btn-quickfix"
+                  title={`Auto-connect to nearest pin: ${nearestPin.componentName}.${nearestPin.pinName}`}
+                  onClick={() => onQuickFix(selectedEndpoint, nearestPin.componentName, nearestPin.pinName)}
+                  style={{ background: "rgba(34,197,94,0.2)", borderColor: "rgba(34,197,94,0.5)" }}
+                >
+                  ⚡ Quick Fix
+                </button>
+              )}
             </div>
           )}
 

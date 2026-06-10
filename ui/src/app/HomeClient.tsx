@@ -633,6 +633,7 @@ export default function HomeClient({
           onDisconnect={handleDisconnect}
           onResetOverrides={handleResetOverrides}
           onUpdateOverrides={handleUpdateOverrides}
+          onQuickFix={handleReassign}
           resetSignal={resetSignal}
         />
       </div>
