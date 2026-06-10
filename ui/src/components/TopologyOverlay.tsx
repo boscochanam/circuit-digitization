@@ -157,6 +157,30 @@ export default function TopologyOverlay({
     [topology.components],
   );
 
+  // node_id -> the electrical components sharing that net, for hover tooltips.
+  const nodeMembers = useMemo(() => {
+    const m = new Map<number, string[]>();
+    for (const p of topology.pins) {
+      if (p.node_id === null || !electricalNames.has(p.component_name)) continue;
+      const arr = m.get(p.node_id) ?? [];
+      if (!arr.includes(p.component_name)) arr.push(p.component_name);
+      m.set(p.node_id, arr);
+    }
+    return m;
+  }, [topology.pins, electricalNames]);
+
+  // Plain-language description of the net a wire/pin sits on (SVG <title> tooltip).
+  const netLabel = useCallback(
+    (nodeId: number | null | undefined): string => {
+      if (nodeId === null || nodeId === undefined) return "unconnected (no net)";
+      const members = nodeMembers.get(nodeId) ?? [];
+      if (members.length === 0) return `Node ${nodeId} · reaches no component`;
+      if (members.length === 1) return `Node ${nodeId} · only ${members[0]} (dead-end)`;
+      return `Node ${nodeId} · ${members.join(", ")}`;
+    },
+    [nodeMembers],
+  );
+
   // Build sets of components and nodes that are part of the path
   const pathComponentNames = new Set<string>();
   const pathNodeIds = new Set<number>();
@@ -365,7 +389,9 @@ export default function TopologyOverlay({
                         e.stopPropagation();
                         if (wire.node_id !== null) onWireClick(wire.node_id);
                       }}
-                    />
+                    >
+                      <title>{`Wire ${wire.idx} — ${netLabel(wire.node_id)}`}</title>
+                    </line>
                   );
                 })()}
                 {/* Endpoint 1 — large invisible hit target + clear marker */}
@@ -384,7 +410,9 @@ export default function TopologyOverlay({
                       onEndpointClick?.(`wire_${wire.idx}_ep1`, e.shiftKey);
                     }
                   }}
-                />
+                >
+                  <title>{`Endpoint wire ${wire.idx} ep1 — ${netLabel(wire.node_id)} · click to edit`}</title>
+                </circle>
                 <circle
                   cx={wire.ep1[0] * scaleX}
                   cy={wire.ep1[1] * scaleY}
@@ -443,7 +471,9 @@ export default function TopologyOverlay({
                       onEndpointClick?.(`wire_${wire.idx}_ep2`, e.shiftKey);
                     }
                   }}
-                />
+                >
+                  <title>{`Endpoint wire ${wire.idx} ep2 — ${netLabel(wire.node_id)} · click to edit`}</title>
+                </circle>
                 <circle
                   cx={wire.ep2[0] * scaleX}
                   cy={wire.ep2[1] * scaleY}
@@ -580,7 +610,9 @@ export default function TopologyOverlay({
                     e.stopPropagation();
                     if (pin.node_id !== null) onWireClick(pin.node_id);
                   }}
-                />
+                >
+                  <title>{`${pin.component_name}.${pin.pin_name} — ${netLabel(pin.node_id)}${floating ? " · unconnected terminal" : ""}`}</title>
+                </circle>
               </g>
             );
           })}
@@ -640,7 +672,13 @@ export default function TopologyOverlay({
                   e.stopPropagation();
                   onComponentClick(comp.name, e.shiftKey);
                 }}
-              />
+              >
+                <title>{`${comp.name} (${comp.type})${
+                  comp.node_ids.filter((n) => n !== null).length
+                    ? ` — Node ${comp.node_ids.filter((n) => n !== null).join(", ")}`
+                    : ""
+                }`}</title>
+              </rect>
             );
           })}
 
