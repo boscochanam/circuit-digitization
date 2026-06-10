@@ -12,11 +12,10 @@ import os
 import re
 from typing import Any
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-OVERRIDES_ROOT = os.path.join(os.path.dirname(__file__), "..", "overrides")
+OVERRIDES_ROOT = os.environ.get(
+    "OVERRIDES_ROOT",
+    os.path.join(os.path.dirname(__file__), "..", "overrides"),
+)
 
 _ENDPOINT_RE = re.compile(r"^wire_(\d+)_ep(1|2)$")
 

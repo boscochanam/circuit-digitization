@@ -432,7 +432,7 @@ async def save_override(data: OverrideRequest):
         topo = _build_topology_data(
             img_idx=data.img_idx,
             ds=data.dataset,
-            preset="best_candidate_v4",
+            preset=data.preset,
         )
         if "error" in topo:
             return JSONResponse({"error": topo["error"]}, status_code=404)
@@ -477,7 +477,7 @@ async def save_override(data: OverrideRequest):
         updated = _build_topology_data(
             img_idx=data.img_idx,
             ds=data.dataset,
-            preset="best_candidate_v4",
+            preset=data.preset,
         )
         if "error" in updated:
             return JSONResponse({"error": updated["error"]}, status_code=404)
