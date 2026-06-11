@@ -44,8 +44,10 @@ This was thought through before building it; the honest scope:
 **Strong:**
 - **SPICE / "is the simulator doing its job":** excellent. We author a valid
   netlist, so the expected operating point is known and asserted. The harness
-  confirms `I_src` for every catalog circuit matches the analytic value
-  (10 mA / 2.5 mA / 1.667 mA / 2.273 mA / 1 mA).
+  confirms `I_src` for every catalog circuit matches the analytic value —
+  including the diode drop (4.307 mA simulated vs 4.31 mA computed from the
+  DMOD equation) and the opposing two-source loop (exactly 1 mA). An authoring
+  guard flags any spec whose oracle disagrees with its `expect_mA`.
 - **Join *logic* + regression:** good. Known target → perturb → measure recovery.
   Catches regressions on cases that *should* be easy, and gives robustness curves.
 
@@ -53,19 +55,26 @@ This was thought through before building it; the honest scope:
 - **Error-model fidelity is everything.** Real detection error is *structured and
   correlated with the image* (breaks at faint strokes / crossings, anchor
   over-deletion [#21], junction-vs-crossing confusion [#19]). The placeholder here
-  is uniform jitter + symmetric cut-short + independent drops — a clean IID model
-  the real detector does **not** have. Until it is calibrated, synthetic join
-  scores predict robustness *to this noise*, not real-image performance.
-- **The placeholder can only *break* wires, never add false ones**, so it cannot
-  produce shorts — which is why **precision sits at 1.00** across the whole sweep.
-  Precision is therefore currently *uninformative*; a calibrated model (or an
-  added "merge-confusion" error that snaps an endpoint to the wrong nearby pin)
-  is needed to exercise it.
+  is uniform jitter + symmetric cut-short + independent drops + uniform wrong-pin
+  snaps — a clean IID model the real detector does **not** have. Until it is
+  calibrated, synthetic join scores predict robustness *to this noise*, not
+  real-image performance.
+- **Over-merge is exercised, but uncalibrated.** The `wrong_pin` error mode snaps
+  an endpoint onto a nearby pin it does not belong to, so precision now moves
+  (without it the model could only break wires and precision sat at a meaningless
+  1.00). The *rate and locality* of that confusion are invented numbers, though —
+  same calibration caveat as above.
 - **Topology distribution.** Authored circuits skew textbook; real hand-drawn
   ones have a long tail. Ground the catalog in real netlists (below) to fix this.
+  Related: synthetic maps contain **no junction/terminal symbols**, so the
+  junction-aware join modes are never exercised here.
 - **It sidesteps detection — the actual bottleneck.** The loop starts *after*
   detection (netlist -> coordinates), so it says nothing about why real circuits
   arrive fragmented ([#21]). It measures join + sim, not detection.
+- **A single cross-net short is invisible to DC sim.** One extra wire is not a
+  return path, so it doesn't change operating-point currents — `sim_ok` won't
+  catch it. That is *why* join precision is scored separately; the `dense_pair`
+  circuit (two independent loops side by side) exists to bait exactly this.
 
 The SPICE half stands on its own. The join half is a scaffold that becomes
 trustworthy only once the error model and the circuit distribution are anchored
@@ -77,9 +86,9 @@ to reality.
 
 | file | role |
 |---|---|
-| `circuits.py` | `CircuitSpec` + a small catalog of authored circuits with clean layouts. |
-| `synthesize.py` | `CircuitSpec` -> components + wires (routed to real pin positions); plus the **placeholder error model** (`ERROR_LEVELS`, `inject_errors`). |
-| `evaluate.py` | runs the real join + SPICE, scores join (component-pair F1) and sim (operating-point match, injected-source count). |
+| `circuits.py` | `CircuitSpec` + a catalog of authored circuits with clean layouts: parallel/series/ring resistor loops, R–L, a forward-biased **diode**, a **gnd**-referenced divider (node-0 remap), an opposing **two-source** loop, and `dense_pair` (two independent loops — the over-merge bait). |
+| `synthesize.py` | `CircuitSpec` -> components + wires (routed to real pin positions); plus the **placeholder error model** (`ERROR_LEVELS`, `inject_errors`): jitter, cut-short, drop, and the wrong-pin snap (over-merge). |
+| `evaluate.py` | runs the real join + SPICE, scores join (component-pair F1) and sim (operating-point match across **every** authored source, injected-source count). Also flags spec-authoring bugs (oracle vs `expect_mA` mismatch) and takes a `strategy=` to compare joins. |
 | `__main__.py` | CLI report. |
 
 Run it:
@@ -87,15 +96,23 @@ Run it:
 ```bash
 # full suite (needs ngspice for the SPICE columns; set NGSPICE_PATH)
 uv run python -m wire_detection.synthgt
-uv run python -m wire_detection.synthgt -c ring6_r -s 16      # one circuit, more seeds
+uv run python -m wire_detection.synthgt -c ring6_r -s 16        # one circuit, more seeds
+uv run python -m wire_detection.synthgt --strategy production   # compare a join strategy
 uv run python -m wire_detection.synthgt --json > out.json
 ```
+
+The `--strategy` sweep is already informative: on the 6-component ring at heavy
+error, the old `production` join scores F1 0.84 vs `graph_rescue`'s 0.90 — the
+flagship's robustness advantage, now measured against ground truth instead of
+structural proxies.
 
 Metrics per error level (averaged over seeds):
 - **F1 / recall / precision** — component-connectivity vs ground truth. Recall
   down = fragmentation / under-merge; precision down = shorts / over-merge.
-- **sim_ok** — % of seeds that simulate to the authored current with **no**
-  injected test source (the fragmentation tell).
+- **sim_ok** — % of seeds where **every** authored source's branch current
+  matches the clean oracle (within 2%) with **no** injected test source.
+  Checking all sources matters: a multi-source circuit can fragment *between*
+  its sources and each island still "works" locally.
 - **inj** — mean fake sources the backend injected to energize disconnected
   islands; a direct fragmentation-magnitude readout.
 
@@ -108,19 +125,22 @@ there flags a bad layout or a join regression, not a noise effect.
 1. **Calibrate the error model to the real detector.** Run the detector on the
    manually-verified images, diff its wire/endpoint output against the verified
    truth, and fit the actual statistics: cut-short distribution, endpoint-
-   displacement spread, break rate, and junction/crossing confusion. Replace
-   `ERROR_LEVELS` / `inject_errors` with samplers from those fits. Add a
-   short-to-wrong-pin error so **precision** becomes meaningful.
+   displacement spread, break rate, and junction/crossing + wrong-pin confusion
+   rates. Replace `ERROR_LEVELS` / `inject_errors` with samplers from those
+   fits. (The error *modes* — including the over-merge wrong-pin snap — exist;
+   their *rates* are invented.)
 2. **Ground the topology in reality.** Generate the authored netlists by
    reverse-engineering the manually-verified circuits (the UI's human-verified
    connectivity is exactly this ground truth) instead of hand-writing textbook
-   loops — realistic component mix and layout distribution.
+   loops — realistic component mix and layout distribution. Synthesize
+   junction/terminal symbols too, so the junction-aware join modes get exercised.
 3. **Keep a real-image holdout.** Synthetic for scale / tuning / regression;
    the manually-verified set as the source of truth. Report both; if they
    diverge, the error model is wrong — fix it, don't trust the synthetic.
-4. **Widen the catalog** once precision is exercised: multi-source circuits,
-   grounded nets, diodes/transistors, and denser layouts that force the join to
-   choose between nearby pins.
+4. ~~Widen the catalog~~ **partially done:** diode, gnd-referenced, multi-source,
+   and adjacent-loops (`dense_pair`) circuits landed. Still missing:
+   transistors, junction symbols, and genuinely dense layouts where the join
+   must choose between nearby pins of *connected* nets.
 
 The manual-UI work is the feeder for steps 2–3, not a competitor to this: it is
 how human-verified ground truth gets minted cheaply (the completeness indicator

@@ -3,8 +3,9 @@
 `synthesize_clean` produces the components + wires that the *clean* join recovers
 exactly. `inject_errors` then perturbs the wires the way a real detector might -
 BUT the error model here is a first-pass PLACEHOLDER (uniform jitter, symmetric
-cut-short, independent drops). Real detection error is structured and correlated
-with the image (breaks at faint strokes/crossings, anchor over-deletion, etc.).
+cut-short, independent drops, uniform wrong-pin snaps). Real detection error is
+structured and correlated with the image (breaks at faint strokes/crossings,
+anchor over-deletion, etc.).
 Until this is calibrated against the real detector's output (see
 `docs/synthetic-eval-plan.md`), synthetic *join* scores are a robustness signal,
 not a prediction of real-image performance.
@@ -85,16 +86,26 @@ def intended_pairs(spec: CircuitSpec) -> set[tuple[int, int]]:
 # ERROR MODEL  (PLACEHOLDER - see module docstring / docs)
 # ====================================================================
 
-# severity -> (jitter_sigma_px, cut_short_px, drop_prob). Level 0 is the clean
-# control. Swap this table / the functions below when calibrating to the real
-# detector's measured error statistics.
-ERROR_LEVELS: dict[int, tuple[float, float, float]] = {
-    0: (0.0, 0.0, 0.00),   # clean control
-    1: (3.0, 4.0, 0.00),   # mild localization noise + slight cut-short
-    2: (6.0, 9.0, 0.05),   # moderate
-    3: (10.0, 15.0, 0.12),  # heavy
-    4: (14.0, 22.0, 0.20),  # severe
+# severity -> (jitter_sigma_px, cut_short_px, drop_prob, wrong_pin_prob).
+# Level 0 is the clean control. Swap this table / the functions below when
+# calibrating to the real detector's measured error statistics.
+#
+# wrong_pin_prob is the OVER-MERGE mode: an endpoint snaps onto a nearby pin it
+# does not belong to (detector traced a stroke into the wrong lead). Without it
+# the model can only break wires, never short them, and join precision would sit
+# at a meaningless 1.00 across the whole sweep.
+ERROR_LEVELS: dict[int, tuple[float, float, float, float]] = {
+    0: (0.0, 0.0, 0.00, 0.00),   # clean control
+    1: (3.0, 4.0, 0.00, 0.00),   # mild localization noise + slight cut-short
+    2: (6.0, 9.0, 0.05, 0.02),   # moderate
+    3: (10.0, 15.0, 0.12, 0.05),  # heavy
+    4: (14.0, 22.0, 0.20, 0.10),  # severe
 }
+
+# wrong-pin snap: candidate pins live in this distance band from the endpoint
+# (closer = its own pin, farther = not a plausible confusion).
+_SNAP_MIN_PX = 25.0
+_SNAP_MAX_PX = 120.0
 
 
 def _cut_short(wire: Wire, px: float) -> Wire:
@@ -111,20 +122,44 @@ def _cut_short(wire: Wire, px: float) -> Wire:
             (int(x2 - ux * k), int(y2 - uy * k)))
 
 
-def inject_errors(wires: list[Wire], severity: int, seed: int) -> list[Wire]:
-    """Apply the placeholder error model deterministically for (severity, seed)."""
-    sigma, cut, drop = ERROR_LEVELS.get(severity, (0.0, 0.0, 0.0))
-    if severity == 0:
+def inject_errors(
+    wires: list[Wire],
+    severity: int,
+    seed: int,
+    pin_pos: dict[tuple[int, int], Point] | None = None,
+    params: tuple[float, float, float, float] | None = None,
+) -> list[Wire]:
+    """Apply the placeholder error model deterministically for (severity, seed).
+
+    `pin_pos` enables the wrong-pin snap (over-merge) mode; without it that mode
+    is skipped. `params` overrides the ERROR_LEVELS row - used by tests to force
+    a single error mode in isolation.
+    """
+    sigma, cut, drop, wrong = (params if params is not None
+                               else ERROR_LEVELS.get(severity, (0.0, 0.0, 0.0, 0.0)))
+    if params is None and severity == 0:
         return list(wires)
     rng = random.Random((seed << 8) ^ (severity << 3) ^ 0x5EED)
+    pins: list[Point] = sorted(pin_pos.values()) if pin_pos else []
     out: list[Wire] = []
     for w in wires:
         if drop and rng.random() < drop:
             continue                       # detector missed this wire entirely
         w = _cut_short(w, cut)
+        (x1, y1), (x2, y2) = w
         if sigma:
-            (x1, y1), (x2, y2) = w
-            w = ((int(x1 + rng.gauss(0, sigma)), int(y1 + rng.gauss(0, sigma))),
-                 (int(x2 + rng.gauss(0, sigma)), int(y2 + rng.gauss(0, sigma))))
-        out.append(w)
+            x1 += rng.gauss(0, sigma); y1 += rng.gauss(0, sigma)
+            x2 += rng.gauss(0, sigma); y2 += rng.gauss(0, sigma)
+        ends = [(int(x1), int(y1)), (int(x2), int(y2))]
+        if wrong and pins:
+            for k in (0, 1):
+                if rng.random() >= wrong:
+                    continue
+                cands = [p for p in pins
+                         if _SNAP_MIN_PX < math.hypot(p[0] - ends[k][0],
+                                                      p[1] - ends[k][1]) <= _SNAP_MAX_PX]
+                if cands:
+                    # land EXACTLY on the wrong pin - the confident failure mode
+                    ends[k] = cands[rng.randrange(len(cands))]
+        out.append((ends[0], ends[1]))
     return out
