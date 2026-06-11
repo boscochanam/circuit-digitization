@@ -1,0 +1,130 @@
+"""Turn an authored `CircuitSpec` into a detector-style coordinate map.
+
+`synthesize_clean` produces the components + wires that the *clean* join recovers
+exactly. `inject_errors` then perturbs the wires the way a real detector might -
+BUT the error model here is a first-pass PLACEHOLDER (uniform jitter, symmetric
+cut-short, independent drops). Real detection error is structured and correlated
+with the image (breaks at faint strokes/crossings, anchor over-deletion, etc.).
+Until this is calibrated against the real detector's output (see
+`docs/synthetic-eval-plan.md`), synthetic *join* scores are a robustness signal,
+not a prediction of real-image performance.
+"""
+from __future__ import annotations
+
+import math
+import random
+from itertools import combinations
+
+from wire_detection.core.component_classes import COMPONENT_TYPES, PREFIX_MAP
+from wire_detection.core.join_strategies import make_pins
+from wire_detection.synthgt.circuits import CircuitSpec
+
+NAME_TO_CLS = {v: k for k, v in COMPONENT_TYPES.items()}
+
+Point = tuple[int, int]
+Wire = tuple[Point, Point]
+
+
+def build_components(spec: CircuitSpec):
+    """spec -> list of (cls_id, vertices, bbox) in the pipeline's component format."""
+    comps = []
+    for c in spec.comps:
+        cls = NAME_TO_CLS[c.type]
+        if c.orient == "H":
+            w, h = c.size, 30
+        else:
+            w, h = 30, c.size
+        bbox = (c.cx - w // 2, c.cy - h // 2, c.cx + w // 2, c.cy + h // 2)
+        comps.append((cls, [], bbox))
+    return comps
+
+
+def pin_positions(components) -> dict[tuple[int, int], Point]:
+    """Authoritative pin coords from the real deriver, keyed (comp_idx, pin_idx)."""
+    return {(p.component_idx, p.pin_idx): (p.x, p.y) for p in make_pins([], components)}
+
+
+def _route_net(members: list[tuple[int, int]], pin_pos) -> list[Wire]:
+    """Chain a net's pins into wire segments. Sorting by (x, y) yields clean
+    axis-aligned segments for collinear rails and direct links otherwise; each
+    endpoint lands exactly on a pin so the join binds it (dist 0)."""
+    pts = sorted({pin_pos[m] for m in members})
+    return [(pts[i], pts[i + 1]) for i in range(len(pts) - 1)]
+
+
+def synthesize_clean(spec: CircuitSpec):
+    """Return (components, wires, pin_pos). Wires reproduce the authored netlist."""
+    components = build_components(spec)
+    pin_pos = pin_positions(components)
+    wires: list[Wire] = []
+    for net in spec.nets:
+        wires.extend(_route_net(net, pin_pos))
+    return components, wires, pin_pos
+
+
+def value_overrides(spec: CircuitSpec) -> dict[str, str]:
+    """SPICE value map keyed `f"{prefix}{comp_idx+1}"` (matches SpiceGenerator)."""
+    out: dict[str, str] = {}
+    for i, c in enumerate(spec.comps):
+        prefix = PREFIX_MAP.get(c.type)
+        if prefix:
+            out[f"{prefix}{i + 1}"] = c.value
+    return out
+
+
+def intended_pairs(spec: CircuitSpec) -> set[tuple[int, int]]:
+    """Ground-truth connected component pairs (the join target)."""
+    pairs: set[tuple[int, int]] = set()
+    for net in spec.nets:
+        comps = sorted({ci for ci, _pin in net})
+        pairs.update(combinations(comps, 2))
+    return pairs
+
+
+# ====================================================================
+# ERROR MODEL  (PLACEHOLDER - see module docstring / docs)
+# ====================================================================
+
+# severity -> (jitter_sigma_px, cut_short_px, drop_prob). Level 0 is the clean
+# control. Swap this table / the functions below when calibrating to the real
+# detector's measured error statistics.
+ERROR_LEVELS: dict[int, tuple[float, float, float]] = {
+    0: (0.0, 0.0, 0.00),   # clean control
+    1: (3.0, 4.0, 0.00),   # mild localization noise + slight cut-short
+    2: (6.0, 9.0, 0.05),   # moderate
+    3: (10.0, 15.0, 0.12),  # heavy
+    4: (14.0, 22.0, 0.20),  # severe
+}
+
+
+def _cut_short(wire: Wire, px: float) -> Wire:
+    """Pull both endpoints inward along the wire - mimics the detector stopping a
+    stroke short of the component lead (the #21 anchor-deletion failure)."""
+    (x1, y1), (x2, y2) = wire
+    dx, dy = x2 - x1, y2 - y1
+    ln = math.hypot(dx, dy)
+    if ln < 1e-6 or px <= 0:
+        return wire
+    ux, uy = dx / ln, dy / ln
+    k = min(px, (ln - 2) / 2)  # never collapse the wire past a 2px core
+    return ((int(x1 + ux * k), int(y1 + uy * k)),
+            (int(x2 - ux * k), int(y2 - uy * k)))
+
+
+def inject_errors(wires: list[Wire], severity: int, seed: int) -> list[Wire]:
+    """Apply the placeholder error model deterministically for (severity, seed)."""
+    sigma, cut, drop = ERROR_LEVELS.get(severity, (0.0, 0.0, 0.0))
+    if severity == 0:
+        return list(wires)
+    rng = random.Random((seed << 8) ^ (severity << 3) ^ 0x5EED)
+    out: list[Wire] = []
+    for w in wires:
+        if drop and rng.random() < drop:
+            continue                       # detector missed this wire entirely
+        w = _cut_short(w, cut)
+        if sigma:
+            (x1, y1), (x2, y2) = w
+            w = ((int(x1 + rng.gauss(0, sigma)), int(y1 + rng.gauss(0, sigma))),
+                 (int(x2 + rng.gauss(0, sigma)), int(y2 + rng.gauss(0, sigma))))
+        out.append(w)
+    return out
