@@ -7,6 +7,13 @@ Two independent signals:
             over-merge/shorts; recall falling = fragmentation/under-merge.
   * SPICE - does the recovered circuit still simulate to the authored operating
             point, with NO injected test sources (the fragmentation tell).
+            EVERY voltage source's branch current must match the clean oracle -
+            checking only one source would let a circuit fragment between two
+            sources and still "pass".
+
+Note the deliberate asymmetry: a single cross-net short does NOT change DC
+currents (one extra wire is not a return path), so over-merge is mostly invisible
+to sim_ok - join precision is the metric that catches it. Fragmentation hits both.
 """
 from __future__ import annotations
 
@@ -23,6 +30,8 @@ from wire_detection.synthgt.synthesize import (
     synthesize_clean,
     value_overrides,
 )
+
+DEFAULT_STRATEGY = "graph_rescue"
 
 
 def _comp_pairs(netlist) -> set[tuple[int, int]]:
@@ -46,17 +55,22 @@ def _prf(gt: set, got: set) -> tuple[float, float, float]:
     return prec, rec, f1
 
 
-def _voltage_idx(spec: CircuitSpec) -> int | None:
-    for i, c in enumerate(spec.comps):
-        if c.type.startswith("voltage"):
-            return i
-    return None
+def _voltage_idxs(spec: CircuitSpec) -> list[int]:
+    return [i for i, c in enumerate(spec.comps) if c.type.startswith("voltage")]
 
 
-def _source_current(sim: dict, v_idx: int | None) -> float:
-    if v_idx is None or "currents" not in sim:
-        return 0.0
-    return abs(sim["currents"].get(f"v{v_idx + 1}#branch", 0.0))
+def _source_currents(sim: dict, v_idxs: list[int]) -> list[float]:
+    """|branch current| of every authored source, in spec order (0.0 if absent -
+    a source dropped from the SPICE deck reads as a hard mismatch, as it should)."""
+    cur = sim.get("currents", {}) if isinstance(sim, dict) else {}
+    return [abs(cur.get(f"v{i + 1}#branch", 0.0)) for i in v_idxs]
+
+
+def _sources_match(got: list[float], ref: list[float], rel_tol: float = 0.02) -> bool:
+    if not ref or not any(r > 0 for r in ref):
+        return False
+    return all((abs(g - r) <= rel_tol * r) if r > 0 else (g <= 1e-9)
+               for g, r in zip(got, ref))
 
 
 def _injected_sources(spice_text: str) -> int:
@@ -67,21 +81,22 @@ def evaluate_circuit(
     spec: CircuitSpec,
     seeds: int = 8,
     ngspice_path: str | None = None,
+    strategy: str = DEFAULT_STRATEGY,
 ) -> dict:
     """Sweep every error level; average join + SPICE metrics over `seeds`."""
-    components, clean_wires, _ = synthesize_clean(spec)
+    components, clean_wires, pin_pos = synthesize_clean(spec)
     gt_pairs = intended_pairs(spec)
     vov = value_overrides(spec)
-    v_idx = _voltage_idx(spec)
+    v_idxs = _voltage_idxs(spec)
     sim = SpiceSimulator(ngspice_path)
     spice_on = sim.is_available()
 
     # Reference operating point from the CLEAN recovered netlist (the oracle).
-    _, clean_net = run_strategy("graph_rescue", clean_wires, components)
-    gt_i = 0.0
+    _, clean_net = run_strategy(strategy, clean_wires, components)
+    ref_i: list[float] = []
     if spice_on:
-        gt_i = _source_current(sim.run_dc_analysis(
-            SpiceGenerator().generate(components, clean_net, vov)), v_idx)
+        ref_i = _source_currents(sim.run_dc_analysis(
+            SpiceGenerator().generate(components, clean_net, vov)), v_idxs)
 
     rows = []
     for sev in sorted(ERROR_LEVELS):
@@ -89,17 +104,16 @@ def evaluate_circuit(
         sim_ok = inj_total = sim_runs = 0
         n = 1 if sev == 0 else seeds
         for seed in range(n):
-            wires = inject_errors(clean_wires, sev, seed)
-            _, net = run_strategy("graph_rescue", wires, components)
+            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos)
+            _, net = run_strategy(strategy, wires, components)
             p, r, f = _prf(gt_pairs, _comp_pairs(net))
             accP += p; accR += r; accF += f
             if spice_on:
                 text = SpiceGenerator().generate(components, net, vov)
                 inj = _injected_sources(text)
                 inj_total += inj
-                test_i = _source_current(sim.run_dc_analysis(text), v_idx)
-                rel = abs(test_i - gt_i) / gt_i if gt_i else 0.0
-                if inj == 0 and test_i > 0 and rel < 0.02:
+                got_i = _source_currents(sim.run_dc_analysis(text), v_idxs)
+                if inj == 0 and _sources_match(got_i, ref_i):
                     sim_ok += 1
                 sim_runs += 1
         rows.append({
@@ -112,14 +126,23 @@ def evaluate_circuit(
             "mean_injected": (inj_total / sim_runs) if sim_runs else None,
         })
 
+    # Authoring guard: the simulated oracle should agree with the hand-computed
+    # expectation; a mismatch means the spec (values, polarity, nets) is wrong.
+    gt_mA = ref_i[0] * 1000.0 if (spice_on and ref_i) else None
+    expect_match = None
+    if gt_mA is not None and spec.expect_mA:
+        expect_match = abs(gt_mA - spec.expect_mA) <= 0.02 * spec.expect_mA
+
     return {
         "name": spec.name,
         "note": spec.note,
+        "strategy": strategy,
         "components": len(spec.comps),
         "nets": len(spec.nets),
         "gt_pairs": len(gt_pairs),
         "expect_mA": spec.expect_mA,
-        "gt_mA": gt_i * 1000.0 if spice_on else None,
+        "gt_mA": gt_mA,
+        "expect_match": expect_match,
         "spice_on": spice_on,
         "rows": rows,
     }
@@ -129,5 +152,6 @@ def run_suite(
     specs: list[CircuitSpec] | None = None,
     seeds: int = 8,
     ngspice_path: str | None = None,
+    strategy: str = DEFAULT_STRATEGY,
 ) -> list[dict]:
-    return [evaluate_circuit(s, seeds, ngspice_path) for s in (specs or CATALOG)]
+    return [evaluate_circuit(s, seeds, ngspice_path, strategy) for s in (specs or CATALOG)]

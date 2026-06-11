@@ -49,6 +49,9 @@ def _R(value, cx, cy, **kw):  # noqa: N802
 def _L(value, cx, cy, **kw):  # noqa: N802
     return Comp("inductor", value, cx, cy, **kw)
 
+def _D(value, cx, cy, **kw):  # noqa: N802
+    return Comp("diode", value, cx, cy, **kw)
+
 
 # ====================================================================
 # CATALOG
@@ -124,6 +127,67 @@ CATALOG: list[CircuitSpec] = [
               [(5, 0), (0, 1)]],  # R5.left - V.bot      (y=460)
         expect_mA=1.0,            # 5V / 5k
         note="6-component ring; the join-under-error stress case.",
+    ),
+
+    # Forward-biased diode loop: V - R - D. Exercises the D/DMOD SPICE path.
+    # I = (5 - V_D)/1k with V_D ~ 0.69V for DMOD (Is=1e-14, N=1) -> ~4.31 mA.
+    CircuitSpec(
+        name="diode_r",
+        comps=[_V("5", 120, 240, size=200),
+               _R("1k", 300, 140, orient="H"),
+               _D("D_default", 480, 240, size=200)],
+        nets=[[(0, 0), (1, 0)],   # V.top  - R.left
+              [(1, 1), (2, 0)],   # R.right - D.anode (top)
+              [(2, 1), (0, 1)]],  # D.cathode - V.bot
+        expect_mA=4.31,
+        note="Forward-biased diode loop; checks the D path + DMOD model.",
+    ),
+
+    # Divider with a ground symbol on the bottom net. Exercises the gnd
+    # single-pin component and SpiceGenerator's node-0 remap.
+    CircuitSpec(
+        name="gnd_ref",
+        comps=[_V("5", 120, 240, size=200),
+               _R("1k", 300, 140, orient="H"),
+               _R("1k", 480, 240, size=200),
+               Comp("gnd", "0", 300, 400, size=40)],
+        nets=[[(0, 0), (1, 0)],
+              [(1, 1), (2, 0)],
+              [(2, 1), (0, 1), (3, 0)]],   # bottom net carries the gnd symbol
+        expect_mA=2.5,            # 5V / 2k (gnd only renames the node)
+        note="Divider + gnd symbol; checks node-0 remap and 1-pin components.",
+    ),
+
+    # Two opposing sources in one loop: 5V and 3V (same vertical orientation,
+    # so the second source opposes around the loop) over 2k -> 1 mA. Exercises
+    # the multi-source sim check (ALL source currents must match the oracle).
+    CircuitSpec(
+        name="two_sources",
+        comps=[_V("5", 120, 240, size=200),
+               _R("1k", 300, 140, orient="H"),
+               _V("3", 480, 240, size=200),
+               _R("1k", 300, 340, orient="H")],
+        nets=[[(0, 0), (1, 0)],   # V1.top - R1.left
+              [(1, 1), (2, 0)],   # R1.right - V2.top
+              [(2, 1), (3, 1)],   # V2.bot - R2.right
+              [(3, 0), (0, 1)]],  # R2.left - V1.bot
+        expect_mA=1.0,            # (5 - 3)V / 2k
+        note="Opposing 5V/3V sources in one loop; multi-source oracle check.",
+    ),
+
+    # Two INDEPENDENT loops 100px apart - the over-merge bait. Ground truth has
+    # NO cross-loop pairs, so any join that bridges the gap loses precision.
+    # Note a single cross-short does NOT change DC currents (one wire is not a
+    # return path), so this failure is invisible to sim_ok - precision is the
+    # only metric that catches it. That asymmetry is the point of this circuit.
+    CircuitSpec(
+        name="dense_pair",
+        comps=[_V("5", 120, 220, size=120), _R("1k", 220, 220, size=120),
+               _V("5", 320, 220, size=120), _R("1k", 420, 220, size=120)],
+        nets=[[(0, 0), (1, 0)], [(0, 1), (1, 1)],     # loop A
+              [(2, 0), (3, 0)], [(2, 1), (3, 1)]],    # loop B
+        expect_mA=5.0,            # each loop: 5V / 1k
+        note="Two independent loops side by side; GT has no cross pairs.",
     ),
 ]
 
