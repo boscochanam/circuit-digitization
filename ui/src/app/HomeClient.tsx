@@ -134,6 +134,26 @@ export default function HomeClient({
     }
   }, [overrides, imgs.imageIdx, imgs.dataset, pipe.preset]);
 
+  // Connect two component pins directly (no wire needed) — for fragmented
+  // detections where parts share no wire. Stored as a `merge` override.
+  const handleConnectPins = useCallback(
+    async (a: { component: string; pin: string }, b: { component: string; pin: string }) => {
+      const newOverrides: ConnectionOverrides = {
+        ...overrides,
+        merge: [...(overrides.merge ?? []), [a, b]],
+      };
+      try {
+        const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides, pipe.preset);
+        setOverrides(newOverrides);
+        setTopology(updatedTopology);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to connect pins";
+        setOverrideError(msg);
+      }
+    },
+    [overrides, imgs.imageIdx, imgs.dataset, pipe.preset],
+  );
+
   const handleJoin = useCallback(async (sourceEndpoint: string, targetEndpoint: string) => {
     const newOverrides: ConnectionOverrides = {
       ...overrides,
@@ -186,12 +206,13 @@ export default function HomeClient({
   // undo of the last edit fully resets, matching the Reset button.
   const handleUpdateOverrides = useCallback(async (next: ConnectionOverrides) => {
     const empty =
-      Object.keys(next.reassign).length === 0 && next.join.length === 0 && next.remove.length === 0;
+      Object.keys(next.reassign).length === 0 && next.join.length === 0 &&
+      next.remove.length === 0 && (next.merge?.length ?? 0) === 0;
     try {
       const updatedTopology = empty
         ? await clearOverridesAction(imgs.imageIdx, imgs.dataset)
         : await saveOverridesAction(imgs.imageIdx, imgs.dataset, next, pipe.preset);
-      setOverrides(empty ? { reassign: {}, join: [], remove: [] } : next);
+      setOverrides(empty ? { reassign: {}, join: [], remove: [], merge: [] } : next);
       setTopology(updatedTopology);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to update overrides";
@@ -629,6 +650,7 @@ export default function HomeClient({
           onSetJoinSource={setJoinSource}
           overrides={overrides}
           onReassign={handleReassign}
+          onConnectPins={handleConnectPins}
           onJoin={handleJoin}
           onDisconnect={handleDisconnect}
           onResetOverrides={handleResetOverrides}

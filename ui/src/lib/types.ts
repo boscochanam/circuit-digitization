@@ -182,10 +182,14 @@ export interface PathResult {
 
 // ── Connection Editor Overrides ──
 
+export type PinRef = { component: string; pin: string };
+
 export interface ConnectionOverrides {
   reassign: Record<string, { component: string; pin: string }>;
   join: [string, string][];
   remove: string[];
+  // Direct pin <-> pin connections (no wire needed) — for fragmented detections.
+  merge?: [PinRef, PinRef][];
 }
 
 export interface OverrideResponse {
