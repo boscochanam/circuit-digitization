@@ -15,7 +15,11 @@ import sys
 
 from wire_detection.core.join_strategies import list_strategies
 from wire_detection.synthgt.circuits import CATALOG, CATALOG_BY_NAME
-from wire_detection.synthgt.evaluate import DEFAULT_STRATEGY, run_suite
+from wire_detection.synthgt.evaluate import (
+    DEFAULT_STRATEGY,
+    compare_strategies,
+    run_suite,
+)
 
 
 def _fmt_row(r: dict) -> str:
@@ -63,6 +67,23 @@ def _print_report(results: list[dict]) -> None:
         print("\n[ngspice not found - SPICE columns skipped. Set NGSPICE_PATH.]")
 
 
+def _print_leaderboard(rows: list[dict], n_circuits: int, seeds: int) -> None:
+    print(f"\nJoin-strategy leaderboard (join only, {n_circuits} circuits x {seeds} "
+          f"seeds, ground-truth F1)")
+    print("=" * 78)
+    print(f"{'strategy':22} {'clean':>6} {'L1':>6} {'L2':>6} {'L3':>6} {'L4':>6}   "
+          f"{'mean(err)':>9}")
+    print("-" * 78)
+    for r in rows:
+        by = r["by_severity"]
+        flag = "" if r["clean"] >= 0.999 else "  <-- fails clean"
+        cells = "  ".join(f"{v:.2f}" for v in by)
+        print(f"{r['strategy']:22} {cells}   {r['mean_err_f1']:>7.3f}{flag}")
+    print("-" * 78)
+    print("ranked by mean F1 over error levels L1-L4 (higher = more robust to the")
+    print("placeholder error). 'fails clean' = can't recover an easy case = broken.")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="wire_detection.synthgt")
     ap.add_argument("-c", "--circuit", action="append",
@@ -71,6 +92,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="error seeds per non-clean level (default 8)")
     ap.add_argument("--strategy", default=DEFAULT_STRATEGY,
                     help=f"join strategy to evaluate (default {DEFAULT_STRATEGY})")
+    ap.add_argument("--compare", action="store_true",
+                    help="rank EVERY join strategy on ground truth (join-only leaderboard)")
     ap.add_argument("--json", action="store_true", help="emit JSON instead of a table")
     args = ap.parse_args(argv)
 
@@ -85,6 +108,16 @@ def main(argv: list[str] | None = None) -> int:
             ap.error(f"unknown circuit(s): {', '.join(unknown)}. "
                      f"available: {', '.join(CATALOG_BY_NAME)}")
         specs = [CATALOG_BY_NAME[c] for c in args.circuit]
+
+    if args.compare:
+        all_strats = [s["name"] for s in list_strategies()]
+        rows = compare_strategies(all_strats, specs, seeds=args.seeds)
+        if args.json:
+            json.dump(rows, sys.stdout, indent=2)
+            print()
+        else:
+            _print_leaderboard(rows, len(specs), args.seeds)
+        return 0
 
     results = run_suite(specs, seeds=args.seeds, strategy=args.strategy)
     if args.json:
