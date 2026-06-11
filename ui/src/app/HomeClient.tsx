@@ -134,13 +134,16 @@ export default function HomeClient({
     }
   }, [overrides, imgs.imageIdx, imgs.dataset, pipe.preset]);
 
-  // Connect two component pins directly (no wire needed) — for fragmented
-  // detections where parts share no wire. Stored as a `merge` override.
+  // Connect component pins directly (no wire needed) — for fragmented detections
+  // where parts share no wire. All refs are merged onto one node (pairwise to the
+  // first), stored as `merge` overrides.
   const handleConnectPins = useCallback(
-    async (a: { component: string; pin: string }, b: { component: string; pin: string }) => {
+    async (refs: { component: string; pin: string }[]) => {
+      if (refs.length < 2) return;
+      const pairs = refs.slice(1).map((r) => [refs[0], r] as [typeof refs[0], typeof refs[0]]);
       const newOverrides: ConnectionOverrides = {
         ...overrides,
-        merge: [...(overrides.merge ?? []), [a, b]],
+        merge: [...(overrides.merge ?? []), ...pairs],
       };
       try {
         const updatedTopology = await saveOverridesAction(imgs.imageIdx, imgs.dataset, newOverrides, pipe.preset);
