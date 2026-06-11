@@ -15,6 +15,7 @@ from wire_detection.synthgt.evaluate import (
     _comp_pairs,
     _prf,
     _sources_match,
+    compare_strategies,
     evaluate_circuit,
 )
 from wire_detection.synthgt.synthesize import (
@@ -109,6 +110,19 @@ def test_sources_match_requires_every_source():
     assert not _sources_match([0.005, 0.0], ref)            # second source dead
     assert not _sources_match([0.005, 0.006], ref)          # second source off
     assert not _sources_match([0.0, 0.0], [0.0, 0.0])       # all-zero ref = no oracle
+
+
+def test_compare_strategies_ranks_and_flags_clean():
+    rows = compare_strategies(["graph_rescue", "production", "mutual_30"], seeds=2)
+    assert {r["strategy"] for r in rows} == {"graph_rescue", "production", "mutual_30"}
+    # sorted by robustness, best first
+    assert rows[0]["mean_err_f1"] >= rows[-1]["mean_err_f1"]
+    gr = next(r for r in rows if r["strategy"] == "graph_rescue")
+    assert gr["clean"] == pytest.approx(1.0)       # flagship recovers easy cases
+    assert len(gr["by_severity"]) == 5
+    # mutual under-merges and cannot even recover the clean control
+    mut = next(r for r in rows if r["strategy"] == "mutual_30")
+    assert mut["clean"] < 1.0
 
 
 def test_authoring_guard_flags_expectation_mismatch():

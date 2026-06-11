@@ -155,3 +155,49 @@ def run_suite(
     strategy: str = DEFAULT_STRATEGY,
 ) -> list[dict]:
     return [evaluate_circuit(s, seeds, ngspice_path, strategy) for s in (specs or CATALOG)]
+
+
+def _join_f1_sweep(spec: CircuitSpec, strategy: str, seeds: int) -> list[float]:
+    """Mean component-connectivity F1 per severity for one (circuit, strategy).
+    Join only - no SPICE - so comparing every strategy stays fast."""
+    components, clean_wires, pin_pos = synthesize_clean(spec)
+    gt_pairs = intended_pairs(spec)
+    out = []
+    for sev in sorted(ERROR_LEVELS):
+        n = 1 if sev == 0 else seeds
+        acc = 0.0
+        for seed in range(n):
+            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos)
+            _, net = run_strategy(strategy, wires, components)
+            acc += _prf(gt_pairs, _comp_pairs(net))[2]
+        out.append(acc / n)
+    return out
+
+
+def compare_strategies(
+    strategies: list[str],
+    specs: list[CircuitSpec] | None = None,
+    seeds: int = 5,
+) -> list[dict]:
+    """Leaderboard: for every join strategy, mean F1 per severity across all
+    circuits (join only). Sorted by robustness = mean F1 over the error levels.
+
+    A strategy whose clean (L0) score is < 1.0 cannot recover an easy case and
+    is flagged - that is a correctness failure, not a robustness ranking.
+    """
+    specs = specs or CATALOG
+    sevs = sorted(ERROR_LEVELS)
+    rows = []
+    for strat in strategies:
+        per_circuit = [_join_f1_sweep(s, strat, seeds) for s in specs]
+        by_sev = [sum(c[i] for c in per_circuit) / len(per_circuit)
+                  for i in range(len(sevs))]
+        err = by_sev[1:]  # exclude the clean control
+        rows.append({
+            "strategy": strat,
+            "by_severity": by_sev,
+            "clean": by_sev[0],
+            "mean_err_f1": sum(err) / len(err) if err else 0.0,
+        })
+    rows.sort(key=lambda r: r["mean_err_f1"], reverse=True)
+    return rows
