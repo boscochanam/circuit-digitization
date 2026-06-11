@@ -4,7 +4,6 @@ Phase 3 of TDD plan: SPICE integration.
 """
 from __future__ import annotations
 
-import shutil
 import textwrap
 
 import pytest
@@ -17,6 +16,18 @@ from wire_detection.core.netlist import (
 )
 from wire_detection.core.spice import COMPONENT_NAMES, SpiceGenerator
 from wire_detection.core.simulator import SpiceSimulator
+
+# Class ids derived from the live table - hardcoded ids went stale once already
+# when the component classes were renumbered (33 used to be resistor; it is
+# probe now) and silently turned these tests into no-ops.
+_ID = {v: k for k, v in COMPONENT_NAMES.items()}
+_RES = _ID["resistor"]
+_CAP = _ID["capacitor-unpolarized"]
+_IND = _ID["inductor"]
+_DIODE = _ID["diode"]
+_VDC = _ID["voltage-DC"]
+_BJT = _ID["transistor-BJT"]
+_GND = _ID["gnd"]
 
 
 # ═══════════════════════════════════════════════
@@ -53,7 +64,7 @@ class TestSpiceGenerator:
             _make_pin(0, "resistor", 0, 10, 10),
             _make_pin(0, "resistor", 1, 10, 30),
         ]
-        components = [_make_component_obb(33, 5, 5)]
+        components = [_make_component_obb(_RES, 5, 5)]
         netlist = build_netlist([], components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
         result = gen.generate(components, netlist)
@@ -65,7 +76,7 @@ class TestSpiceGenerator:
             _make_pin(0, "capacitor-unpolarized", 0, 10, 10),
             _make_pin(0, "capacitor-unpolarized", 1, 10, 30),
         ]
-        components = [_make_component_obb(4, 5, 5)]
+        components = [_make_component_obb(_CAP, 5, 5)]
         netlist = build_netlist([], components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
         result = gen.generate(components, netlist)
@@ -77,7 +88,7 @@ class TestSpiceGenerator:
             _make_pin(0, "inductor", 0, 10, 10),
             _make_pin(0, "inductor", 1, 10, 30),
         ]
-        components = [_make_component_obb(14, 5, 5)]
+        components = [_make_component_obb(_IND, 5, 5)]
         netlist = build_netlist([], components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
         result = gen.generate(components, netlist)
@@ -89,7 +100,7 @@ class TestSpiceGenerator:
             _make_pin(0, "diode", 0, 10, 10),
             _make_pin(0, "diode", 1, 10, 30),
         ]
-        components = [_make_component_obb(8, 5, 5)]
+        components = [_make_component_obb(_DIODE, 5, 5)]
         netlist = build_netlist([], components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
         result = gen.generate(components, netlist)
@@ -99,10 +110,10 @@ class TestSpiceGenerator:
 
     def test_voltage_source(self):
         pins = [
-            _make_pin(0, "voltage_source", 0, 10, 10),
-            _make_pin(0, "voltage_source", 1, 10, 30),
+            _make_pin(0, "voltage-DC", 0, 10, 10),
+            _make_pin(0, "voltage-DC", 1, 10, 30),
         ]
-        components = [_make_component_obb(42, 5, 5)]
+        components = [_make_component_obb(_VDC, 5, 5)]
         netlist = build_netlist([], components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
         result = gen.generate(components, netlist)
@@ -121,7 +132,7 @@ class TestSpiceGenerator:
             _make_pin(1, "resistor", 0, 30, 10),
             _make_pin(1, "resistor", 1, 30, 30),
         ]
-        components = [_make_component_obb(33, 5, 5), _make_component_obb(33, 25, 5)]
+        components = [_make_component_obb(_RES, 5, 5), _make_component_obb(_RES, 25, 5)]
         wires = [((10, 30), (30, 10))]
         netlist = build_netlist(wires, components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
@@ -145,16 +156,19 @@ class TestSpiceGenerator:
             _make_pin(2, "capacitor-unpolarized", 1, 50, 30),
         ]
         components = [
-            _make_component_obb(33, 5, 5),
-            _make_component_obb(33, 25, 5),
-            _make_component_obb(4, 45, 5),
+            _make_component_obb(_RES, 5, 5),
+            _make_component_obb(_RES, 25, 5),
+            _make_component_obb(_CAP, 45, 5),
         ]
         netlist = build_netlist([], components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
         result = gen.generate(components, netlist)
+        # device names are INDEX-based (prefix + comp_idx + 1), not per-type
+        # counters - the UI's value-overrides key on this, so the cap at
+        # component index 2 must be C3, not C1.
         assert "R1" in result
         assert "R2" in result
-        assert "C1" in result
+        assert "C3" in result
 
     def test_empty_netlist(self):
         gen = SpiceGenerator()
@@ -169,7 +183,7 @@ class TestSpiceGenerator:
             _make_pin(1, "resistor", 0, 30, 10),
             _make_pin(1, "resistor", 1, 30, 30),
         ]
-        components = [_make_component_obb(33, 5, 5), _make_component_obb(33, 25, 5)]
+        components = [_make_component_obb(_RES, 5, 5), _make_component_obb(_RES, 25, 5)]
         wires = [((10, 30), (30, 10))]
         netlist = build_netlist(wires, components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
@@ -184,7 +198,7 @@ class TestSpiceGenerator:
             _make_pin(1, "resistor", 0, 10, 10),
             _make_pin(1, "resistor", 1, 10, 30),
         ]
-        components = [_make_component_obb(33, 5, 5), _make_component_obb(33, 5, 5)]
+        components = [_make_component_obb(_RES, 5, 5), _make_component_obb(_RES, 5, 5)]
         wires = [((10, 10), (10, 10))]
         netlist = build_netlist(wires, components, pins, max_pin_dist=30)
         gen = SpiceGenerator()
@@ -197,7 +211,7 @@ class TestSpiceGenerator:
 # TestSpiceSimulator
 # ═══════════════════════════════════════════════
 
-ngspice_available = shutil.which("ngspice") is not None
+ngspice_available = SpiceSimulator.is_available()
 
 
 class TestSpiceSimulator:
@@ -275,7 +289,7 @@ class TestNetlistBuilder:
             _make_pin(1, "resistor", 0, 30, 10),
             _make_pin(1, "resistor", 1, 30, 30),
         ]
-        components = [_make_component_obb(33, 5, 15), _make_component_obb(33, 25, 15)]
+        components = [_make_component_obb(_RES, 5, 15), _make_component_obb(_RES, 25, 15)]
         wires = [((10, 30), (30, 10))]
         netlist = build_netlist(wires, components, pins, max_pin_dist=30)
         node_r1p1 = netlist.pin_to_node.get((0, "pin1"))
@@ -293,7 +307,7 @@ class TestNetlistBuilder:
             _make_pin(2, "resistor", 0, 50, 50),
             _make_pin(2, "resistor", 1, 50, 200),
         ]
-        components = [_make_component_obb(33, 40, 45) for _ in range(3)]
+        components = [_make_component_obb(_RES, 40, 45) for _ in range(3)]
         wires = [((50, 50), (50, 50))]
         netlist = build_netlist(wires, components, pins, max_pin_dist=30)
         node_ids = {netlist.pin_to_node[(i, "pin0")] for i in range(3)}
@@ -306,18 +320,18 @@ class TestNetlistBuilder:
         assert gen._get_default_value("unknown_type") == "1"
 
     def test_pin_assignment_resistor(self):
-        comp = _make_component_obb(33, 100, 100, w=60, h=20)
+        comp = _make_component_obb(_RES, 100, 100, w=60, h=20)
         pins = derive_pins_from_obb(0, comp, "resistor")
         assert len(pins) == 2
 
     def test_pin_assignment_transistor(self):
-        comp = _make_component_obb(38, 100, 100, w=40, h=40)
-        pins = derive_pins_from_obb(0, comp, "transistor")
+        comp = _make_component_obb(_BJT, 100, 100, w=40, h=40)
+        pins = derive_pins_from_obb(0, comp, "transistor-BJT")
         assert len(pins) == 3
 
     def test_gnd_component_detection(self):
         pins = [_make_pin(0, "gnd", 0, 50, 50)]
-        components = [_make_component_obb(13, 45, 45)]
+        components = [_make_component_obb(_GND, 45, 45)]
         netlist = build_netlist([], components, pins, max_pin_dist=30)
         node_id = netlist.pin_to_node[(0, "pin0")]
         assert isinstance(node_id, int)
