@@ -21,7 +21,7 @@ _ENDPOINT_RE = re.compile(r"^wire_(\d+)_ep(1|2)$")
 
 
 def _default_overrides() -> dict:
-    return {"reassign": {}, "join": [], "remove": []}
+    return {"reassign": {}, "join": [], "remove": [], "merge": []}
 
 
 def _overrides_path(dataset: str, img_idx: int) -> str:
@@ -71,6 +71,13 @@ def _validate_structure(overrides: dict) -> None:
     for i, item in enumerate(remove):
         if not isinstance(item, str):
             raise ValueError(f"'remove[{i}]' must be a string, got {type(item).__name__}")
+
+    merge = overrides.get("merge", [])
+    if not isinstance(merge, list):
+        raise ValueError("'merge' must be a list of 2-element [pin, pin] lists")
+    for i, pair in enumerate(merge):
+        if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+            raise ValueError(f"'merge[{i}]' must be a 2-element list/tuple")
 
 
 def save_overrides(dataset: str, img_idx: int, overrides: dict) -> None:
@@ -206,7 +213,8 @@ def apply_overrides_to_netlist(netlist, components_raw, overrides):
 
     reassign = overrides.get("reassign", {}) or {}
     join = overrides.get("join", []) or []
-    if not reassign and not join:
+    merge = overrides.get("merge", []) or []
+    if not reassign and not join and not merge:
         return netlist
 
     # wire index -> its node id (from the current join result)
@@ -266,6 +274,21 @@ def apply_overrides_to_netlist(netlist, components_raw, overrides):
         if wa is None or wb is None:
             continue
         na, nb = wire_to_node.get(wa), wire_to_node.get(wb)
+        if na is not None and nb is not None:
+            union(na, nb)
+
+    # merge: connect two component pins directly (no wire needed) — the manual fix
+    # for fragmented detections where parts share no wire at all.
+    def _pin_node(ref) -> int | None:
+        ci = name_to_idx.get((ref or {}).get("component", ""))
+        if ci is None:
+            return None
+        return pin_to_node.get((ci, (ref or {}).get("pin", "")))
+
+    for pair in merge:
+        if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+            continue
+        na, nb = _pin_node(pair[0]), _pin_node(pair[1])
         if na is not None and nb is not None:
             union(na, nb)
 

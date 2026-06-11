@@ -140,6 +140,12 @@ export default function TopologyOverlay({
     return m[2] === "1" ? w.ep1 : w.ep2;
   }, [topology]);
 
+  // Resolve a pin ref ({component, pin}) to its [x, y] (for drawing merge links).
+  const pinCoord = useCallback((ref: { component: string; pin: string }): [number, number] | null => {
+    const p = topology?.pins.find((pp) => pp.component_name === ref.component && pp.pin_name === ref.pin);
+    return p ? [p.x, p.y] : null;
+  }, [topology]);
+
   // Node ids that include at least one component pin. A wire NOT on one of these
   // is "floating" — not connected to any component (the thing the editor fixes).
   const connectedNodeIds = useMemo(
@@ -657,6 +663,25 @@ export default function TopologyOverlay({
               </g>
             );
           })}
+
+        {/* Manual pin<->pin merges — a dashed line between the two connected pins,
+            so a wireless connection still reads as an actual link on the diagram. */}
+        {(overrides.merge ?? []).map((pair, i) => {
+          const a = pinCoord(pair[0]);
+          const b = pinCoord(pair[1]);
+          if (!a || !b) return null;
+          const mx = ((a[0] + b[0]) / 2) * scaleX;
+          const my = ((a[1] + b[1]) / 2) * scaleY;
+          return (
+            <g key={`merge-link-${i}`} style={{ pointerEvents: "none" }}>
+              <line x1={a[0] * scaleX} y1={a[1] * scaleY} x2={b[0] * scaleX} y2={b[1] * scaleY}
+                stroke="#0066CC" strokeWidth={2.5} strokeDasharray="2 3" opacity={0.95} />
+              <circle cx={mx} cy={my} r={7} fill="#0066CC" opacity={0.95} />
+              <text x={mx} y={my + 3} textAnchor="middle" fontSize={10} fontWeight={700}
+                fill="#fff" style={{ pointerEvents: "none" }}>⊕</text>
+            </g>
+          );
+        })}
 
         {/* Selected endpoint marker — bright cyan halo so it's unmistakable */}
         {showWires && selectedEpCoords && (
