@@ -97,14 +97,45 @@ Run it:
 # full suite (needs ngspice for the SPICE columns; set NGSPICE_PATH)
 uv run python -m wire_detection.synthgt
 uv run python -m wire_detection.synthgt -c ring6_r -s 16        # one circuit, more seeds
-uv run python -m wire_detection.synthgt --strategy production   # compare a join strategy
+uv run python -m wire_detection.synthgt --strategy production   # score one join strategy
+uv run python -m wire_detection.synthgt --compare              # rank EVERY join strategy
 uv run python -m wire_detection.synthgt --json > out.json
 ```
 
-The `--strategy` sweep is already informative: on the 6-component ring at heavy
-error, the old `production` join scores F1 0.84 vs `graph_rescue`'s 0.90 — the
-flagship's robustness advantage, now measured against ground truth instead of
-structural proxies.
+## Using it to test implementations
+
+**Test the current join strategies, all at once** — `--compare` runs every
+strategy in the registry against the whole catalog and prints a ground-truth
+leaderboard (join-only, so it's fast):
+
+```
+strategy                clean     L1     L2     L3     L4   mean(err)
+graph_full             1.00  1.00  0.98  0.96  0.89     0.958
+graph_rescue           1.00  1.00  0.98  0.96  0.89     0.958
+...
+production             1.00  1.00  0.98  0.89  0.50     0.843
+mutual_30              0.92  0.94  0.91  0.80  0.44     0.773  <-- fails clean
+all_18                 1.00  1.00  0.91  0.47  0.17     0.637
+```
+
+This already earns its keep: the flagship graph joins top the board, the legacy
+`nearest`/`production` family collapses at heavy error, and `mutual_30` is
+flagged because it cannot recover even the **clean** control (it under-merges) —
+a correctness bug surfaced by ground truth, not a structural proxy.
+
+**Test a future implementation** is the same loop with zero new wiring:
+1. Add the new strategy to the registry (`wire_detection/core/join_strategies.py`).
+   It appears in `--compare` automatically (the CLI reads `list_strategies()`).
+2. `uv run python -m wire_detection.synthgt --compare` — see where it ranks; if
+   its `clean` column is < 1.0 it is broken on easy cases, full stop.
+3. `--strategy <name>` for the per-circuit / per-severity breakdown + SPICE.
+
+**Test a change to the join/SPICE internals** (not a new strategy):
+1. `uv run pytest wire_detection/tests/test_synthgt.py` — the invariants
+   (clean F1 = 1.0, oracle == authored expectation, recall non-increasing) fail
+   if the change regressed correctness.
+2. `--json > before.json` on `main`, apply the change, `--json > after.json`,
+   diff — any moved number is a behaviour change to explain.
 
 Metrics per error level (averaged over seeds):
 - **F1 / recall / precision** — component-connectivity vs ground truth. Recall
