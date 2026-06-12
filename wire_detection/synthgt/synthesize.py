@@ -138,7 +138,8 @@ def intended_pairs(spec: CircuitSpec) -> set[tuple[int, int]]:
 # ERROR MODEL  (PLACEHOLDER - see module docstring / docs)
 # ====================================================================
 
-# severity -> (jitter_sigma_px, cut_short_px, drop_prob, wrong_pin_prob).
+# severity -> (jitter_sigma_px, cut_short_px, drop_prob, wrong_pin_prob,
+#              displace_prob, displace_dist_px).
 # Level 0 is the clean control. Swap this table / the functions below when
 # calibrating to the real detector's measured error statistics.
 #
@@ -146,12 +147,17 @@ def intended_pairs(spec: CircuitSpec) -> set[tuple[int, int]]:
 # does not belong to (detector traced a stroke into the wrong lead). Without it
 # the model can only break wires, never short them, and join precision would sit
 # at a meaningless 1.00 across the whole sweep.
-ERROR_LEVELS: dict[int, tuple[float, float, float, float]] = {
-    0: (0.0, 0.0, 0.00, 0.00),   # clean control
-    1: (3.0, 4.0, 0.00, 0.00),   # mild localization noise + slight cut-short
-    2: (6.0, 9.0, 0.05, 0.02),   # moderate
-    3: (10.0, 15.0, 0.12, 0.05),  # heavy
-    4: (14.0, 22.0, 0.20, 0.10),  # severe
+#
+# displace_prob + displace_dist_px model ANCHOR DELETION (#21): the detector
+# fails to trace a wire all the way to the component lead, leaving the endpoint
+# 30-80px away from the pin. One endpoint per wire is displaced in a random
+# direction — the wire still exists but its end doesn't reach the pin.
+ERROR_LEVELS: dict[int, tuple[float, float, float, float, float, float]] = {
+    0: (0.0, 0.0, 0.00, 0.00, 0.00, 0.0),    # clean control
+    1: (3.0, 4.0, 0.00, 0.00, 0.10, 30.0),    # mild: slight cut-short + anchor miss
+    2: (6.0, 9.0, 0.05, 0.02, 0.20, 45.0),    # moderate
+    3: (10.0, 15.0, 0.12, 0.05, 0.30, 60.0),  # heavy
+    4: (14.0, 22.0, 0.20, 0.10, 0.40, 80.0),  # severe
 }
 
 # wrong-pin snap: candidate pins live in this distance band from the endpoint
@@ -161,8 +167,7 @@ _SNAP_MAX_PX = 120.0
 
 
 def _cut_short(wire: Wire, px: float) -> Wire:
-    """Pull both endpoints inward along the wire - mimics the detector stopping a
-    stroke short of the component lead (the #21 anchor-deletion failure)."""
+    """Pull BOTH endpoints inward along the wire — symmetric shortening."""
     (x1, y1), (x2, y2) = wire
     dx, dy = x2 - x1, y2 - y1
     ln = math.hypot(dx, dy)
@@ -179,16 +184,17 @@ def inject_errors(
     severity: int,
     seed: int,
     pin_pos: dict[tuple[int, int], Point] | None = None,
-    params: tuple[float, float, float, float] | None = None,
+    params: tuple[float, float, float, float, float, float] | None = None,
 ) -> list[Wire]:
-    """Apply the placeholder error model deterministically for (severity, seed).
+    """Apply the error model deterministically for (severity, seed).
 
     `pin_pos` enables the wrong-pin snap (over-merge) mode; without it that mode
     is skipped. `params` overrides the ERROR_LEVELS row - used by tests to force
     a single error mode in isolation.
     """
-    sigma, cut, drop, wrong = (params if params is not None
-                               else ERROR_LEVELS.get(severity, (0.0, 0.0, 0.0, 0.0)))
+    sigma, cut, drop, wrong, displace_p, displace_d = (
+        params if params is not None
+        else ERROR_LEVELS.get(severity, (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)))
     if params is None and severity == 0:
         return list(wires)
     rng = random.Random((seed << 8) ^ (severity << 3) ^ 0x5EED)
@@ -198,6 +204,9 @@ def inject_errors(
         if drop and rng.random() < drop:
             continue                       # detector missed this wire entirely
         w = _cut_short(w, cut)
+        # Anchor deletion: displace one endpoint far from its pin
+        if displace_p and rng.random() < displace_p:
+            w = _displace_endpoint(w, displace_d, rng)
         (x1, y1), (x2, y2) = w
         if sigma:
             x1 += rng.gauss(0, sigma); y1 += rng.gauss(0, sigma)
@@ -215,3 +224,21 @@ def inject_errors(
                     ends[k] = cands[rng.randrange(len(cands))]
         out.append((ends[0], ends[1]))
     return out
+
+
+def _displace_endpoint(wire: Wire, dist: float, rng: random.Random) -> Wire:
+    """Displace ONE endpoint by *dist* pixels in a random direction — models the
+    detector failing to trace a wire all the way to the component lead (anchor
+    deletion, #21). The wire still exists but its end lands in no-man's land,
+    far from any pin."""
+    (x1, y1), (x2, y2) = wire
+    # Pick which endpoint to displace (the one closer to a pin is the "anchor")
+    k = rng.randint(0, 1)
+    ox, oy = (x1, y1) if k == 0 else (x2, y2)
+    # Random direction, clamped to dist
+    angle = rng.uniform(0, 2 * math.pi)
+    nx = int(ox + dist * math.cos(angle))
+    ny = int(oy + dist * math.sin(angle))
+    if k == 0:
+        return ((nx, ny), (x2, y2))
+    return ((x1, y1), (nx, ny))
