@@ -7,6 +7,7 @@ on an easy case -- either way the synthetic scores can't be trusted.
 """
 from __future__ import annotations
 
+import math
 import pytest
 
 from wire_detection.core.join_strategies import run_strategy
@@ -77,7 +78,7 @@ def test_wrong_pin_snap_lands_on_other_pins():
     spec = CATALOG_BY_NAME["dense_pair"]
     _, wires, pin_pos = synthesize_clean(spec)
     snapped = inject_errors(wires, severity=4, seed=3, pin_pos=pin_pos,
-                            params=(0.0, 0.0, 0.0, 1.0))   # snap only, forced
+                            params=(0.0, 0.0, 0.0, 1.0, 0.0, 0.0))  # snap only, forced
     assert len(snapped) == len(wires)                       # no drops
     pins = set(pin_pos.values())
     orig = [ep for w in wires for ep in w]
@@ -96,11 +97,29 @@ def test_wrong_pin_snap_breaks_precision():
     worst = 1.0
     for seed in range(4):   # deterministic - verified to bridge loops
         snapped = inject_errors(wires, 4, seed, pin_pos=pin_pos,
-                                params=(0.0, 0.0, 0.0, 1.0))
+                                params=(0.0, 0.0, 0.0, 1.0, 0.0, 0.0))
         _, net = run_strategy("graph_rescue", snapped, components)
         p, _r, _f = _prf(gt, _comp_pairs(net))
         worst = min(worst, p)
     assert worst < 1.0
+
+
+def test_displace_endpoint_moves_endpoints_far():
+    """Anchor deletion: one endpoint per wire is displaced by dist px in a
+    random direction — the wire exists but doesn't reach the pin."""
+    spec = CATALOG_BY_NAME["divider_rr"]
+    _, wires, pin_pos = synthesize_clean(spec)
+    # Force displacement only, no other errors
+    displaced = inject_errors(wires, severity=0, seed=5, pin_pos=pin_pos,
+                              params=(0.0, 0.0, 0.0, 0.0, 1.0, 50.0))
+    # All wires preserved (no drops)
+    assert len(displaced) == len(wires)
+    # At least one endpoint moved significantly (>20px from original)
+    orig_eps = [ep for w in wires for ep in w]
+    new_eps = [ep for w in displaced for ep in w]
+    max_disp = max(math.hypot(o[0] - n[0], o[1] - n[1])
+                   for o, n in zip(orig_eps, new_eps))
+    assert max_disp > 20, f"expected displacement >20px, got {max_disp:.1f}"
 
 
 def test_sources_match_requires_every_source():

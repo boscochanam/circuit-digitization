@@ -23,11 +23,11 @@ from wire_detection.synthgt.evaluate import (
 
 
 def _fmt_row(r: dict) -> str:
-    j, c, d, w = r["params"]
-    params = f"j{j:g}/c{c:g}/d{d:g}/w{w:g}"
+    p = r["params"]
+    params = f"j{p[0]:g}/c{p[1]:g}/d{p[2]:g}/w{p[3]:g}/a{p[4]:g}/d{p[5]:.0f}"
     sim = "  n/a" if r["sim_ok_rate"] is None else f"{r['sim_ok_rate'] * 100:4.0f}%"
     inj = "  -" if r["mean_injected"] is None else f"{r['mean_injected']:4.1f}"
-    return (f"   L{r['severity']}  {params:17}  "
+    return (f"   L{r['severity']}  {params:26}  "
             f"F1 {r['f1']:.2f}  rec {r['recall']:.2f}  prec {r['precision']:.2f}   "
             f"sim_ok {sim}   inj {inj}")
 
@@ -48,7 +48,7 @@ def _print_report(results: list[dict]) -> None:
               f"{res['gt_pairs']} gt-pairs)   I_src clean={mA} expect={exp}{flag}")
         if res["note"]:
             print(f"   {res['note']}")
-        print("   level  error(jit/cut/drop/wrongpin)  join                  spice")
+        print("   level  error(jit/cut/drop/wrongpin/anchor)    join                  spice")
         for r in res["rows"]:
             print(_fmt_row(r))
 
