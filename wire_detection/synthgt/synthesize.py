@@ -26,22 +26,74 @@ Point = tuple[int, int]
 Wire = tuple[Point, Point]
 
 
-def build_components(spec: CircuitSpec):
-    """spec -> list of (cls_id, vertices, bbox) in the pipeline's component format."""
+def build_components(spec: CircuitSpec, *, return_angle: bool = False):
+    """spec -> list of (cls_id, vertices, bbox) in the pipeline's component format.
+
+    When *return_angle* is True, also return the per-component angle (degrees)
+    so callers can compute rotated pin positions.
+    """
     comps = []
+    angles = []
     for c in spec.comps:
         cls = NAME_TO_CLS[c.type]
         if c.orient == "H":
             w, h = c.size, 30
         else:
             w, h = 30, c.size
-        bbox = (c.cx - w // 2, c.cy - h // 2, c.cx + w // 2, c.cy + h // 2)
-        comps.append((cls, [], bbox))
+        angle = getattr(c, "angle", 0.0) or 0.0
+        if angle:
+            # Rotate the 4 corners, then compute the AABB that contains them
+            rad = math.radians(angle)
+            cos_a, sin_a = math.cos(rad), math.sin(rad)
+            half_w, half_h = w / 2, h / 2
+            corners = [(-half_w, -half_h), (half_w, -half_h),
+                       (half_w, half_h), (-half_w, half_h)]
+            rotated = [(int(cos_a * dx - sin_a * dy + c.cx),
+                        int(sin_a * dx + cos_a * dy + c.cy))
+                       for dx, dy in corners]
+            xs = [p[0] for p in rotated]
+            ys = [p[1] for p in rotated]
+            bbox = (min(xs), min(ys), max(xs), max(ys))
+            comps.append((cls, rotated, bbox))
+        else:
+            bbox = (c.cx - w // 2, c.cy - h // 2, c.cx + w // 2, c.cy + h // 2)
+            comps.append((cls, [], bbox))
+        angles.append(angle)
+    if return_angle:
+        return comps, angles
     return comps
 
 
-def pin_positions(components) -> dict[tuple[int, int], Point]:
-    """Authoritative pin coords from the real deriver, keyed (comp_idx, pin_idx)."""
+def pin_positions(components, spec: CircuitSpec | None = None) -> dict[tuple[int, int], Point]:
+    """Pin coords keyed (comp_idx, pin_idx).
+
+    If *spec* is provided and components have non-zero angles, computes pins
+    directly from the rotation geometry (the pipeline's derive_pins_from_obb
+    only handles axis-aligned bboxes).  Otherwise falls back to make_pins.
+    """
+    # Check if any component has rotation
+    has_angle = any(getattr(c, "angle", 0.0) for c in spec.comps) if spec else False
+    if has_angle and spec:
+        pins: dict[tuple[int, int], Point] = {}
+        for i, c in enumerate(spec.comps):
+            angle = getattr(c, "angle", 0.0) or 0.0
+            # Pins are along the LONG axis: Y for "V", X for "H"
+            half_long = c.size / 2
+            rad = math.radians(angle)
+            cos_a, sin_a = math.cos(rad), math.sin(rad)
+            if c.orient == "H":
+                # Long axis is X before rotation
+                base_angle = 0.0
+            else:
+                # Long axis is Y before rotation (90°)
+                base_angle = 90.0
+            total_rad = math.radians(angle + base_angle)
+            ca, sa = math.cos(total_rad), math.sin(total_rad)
+            for pi, sign in enumerate([-1, 1]):
+                px = int(sign * half_long * ca + c.cx)
+                py = int(sign * half_long * sa + c.cy)
+                pins[(i, pi)] = (px, py)
+        return pins
     return {(p.component_idx, p.pin_idx): (p.x, p.y) for p in make_pins([], components)}
 
 
@@ -56,7 +108,7 @@ def _route_net(members: list[tuple[int, int]], pin_pos) -> list[Wire]:
 def synthesize_clean(spec: CircuitSpec):
     """Return (components, wires, pin_pos). Wires reproduce the authored netlist."""
     components = build_components(spec)
-    pin_pos = pin_positions(components)
+    pin_pos = pin_positions(components, spec)
     wires: list[Wire] = []
     for net in spec.nets:
         wires.extend(_route_net(net, pin_pos))
