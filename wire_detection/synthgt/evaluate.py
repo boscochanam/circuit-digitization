@@ -104,7 +104,7 @@ def evaluate_circuit(
         sim_ok = inj_total = sim_runs = 0
         n = 1 if sev == 0 else seeds
         for seed in range(n):
-            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos)
+            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos, components=components)
             _, net = run_strategy(strategy, wires, components)
             p, r, f = _prf(gt_pairs, _comp_pairs(net))
             accP += p; accR += r; accF += f
@@ -167,7 +167,7 @@ def _join_f1_sweep(spec: CircuitSpec, strategy: str, seeds: int) -> list[float]:
         n = 1 if sev == 0 else seeds
         acc = 0.0
         for seed in range(n):
-            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos)
+            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos, components=components)
             _, net = run_strategy(strategy, wires, components)
             acc += _prf(gt_pairs, _comp_pairs(net))[2]
         out.append(acc / n)
