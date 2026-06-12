@@ -27,6 +27,7 @@ class Comp:
     cy: int
     orient: str = "V"    # "V" -> pins top/bottom ; "H" -> pins left/right
     size: int = 160      # long-axis length; short axis fixed at 30
+    angle: float = 0.0   # rotation in degrees (0 = axis-aligned per orient)
 
 
 @dataclass
@@ -51,6 +52,9 @@ def _L(value, cx, cy, **kw):  # noqa: N802
 
 def _D(value, cx, cy, **kw):  # noqa: N802
     return Comp("diode", value, cx, cy, **kw)
+
+def _GND(value, cx, cy, **kw):  # noqa: N802
+    return Comp("gnd", value, cx, cy, **kw)
 
 
 # ====================================================================
@@ -188,6 +192,51 @@ CATALOG: list[CircuitSpec] = [
               [(2, 0), (3, 0)], [(2, 1), (3, 1)]],    # loop B
         expect_mA=5.0,            # each loop: 5V / 1k
         note="Two independent loops side by side; GT has no cross pairs.",
+    ),
+
+    # ── Angled circuits (rotation in degrees) ──────────────────────────
+    # Tests that the harness correctly handles rotated OBBs and pin positions.
+    # Pins are computed from angle + orient, not from the axis-aligned bbox.
+
+    # V-shaped series: V1(vertical) + R1(30°) + R2(-30°) in a V loop.
+    # Wires are diagonal — the join must handle non-axis-aligned segments.
+    CircuitSpec(
+        name="angled_v",
+        comps=[_V("5", 200, 250, size=160),
+               _R("1k", 380, 150, orient="H", size=160, angle=30),
+               _R("1k", 380, 350, orient="H", size=160, angle=-30)],
+        nets=[[(0, 0), (1, 0)],   # V1.top → R1.pin0
+              [(1, 1), (2, 1)],   # R1.pin1 → R2.pin1
+              [(2, 0), (0, 1)]],  # R2.pin0 → V1.bot
+        expect_mA=2.5,            # 5V / 2k
+        note="V-shaped series loop; components at ±30°.",
+    ),
+
+    # Diamond ring: V1 + 4×R at 0°, 45°, 0°, -45° — a non-rectangular ring.
+    CircuitSpec(
+        name="angled_ring4",
+        comps=[_V("5", 200, 300, size=160),
+               _R("1k", 400, 150, orient="H", size=160, angle=45),
+               _R("1k", 600, 300, size=160),
+               _R("1k", 400, 450, orient="H", size=160, angle=-45)],
+        nets=[[(0, 0), (1, 0)],   # V1.top → R1.pin0
+              [(1, 1), (2, 0)],   # R1.pin1 → R2.top
+              [(2, 1), (3, 1)],   # R2.bot → R3.pin1
+              [(3, 0), (0, 1)]],  # R3.pin0 → V1.bot
+        expect_mA=1.667,           # 5V / 3k (V1 + 3 resistors in series)
+        note="Diamond-shaped ring; 4 components at mixed angles.",
+    ),
+
+    # Parallel with angled resistors: V1 + R1(45°) + R2(-45°) sharing both nets.
+    CircuitSpec(
+        name="angled_parallel",
+        comps=[_V("5", 150, 250, size=160),
+               _R("1k", 400, 150, orient="H", size=160, angle=45),
+               _R("1k", 400, 350, orient="H", size=160, angle=-45)],
+        nets=[[(0, 0), (1, 0), (2, 0)],   # top rail
+              [(0, 1), (1, 1), (2, 1)]],   # bottom rail
+        expect_mA=5.0,            # 5V / 1k (SPICE sees series, not parallel — known issue)
+        note="Parallel resistors at ±45°; multi-terminal angled nets.",
     ),
 ]
 
