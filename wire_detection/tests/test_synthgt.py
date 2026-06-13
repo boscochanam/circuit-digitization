@@ -188,6 +188,35 @@ def test_degree_budget_completion_beats_graph_rescue():
     assert cand["wheat_prec_L3"] >= base["wheat_prec_L3"] - 1e-6   # not precision-for-recall
 
 
+def test_degree_budget_tracks_wires_and_curbs_self_loops():
+    """The two production-blocking fixes (PR #64 handoff), measured the same way
+    the real benchmark does (score_netlist): (1) wire tracking is populated -- was
+    0% before netlist_from_uf carried base wires; (2) the self-loop guard keeps
+    two-terminal shorts at or below graph_rescue rather than ~2x above it."""
+    from wire_detection.synthgt.candidate_joins import degree_budget_completion
+    from wire_detection.core.join_strategies import run_strategy, score_netlist
+
+    # (1) wire tracking: a clean degree_budget netlist must report ~full wire usage.
+    spec = CATALOG_BY_NAME["ring6_r"]
+    comps, wires, pp = synthesize_clean(spec)
+    sp = _make_std_pins(pp, spec)
+    assert score_netlist(wires, comps, sp,
+                         degree_budget_completion(wires, comps, sp))["pct_wires_used"] > 99.0
+
+    # (2) self-loop guard: under heavy error, degree_budget must not short more
+    # two-terminal components than graph_rescue (it used to ~double them).
+    db = gr = 0.0; n = 0
+    for s in CATALOG:
+        c, w0, p = synthesize_clean(s)
+        spn = _make_std_pins(p, s)
+        for seed in range(4):
+            w = inject_errors(w0, 4, seed, pin_pos=p, components=c)
+            db += score_netlist(w, c, spn, degree_budget_completion(w, c, spn))["self_loop_components"]
+            gr += score_netlist(w, c, spn, run_strategy("graph_rescue", w, c, std_pins=spn)[1])["self_loop_components"]
+            n += 1
+    assert db / n <= gr / n + 0.05, f"degree_budget self-loops {db/n:.3f} > graph_rescue {gr/n:.3f}"
+
+
 def test_authoring_guard_flags_expectation_mismatch():
     """gt_mA vs expect_mA disagreement must be surfaced (spec bug detector)."""
     import copy
