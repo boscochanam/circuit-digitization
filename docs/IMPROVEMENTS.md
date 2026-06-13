@@ -23,7 +23,18 @@ complete to a given net. The other pin must find a different net.
 - Connectivity: should stay at 83.8% (real), 0.970 (synthetic)
 - Wire coverage: should stay ~82% (real)
 
-**File:** `wire_detection/core/joining.py` → `degree_budget_completion()`
+**File (corrected):** `wire_detection/synthgt/candidate_joins.py` → `degree_budget_completion()`.
+NOT `core/joining.py` — degree_budget lives in the synthgt module; it was evaluated
+on real data but never moved to core. So "promote to default" (#3) also requires
+registering it as a core join strategy first — that step is NOT yet done.
+
+**✅ DONE (synthetic-validated):** added a self-loop guard — the completion
+b-matching refuses to merge two nets that already share a component (one pin per
+component per net), and skips any match that would. Synthetic self-loops/image
+0.37 → **0.15** at L4 (now *below* graph_rescue's 0.17); mean-err F1 unchanged at
+0.972; connectivity 99–100%. **Real (133 images) still needs re-running** — the
+bench script (`scripts/bench_degree_budget.py`) has machine-specific `/home/claw`
+paths; point them at the local dataset to confirm 4.4 → ~1–2.
 
 ---
 
@@ -32,16 +43,18 @@ complete to a given net. The other pin must find a different net.
 **Problem:** `degree_budget_completion` populates `n.components` but NOT `n.wires`.
 This means wire tracking shows 0% for degree_budget results.
 
-**Root cause:** `netlist_from_uf()` only looks at `n.components` when building the
-wire→net mapping. degree_budget stores wire assignments differently.
+**Root cause:** `netlist_from_uf()` built nodes with an empty `wires=[]`; the base
+graph_rescue wires were discarded on the way to the final netlist.
 
-**Proposed fix:** After union-find resolution, iterate through component endpoint
-assignments and map each wire to its net. This is a data plumbing fix, not algorithmic.
+**File (corrected):** `wire_detection/synthgt/candidate_joins.py` → `netlist_from_uf()`
+(NOT `core/netlist.py`).
 
-**Validation:** Re-run detection benchmark with `--track-wires` on degree_budget
-results. Expect wire coverage to match graph_rescue (~82%).
-
-**File:** `wire_detection/core/netlist.py` → `netlist_from_uf()`
+**✅ DONE (synthetic-validated):** `netlist_from_uf` now accepts the base netlist
+and carries each base node's wire indices onto the final node its pins landed in;
+`degree_budget_completion` passes its graph_rescue base through. Completion edges
+are wireless by nature (inferred, like a manual pin-to-pin merge) and add none.
+Synthetic `pct_wires_used` 0% → **100%** (matches graph_rescue) at every error
+level. Verify on real with the bench script once its paths are fixed.
 
 ---
 
