@@ -151,6 +151,29 @@ The harness asserts every **clean** (level 0) join recovers F1 = 1.0; a failure
 there flags a bad layout or a join regression, not a noise effect.
 `wire_detection/tests/test_synthgt.py` locks this invariant in.
 
+## Strategy selection: why graph_rescue (a worked example)
+
+The harness was used to pick the default join empirically rather than by intuition.
+`--compare` over the 15-circuit catalog ranks the `graph_*` family (with the
+component-first endpoint binding) at ~0.94-0.96 mean-error F1, while the legacy
+`nearest`/`mutual`/`anchored`/`production` families collapse to 0.48-0.76 and
+several fail the clean control. Within the graph family the differences are small,
+so reach-tuned variants were tried (dead-end reach 2.2x -> 2.8x / 3.5x, end
+extension 12px -> 20px, directional on/off):
+
+- **More reach is a wash.** The 2.2x rescue already reaches ~132px, past the 80px
+  max anchor-displacement, so longer reach recovers nothing extra (per-circuit
+  precision/recall are identical to graph_rescue).
+- **`extend=20` regresses** — it over-reaches on clean layouts and grabs the wrong
+  pin, breaking the F1 = 1.0 invariant (a real over-merge, caught by the harness).
+- The residual high-error failures are **recall drops from wires dropped entirely**
+  (a detection loss, [#21]) — unrecoverable by any join. The join is at its ceiling.
+
+Conclusion: `graph_rescue` is kept as the default; nothing beats it among the
+available algorithms. Caveat: this is measured against the placeholder error model,
+so the *tuning* could shift after calibration ([#61]); the graph family's
+*dominance* over the pin-only families is robust regardless.
+
 ## Roadmap (to make the join numbers trustworthy)
 
 1. **Calibrate the error model to the real detector.** Run the detector on the
@@ -180,3 +203,4 @@ and pin-to-pin connect make producing it fast).
 [#19]: https://github.com/boscochanam/circuit-digitization/issues/19
 [#20]: https://github.com/boscochanam/circuit-digitization/issues/20
 [#21]: https://github.com/boscochanam/circuit-digitization/issues/21
+[#61]: https://github.com/boscochanam/circuit-digitization/issues/61
