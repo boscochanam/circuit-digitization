@@ -156,37 +156,20 @@ def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
     pins, net = result
     
     # Determine connection status from the actual join result (union-find)
-    # Use shared component-assignment logic to find which component each endpoint belongs to
-    from wire_detection.core.component_assignment import assign_endpoint_to_component
-    
+    # Check if the wire appears in a node that spans multiple components
     wire_connected = []
-    for w_idx, w in enumerate(err_wires):
-        # Find which component each endpoint is assigned to
-        r0 = assign_endpoint_to_component(w[0], components, 60.0)
-        r1 = assign_endpoint_to_component(w[1], components, 60.0)
-        
-        if r0.component_idx is not None and r1.component_idx is not None:
-            # Check if those components are in the same node
-            node0 = net.pin_to_node.get((r0.component_idx, 'pin0'))
-            node1 = net.pin_to_node.get((r1.component_idx, 'pin0'))
-            if node0 is not None and node1 is not None and node0 == node1:
-                wire_connected.append(True)
-                continue
-        
-        # Fallback: check if endpoint is assigned to a component in a multi-component node
-        connected = False
-        for r in [r0, r1]:
-            if r.component_idx is not None:
-                node = net.pin_to_node.get((r.component_idx, 'pin0'))
-                if node is not None:
-                    other_comps = set()
-                    for (pci, ppi), nid in net.pin_to_node.items():
-                        if nid == node and pci != r.component_idx:
-                            other_comps.add(pci)
-                    if other_comps:
-                        connected = True
-                        break
-        wire_connected.append(connected)
+    
+    # Build a map: wire_index -> set of component indices in the same node
+    wire_comp_map = {}
+    for nid, node in enumerate(net.nodes):
+        comp_set = set(p.component_idx for p in node.pins)
+        if len(comp_set) > 1:  # multi-component node
+            for wi in node.wires:
+                wire_comp_map.setdefault(wi, set()).update(comp_set)
+    
+    for w_idx in range(len(err_wires)):
+        # Wire is connected if it appears in a multi-component node
+        wire_connected.append(w_idx in wire_comp_map)
 
     # Build joined wires: green if both endpoints connected, yellow if one, red if none
     joined_wires = []
