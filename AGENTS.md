@@ -156,6 +156,33 @@ Graph strategies dominate the top 5. `graph_rescue` uses 97.7% of wires (vs prod
 
 Full details: `docs/research/join-verification.md`
 
+## Shared Component-Assignment Logic (MANDATORY)
+
+**The component-assignment logic is centralized in `wire_detection/core/component_assignment.py`.** This module is the SINGLE SOURCE OF TRUTH for determining which component and pin a wire endpoint belongs to.
+
+**Why this exists:** The join pipeline and visualizations both need to answer "which component does this endpoint connect to?" If they implement this independently, they diverge (see RCA in git history — visualization showed endpoints as disconnected when the pipeline had correctly assigned them).
+
+**API:**
+```python
+from wire_detection.core.component_assignment import (
+    assign_endpoint_to_component,  # Step 1: nearest component by bbox proximity
+    pick_pin_for_component,        # Step 2: which pin based on geometry
+    assign_endpoint_to_pin,        # Combined: assign to component, then pick pin
+    snap_endpoint,                 # For visualization: snap to pin coordinates
+)
+```
+
+**Rules:**
+1. **NEVER reimplement component-assignment logic locally** — always import from `component_assignment.py`
+2. **Visualizations** use `snap_endpoint(ep, components, pin_pos)` to snap endpoints to pin positions
+3. **Pipeline code** uses `assign_endpoint_to_component()` + `pick_pin_for_component()` in the union-find graph builder
+4. **Tests** should verify that both pipeline and visualization produce identical assignments
+
+**Assignment algorithm (must match everywhere):**
+- Distance from endpoint to bbox (0 if inside, else to nearest edge)
+- Assignment radius: `max(tau_pin, 0.5 × component diagonal)`
+- Pin selection: horizontal → left/right, vertical → top/bottom
+
 **Known gotchas:**
 - `core/netlist.py` imports `sklearn` but `scikit-learn` is **missing from
   `pyproject.toml`** → clean installs crash `/api/netlist` + `/api/join_overlay`.

@@ -1,0 +1,27 @@
+# Circuit Digitization — Agent Configuration
+
+## Critical: Shared Logic
+
+**Component-assignment logic** lives in `wire_detection/core/component_assignment.py`.
+This is the SINGLE SOURCE OF TRUTH for:
+- Which component an endpoint belongs to
+- Which pin it connects to
+
+**NEVER reimplement this logic locally.** Always import from `component_assignment.py`.
+
+## Files That Use Component Assignment
+
+| File | Usage |
+|------|-------|
+| `wire_detection/core/join_graph.py` | Pipeline: endpoint → component → pin in union-find |
+| `docs/draw_3panel.py` | Visualization: snap endpoints to pin positions |
+| `docs/draw_circuits*.py` | Circuit catalog visualizations |
+| `docs/draw_error_sweep.py` | Error sweep visualizations |
+
+## If You Need to Change Assignment Logic
+
+1. Edit ONLY `wire_detection/core/component_assignment.py`
+2. Run tests: `uv run python -m pytest wire_detection/tests/test_join_strategies.py wire_detection/tests/test_synthgt.py -x -q`
+3. Run eval: `uv run python -m wire_detection.synthgt --seeds 1 --strategy graph_rescue`
+4. Regenerate visualizations: `uv run python docs/draw_3panel.py`
+5. Verify L0 (clean) still gives F1=1.00 across all circuits
