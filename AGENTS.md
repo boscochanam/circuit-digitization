@@ -6,10 +6,15 @@ The wire detection pipeline **WILL NOT WORK** without these three preprocessing 
 
 ### 1. HDC Label Matching
 Each image needs YOLO-OBB component labels from roboflow_test2. **Use filename prefix matching** (not pixel-difference) — HDC files have `.rf.XXXX` suffixes from Roboflow augmentation.
+
+**⚠️ CRITICAL — Label orientation alignment:** Roboflow applies augmentations (90° rotations, flips) to training images, and labels are annotated on those augmented versions. The original GT images in `ground_truth/` may have different orientation. **Always use the Roboflow augmented image** (from `roboflow_test2/{split}/images/`) when labels are present, NOT the original GT image. Use `find_roboflow_image()` from `wire_detection/data/dataset.py` or `load_component_labels_aligned()` on the registry.
+
 - Paths: `/home/claw/circuit-digitization/roboflow_test2/{train,valid,test}/labels/`
+- Augmented images: `/home/claw/circuit-digitization/roboflow_test2/{train,valid,test}/images/`
 - Images: `/home/claw/workspace/ground_truth/labels_few_annot/images/`
 - Labels: `/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images/`
 - Matches: **134 images** with both GT wire labels and HDC component labels (3,524 total wire annotations)
+- **38 of 134 images** have non-trivial augmentations (rot90, rot270, flip_h, flip_v, combos). Using the original image on these causes bounding box misalignment.
 
 ### 2. Component Occlusion  
 Fill each component polygon with **local median color** (NOT white, NOT black — use `np.median()` of local region).
@@ -68,6 +73,7 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 6. ✗ Using old params (otsu, dilate=5, min_area=30, dedup_dist=12) → wrong pipeline
 7. ✗ Not matching HDC labels → no occlusion at all
 8. ✗ Using pixel-diff matching instead of prefix matching → only finds 23/134 images
+9. ✗ Using original GT image instead of Roboflow augmented image → 38/134 images have misaligned bounding boxes (rot90, rot270, flip_h, flip_v). Always use `find_roboflow_image()` or `load_component_labels_aligned()`.
 
 ## Netlist / SPICE / Topology Pipeline
 
