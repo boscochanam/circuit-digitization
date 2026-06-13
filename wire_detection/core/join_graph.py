@@ -26,6 +26,10 @@ from __future__ import annotations
 import math
 from collections import defaultdict
 
+from wire_detection.core.component_assignment import (
+    assign_endpoint_to_component,
+    pick_pin_for_component,
+)
 from wire_detection.core.netlist import NetNode, Netlist
 
 
@@ -144,28 +148,59 @@ def build_endpoint_graph(
             if math.hypot(pi[0] - pj[0], pi[1] - pj[1]) <= tau_join:
                 uf.union(ekey(wi, ei), ekey(wj, ej))
 
-    # edge 3: endpoint ↔ pin (nearest within tau_pin; optional directional preference)
+    # edge 3: endpoint ↔ pin — COMPONENT-FIRST assignment
+    # Step 1: assign each endpoint to the nearest COMPONENT (by bbox proximity)
+    # Step 2: once assigned, route to the correct pin based on geometry
+    # This handles the common case where endpoints land INSIDE a component's
+    # bbox but far from its pin (e.g., 50-80px from pin, but visually overlapping).
     wire_dir = {}
     for wi, (a, b) in enumerate(wires):
         dx, dy = b[0] - a[0], b[1] - a[1]
         L = math.hypot(dx, dy) or 1.0
         wire_dir[wi] = (dx / L, dy / L)
+
+    # Group pins by component for fast lookup
+    comp_pins_map: dict[int, list] = defaultdict(list)
+    for p in pins:
+        comp_pins_map[p.component_idx].append(p)
+
     for wi, end, ep in eps:
         ux, uy = wire_dir[wi]
         if end == 0:           # outward direction points away from the wire body
             ux, uy = -ux, -uy
-        best, bestkey = None, None
-        for p in pins:
-            d = math.hypot(ep[0] - p.x, ep[1] - p.y)
-            if d > tau_pin:
-                continue
-            score = d
-            if directional and d > 1e-6:
-                vx, vy = (p.x - ep[0]) / d, (p.y - ep[1]) / d
-                cos = ux * vx + uy * vy            # +1 = pin straight ahead of the wire
-                score = d * (1.0 - 0.35 * max(0.0, cos))
-            if best is None or score < best:
-                best, bestkey = score, pkey(p)
+
+        bestkey = None
+
+        # Use shared component-assignment logic (component_assignment.py)
+        comp_result = assign_endpoint_to_component(ep, components, tau_pin)
+
+        if comp_result.component_idx is not None:
+            # Endpoint assigned to a component → pick pin by geometry
+            ci = comp_result.component_idx
+            pin_idx = pick_pin_for_component(ep, ci, components[ci][2], pins)
+            if pin_idx is not None:
+                # Find the actual pin object
+                for p in comp_pins_map.get(ci, []):
+                    if p.pin_idx == pin_idx:
+                        bestkey = pkey(p)
+                        break
+        else:
+            # --- Step 2b: no component nearby → fall back to nearest pin ---
+            best, bestkey_candidate = None, None
+            for p in pins:
+                d = math.hypot(ep[0] - p.x, ep[1] - p.y)
+                if d > tau_pin:
+                    continue
+                score = d
+                if directional and d > 1e-6:
+                    vx, vy = (p.x - ep[0]) / d, (p.y - ep[1]) / d
+                    cos = ux * vx + uy * vy            # +1 = pin straight ahead of the wire
+                    score = d * (1.0 - 0.35 * max(0.0, cos))
+                if best is None or score < best:
+                    best, bestkey_candidate = score, pkey(p)
+            if bestkey_candidate is not None:
+                bestkey = bestkey_candidate
+
         if bestkey is not None:
             uf.union(ekey(wi, end), bestkey)
 

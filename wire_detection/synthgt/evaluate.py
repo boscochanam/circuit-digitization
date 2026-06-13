@@ -22,6 +22,7 @@ from itertools import combinations
 from wire_detection.core.join_strategies import run_strategy
 from wire_detection.core.simulator import SpiceSimulator
 from wire_detection.core.spice import SpiceGenerator
+from wire_detection.core.netlist import ComponentPin
 from wire_detection.synthgt.circuits import CATALOG, CircuitSpec
 from wire_detection.synthgt.synthesize import (
     ERROR_LEVELS,
@@ -57,6 +58,22 @@ def _prf(gt: set, got: set) -> tuple[float, float, float]:
 
 def _voltage_idxs(spec: CircuitSpec) -> list[int]:
     return [i for i, c in enumerate(spec.comps) if c.type.startswith("voltage")]
+
+
+def _make_std_pins(pin_pos: dict, spec: CircuitSpec) -> list[ComponentPin]:
+    """Convert synthgt pin_pos dict to ComponentPin objects for run_strategy."""
+    pins = []
+    for (ci, pi), (x, y) in pin_pos.items():
+        c = spec.comps[ci]
+        pins.append(ComponentPin(
+            component_idx=ci,
+            component_name=c.type,
+            pin_idx=pi,
+            pin_name=f"pin{pi}",
+            x=x, y=y,
+            rel_x=0.0, rel_y=0.0,
+        ))
+    return pins
 
 
 def _source_currents(sim: dict, v_idxs: list[int]) -> list[float]:
@@ -105,7 +122,8 @@ def evaluate_circuit(
         n = 1 if sev == 0 else seeds
         for seed in range(n):
             wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos, components=components)
-            _, net = run_strategy(strategy, wires, components)
+            _, net = run_strategy(strategy, wires, components,
+                                  std_pins=_make_std_pins(pin_pos, spec))
             p, r, f = _prf(gt_pairs, _comp_pairs(net))
             accP += p; accR += r; accF += f
             if spice_on:
@@ -168,7 +186,8 @@ def _join_f1_sweep(spec: CircuitSpec, strategy: str, seeds: int) -> list[float]:
         acc = 0.0
         for seed in range(n):
             wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos, components=components)
-            _, net = run_strategy(strategy, wires, components)
+            _, net = run_strategy(strategy, wires, components,
+                                  std_pins=_make_std_pins(pin_pos, spec))
             acc += _prf(gt_pairs, _comp_pairs(net))[2]
         out.append(acc / n)
     return out
