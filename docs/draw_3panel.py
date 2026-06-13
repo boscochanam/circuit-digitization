@@ -195,28 +195,13 @@ def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
     sx = lambda x: cx3 + tx(x)
     sy = lambda y: 45 + ty(y)
     
-    # Draw joined wires with snapped endpoints for recovered wires
+    # Draw joined wires — color shows connection status
     for w_idx, (w, color) in enumerate(joined_wires):
-        if wire_connected[w_idx]:
-            # Snap both endpoints to their pin positions (using shared utility)
-            ep0_snap = snap_endpoint(w[0], components, pin_pos)
-            ep1_snap = snap_endpoint(w[1], components, pin_pos)
-            draw.line([(sx(ep0_snap[0]), sy(ep0_snap[1])), (sx(ep1_snap[0]), sy(ep1_snap[1]))],
-                      fill=color, width=2)
-            # Draw small snap indicators
-            for ep_snap in [ep0_snap, ep1_snap]:
-                if ep_snap != ep0_snap or ep_snap != ep1_snap:
-                    pass  # skip if no change
-                r = 3
-                draw.ellipse([sx(ep_snap[0])-r, sy(ep_snap[1])-r, sx(ep_snap[0])+r, sy(ep_snap[1])+r], 
-                            fill=color, outline="#fff", width=1)
-        else:
-            # Disconnected — draw at original displaced position
-            draw.line([(sx(w[0][0]), sy(w[0][1])), (sx(w[1][0]), sy(w[1][1]))],
-                      fill=color, width=2)
-            for ep in w:
-                r = 2
-                draw.ellipse([sx(ep[0])-r, sy(ep[1])-r, sx(ep[0])+r, sy(ep[1])+r], fill=EP_COL)
+        draw.line([(sx(w[0][0]), sy(w[0][1])), (sx(w[1][0]), sy(w[1][1]))],
+                  fill=color, width=2)
+        for ep in w:
+            r = 2
+            draw.ellipse([sx(ep[0])-r, sy(ep[1])-r, sx(ep[0])+r, sy(ep[1])+r], fill=EP_COL)
     
     draw_components(draw, spec, sx, sy, sc)
     draw_pins(draw, pin_pos, sx, sy)
