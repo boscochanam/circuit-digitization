@@ -209,13 +209,18 @@ A robust secondary finding: ~10 other candidates beat graph_rescue on bridge
 recall-optimized, and the drop-heavy error model rewards that. Only
 `degree_budget_completion` improved recall on drops without sacrificing precision.
 
-**Why it is NOT yet the production default:** its prior is "a floating pin is a
-dropped wire and should be reconnected to expected degree." That holds for the
-synthetic catalog (every authored pin connects), but real circuits can have
-legitimately floating terminals, where completion could invent connections.
-Promote it past graph_rescue only after validating on real / calibrated data
-([#61], [#62]). It is kept as a verified, reproducible candidate + a regression
-test (`test_degree_budget_completion_beats_graph_rescue`).
+**Promotion (done):** the two production blockers from the real benchmark were
+fixed — a self-loop guard (one pin per component per net) and wire tracking (base
+wires carried onto final nodes) — then validated on **real images** (40-image
+subset, gt153 + hdc): self-loops 4.4 → **1.38** (below graph_rescue's 1.82), wire
+coverage 0% → **83%**, connectivity **+16.5%** with *fewer* floating components.
+The implementation was moved to `wire_detection/core/completion.py`, registered as
+the `degree_budget` join strategy, and is now `DEFAULT_STRATEGY`; graph_rescue
+stays as fallback (`?strategy=graph_rescue`). **Residual caveat:** the connectivity
+gain still has no net-level ground truth ([#20]) to fully rule out over-merge —
+but real self-loops *and* floating components both dropped, which is consistent
+with recovering real connections, not inventing them. Confirm on the full
+153-image set; recheck once the error model is calibrated ([#61], [#62]).
 
 ## Roadmap (to make the join numbers trustworthy)
 
