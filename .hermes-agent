@@ -24,24 +24,26 @@ This is the SINGLE SOURCE OF TRUTH for:
 
 **DO:**
 ```python
-from wire_detection.core.component_assignment import assign_endpoint_to_component, snap_endpoint
+from wire_detection.core.netlist import Netlist
 
-# Check if endpoint is assigned to a component
-result = assign_endpoint_to_component(ep, components, tau_pin=60.0)
-if result.component_idx is not None:
-    # Endpoint is connected to this component
-    ...
+# Check if wire connects two components — call the netlist's own method
+is_connected = net.wire_connects_components(wire_idx)
 
-# Snap endpoint to pin position for display
-snapped = snap_endpoint(ep, components, pin_pos)
+# Or get all connected wires at once
+connected = net.connected_wires()
 ```
 
 **DON'T:**
 ```python
-# WRONG — reimplementing bbox check locally
+# WRONG — reimplementing logic locally
 if x1 <= ep[0] <= x2 and y1 <= ep[1] <= y2:
     # This misses endpoints that are NEAR but OUTSIDE the bbox
     ...
+
+# WRONG — reimplementing union-find traversal
+for node in net.nodes:
+    if wire_idx in node.wires:
+        ...
 ```
 
 **Why:** The pipeline assigns endpoints to the nearest component within `max(tau_pin, 0.5 * diagonal)` radius. Endpoints can be 10-80px outside the bbox but still assigned to that component. If the visualization only checks "inside bbox", it will show endpoints as disconnected when the pipeline has correctly connected them.
