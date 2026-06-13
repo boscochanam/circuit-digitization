@@ -9,12 +9,13 @@ Usage:
     uv run python scripts/bench_degree_budget.py
 """
 from __future__ import annotations
-import sys, time
+import os, sys, time
 from pathlib import Path
 
 import cv2
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+_REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO))
 
 from wire_detection.api.routes.netlist import _run_preset_pipeline
 from wire_detection.core.join_strategies import (
@@ -22,9 +23,27 @@ from wire_detection.core.join_strategies import (
 )
 from wire_detection.synthgt.candidate_joins import degree_budget_completion
 
-GT_LABELS = Path("/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images")
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
+
+def _resolve(env_var, *candidates):
+    """Path from $env_var if set, else the first candidate that exists, else the
+    last. Lets the bench run on any machine: friend's layout, repo-local ui_data,
+    or an explicit override (BENCH_GT_LABELS / BENCH_GT_IMAGES / BENCH_HDC_BASE)."""
+    if os.environ.get(env_var):
+        return Path(os.environ[env_var])
+    for c in candidates:
+        if Path(c).exists():
+            return Path(c)
+    return Path(candidates[-1])
+
+GT_LABELS = _resolve("BENCH_GT_LABELS",
+    "/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images",
+    str(_REPO.parent / "ui_data" / "gt153" / "labels"))
+GT_IMAGES = _resolve("BENCH_GT_IMAGES",
+    "/home/claw/workspace/ground_truth/labels_few_annot/images",
+    str(_REPO.parent / "ui_data" / "gt153" / "images"))
+HDC_BASE = _resolve("BENCH_HDC_BASE",
+    "/home/claw/circuit-digitization/roboflow_test2",
+    str(_REPO.parent / "ui_data" / "hdc"))
 HDC_SPLITS = ["train", "valid", "test"]
 
 from wire_detection.benchmark import reference_pipeline as ref
@@ -50,7 +69,11 @@ def score_join(name: str, wires, components, pins) -> dict:
 
 
 def main():
+    limit = int(sys.argv[1]) if len(sys.argv) > 1 else None
+    print(f"GT_LABELS = {GT_LABELS}\nGT_IMAGES = {GT_IMAGES}\nHDC_BASE  = {HDC_BASE}")
     all_images = sorted(GT_LABELS.glob("*_jpg.txt"))
+    if limit:
+        all_images = all_images[:limit]
     print(f"Found {len(all_images)} GT images")
 
     results = []
@@ -88,7 +111,7 @@ def main():
     elapsed = time.time() - t0
     print(f"\nDone: {len(results)} images in {elapsed:.1f}s\n")
 
-    # ── Key metrics side-by-side ──
+    # -- Key metrics side-by-side --
     metrics = [
         ("pct_connected",      "% Connected",     True),
         ("pct_wires_used",     "% Wires Used",    True),
@@ -111,10 +134,10 @@ def main():
         dbc_avg = sum(dbc_vals) / len(dbc_vals)
         delta = dbc_avg - gr_avg
         sign = "+" if delta > 0 else ""
-        marker = " ✓" if (delta > 0 and higher_better) or (delta < 0 and not higher_better) else ""
+        marker = " *" if (delta > 0 and higher_better) or (delta < 0 and not higher_better) else ""
         print(f"{label:<22} {gr_avg:>14.2f} {dbc_avg:>14.2f} {sign}{delta:>7.2f}{marker}")
 
-    # ── Per-image connectivity ──
+    # -- Per-image connectivity --
     improved = sum(1 for r in results if r["dbc"]["pct_connected"] > r["gr"]["pct_connected"])
     regressed = sum(1 for r in results if r["dbc"]["pct_connected"] < r["gr"]["pct_connected"])
     same = len(results) - improved - regressed
