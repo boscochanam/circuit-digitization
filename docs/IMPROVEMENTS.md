@@ -3,6 +3,18 @@
 > **For next agent:** This is a temp scratchpad of validated improvement leads.
 > Real + synthetic benchmarks are complete. These are ranked by expected impact.
 
+> **STATUS UPDATE — degree_budget PROMOTED to default join.** Items #1 (self-loops)
+> and #2 (wire tracking) are fixed AND validated on real images (40-image subset):
+> self-loops 4.4 → **1.38** (now below graph_rescue's 1.82), wire coverage 0% →
+> **83%** (matches graph_rescue's 85%), connectivity **+16.5%** with *fewer*
+> floating components. degree_budget_completion was moved to
+> `wire_detection/core/completion.py`, registered as the `degree_budget` join
+> strategy, and is now `DEFAULT_STRATEGY`. graph_rescue stays as fallback
+> (`?strategy=graph_rescue`). Caveat: connectivity gain still lacks net-level GT
+> (#20), but real self-loops + floating both *dropped*, which is consistent with
+> recovering real connections rather than over-merging. Run the full 153-image
+> bench to confirm the subset numbers.
+
 ---
 
 ## 1. Self-Loop Elimination in `degree_budget_completion` 🔴 High Impact
@@ -32,9 +44,9 @@ registering it as a core join strategy first — that step is NOT yet done.
 b-matching refuses to merge two nets that already share a component (one pin per
 component per net), and skips any match that would. Synthetic self-loops/image
 0.37 → **0.15** at L4 (now *below* graph_rescue's 0.17); mean-err F1 unchanged at
-0.972; connectivity 99–100%. **Real (133 images) still needs re-running** — the
-bench script (`scripts/bench_degree_budget.py`) has machine-specific `/home/claw`
-paths; point them at the local dataset to confirm 4.4 → ~1–2.
+0.972; connectivity 99–100%. **✅ Real-validated** (40-image subset, gt153 + hdc):
+self-loops 4.4 → **1.38** (below graph_rescue's 1.82), connectivity +16.5%,
+floating components 7.75 → 4.60. Target (4.4 → ~1–2) met.
 
 ---
 
@@ -54,7 +66,8 @@ and carries each base node's wire indices onto the final node its pins landed in
 `degree_budget_completion` passes its graph_rescue base through. Completion edges
 are wireless by nature (inferred, like a manual pin-to-pin merge) and add none.
 Synthetic `pct_wires_used` 0% → **100%** (matches graph_rescue) at every error
-level. Verify on real with the bench script once its paths are fixed.
+level. **✅ Real-validated** (40-image subset): `pct_wires_used` 0% → **83.4%**,
+matching graph_rescue's 84.5% (target ~82%).
 
 ---
 
