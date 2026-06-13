@@ -39,14 +39,27 @@ connected = net.connected_wires()
 if x1 <= ep[0] <= x2 and y1 <= ep[1] <= y2:
     # This misses endpoints that are NEAR but OUTSIDE the bbox
     ...
-
 # WRONG — reimplementing union-find traversal
 for node in net.nodes:
     if wire_idx in node.wires:
         ...
 ```
-
 **Why:** The pipeline assigns endpoints to the nearest component within `max(tau_pin, 0.5 * diagonal)` radius. Endpoints can be 10-80px outside the bbox but still assigned to that component. If the visualization only checks "inside bbox", it will show endpoints as disconnected when the pipeline has correctly connected them.
+## Connected Wires: Snap to Pin Positions
+
+**Rule:** In result visualizations (3-panel "After Join"), draw connected wires between the **actual pin positions** they were assigned to, NOT at the error-injected endpoint positions.
+
+**Why:** The algorithm assigns an endpoint to a component and derives a pin position from geometry. The error-injected endpoint may be 10-80px away from that pin. If you draw at the error-injected position, the wire visually doesn't reach the component.
+
+**How:** Use the netlist's `pin_to_node` and `nodes` to find which pins are in the same node as the wire, then snap each endpoint to the nearest pin:
+```python
+node_pins = {node.node_id: [(p.x, p.y) for p in node.pins] for node in net.nodes}
+wire_node = {}
+for node in net.nodes:
+    for w_idx in node.wires:
+        wire_node[w_idx] = node.node_id
+# For each wire: snap ep0 to nearest pin, ep1 to second-nearest pin in same node
+```
 
 ## If You Need to Change Assignment Logic
 
