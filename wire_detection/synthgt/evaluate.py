@@ -220,3 +220,40 @@ def compare_strategies(
         })
     rows.sort(key=lambda r: r["mean_err_f1"], reverse=True)
     return rows
+
+
+def score_join_fn(join_fn, specs: list[CircuitSpec] | None = None, seeds: int = 12) -> dict:
+    """Per-severity mean F1 (+ clean, + wheatstone L3 precision) for a raw join_fn
+    (wires, components, std_pins) -> Netlist. Used to score search-found candidate
+    strategies that are not registry entries (see candidate_joins.py)."""
+    specs = specs or CATALOG
+    sevs = sorted(ERROR_LEVELS)
+    by = {s: [] for s in sevs}
+    wheat = []
+    for spec in specs:
+        comps, clean_wires, pin_pos = synthesize_clean(spec)
+        std_pins = _make_std_pins(pin_pos, spec)
+        gt = intended_pairs(spec)
+        for sev in sevs:
+            for seed in range(1 if sev == 0 else seeds):
+                w = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos, components=comps)
+                p, r, f = _prf(gt, _comp_pairs(join_fn(w, comps, std_pins)))
+                by[sev].append(f)
+                if spec.name == "wheatstone" and sev == 3:
+                    wheat.append(p)
+    m = {s: sum(v) / len(v) for s, v in by.items()}
+    err = [m[s] for s in sevs if s != 0]
+    return {"clean": m[0], "by_sev": [m[s] for s in sevs],
+            "mean_err_f1": sum(err) / len(err) if err else 0.0,
+            "wheat_prec_L3": (sum(wheat) / len(wheat)) if wheat else None}
+
+
+def compare_candidates(specs: list[CircuitSpec] | None = None, seeds: int = 12) -> list[dict]:
+    """Baseline graph_rescue vs each search-found candidate join (join-only)."""
+    from wire_detection.synthgt.candidate_joins import CANDIDATES
+    rows = [{"name": f"{DEFAULT_STRATEGY} (baseline)",
+             **score_join_fn(lambda w, c, sp: run_strategy(DEFAULT_STRATEGY, w, c, std_pins=sp)[1],
+                             specs, seeds)}]
+    for name, fn in CANDIDATES.items():
+        rows.append({"name": name, **score_join_fn(fn, specs, seeds)})
+    return rows
