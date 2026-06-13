@@ -25,7 +25,7 @@ from collections import defaultdict
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-from wire_detection.core.join_graph import build_endpoint_graph, estimate_scale
+from wire_detection.core.join_graph import build_endpoint_graph, estimate_scale, extend_wires
 from wire_detection.core.netlist import Netlist, NetNode
 
 # Component types that legitimately touch only one net -> never treated as a
@@ -89,6 +89,7 @@ def degree_budget_completion(wires, components, std_pins, relax_witness=True):
     if not std_pins:
         return netlist_from_uf(std_pins, {})
 
+    wires = extend_wires(wires, 12)  # match graph_rescue's 12px endpoint extension
     base = build_endpoint_graph(
         wires, components, std_pins,
         tau_pin=0.62, tau_join=0.30, tau_t=0.20,

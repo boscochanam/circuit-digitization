@@ -287,3 +287,21 @@ def build_endpoint_graph(
         for p in plist:
             nl.pin_to_node[(p.component_idx, p.pin_name)] = nid
     return nl
+
+
+def extend_wires(wires, px):
+    """Lengthen each wire by ``px`` at both ends along its direction so endpoints
+    truncated at component edges reach the component pin."""
+    if not px:
+        return wires
+    out = []
+    for (x1, y1), (x2, y2) in wires:
+        dx, dy = x2 - x1, y2 - y1
+        ln = math.hypot(dx, dy)
+        if ln < 1e-6:
+            out.append(((x1, y1), (x2, y2)))
+            continue
+        ux, uy = dx / ln, dy / ln
+        out.append(((int(x1 - ux * px), int(y1 - uy * px)),
+                    (int(x2 + ux * px), int(y2 + uy * px))))
+    return out
