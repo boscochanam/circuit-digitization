@@ -18,6 +18,34 @@ This is the SINGLE SOURCE OF TRUTH for:
 | `docs/draw_circuits*.py` | Circuit catalog visualizations |
 | `docs/draw_error_sweep.py` | Error sweep visualizations |
 
+## Visualizations MUST Use the Real Algorithm
+
+**Rule:** Any visualization that shows connection status (connected/disconnected, recovered/missed) MUST use the same logic as the pipeline.
+
+**DO:**
+```python
+from wire_detection.core.component_assignment import assign_endpoint_to_component, snap_endpoint
+
+# Check if endpoint is assigned to a component
+result = assign_endpoint_to_component(ep, components, tau_pin=60.0)
+if result.component_idx is not None:
+    # Endpoint is connected to this component
+    ...
+
+# Snap endpoint to pin position for display
+snapped = snap_endpoint(ep, components, pin_pos)
+```
+
+**DON'T:**
+```python
+# WRONG — reimplementing bbox check locally
+if x1 <= ep[0] <= x2 and y1 <= ep[1] <= y2:
+    # This misses endpoints that are NEAR but OUTSIDE the bbox
+    ...
+```
+
+**Why:** The pipeline assigns endpoints to the nearest component within `max(tau_pin, 0.5 * diagonal)` radius. Endpoints can be 10-80px outside the bbox but still assigned to that component. If the visualization only checks "inside bbox", it will show endpoints as disconnected when the pipeline has correctly connected them.
+
 ## If You Need to Change Assignment Logic
 
 1. Edit ONLY `wire_detection/core/component_assignment.py`
