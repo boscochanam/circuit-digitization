@@ -155,21 +155,9 @@ def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
     result = run_strategy("graph_rescue", err_wires, components, std_pins=std_pins)
     pins, net = result
     
-    # Determine connection status from the actual join result (union-find)
-    # Check if the wire appears in a node that spans multiple components
-    wire_connected = []
-    
-    # Build a map: wire_index -> set of component indices in the same node
-    wire_comp_map = {}
-    for nid, node in enumerate(net.nodes):
-        comp_set = set(p.component_idx for p in node.pins)
-        if len(comp_set) > 1:  # multi-component node
-            for wi in node.wires:
-                wire_comp_map.setdefault(wi, set()).update(comp_set)
-    
-    for w_idx in range(len(err_wires)):
-        # Wire is connected if it appears in a multi-component node
-        wire_connected.append(w_idx in wire_comp_map)
+    # Determine connection status from the actual netlist
+    # Use the Netlist's own method — no reimplementation
+    wire_connected = [net.wire_connects_components(w_idx) for w_idx in range(len(err_wires))]
 
     # Build joined wires: green if both endpoints connected, yellow if one, red if none
     joined_wires = []
