@@ -22,7 +22,7 @@ from wire_detection.core.netlist import (
     derive_pins_from_obb,
     discover_pins,
 )
-from wire_detection.core.join_graph import build_endpoint_graph
+from wire_detection.core.join_graph import build_endpoint_graph, extend_wires
 from wire_detection.core.completion import degree_budget_completion
 from wire_detection.core.mapping import TWO_TERMINAL_TYPES
 from wire_detection.core.component_classes import COMPONENT_TYPES
@@ -101,25 +101,6 @@ def attach_density(ep, pins, base, k=1, shrink=0.07, floor=0.45):
     sel = sorted((dp for dp in within if dp[0] <= r_eff), key=lambda dp: dp[0])
     return [p for _d, p in sel[:k]]
 
-
-# ── wire-end extension (occlusion-gap fix) ──
-
-def extend_wires(wires, px):
-    """Lengthen each wire by `px` at both ends along its direction so endpoints
-    truncated at component edges reach the component pin."""
-    if not px:
-        return wires
-    out = []
-    for (x1, y1), (x2, y2) in wires:
-        dx, dy = x2 - x1, y2 - y1
-        ln = math.hypot(dx, dy)
-        if ln < 1e-6:
-            out.append(((x1, y1), (x2, y2)))
-            continue
-        ux, uy = dx / ln, dy / ln
-        out.append(((int(x1 - ux * px), int(y1 - uy * px)),
-                    (int(x2 + ux * px), int(y2 + uy * px))))
-    return out
 
 
 # ── junction-aware pins: relocate junction/terminal pins to where wires meet ──
@@ -339,7 +320,7 @@ STRATEGIES = [
     # on real images. Implementation in core/completion.py.
     {"name": "degree_budget", "label": "Degree-budget completion (graph_rescue + floating-pin recovery)",
      "desc": "Endpoint graph (graph_rescue), then min-cost b-matching reconnects floating pins the detector dropped, bounded to <=1 edge/pin with a self-loop guard. Best join_quality on synthetic ground truth and highest real-image connectivity.",
-     "radius": 30, "kind": "completion"},
+     "radius": 30, "kind": "completion", "extend": 12},
 ]
 _BY_NAME = {s["name"]: s for s in STRATEGIES}
 # Promoted default: degree_budget = graph_rescue + floating-pin completion. Best
