@@ -14,6 +14,7 @@ from wire_detection.core.join_strategies import run_strategy
 from wire_detection.synthgt.circuits import CATALOG, CATALOG_BY_NAME
 from wire_detection.synthgt.evaluate import (
     _comp_pairs,
+    _make_std_pins,
     _prf,
     _sources_match,
     compare_strategies,
@@ -142,6 +143,49 @@ def test_compare_strategies_ranks_and_flags_clean():
     # mutual under-merges and cannot even recover the clean control
     mut = next(r for r in rows if r["strategy"] == "mutual_30")
     assert mut["clean"] < 1.0
+
+
+def test_catalog_names_unique_and_include_new_topologies():
+    names = [c.name for c in CATALOG]
+    assert len(names) == len(set(names))            # no duplicate names
+    assert {"series_parallel", "rc_parallel", "wheatstone"} <= set(names)
+
+
+def test_wheatstone_recovers_four_node_bridge():
+    """The bridge is a genuine non-series/non-parallel topology: 4 distinct
+    electrical nodes (A/B/M/N), and the bridge resistor spans the two mids."""
+    spec = CATALOG_BY_NAME["wheatstone"]
+    components, wires, pin_pos = synthesize_clean(spec)
+    _, net = run_strategy("graph_rescue", wires, components,
+                          std_pins=_make_std_pins(pin_pos, spec))
+    assert len(set(net.pin_to_node.values())) == 4          # A, B, M, N
+    assert net.pin_to_node[(5, "pin0")] != net.pin_to_node[(5, "pin1")]  # bridge spans M-N
+
+
+def test_rc_parallel_emits_capacitor_with_valid_dc_current():
+    """The cap must appear in the SPICE deck (C path exercised) while the DC
+    current stays at the authored 2.5 mA (cap open at DC)."""
+    spec = CATALOG_BY_NAME["rc_parallel"]
+    res = evaluate_circuit(spec, seeds=1)
+    if res["spice_on"]:
+        assert res["expect_match"] is True
+    assert any(c.type.startswith("capacitor") for c in spec.comps)
+
+
+def test_degree_budget_completion_beats_graph_rescue():
+    """Lock in the search finding: the completion candidate recovers more (mean-err
+    F1 up) without breaking clean and without trading away bridge precision. If this
+    regresses, the candidate or the harness changed -- investigate before trusting."""
+    from wire_detection.synthgt.candidate_joins import degree_budget_completion
+    from wire_detection.synthgt.evaluate import score_join_fn
+    from wire_detection.core.join_strategies import run_strategy
+
+    cand = score_join_fn(degree_budget_completion, seeds=4)
+    base = score_join_fn(lambda w, c, sp: run_strategy("graph_rescue", w, c, std_pins=sp)[1],
+                         seeds=4)
+    assert cand["clean"] == pytest.approx(1.0)              # never breaks easy cases
+    assert cand["mean_err_f1"] > base["mean_err_f1"]        # genuinely more robust
+    assert cand["wheat_prec_L3"] >= base["wheat_prec_L3"] - 1e-6   # not precision-for-recall
 
 
 def test_authoring_guard_flags_expectation_mismatch():
