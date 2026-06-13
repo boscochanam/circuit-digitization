@@ -120,6 +120,12 @@ def draw_panel(img, spec, wires, pin_pos, cx, cy, pw, ph, title, wire_color, sho
     draw_wires(draw, wires, sx, sy, wire_color)
     draw_components(draw, spec, sx, sy, sc)
     draw_pins(draw, pin_pos, sx, sy)
+    
+    # Wire labels (W0, W1, etc.) at midpoint
+    for w_idx, w in enumerate(wires):
+        mid_x = (w[0][0] + w[1][0]) / 2
+        mid_y = (w[0][1] + w[1][1]) / 2
+        draw.text((sx(mid_x), sy(mid_y)), f"W{w_idx}", fill="#9ca3af", font=font_pin, anchor="mm")
 
 
 def get_join_connections(err_wires, components):
@@ -150,57 +156,36 @@ def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
     pins, net = result
     
     # Determine connection status from the actual join result (union-find)
-    # A wire endpoint is "connected" if its union-find root contains any pin
-    from collections import defaultdict
-    ep_roots = {}  # (w_idx, ep_idx) -> root
-    pin_roots = set()  # roots that contain pins
-    for (ci, pi), nid in net.pin_to_node.items():
-        pin_roots.add(nid)
+    # Use shared component-assignment logic to find which component each endpoint belongs to
+    from wire_detection.core.component_assignment import assign_endpoint_to_component
     
-    # We need to run the graph builder to get the union-find state
-    # Instead, check if the wire's endpoints share a node with any pin
-    # by checking if both endpoints' components are in the same node
     wire_connected = []
     for w_idx, w in enumerate(err_wires):
-        # Check if this wire's endpoints are assigned to components that are connected
-        ep0_comp = None
-        ep1_comp = None
-        # Find which component each endpoint is nearest to
-        for ci, (cls, verts, bbox) in enumerate(components):
-            x1, y1, x2, y2 = bbox
-            for ep_idx, ep in enumerate(w):
-                if x1 <= ep[0] <= x2 and y1 <= ep[1] <= y2:
-                    if ep_idx == 0:
-                        ep0_comp = ci
-                    else:
-                        ep1_comp = ci
-        # Check if those components are in the same node
-        if ep0_comp is not None and ep1_comp is not None:
-            node0 = net.pin_to_node.get((ep0_comp, 'pin0'))
-            node1 = net.pin_to_node.get((ep1_comp, 'pin0'))
+        # Find which component each endpoint is assigned to
+        r0 = assign_endpoint_to_component(w[0], components, 60.0)
+        r1 = assign_endpoint_to_component(w[1], components, 60.0)
+        
+        if r0.component_idx is not None and r1.component_idx is not None:
+            # Check if those components are in the same node
+            node0 = net.pin_to_node.get((r0.component_idx, 'pin0'))
+            node1 = net.pin_to_node.get((r1.component_idx, 'pin0'))
             if node0 is not None and node1 is not None and node0 == node1:
                 wire_connected.append(True)
                 continue
-        # Fallback: check if either endpoint is inside a component bbox
-        # and that component is in a node with other components
+        
+        # Fallback: check if endpoint is assigned to a component in a multi-component node
         connected = False
-        for ep_idx, ep in enumerate(w):
-            for ci, (cls, verts, bbox) in enumerate(components):
-                x1, y1, x2, y2 = bbox
-                if x1 <= ep[0] <= x2 and y1 <= ep[1] <= y2:
-                    # This endpoint is inside a component
-                    node = net.pin_to_node.get((ci, 'pin0'))
-                    if node is not None:
-                        # Check if this node has pins from other components
-                        other_comps = set()
-                        for (pci, ppi), nid in net.pin_to_node.items():
-                            if nid == node and pci != ci:
-                                other_comps.add(pci)
-                        if other_comps:
-                            connected = True
-                            break
-            if connected:
-                break
+        for r in [r0, r1]:
+            if r.component_idx is not None:
+                node = net.pin_to_node.get((r.component_idx, 'pin0'))
+                if node is not None:
+                    other_comps = set()
+                    for (pci, ppi), nid in net.pin_to_node.items():
+                        if nid == node and pci != r.component_idx:
+                            other_comps.add(pci)
+                    if other_comps:
+                        connected = True
+                        break
         wire_connected.append(connected)
 
     # Build joined wires: green if both endpoints connected, yellow if one, red if none
@@ -218,8 +203,10 @@ def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
     img = Image.new("RGB", (W, H), "#111827")
     draw = ImageDraw.Draw(img)
 
-    # Title
-    draw.text((W // 2, 10), f"{circuit_name}  ({len(spec.comps)} components, {len(spec.nets)} nets)",
+    # Title — include circuit index from CATALOG
+    from wire_detection.synthgt.circuits import CATALOG
+    circuit_idx = next((i for i, c in enumerate(CATALOG) if c.name == circuit_name), "?")
+    draw.text((W // 2, 10), f"[{circuit_idx}] {circuit_name}  ({len(spec.comps)} components, {len(spec.nets)} nets)",
               fill="#e94560", font=font_title, anchor="mt")
 
     # Stage 1: Ground Truth
@@ -262,7 +249,13 @@ def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
     
     draw_components(draw, spec, sx, sy, sc)
     draw_pins(draw, pin_pos, sx, sy)
-
+    
+    # Wire labels (W0, W1, etc.) at midpoint of each wire
+    for w_idx, w in enumerate(clean_wires):
+        mid_x = (w[0][0] + w[1][0]) / 2
+        mid_y = (w[0][1] + w[1][1]) / 2
+        draw.text((sx(mid_x), sy(mid_y)), f"W{w_idx}", fill="#9ca3af", font=font_pin, anchor="mm")
+    
     # Legend at bottom
     ly = H - 25
     lx = 15
