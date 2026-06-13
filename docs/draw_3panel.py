@@ -10,6 +10,7 @@ wires as lines (green=correct, red=displaced, blue=recovered).
 """
 from __future__ import annotations
 import math
+import os
 from PIL import Image, ImageDraw, ImageFont
 from wire_detection.synthgt.circuits import CATALOG, CATALOG_BY_NAME
 from wire_detection.synthgt.synthesize import (
@@ -18,11 +19,22 @@ from wire_detection.synthgt.synthesize import (
 from wire_detection.core.join_strategies import run_strategy
 
 
-try:
-    FNT = lambda s: ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", s)
-    FNT_R = lambda s: ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", s)
-except Exception:
-    FNT = FNT_R = lambda s: ImageFont.load_default()
+def _try_font(candidates, size):
+    """Load the first available font; fall back to PIL's default. Must actually
+    CALL truetype inside the try (the path may be missing on this OS)."""
+    for name in candidates:
+        try:
+            return ImageFont.truetype(name, size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
+
+_BOLD = ["DejaVuSans-Bold.ttf",
+         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "arialbd.ttf"]
+_REG = ["DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "arial.ttf"]
+FNT = lambda s: _try_font(_BOLD, s)
+FNT_R = lambda s: _try_font(_REG, s)
 
 font_title = FNT(18)
 font_stage = FNT(14)
@@ -283,15 +295,15 @@ def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
     return img
 
 
-# Generate for all circuits
+# Generate for all circuits. Output next to this script (docs/) regardless of OS.
 SEED = 0
 ERR_LEVEL = 3
-OUT_DIR = "/home/claw/circuit-digitization/docs"
+OUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 for spec in CATALOG:
     img = make_three_panel(spec.name, spec, seed=SEED, error_level=ERR_LEVEL)
-    out = f"{OUT_DIR}/synthgt_3panel_{spec.name}.png"
+    out = os.path.join(OUT_DIR, f"synthgt_3panel_{spec.name}.png")
     img.save(out, "PNG")
     print(f"Saved {out} ({img.width}x{img.height})")
 
-print("\nDone — all 11 circuits rendered.")
+print(f"\nDone - all {len(CATALOG)} circuits rendered.")

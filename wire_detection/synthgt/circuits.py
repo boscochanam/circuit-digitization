@@ -235,8 +235,66 @@ CATALOG: list[CircuitSpec] = [
                _R("1k", 400, 350, orient="H", size=160, angle=-45)],
         nets=[[(0, 0), (1, 0), (2, 0)],   # top rail
               [(0, 1), (1, 1), (2, 1)]],   # bottom rail
-        expect_mA=5.0,            # 5V / 1k (SPICE sees series, not parallel — known issue)
-        note="Parallel resistors at ±45°; multi-terminal angled nets.",
+        expect_mA=10.0,           # 5V / (1k||1k = 500R) - simulates correctly to 10mA
+        note="Parallel resistors at +/-45deg; multi-terminal angled nets.",
+    ),
+
+    # -- More topologies (added in the review pass) ----------------------
+
+    # Series + parallel: V - R1 - (R2 || R3). Mixed topology, not a pure loop.
+    # I = 5V / (R1 + R2||R3) = 5 / (1k + 500R) = 3.333 mA.
+    CircuitSpec(
+        name="series_parallel",
+        comps=[_V("5", 120, 240, size=200),
+               _R("1k", 300, 140, orient="H"),
+               _R("1k", 450, 240, size=200),
+               _R("1k", 560, 240, size=200)],
+        nets=[[(0, 0), (1, 0)],            # A: V.top - R1.left
+              [(1, 1), (2, 0), (3, 0)],    # M: R1.right - R2.top - R3.top (parallel node)
+              [(2, 1), (3, 1), (0, 1)]],   # B: R2.bot - R3.bot - V.bot
+        expect_mA=5.0 / 1500.0 * 1000.0,   # ~3.333 mA
+        note="Series R into a parallel pair; mixed series/parallel topology.",
+    ),
+
+    # Capacitor in a DC-valid position: V - R1 - R2 with C across R2. At DC the
+    # cap is open, so I = 5V/(R1+R2) = 2.5 mA and the cap draws no current - but
+    # it still appears in the SPICE deck, exercising the C path that the pure
+    # series loops deliberately avoid (a cap in the ONLY path would read I=0,
+    # indistinguishable from a dead join).
+    CircuitSpec(
+        name="rc_parallel",
+        comps=[_V("5", 120, 240, size=200),
+               _R("1k", 300, 140, orient="H"),
+               _R("1k", 480, 240, size=200),
+               Comp("capacitor-unpolarized", "1u", 600, 240, size=200)],
+        nets=[[(0, 0), (1, 0)],            # A: V.top - R1.left
+              [(1, 1), (2, 0), (3, 0)],    # M: R1.right - R2.top - C.top
+              [(2, 1), (0, 1), (3, 1)]],   # B: R2.bot - V.bot - C.bot
+        expect_mA=2.5,            # 5V / 2k (cap open at DC)
+        note="V-R-R with C across R2; checks the C SPICE path in a DC-valid circuit.",
+    ),
+
+    # Wheatstone bridge: V across A-B, four arms R1..R4, bridge R5 between the
+    # two mid-nodes. Balanced (all 1k) so the bridge carries NO current and the
+    # source sees (2k || 2k) = 1k -> 5 mA. Dropping the bridge by error is then
+    # invisible to sim (balanced) but visible to join F1 - the mirror image of
+    # dense_pair's over-merge-invisible-to-sim case. A genuine non-series/
+    # non-parallel topology. Small stacked Rs joined by wires (bbox = 2x pin
+    # span, so columns need gaps + connecting segments, not touching pins).
+    CircuitSpec(
+        name="wheatstone",
+        comps=[_V("5", 110, 300, size=320),          # 0: source, A(top)/B(bot)
+               _R("1k", 280, 200, size=80),           # 1: A-M  (left-top arm)
+               _R("1k", 540, 200, size=80),           # 2: A-N  (right-top arm)
+               _R("1k", 280, 400, size=80),           # 3: M-B  (left-bot arm)
+               _R("1k", 540, 400, size=80),           # 4: N-B  (right-bot arm)
+               _R("1k", 410, 300, orient="H", size=80)],  # 5: M-N (bridge)
+        nets=[[(0, 0), (1, 0), (2, 0)],   # A: V.top - R1.top - R2.top
+              [(0, 1), (3, 1), (4, 1)],   # B: V.bot - R3.bot - R4.bot
+              [(1, 1), (3, 0), (5, 0)],   # M: R1.bot - R3.top - bridge.left
+              [(2, 1), (4, 0), (5, 1)]],  # N: R2.bot - R4.top - bridge.right
+        expect_mA=5.0,            # balanced bridge: (R1+R3)||(R2+R4) = 2k||2k = 1k
+        note="Balanced Wheatstone bridge; bridge carries 0 current (under-merge-invisible-to-sim).",
     ),
 ]
 
