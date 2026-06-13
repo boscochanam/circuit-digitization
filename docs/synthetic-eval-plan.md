@@ -151,6 +151,77 @@ The harness asserts every **clean** (level 0) join recovers F1 = 1.0; a failure
 there flags a bad layout or a join regression, not a noise effect.
 `wire_detection/tests/test_synthgt.py` locks this invariant in.
 
+## Strategy selection: why graph_rescue (a worked example)
+
+The harness was used to pick the default join empirically rather than by intuition.
+`--compare` over the 15-circuit catalog ranks the `graph_*` family (with the
+component-first endpoint binding) at ~0.94-0.96 mean-error F1, while the legacy
+`nearest`/`mutual`/`anchored`/`production` families collapse to 0.48-0.76 and
+several fail the clean control. Within the graph family the differences are small,
+so reach-tuned variants were tried (dead-end reach 2.2x -> 2.8x / 3.5x, end
+extension 12px -> 20px, directional on/off):
+
+- **More reach is a wash.** The 2.2x rescue already reaches ~132px, past the 80px
+  max anchor-displacement, so longer reach recovers nothing extra (per-circuit
+  precision/recall are identical to graph_rescue).
+- **`extend=20` regresses** — it over-reaches on clean layouts and grabs the wrong
+  pin, breaking the F1 = 1.0 invariant (a real over-merge, caught by the harness).
+- The residual high-error failures are **recall drops from wires dropped entirely**
+  (a detection loss, [#21]) — unrecoverable by any join. The join is at its ceiling.
+
+Conclusion within the *existing* registry: `graph_rescue` is the best of the
+shipped algorithms. But the harness can also be used as a SEARCH ENGINE for new
+ones (next section), and that did turn up a winner.
+
+## Strategy search: a candidate that beats graph_rescue
+
+Using the ground truth as a search target (ideate diverse families -> implement +
+score each vs ground truth -> adversarially verify the winners), one candidate
+genuinely beat `graph_rescue`:
+
+**`degree_budget_completion`** (`wire_detection/synthgt/candidate_joins.py`) — a
+post-processing COMPLETION layer on top of graph_rescue. A pin whose net touches
+only its own component is "floating" (the signature of a dropped/over-displaced
+wire); it reconnects such pins to other components via reach-bounded **min-cost
+b-matching** (at most one edge per floating pin). Scores (12 seeds, 15 circuits):
+
+```
+join                       clean   L1     L2     L3     L4   mean(err)  wheatL3p
+graph_rescue (baseline)    1.00  1.00  0.97  0.94  0.87    0.944      0.885
+degree_budget_completion   1.00  1.00  0.99  0.96  0.94    0.972      0.921
+```
+
+It wins at every severity (+0.035 mean-error F1), keeps clean = 1.0, and RAISES
+bridge precision — it is not a precision-for-recall trade. Run it with
+`uv run python -m wire_detection.synthgt --candidates`.
+
+**Adversarial verification (overfit_risk = low):** the gain is stable across seed
+batches (0.972 at 12 seeds, 0.9705 at 24), the REACH_FACTOR sweep is smooth (not a
+tuned spike), and the win is concentrated in DROP mode (recovering wires the
+detector missed entirely — a real high-frequency failure) where precision *rises*.
+Contrast: a second apparent winner (`candidate_join_ilp_relaxation`, 0.951) was
+verified as **overfit** — its headline number was the luckiest seed batch, its
+named ILP mechanism was inert, and it regressed on jitter mode. The adversarial
+pass is what separated the real win from the artifact.
+
+A robust secondary finding: ~10 other candidates beat graph_rescue on bridge
+*precision* (0.92–0.97) but lost *recall* at high severity — graph_rescue is
+recall-optimized, and the drop-heavy error model rewards that. Only
+`degree_budget_completion` improved recall on drops without sacrificing precision.
+
+**Promotion (done):** the two production blockers from the real benchmark were
+fixed — a self-loop guard (one pin per component per net) and wire tracking (base
+wires carried onto final nodes) — then validated on **real images** (40-image
+subset, gt153 + hdc): self-loops 4.4 → **1.38** (below graph_rescue's 1.82), wire
+coverage 0% → **83%**, connectivity **+16.5%** with *fewer* floating components.
+The implementation was moved to `wire_detection/core/completion.py`, registered as
+the `degree_budget` join strategy, and is now `DEFAULT_STRATEGY`; graph_rescue
+stays as fallback (`?strategy=graph_rescue`). **Residual caveat:** the connectivity
+gain still has no net-level ground truth ([#20]) to fully rule out over-merge —
+but real self-loops *and* floating components both dropped, which is consistent
+with recovering real connections, not inventing them. Confirm on the full
+153-image set; recheck once the error model is calibrated ([#61], [#62]).
+
 ## Roadmap (to make the join numbers trustworthy)
 
 1. **Calibrate the error model to the real detector.** Run the detector on the
@@ -180,3 +251,4 @@ and pin-to-pin connect make producing it fast).
 [#19]: https://github.com/boscochanam/circuit-digitization/issues/19
 [#20]: https://github.com/boscochanam/circuit-digitization/issues/20
 [#21]: https://github.com/boscochanam/circuit-digitization/issues/21
+[#61]: https://github.com/boscochanam/circuit-digitization/issues/61

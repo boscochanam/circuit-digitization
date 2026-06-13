@@ -22,6 +22,7 @@ from itertools import combinations
 from wire_detection.core.join_strategies import run_strategy
 from wire_detection.core.simulator import SpiceSimulator
 from wire_detection.core.spice import SpiceGenerator
+from wire_detection.core.netlist import ComponentPin
 from wire_detection.synthgt.circuits import CATALOG, CircuitSpec
 from wire_detection.synthgt.synthesize import (
     ERROR_LEVELS,
@@ -57,6 +58,22 @@ def _prf(gt: set, got: set) -> tuple[float, float, float]:
 
 def _voltage_idxs(spec: CircuitSpec) -> list[int]:
     return [i for i, c in enumerate(spec.comps) if c.type.startswith("voltage")]
+
+
+def _make_std_pins(pin_pos: dict, spec: CircuitSpec) -> list[ComponentPin]:
+    """Convert synthgt pin_pos dict to ComponentPin objects for run_strategy."""
+    pins = []
+    for (ci, pi), (x, y) in pin_pos.items():
+        c = spec.comps[ci]
+        pins.append(ComponentPin(
+            component_idx=ci,
+            component_name=c.type,
+            pin_idx=pi,
+            pin_name=f"pin{pi}",
+            x=x, y=y,
+            rel_x=0.0, rel_y=0.0,
+        ))
+    return pins
 
 
 def _source_currents(sim: dict, v_idxs: list[int]) -> list[float]:
@@ -104,8 +121,9 @@ def evaluate_circuit(
         sim_ok = inj_total = sim_runs = 0
         n = 1 if sev == 0 else seeds
         for seed in range(n):
-            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos)
-            _, net = run_strategy(strategy, wires, components)
+            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos, components=components)
+            _, net = run_strategy(strategy, wires, components,
+                                  std_pins=_make_std_pins(pin_pos, spec))
             p, r, f = _prf(gt_pairs, _comp_pairs(net))
             accP += p; accR += r; accF += f
             if spice_on:
@@ -167,8 +185,9 @@ def _join_f1_sweep(spec: CircuitSpec, strategy: str, seeds: int) -> list[float]:
         n = 1 if sev == 0 else seeds
         acc = 0.0
         for seed in range(n):
-            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos)
-            _, net = run_strategy(strategy, wires, components)
+            wires = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos, components=components)
+            _, net = run_strategy(strategy, wires, components,
+                                  std_pins=_make_std_pins(pin_pos, spec))
             acc += _prf(gt_pairs, _comp_pairs(net))[2]
         out.append(acc / n)
     return out
@@ -200,4 +219,41 @@ def compare_strategies(
             "mean_err_f1": sum(err) / len(err) if err else 0.0,
         })
     rows.sort(key=lambda r: r["mean_err_f1"], reverse=True)
+    return rows
+
+
+def score_join_fn(join_fn, specs: list[CircuitSpec] | None = None, seeds: int = 12) -> dict:
+    """Per-severity mean F1 (+ clean, + wheatstone L3 precision) for a raw join_fn
+    (wires, components, std_pins) -> Netlist. Used to score search-found candidate
+    strategies that are not registry entries (see candidate_joins.py)."""
+    specs = specs or CATALOG
+    sevs = sorted(ERROR_LEVELS)
+    by = {s: [] for s in sevs}
+    wheat = []
+    for spec in specs:
+        comps, clean_wires, pin_pos = synthesize_clean(spec)
+        std_pins = _make_std_pins(pin_pos, spec)
+        gt = intended_pairs(spec)
+        for sev in sevs:
+            for seed in range(1 if sev == 0 else seeds):
+                w = inject_errors(clean_wires, sev, seed, pin_pos=pin_pos, components=comps)
+                p, r, f = _prf(gt, _comp_pairs(join_fn(w, comps, std_pins)))
+                by[sev].append(f)
+                if spec.name == "wheatstone" and sev == 3:
+                    wheat.append(p)
+    m = {s: sum(v) / len(v) for s, v in by.items()}
+    err = [m[s] for s in sevs if s != 0]
+    return {"clean": m[0], "by_sev": [m[s] for s in sevs],
+            "mean_err_f1": sum(err) / len(err) if err else 0.0,
+            "wheat_prec_L3": (sum(wheat) / len(wheat)) if wheat else None}
+
+
+def compare_candidates(specs: list[CircuitSpec] | None = None, seeds: int = 12) -> list[dict]:
+    """Baseline graph_rescue vs each search-found candidate join (join-only)."""
+    from wire_detection.synthgt.candidate_joins import CANDIDATES
+    rows = [{"name": f"{DEFAULT_STRATEGY} (baseline)",
+             **score_join_fn(lambda w, c, sp: run_strategy(DEFAULT_STRATEGY, w, c, std_pins=sp)[1],
+                             specs, seeds)}]
+    for name, fn in CANDIDATES.items():
+        rows.append({"name": name, **score_join_fn(fn, specs, seeds)})
     return rows
