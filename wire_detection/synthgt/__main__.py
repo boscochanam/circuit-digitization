@@ -17,6 +17,7 @@ from wire_detection.core.join_strategies import list_strategies
 from wire_detection.synthgt.circuits import CATALOG, CATALOG_BY_NAME
 from wire_detection.synthgt.evaluate import (
     DEFAULT_STRATEGY,
+    compare_candidates,
     compare_strategies,
     run_suite,
 )
@@ -94,6 +95,8 @@ def main(argv: list[str] | None = None) -> int:
                     help=f"join strategy to evaluate (default {DEFAULT_STRATEGY})")
     ap.add_argument("--compare", action="store_true",
                     help="rank EVERY join strategy on ground truth (join-only leaderboard)")
+    ap.add_argument("--candidates", action="store_true",
+                    help="baseline vs search-found candidate joins (see candidate_joins.py)")
     ap.add_argument("--json", action="store_true", help="emit JSON instead of a table")
     args = ap.parse_args(argv)
 
@@ -117,6 +120,28 @@ def main(argv: list[str] | None = None) -> int:
             print()
         else:
             _print_leaderboard(rows, len(specs), args.seeds)
+        return 0
+
+    if args.candidates:
+        rows = compare_candidates(specs, seeds=args.seeds)
+        if args.json:
+            json.dump(rows, sys.stdout, indent=2)
+            print()
+        else:
+            print(f"\nSearch-found candidate joins vs baseline ({len(specs)} circuits "
+                  f"x {args.seeds} seeds, ground-truth F1)")
+            print("=" * 78)
+            print(f"{'join':34} {'clean':>6} {'L1':>6} {'L2':>6} {'L3':>6} {'L4':>6}  "
+                  f"{'mean(err)':>9} {'wheatL3p':>9}")
+            print("-" * 78)
+            for r in rows:
+                cells = "  ".join(f"{v:.2f}" for v in r["by_sev"])
+                wp = "   n/a" if r["wheat_prec_L3"] is None else f"{r['wheat_prec_L3']:.3f}"
+                print(f"{r['name']:34} {cells}  {r['mean_err_f1']:>7.3f}  {wp:>9}")
+            print("-" * 78)
+            print("Candidates are search-found and adversarially verified, but NOT the")
+            print("production default - validate on real/calibrated data first (see")
+            print("candidate_joins.py docstring + docs/synthetic-eval-plan.md).")
         return 0
 
     results = run_suite(specs, seeds=args.seeds, strategy=args.strategy)

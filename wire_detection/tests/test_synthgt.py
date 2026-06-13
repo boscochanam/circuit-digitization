@@ -172,6 +172,22 @@ def test_rc_parallel_emits_capacitor_with_valid_dc_current():
     assert any(c.type.startswith("capacitor") for c in spec.comps)
 
 
+def test_degree_budget_completion_beats_graph_rescue():
+    """Lock in the search finding: the completion candidate recovers more (mean-err
+    F1 up) without breaking clean and without trading away bridge precision. If this
+    regresses, the candidate or the harness changed -- investigate before trusting."""
+    from wire_detection.synthgt.candidate_joins import degree_budget_completion
+    from wire_detection.synthgt.evaluate import score_join_fn
+    from wire_detection.core.join_strategies import run_strategy
+
+    cand = score_join_fn(degree_budget_completion, seeds=4)
+    base = score_join_fn(lambda w, c, sp: run_strategy("graph_rescue", w, c, std_pins=sp)[1],
+                         seeds=4)
+    assert cand["clean"] == pytest.approx(1.0)              # never breaks easy cases
+    assert cand["mean_err_f1"] > base["mean_err_f1"]        # genuinely more robust
+    assert cand["wheat_prec_L3"] >= base["wheat_prec_L3"] - 1e-6   # not precision-for-recall
+
+
 def test_authoring_guard_flags_expectation_mismatch():
     """gt_mA vs expect_mA disagreement must be surfaced (spec bug detector)."""
     import copy
