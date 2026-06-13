@@ -207,7 +207,7 @@ def inject_errors(
         w = _cut_short(w, cut)
         # Anchor deletion: displace one endpoint far from its pin
         if displace_p and rng.random() < displace_p:
-            w = _displace_endpoint(w, displace_d, rng, components, pin_pos)
+            w = _displace_endpoint(w, displace_d, rng)
         (x1, y1), (x2, y2) = w
         if sigma:
             x1 += rng.gauss(0, sigma); y1 += rng.gauss(0, sigma)
@@ -227,40 +227,17 @@ def inject_errors(
     return out
 
 
-def _displace_endpoint(wire: Wire, dist: float, rng: random.Random,
-                       components=None, pin_pos=None) -> Wire:
+def _displace_endpoint(wire: Wire, dist: float, rng: random.Random) -> Wire:
     """Displace ONE endpoint by *dist* pixels in a random direction — models the
     detector failing to trace a wire all the way to the component lead (anchor
-    deletion, #21). If the displaced endpoint lands inside a component's bbox,
-    snap it to the nearest pin of that component (realistic: the wire reached
-    the component but not the pin). Otherwise leave it displaced."""
+    deletion, #21). Pure random displacement; the join algorithm figures out
+    which component each endpoint belongs to based on derived pin positions."""
     (x1, y1), (x2, y2) = wire
-    # Pick which endpoint to displace
     k = rng.randint(0, 1)
     ox, oy = (x1, y1) if k == 0 else (x2, y2)
-    # Random direction, clamped to dist
     angle = rng.uniform(0, 2 * math.pi)
     nx = int(ox + dist * math.cos(angle))
     ny = int(oy + dist * math.sin(angle))
-
-    # Check if displaced endpoint lands inside any component's bbox
-    if components and pin_pos:
-        for comp in components:
-            x1b, y1b, x2b, y2b = comp[2]  # bbox
-            if x1b - 8 <= nx <= x2b + 8 and y1b - 8 <= ny <= y2b + 8:
-                # Inside a component bbox — snap to nearest pin of that component
-                ci = components.index(comp)
-                cands = [(px, py) for (pci, _), (px, py) in pin_pos.items() if pci == ci]
-                if cands:
-                    nearest = min(cands, key=lambda p: math.hypot(p[0] - nx, p[1] - ny))
-                    # Snap to a point NEAR the pin but not exactly on it (10-25px offset)
-                    snap_dist = rng.uniform(10, 25)
-                    snap_angle = rng.uniform(0, 2 * math.pi)
-                    nx = int(nearest[0] + snap_dist * math.cos(snap_angle))
-                    ny = int(nearest[1] + snap_dist * math.sin(snap_angle))
-                break
-    # else: endpoint lands in empty space (no component nearby) — stays displaced
-
     if k == 0:
         return ((nx, ny), (x2, y2))
     return ((x1, y1), (nx, ny))
