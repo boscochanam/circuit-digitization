@@ -109,6 +109,29 @@ class Netlist:
     nodes: list[NetNode] = field(default_factory=list)
     pin_to_node: dict[tuple[int, str], int] = field(default_factory=dict)
 
+    def wire_connects_components(self, wire_idx: int) -> bool:
+        """Check if a wire connects two different components.
+
+        A wire is 'connected' if it appears in a node that contains pins
+        from multiple components. This is the canonical way to determine
+        wire connection status — use this instead of reimplementing logic.
+        """
+        for node in self.nodes:
+            if wire_idx in node.wires:
+                comp_set = set(p.component_idx for p in node.pins)
+                if len(comp_set) > 1:
+                    return True
+        return False
+
+    def connected_wires(self) -> set[int]:
+        """Return the set of wire indices that connect two or more components."""
+        result = set()
+        for node in self.nodes:
+            comp_set = set(p.component_idx for p in node.pins)
+            if len(comp_set) > 1:
+                result.update(node.wires)
+        return result
+
 
 # ═══════════════════════════════════════════════
 # ENDPOINT CLUSTERING — data-driven pin discovery

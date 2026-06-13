@@ -22,7 +22,8 @@ from wire_detection.core.netlist import (
     derive_pins_from_obb,
     discover_pins,
 )
-from wire_detection.core.join_graph import build_endpoint_graph
+from wire_detection.core.join_graph import build_endpoint_graph, extend_wires
+from wire_detection.core.completion import degree_budget_completion
 from wire_detection.core.mapping import TWO_TERMINAL_TYPES
 from wire_detection.core.component_classes import COMPONENT_TYPES
 
@@ -100,25 +101,6 @@ def attach_density(ep, pins, base, k=1, shrink=0.07, floor=0.45):
     sel = sorted((dp for dp in within if dp[0] <= r_eff), key=lambda dp: dp[0])
     return [p for _d, p in sel[:k]]
 
-
-# ── wire-end extension (occlusion-gap fix) ──
-
-def extend_wires(wires, px):
-    """Lengthen each wire by `px` at both ends along its direction so endpoints
-    truncated at component edges reach the component pin."""
-    if not px:
-        return wires
-    out = []
-    for (x1, y1), (x2, y2) in wires:
-        dx, dy = x2 - x1, y2 - y1
-        ln = math.hypot(dx, dy)
-        if ln < 1e-6:
-            out.append(((x1, y1), (x2, y2)))
-            continue
-        ux, uy = dx / ln, dy / ln
-        out.append(((int(x1 - ux * px), int(y1 - uy * px)),
-                    (int(x2 + ux * px), int(y2 + uy * px))))
-    return out
 
 
 # ── junction-aware pins: relocate junction/terminal pins to where wires meet ──
@@ -332,12 +314,24 @@ STRATEGIES = [
      "desc": "graph_full plus dead-end rescue: a wire anchored on ONE pin extends its dangling end (2.2x reach, directional) to the pin it points at — recovers wires the detector cut short.",
      "radius": 30, "kind": "graph", "extend": 12,
      "graph": {"tau_pin": 0.62, "tau_join": 0.30, "tau_t": 0.20, "directional": True, "t_junctions": True, "scale_rel": True, "dead_end_rescue": True}},
+    # graph_rescue + min-cost b-matching completion of floating pins (dropped-wire
+    # recovery) with a self-loop guard. Found + verified via the synthgt ground-truth
+    # search (docs/synthetic-eval-plan.md): +0.035 F1 on synthetic, +12% connectivity
+    # on real images. Implementation in core/completion.py.
+    {"name": "degree_budget", "label": "Degree-budget completion (graph_rescue + floating-pin recovery)",
+     "desc": "Endpoint graph (graph_rescue), then min-cost b-matching reconnects floating pins the detector dropped, bounded to <=1 edge/pin with a self-loop guard. Best join_quality on synthetic ground truth and highest real-image connectivity.",
+     "radius": 30, "kind": "completion", "extend": 12},
 ]
 _BY_NAME = {s["name"]: s for s in STRATEGIES}
-# The endpoint-graph join with dead-end rescue — best join_quality across the eval
-# (see docs/join-verification.md). Used by /api/netlist (netlist+topology+SPICE) and
-# as the Join Check default; `production` stays in the registry for comparison.
-DEFAULT_STRATEGY = "graph_rescue"
+# Promoted default: degree_budget = graph_rescue + floating-pin completion. Best
+# join_quality on synthetic ground truth (+0.035 F1, with HIGHER precision) and
+# highest real-image connectivity (+12%), after the self-loop guard + wire-tracking
+# fixes (see docs/synthetic-eval-plan.md + IMPROVEMENTS.md). graph_rescue stays in
+# the registry as the prior default / fallback (select via ?strategy=graph_rescue).
+# CAVEAT: the +12% real connectivity lacks net-level ground truth to fully rule out
+# over-merge (issue #20); on synthetic GT precision rose, but watch real circuits
+# with legitimately-floating terminals.
+DEFAULT_STRATEGY = "degree_budget"
 
 
 def list_strategies():
@@ -352,6 +346,8 @@ def _build_with_pins(s, wires, components, pins):
         return build_mutual(wires, components, pins, radius)
     if kind == "graph":
         return build_endpoint_graph(wires, components, pins, **s.get("graph", {}))
+    if kind == "completion":
+        return degree_budget_completion(wires, components, pins)
     if kind == "all":
         attach = lambda ep, pp, comps: attach_all(ep, pp, radius)
     elif kind == "anchored":
