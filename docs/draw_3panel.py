@@ -16,7 +16,7 @@ from wire_detection.synthgt.synthesize import (
     synthesize_clean, inject_errors, ERROR_LEVELS, pin_positions,
 )
 from wire_detection.core.join_strategies import run_strategy
-from wire_detection.core.component_assignment import snap_endpoint
+
 
 try:
     FNT = lambda s: ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", s)
@@ -128,20 +128,6 @@ def draw_panel(img, spec, wires, pin_pos, cx, cy, pw, ph, title, wire_color, sho
         draw.text((sx(mid_x), sy(mid_y)), f"W{w_idx}", fill="#9ca3af", font=font_pin, anchor="mm")
 
 
-def get_join_connections(err_wires, components):
-    """Run join and return which endpoints connected (as sets of pin keys)."""
-    result = run_strategy("graph_rescue", err_wires, components)
-    net = result[1]  # (pins, netlist)
-    # Map wire endpoints to nodes
-    connected = []
-    for w in err_wires:
-        ep1_connected = False
-        ep2_connected = False
-        for (ci, pi), nid in net.pin_to_node.items():
-            # Check if endpoint is close to any pin on this node
-            pass
-        connected.append((ep1_connected, ep2_connected))
-    return net
 
 
 def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
