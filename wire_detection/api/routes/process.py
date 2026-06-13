@@ -149,10 +149,15 @@ def _run_preset_pipeline(image: np.ndarray, preset_name: str, ui_params: dict, i
     # Load raw component labels (tuples used by pipeline processing)
     comp_labels_raw = []
     if image_path:
-        comp_labels = deps.registry.load_component_labels(
+        aligned_result = deps.registry.load_component_labels_aligned(
             Path(image_path), img_wh=(gray.shape[1], gray.shape[0]))
-        if comp_labels:
-            comp_labels_raw = comp_labels
+        if aligned_result:
+            comp_labels_raw = aligned_result[0]
+            # Use Roboflow augmented image when labels are from a different orientation
+            if aligned_result[1] != Path(image_path):
+                aligned_img = deps.cache.load_image(str(aligned_result[1]))
+                gray = aligned_img if len(aligned_img.shape) == 2 else cv2.cvtColor(aligned_img, cv2.COLOR_BGR2GRAY)
+                image_path = str(aligned_result[1])
 
     if comp_labels_raw:
         occluded = build_component_mask(gray, comp_labels_raw, cfg.occlusion_margin)

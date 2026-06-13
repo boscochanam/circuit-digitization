@@ -322,9 +322,16 @@ def _build_topology_data(
     image_path = str(images[img_idx])
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    components_raw = deps.registry.load_component_labels(
-        Path(image_path), img_wh=(image.shape[1], image.shape[0])
-    ) or []
+    aligned_result = deps.registry.load_component_labels_aligned(
+        Path(image_path), img_wh=(image.shape[1], image.shape[0]))
+    components_raw = aligned_result[0] if aligned_result else []
+
+    # Use Roboflow augmented image when labels are from a different orientation
+    if aligned_result and aligned_result[1] != Path(image_path):
+        aligned_path = str(aligned_result[1])
+        aligned_img = deps.cache.load_image(aligned_path)
+        gray = aligned_img if len(aligned_img.shape) == 2 else cv2.cvtColor(aligned_img, cv2.COLOR_BGR2GRAY)
+        image_path = aligned_path
 
     from wire_detection.api.routes.process import _run_preset_pipeline_cached
 

@@ -14,6 +14,7 @@ import numpy as np
 sys.path.insert(0, '/home/claw/circuit-digitization')
 sys.path.insert(0, '/home/claw/workspace')
 from wire_detection.benchmark import reference_pipeline as ref
+from wire_detection.data.dataset import find_roboflow_image
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig, ImageResult, RunSummary,
     normalize_image, sauvola_binary, build_component_mask,
@@ -28,6 +29,7 @@ from wire_detection.benchmark.experiment_harness import (
 GT_LABELS = Path("/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images")
 GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
 HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
+ROB_IMAGES_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
 HDC_SPLITS = ["train", "valid", "test"]
 
 
@@ -50,14 +52,23 @@ def find_hdc_label_by_prefix(image_name: str) -> Path | None:
 
 
 # Cache: image_name -> components
+# Cache: image_name -> components
 _component_cache: dict[str, list] = {}
-
 def load_components(image_name: str, w: int, h: int) -> list:
     """Load and cache HDC components for an image."""
     if image_name not in _component_cache:
         hdc_path = find_hdc_label_by_prefix(image_name)
         _component_cache[image_name] = ref.parse_components(hdc_path, w, h)
     return _component_cache[image_name]
+
+def find_rob_image(image_name: str) -> Path | None:
+    """Find the Roboflow augmented image (matches label orientation)."""
+    for split in HDC_SPLITS:
+        img_dir = ROB_IMAGES_BASE / split / "images"
+        matches = sorted(img_dir.glob(f"{image_name}_jpg.rf.*.jpg"))
+        if matches:
+            return matches[0]
+    return None
 
 
 # Preload all image data
@@ -74,9 +85,17 @@ def preload_all_images():
     for gt_file in all_images:
         image_name = gt_file.stem.replace("_jpg", "")
         image_path = GT_IMAGES / f"{image_name}_jpg.jpg"
-        gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+
+        # Use Roboflow augmented image (matches label orientation)
+        rob_path = find_rob_image(image_name)
+        load_path = rob_path if rob_path else image_path
+        gray = cv2.imread(str(load_path), cv2.IMREAD_GRAYSCALE)
         if gray is None:
-            continue
+            # Fallback to original
+            gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+            if gray is None:
+                continue
+
         h, w = gray.shape
         gt_lines = ref.load_ground_truth(gt_file, w, h)
         components = load_components(image_name, w, h)
