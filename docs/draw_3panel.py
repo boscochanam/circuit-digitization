@@ -48,6 +48,43 @@ PIN_COL = "#facc15"
 EP_COL = "#ffffff"
 
 
+def snap_connected_wires(err_wires, net):
+    """For connected wires, snap each endpoint to the nearest pin in the same node.
+    Returns list of (snapped_ep0, snapped_ep1, is_connected) tuples."""
+    # Build node_id -> list of (x, y) pin positions
+    node_pins = {}
+    for node in net.nodes:
+        node_pins[node.node_id] = [(p.x, p.y) for p in node.pins]
+
+    # Build wire_idx -> node_id mapping
+    wire_node = {}
+    for node in net.nodes:
+        for w_idx in node.wires:
+            wire_node[w_idx] = node.node_id
+
+    result = []
+    for w_idx, w in enumerate(err_wires):
+        nid = wire_node.get(w_idx)
+        if nid is not None and nid in node_pins and len(node_pins[nid]) >= 2:
+            pins = node_pins[nid]
+            # Snap ep0 to nearest pin, ep1 to second-nearest (or nearest different pin)
+            def nearest_pin(ep, exclude=None):
+                best, best_d = ep, float("inf")
+                for px, py in pins:
+                    if (px, py) == exclude:
+                        continue
+                    d = math.hypot(ep[0] - px, ep[1] - py)
+                    if d < best_d:
+                        best, best_d = (px, py), d
+                return best
+            s0 = nearest_pin(w[0])
+            s1 = nearest_pin(w[1], exclude=s0)
+            result.append((s0, s1, True))
+        else:
+            result.append((w[0], w[1], False))
+    return result
+
+
 def rotated_rect(cx, cy, w, h, angle_deg):
     rad = math.radians(angle_deg)
     cos_a, sin_a = math.cos(rad), math.sin(rad)
@@ -145,6 +182,9 @@ def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
     # Use the Netlist's own method — no reimplementation
     wire_connected = [net.wire_connects_components(w_idx) for w_idx in range(len(err_wires))]
 
+    # Snap connected wires to actual pin positions
+    snapped = snap_connected_wires(err_wires, net)
+
     # Build joined wires: green if both endpoints connected, yellow if one, red if none
     joined_wires = []
     for w_idx, w in enumerate(err_wires):
@@ -183,9 +223,10 @@ def make_three_panel(circuit_name, spec, pw=420, ph=340, seed=0, error_level=3):
     
     # Draw joined wires — color shows connection status
     for w_idx, (w, color) in enumerate(joined_wires):
-        draw.line([(sx(w[0][0]), sy(w[0][1])), (sx(w[1][0]), sy(w[1][1]))],
+        s0, s1, is_conn = snapped[w_idx]
+        draw.line([(sx(s0[0]), sy(s0[1])), (sx(s1[0]), sy(s1[1]))],
                   fill=color, width=2)
-        for ep in w:
+        for ep in [s0, s1]:
             r = 2
             draw.ellipse([sx(ep[0])-r, sy(ep[1])-r, sx(ep[0])+r, sy(ep[1])+r], fill=EP_COL)
     
