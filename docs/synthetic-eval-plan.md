@@ -169,10 +169,53 @@ extension 12px -> 20px, directional on/off):
 - The residual high-error failures are **recall drops from wires dropped entirely**
   (a detection loss, [#21]) — unrecoverable by any join. The join is at its ceiling.
 
-Conclusion: `graph_rescue` is kept as the default; nothing beats it among the
-available algorithms. Caveat: this is measured against the placeholder error model,
-so the *tuning* could shift after calibration ([#61]); the graph family's
-*dominance* over the pin-only families is robust regardless.
+Conclusion within the *existing* registry: `graph_rescue` is the best of the
+shipped algorithms. But the harness can also be used as a SEARCH ENGINE for new
+ones (next section), and that did turn up a winner.
+
+## Strategy search: a candidate that beats graph_rescue
+
+Using the ground truth as a search target (ideate diverse families -> implement +
+score each vs ground truth -> adversarially verify the winners), one candidate
+genuinely beat `graph_rescue`:
+
+**`degree_budget_completion`** (`wire_detection/synthgt/candidate_joins.py`) — a
+post-processing COMPLETION layer on top of graph_rescue. A pin whose net touches
+only its own component is "floating" (the signature of a dropped/over-displaced
+wire); it reconnects such pins to other components via reach-bounded **min-cost
+b-matching** (at most one edge per floating pin). Scores (12 seeds, 15 circuits):
+
+```
+join                       clean   L1     L2     L3     L4   mean(err)  wheatL3p
+graph_rescue (baseline)    1.00  1.00  0.97  0.94  0.87    0.944      0.885
+degree_budget_completion   1.00  1.00  0.99  0.96  0.94    0.972      0.921
+```
+
+It wins at every severity (+0.035 mean-error F1), keeps clean = 1.0, and RAISES
+bridge precision — it is not a precision-for-recall trade. Run it with
+`uv run python -m wire_detection.synthgt --candidates`.
+
+**Adversarial verification (overfit_risk = low):** the gain is stable across seed
+batches (0.972 at 12 seeds, 0.9705 at 24), the REACH_FACTOR sweep is smooth (not a
+tuned spike), and the win is concentrated in DROP mode (recovering wires the
+detector missed entirely — a real high-frequency failure) where precision *rises*.
+Contrast: a second apparent winner (`candidate_join_ilp_relaxation`, 0.951) was
+verified as **overfit** — its headline number was the luckiest seed batch, its
+named ILP mechanism was inert, and it regressed on jitter mode. The adversarial
+pass is what separated the real win from the artifact.
+
+A robust secondary finding: ~10 other candidates beat graph_rescue on bridge
+*precision* (0.92–0.97) but lost *recall* at high severity — graph_rescue is
+recall-optimized, and the drop-heavy error model rewards that. Only
+`degree_budget_completion` improved recall on drops without sacrificing precision.
+
+**Why it is NOT yet the production default:** its prior is "a floating pin is a
+dropped wire and should be reconnected to expected degree." That holds for the
+synthetic catalog (every authored pin connects), but real circuits can have
+legitimately floating terminals, where completion could invent connections.
+Promote it past graph_rescue only after validating on real / calibrated data
+([#61], [#62]). It is kept as a verified, reproducible candidate + a regression
+test (`test_degree_budget_completion_beats_graph_rescue`).
 
 ## Roadmap (to make the join numbers trustworthy)
 
