@@ -71,8 +71,17 @@ async def sim_overlay(data: SimOverlayRequest):
             return JSONResponse({"error": "image not found"}, status_code=404)
         gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        components = deps.registry.load_component_labels(
-            Path(image_path), img_wh=(gray.shape[1], gray.shape[0])) or []
+        aligned_result = deps.registry.load_component_labels_aligned(
+            Path(image_path), img_wh=(gray.shape[1], gray.shape[0]))
+        components = aligned_result[0] if aligned_result else []
+
+        # Use Roboflow augmented image when labels are from a different orientation
+        if aligned_result and aligned_result[1] != Path(image_path):
+            aligned_path = str(aligned_result[1])
+            aligned_img = deps.cache.load_image(aligned_path)
+            gray = aligned_img if len(aligned_img.shape) == 2 else cv2.cvtColor(aligned_img, cv2.COLOR_BGR2GRAY)
+            image_path = aligned_path
+
         res = _run_preset_pipeline_cached(gray, image_path, data.preset, data.params or {})
         wires = [((int(a[0]), int(a[1])), (int(b[0]), int(b[1]))) for a, b in res.get("lines", [])]
 

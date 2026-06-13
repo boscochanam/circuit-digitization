@@ -25,6 +25,40 @@ class WireLine:
 
 HDC_SPLITS = ["train", "valid", "test"]
 
+def find_roboflow_image(image_path: Path, hdc_base: Path | None = None) -> Path | None:
+    """Find the Roboflow augmented image that matches a label file.
+
+    Roboflow applies augmentations (rotations, flips) to training images, and the
+    YOLO-OBB labels are annotated on those augmented versions.  When the original
+    GT image is used instead, bounding boxes are misaligned.  This function finds
+    the augmented ``.rf.*.jpg`` that corresponds to the label, so callers can load
+    the correct image for occlusion / visualization.
+
+    Returns the augmented image path, or ``None`` if not found (in which case the
+    caller should fall back to the original ``image_path``).
+    """
+    stem = image_path.stem  # e.g. "C100_D1_P1_jpg"
+    if hdc_base is None:
+        # Try to discover hdc_base from the label file path convention
+        # Labels live under roboflow_test2/{split}/labels/
+        for parent in [image_path.parent.parent, image_path.parent.parent.parent]:
+            candidate = parent / "roboflow_test2"
+            if candidate.exists():
+                hdc_base = candidate
+                break
+        if hdc_base is None:
+            return None
+
+    for split in HDC_SPLITS:
+        img_dir = hdc_base / split / "images"
+        if not img_dir.exists():
+            continue
+        matches = sorted(img_dir.glob(f"{stem}.rf.*.jpg"))
+        if matches:
+            return matches[0]
+    return None
+
+
 
 class DatasetRegistry:
     def __init__(self, config_path: Path | None = None):
@@ -183,3 +217,26 @@ class DatasetRegistry:
                     continue
         
         return components if components else None
+
+    def load_component_labels_aligned(
+        self,
+        image_path: Path,
+        img_wh: tuple[int, int] | None = None,
+    ) -> tuple[list, Path] | None:
+        """Load HDC labels AND find the correctly-oriented Roboflow image.
+
+        Returns ``(components, aligned_image_path)`` or ``None``.
+        ``aligned_image_path`` is the Roboflow augmented version whose geometry
+        matches the label coordinates — use this for occlusion / visualization
+        instead of the original ``image_path``.  Falls back to ``image_path``
+        when no augmented version exists (identical images).
+        """
+        components = self.load_component_labels(image_path, img_wh=img_wh)
+        if components is None:
+            return None
+
+        hdc_cfg = self.get("hdc")
+        hdc_base = hdc_cfg.path if hdc_cfg else None
+        rob_path = find_roboflow_image(image_path, hdc_base)
+        aligned = rob_path if rob_path is not None else image_path
+        return (components, aligned)
