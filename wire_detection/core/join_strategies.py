@@ -320,7 +320,10 @@ STRATEGIES = [
     # on real images. Implementation in core/completion.py.
     {"name": "degree_budget", "label": "Degree-budget completion (graph_rescue + floating-pin recovery)",
      "desc": "Endpoint graph (graph_rescue), then min-cost b-matching reconnects floating pins the detector dropped, bounded to <=1 edge/pin with a self-loop guard. Best join_quality on synthetic ground truth and highest real-image connectivity.",
-     "radius": 30, "kind": "completion", "extend": 12},
+     # NO strategy-level extend: degree_budget_completion() applies the 12px extend
+     # itself (so direct callers match graph_rescue). A registry "extend" here would
+     # double it to 24px -> over-merge (broke clean wheatstone, inflated self-loops).
+     "radius": 30, "kind": "completion"},
 ]
 _BY_NAME = {s["name"]: s for s in STRATEGIES}
 # Promoted default: degree_budget = graph_rescue + floating-pin completion. Best
