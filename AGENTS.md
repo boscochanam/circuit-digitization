@@ -5,16 +5,32 @@ The wire detection pipeline **WILL NOT WORK** without these three preprocessing 
 ## MANDATORY Preprocessing (in order)
 
 ### 1. HDC Label Matching
-Each image needs YOLO-OBB component labels from roboflow_test2. **Use filename prefix matching** (not pixel-difference) — HDC files have `.rf.XXXX` suffixes from Roboflow augmentation.
+Each image needs YOLO-OBB component labels from roboflow_test2.
 
-**⚠️ CRITICAL — Label orientation alignment:** Roboflow applies augmentations (90° rotations, flips) to training images, and labels are annotated on those augmented versions. The original GT images in `ground_truth/` may have different orientation. **Always use the Roboflow augmented image** (from `roboflow_test2/{split}/images/`) when labels are present, NOT the original GT image. Use `find_roboflow_image()` from `wire_detection/data/dataset.py` or `load_component_labels_aligned()` on the registry.
+**🚨 CRITICAL — Exact-Match Label Selection (Jun 2026):**
+Each Roboflow image has **multiple** `.rf.<hash>` versions — some augmented, some pixel-identical to the original. `find_roboflow_image()` returns the first match (sorted by filename), which may be augmented. Its labels are in a **different coordinate space** and will produce wrong occlusion polygons on the original image.
+
+**Always use `find_exact_match_roboflow()`** from `wire_detection/data/dataset.py` (or `find_exact_match()` from `expanded_benchmark.py`). This finds the Roboflow version with pixel error < 0.01 (identical to original) and returns its labels. These labels are in the **same coordinate space** as the original image, so occlusion polygons are correct.
+
+```python
+# CORRECT — exact-match labels (same coord space as original)
+from wire_detection.data.dataset import find_exact_match_roboflow
+result = find_exact_match_roboflow(orig_path, hdc_base=HDC_BASE)
+if result:
+    rob_path, label_path = result
+    components = ref.parse_components(label_path, w, h)
+
+# WRONG — first-match labels (may be augmented, wrong coord space)
+from wire_detection.data.dataset import find_roboflow_image
+rob_path = find_roboflow_image(orig_path)  # may return augmented version!
+```
 
 - Paths: `/home/claw/circuit-digitization/roboflow_test2/{train,valid,test}/labels/`
 - Augmented images: `/home/claw/circuit-digitization/roboflow_test2/{train,valid,test}/images/`
 - Images: `/home/claw/workspace/ground_truth/labels_few_annot/images/`
 - Labels: `/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images/`
 - Matches: **134 images** with both GT wire labels and HDC component labels (3,524 total wire annotations)
-- **38 of 134 images** have non-trivial augmentations (rot90, rot270, flip_h, flip_v, combos). Using the original image on these causes bounding box misalignment.
+- **28 of 30 poor images** have augmented Roboflow versions — using first-match labels causes incorrect occlusion
 
 ### 2. Component Occlusion  
 Fill each component polygon with **local median color** (NOT white, NOT black — use `np.median()` of local region).
@@ -73,7 +89,8 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 6. ✗ Using old params (otsu, dilate=5, min_area=30, dedup_dist=12) → wrong pipeline
 7. ✗ Not matching HDC labels → no occlusion at all
 8. ✗ Using pixel-diff matching instead of prefix matching → only finds 23/134 images
-9. ✗ Using original GT image instead of Roboflow augmented image → 38/134 images have misaligned bounding boxes (rot90, rot270, flip_h, flip_v). Always use `find_roboflow_image()` or `load_component_labels_aligned()`.
+9. ✗ Using `find_roboflow_image()` (first-match) instead of `find_exact_match_roboflow()` → labels from augmented version applied to original image → wrong occlusion polygons. **Always use exact-match.**
+10. ✗ Using original GT image with first-match Roboflow labels → 28/30 poor images have augmented versions with different coordinate space. Use `find_exact_match_roboflow()` to get labels in the same coordinate space as the original.
 
 ## Netlist / SPICE / Topology Pipeline
 
