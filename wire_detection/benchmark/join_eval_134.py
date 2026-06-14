@@ -72,7 +72,7 @@ CFG = ExperimentConfig(
     dedup_angle=12,
     dedup_dist=8,
     anchor_filter_enabled=True,
-    anchor_endpoint_dist=12.0,
+    anchor_endpoint_dist=16.0,
     anchor_link_dist=8.0,
 )
 
@@ -184,7 +184,7 @@ def main() -> int:
     strategy_names = [s["name"] for s in STRATEGIES]
     # Reorder: graph_rescue first, then graph_*, then junction_*, then rest
     priority = [
-        "graph_rescue", "graph_full", "graph_scale", "graph_dir_30", "graph_30",
+        "degree_budget", "graph_rescue", "graph_full", "graph_scale", "graph_dir_30", "graph_30",
         "junction_extend_n1", "junction_n1_30",
         "nearest2_30", "extend12_n1_30",
         "anchored2_30", "nearest1_30", "density_30",
