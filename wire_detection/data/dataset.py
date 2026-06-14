@@ -26,16 +26,14 @@ class WireLine:
 HDC_SPLITS = ["train", "valid", "test"]
 
 def find_roboflow_image(image_path: Path, hdc_base: Path | None = None) -> Path | None:
-    """Find the Roboflow augmented image that matches a label file.
+    """Find a Roboflow image by filename prefix (may be augmented).
 
-    Roboflow applies augmentations (rotations, flips) to training images, and the
-    YOLO-OBB labels are annotated on those augmented versions.  When the original
-    GT image is used instead, bounding boxes are misaligned.  This function finds
-    the augmented ``.rf.*.jpg`` that corresponds to the label, so callers can load
-    the correct image for occlusion / visualization.
+    .. warning::
+       Returns the FIRST match sorted by filename — may be an augmented version
+       whose labels do NOT align with the original image.  For occlusion on
+       original images, use :func:`find_exact_match_roboflow` instead.
 
-    Returns the augmented image path, or ``None`` if not found (in which case the
-    caller should fall back to the original ``image_path``).
+    Returns an image path, or ``None`` if not found.
     """
     stem = image_path.stem  # e.g. "C100_D1_P1_jpg"
     if hdc_base is None:
@@ -58,6 +56,55 @@ def find_roboflow_image(image_path: Path, hdc_base: Path | None = None) -> Path 
             return matches[0]
     return None
 
+
+def find_exact_match_roboflow(
+    image_path: Path, hdc_base: Path | None = None
+) -> tuple[Path, Path] | None:
+    """Find the Roboflow version pixel-identical to ``image_path`` and its label.
+
+    Roboflow duplicates each image under multiple ``.rf.<hash>`` filenames —
+    some augmented, some untouched.  The untouched version's labels are in the
+    **same coordinate space** as the original, so they can be used directly for
+    occlusion without flip/rotation correction.
+
+    CRITICAL (Jun 2026): Every Roboflow image has multiple versions.  The first
+    match from ``find_roboflow_image()`` may be augmented — its labels will be
+    in the wrong coordinate space for the original image, causing incorrect
+    occlusion polygons.  Always prefer this function when loading component
+    labels for occlusion on original images.
+
+    Returns ``(roboflow_image_path, label_path)`` or ``None``.
+    """
+    import cv2
+
+    stem = image_path.stem
+    orig = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+    if orig is None:
+        return None
+
+    if hdc_base is None:
+        for parent in [image_path.parent.parent, image_path.parent.parent.parent]:
+            candidate = parent / "roboflow_test2"
+            if candidate.exists():
+                hdc_base = candidate
+                break
+        if hdc_base is None:
+            return None
+
+    for split in HDC_SPLITS:
+        img_dir = hdc_base / split / "images"
+        label_dir = hdc_base / split / "labels"
+        if not img_dir.exists():
+            continue
+        for f in sorted(img_dir.glob(f"{stem}.rf.*.jpg")):
+            rob = cv2.imread(str(f), cv2.IMREAD_GRAYSCALE)
+            if rob is not None and rob.shape == orig.shape:
+                err = np.mean(np.abs(orig.astype(float) - rob.astype(float)))
+                if err < 0.01:  # pixel-identical
+                    label = label_dir / f"{f.stem}.txt"
+                    if label.exists():
+                        return (f, label)
+    return None
 
 
 class DatasetRegistry:
