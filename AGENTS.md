@@ -253,18 +253,18 @@ registry-based. `DEFAULT_STRATEGY = "degree_budget"`. Strategies compose:
 - `wire_detection/benchmark/netlist_viz.py` — image-grounded overlays (`_joins.png`) + per-net stepper
 - **Join Check** UI tab (`JoinCheckPanel.tsx`, `/api/join_overlay`) — cycle strategies, view metrics + overlays
 
-**Key numbers (134-image GT set, fresh best_candidate_v4 detection):**
-| Strategy | balanced | composite | wires-used% | nets/comp | self-loop | floating | % Connected |
-|----------|----------|-----------|-------------|-----------|-----------|----------|-------------|
-| **degree_budget** (default) | **0.3100** | 0.2861 | **99.3** | 0.158 | 433 | 948 | **81.9%** |
-| graph_rescue | 0.3732 | 0.3718 | 99.4 | 0.117 | 208 | 1629 | 68.8% |
-| graph_scale | 0.3691 | 0.3635 | 99.5 | 0.135 | 77 | 1724 | 67.0% |
-| graph_dir_30 | 0.3697 | 0.3632 | 99.5 | 0.131 | 85 | 1709 | 67.3% |
-| graph_full | 0.3747 | 0.3739 | 99.4 | 0.116 | 207 | 1641 | 68.6% |
-| junction_extend_n1 | 0.4411 | 0.3483 | 83.2 | 0.143 | 45 | 1690 | 68.0% |
-| production (old) | 0.4738 | 0.3299 | 77.1 | 0.109 | 441 | 1175 | 77.5% |
+**Key numbers (134-image GT set, fresh best_candidate_v4 detection, post double-extend fix Jun 2026):**
+| Strategy | balanced | composite | wires-used% | nets/comp | self-loop | floating | giant |
+|----------|----------|-----------|-------------|-----------|-----------|----------|-------|
+| **degree_budget** (default) | **0.2679** | **0.2662** | 99.4 | 0.204 | 208 | 1069 | 115 |
+| graph_rescue | 0.3732 | 0.3718 | 99.4 | 0.117 | 208 | 1629 | 107 |
+| graph_scale | 0.3691 | 0.3635 | 99.5 | 0.135 | 77 | 1724 | 100 |
+| graph_dir_30 | 0.3697 | 0.3632 | 99.5 | 0.131 | 85 | 1709 | 105 |
+| graph_full | 0.3747 | 0.3739 | 99.4 | 0.116 | 207 | 1641 | 107 |
+| junction_extend_n1 | 0.4411 | 0.3483 | 83.2 | 0.143 | 45 | 1690 | 86 |
+| production (old) | 0.4738 | 0.3299 | 77.1 | 0.109 | 441 | 1175 | 109 |
 
-`degree_budget` = graph_rescue + floating-pin recovery. +13.1pp connectivity over graph_rescue, 0 regressions.
+`degree_budget` = graph_rescue + floating-pin recovery. Lowest balanced+composite, 0 regressions.
 
 Full details: `docs/research/join-verification.md`
 
