@@ -2,6 +2,15 @@
 
 The framework uses several datasets for wire detection, component detection, and evaluation. These datasets are **not** included in the repository — they must be downloaded or generated separately.
 
+## Trained Models
+
+| Model | Source | Classes | mAP50 | Purpose |
+|-------|--------|---------|-------|---------|
+| `yolo26m_obb_16class_aug.pt` | [HuggingFace](https://huggingface.co/boscochanam/circuit-component-detector) | 16 | 88.5% | Component detection (single source of truth) |
+
+**Location:** `models/component_detection/yolo26m_obb_16class_aug.pt` (46MB, gitignored)
+**SHA256:** `d700b33f90191968af9f7f2798fff5e90a3f1ea473b811adc241bc570987264d`
+
 ## Available Datasets
 
 | Key | Source | Images | Labels | Purpose |
