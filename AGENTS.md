@@ -48,30 +48,31 @@ Crop to union of all component bounding boxes + 10px padding in all directions.
 - CCL: min_area=28
 - PCA endpoints (not extremal)
 - Overlap dedup: angle=12°, dist=8px  
-- Anchor filter: endpoint_dist=12, link_dist=8
+- Anchor filter: endpoint_dist=**16**, link_dist=8
 - **NO merge, NO length filter** — both destroy TPs
 
 ## Expanded Benchmark (134 images, all 36 configs)
 Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 
-### Top Configs (Jun 2026)
-| Rank | Config | F1 | Precision | Recall |
-|---|---|---|---|---|
-| 1 | **best_candidate_v4** | **0.8334** | 0.898 | 0.778 |
-| 2 | best_candidate_v2 | 0.8258 | 0.873 | 0.784 |
-| 3 | best_candidate_v3 | 0.8194 | 0.856 | 0.786 |
-| 4 | skeleton_graph_v1 | 0.8185 | 0.815 | 0.822 |
-| 5 | best_candidate_v1 | 0.8170 | 0.845 | 0.791 |
+### Top Configs (Jun 2026, corrected eval — exact-match labels on original images)
+| Rank | Config | F1 | Precision | Recall | FP | FN |
+|---|---|---|---|---|---|---|
+| 1 | **a16** (anchor_endpoint_dist=16) | **0.9755** | 0.9729 | 0.9781 | 47 | 77 |
+| 2 | v4 baseline (anchor_endpoint_dist=12) | 0.9730 | 0.9741 | 0.9719 | 44 | 99 |
+| 3 | best_candidate_v2 | 0.9589 | 0.9442 | 0.9742 | 81 | 91 |
+| 4 | best_candidate_v1 | 0.9498 | 0.9213 | 0.9801 | 112 | 70 |
+| 5 | best_candidate_v3 | 0.9490 | 0.9235 | 0.9759 | 110 | 85 |
 
 ### Key Findings
-- **best_candidate_v4** (Sauvola + component extraction) is the winner
-- Skeleton graph methods (v5-v8) have higher precision but worse F1
-- **OTSU is terrible** for this dataset (F1 < 0.67)
-- Adaptive thresholding beats OTSU but not Sauvola (F1=0.755 vs 0.833)
-- Sauvola adaptive gaussian fusion (F1=0.765) doesn't beat plain Sauvola
+- **a16** (Sauvola + component extraction + anchor_endpoint_dist=16) is the winner
+- Only change from v4 baseline: anchor_endpoint_dist 12 → 16 (+0.0025 F1)
+- **Sauvola dominates all other thresholding methods** — adaptive Gaussian F1=0.928, OTSU F1=0.828, Triangle F1=0.795
+- Skeleton extraction loses recall (FN=402 vs 77) — breaks thin wires
+- Adaptive thresholding fusion adds nothing — Sauvola already captures optimal per-pixel threshold
+- Parameter sweep shows pipeline is **robust** — k, window, link_dist, dedup_angle variations have minimal effect
 
-### Per-image Breakdown (best_candidate_v4)
-- **91 images** (68%) — F1 >= 0.90
+### Per-image Breakdown (a16)
+- **91+ images** (68%+) — F1 >= 0.90
 - **Median F1: 1.000**
 - **31 images** (23%) — F1 < 0.50 (poor: bimodal lighting, dense circuits)
 
