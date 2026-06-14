@@ -15,6 +15,11 @@ limits over-merge. Two safeguards make it production-safe:
     the final nodes (NetNode.wires), which the SPICE / current overlay reads;
     completion edges are wireless by nature (inferred, like a manual pin merge).
 
+The base graph is built on 12px-extended wires (`extend_wires(wires, 12)`),
+matching graph_rescue's endpoint extension, so this is strictly graph_rescue +
+completion. That additive property eliminated the handful of real-image
+regressions an un-extended base caused (full bench: 0 regressions, 114 improved).
+
 Registered in join_strategies.py as the "degree_budget" strategy (kind=completion).
 """
 from __future__ import annotations

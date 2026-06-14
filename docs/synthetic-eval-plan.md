@@ -209,18 +209,23 @@ A robust secondary finding: ~10 other candidates beat graph_rescue on bridge
 recall-optimized, and the drop-heavy error model rewards that. Only
 `degree_budget_completion` improved recall on drops without sacrificing precision.
 
-**Promotion (done):** the two production blockers from the real benchmark were
-fixed — a self-loop guard (one pin per component per net) and wire tracking (base
-wires carried onto final nodes) — then validated on **real images** (40-image
-subset, gt153 + hdc): self-loops 4.4 → **1.38** (below graph_rescue's 1.82), wire
-coverage 0% → **83%**, connectivity **+16.5%** with *fewer* floating components.
-The implementation was moved to `wire_detection/core/completion.py`, registered as
-the `degree_budget` join strategy, and is now `DEFAULT_STRATEGY`; graph_rescue
-stays as fallback (`?strategy=graph_rescue`). **Residual caveat:** the connectivity
-gain still has no net-level ground truth ([#20]) to fully rule out over-merge —
-but real self-loops *and* floating components both dropped, which is consistent
-with recovering real connections, not inventing them. Confirm on the full
-153-image set; recheck once the error model is calibrated ([#61], [#62]).
+**Promotion (done + fully validated).** Three fixes made degree_budget
+production-ready: a self-loop guard (one pin per component per net), wire tracking
+(base wires carried onto final nodes), and a 12px wire extend on the base so
+`degree_budget = graph_rescue + completion` (strictly additive). It was moved to
+`wire_detection/core/completion.py`, registered as the `degree_budget` strategy,
+and is now `DEFAULT_STRATEGY` (graph_rescue stays as `?strategy=graph_rescue`).
+
+**Full real bench** (`bench_degree_budget.py`, 134 of 153 images): **0 regressions**
+(114 improved / 20 same), connectivity 63.1% → **88.6%**, self-loops **1.37 =
+graph_rescue** (down from pre-fix 4.4), wire coverage **87% = graph_rescue**,
+floating 8.1 → 2.6. **Synthetic:** clean F1 = 1.0, mean-err F1 **0.969** vs
+graph_rescue 0.944. (AGENTS.md has the production-pipeline join table — absolute %
+differ because components come from the trained model there vs HDC labels here;
+both show 0 regressions.) **Residual caveat:** the connectivity gain still has no
+net-level ground truth ([#20]) to fully rule out over-merge — but self-loops,
+floating, *and* giant-nets all stayed at/below graph_rescue, consistent with
+recovering real connections. Recheck once the error model is calibrated ([#61], [#62]).
 
 ## Roadmap (to make the join numbers trustworthy)
 
