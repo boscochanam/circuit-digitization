@@ -5,10 +5,10 @@ space (see docs/synthetic-eval-plan.md, "Strategy search"). Each is a
 `join_fn(wires, components, std_pins) -> Netlist` scored against ground truth and
 adversarially verified for overfitting to the placeholder error model.
 
-The headline result, `degree_budget_completion`, beat graph_rescue by ~+0.035
-mean-error F1 (0.972 vs 0.944, 12 seeds / 15 circuits), winning at every severity
-while RAISING bridge precision -- verified at overfit_risk=low (the gain is in DROP
-mode, recovering wires the detector missed entirely, where precision rises).
+The headline result, `degree_budget_completion`, beats graph_rescue by ~+0.025
+mean-error F1 (0.969 vs 0.944, 12 seeds / 15 circuits), winning at every severity
+-- verified at overfit_risk=low (the gain is in DROP mode, recovering wires the
+detector missed entirely, where precision rises).
 
 It has since been PROMOTED into the core join registry: the implementation now
 lives in `wire_detection/core/completion.py` and is registered in
