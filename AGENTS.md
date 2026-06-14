@@ -72,9 +72,9 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 - Parameter sweep shows pipeline is **robust** — k, window, link_dist, dedup_angle variations have minimal effect
 
 ### Per-image Breakdown (a16)
-- **91+ images** (68%+) — F1 >= 0.90
+- **117 images** (87%) — F1 >= 0.90
 - **Median F1: 1.000**
-- **31 images** (23%) — F1 < 0.50 (poor: bimodal lighting, dense circuits)
+- **4 images** (3%) — F1 < 0.50 (dense circuits where large component occlusion eats wire endpoints)
 
 ## VLM Quality Assessment
 - Module: `wire_detection.vlm` — classify images by paper type via VLM or programmatic scores
@@ -142,7 +142,7 @@ The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netl
 2. Backend runs on port 8000, UI on port 4200 (proxied via Next.js rewrites)
 3. All `localhost:8000` calls happen server-side in Next.js server actions, never from the browser
 
-## Netlist / Joining (COMPLETE — `graph_rescue` is default)
+## Netlist / Joining (COMPLETE — `degree_budget` is default)
 
 **Status:** Node joining is substantially complete. `degree_budget`
 (graph_rescue + floating-pin recovery) is the promoted default strategy.
