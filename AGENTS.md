@@ -83,7 +83,8 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 
 ## Component Detection Model (Jun 2026)
 
-**Location:** `models/component_detection/best.pt` (46MB, not in git — see .gitignore)
+**Location:** `models/component_detection/yolo26m_obb_16class_aug.pt` (46MB, not in git — see .gitignore)
+**SHA256:** `d700b33f90191968af9f7f2798fff5e90a3f1ea473b811adc241bc570987264d`
 
 **Model:** YOLO26M-OBB, trained on CGHD dataset (same dataset used for wire detection pipeline)
 - **16 classes** (merged from 61 original — class merging was critical)
@@ -119,7 +120,7 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 ### Usage
 ```python
 from ultralytics import YOLO
-model = YOLO('models/component_detection/best.pt')
+model = YOLO('models/component_detection/yolo26m_obb_16class_aug.pt')
 results = model('path/to/image.jpg', task='obb')
 ```
 
