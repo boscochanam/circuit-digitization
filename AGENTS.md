@@ -227,6 +227,14 @@ The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netl
 (graph_rescue + floating-pin recovery) is the promoted default strategy.
 Beats graph_rescue on **92/133 images** with 0 regressions.
 
+> NOTE: a double-extend bug was fixed (the `degree_budget` registry entry carried
+> `extend=12` *and* the completion fn extends 12px internally → 24px in the
+> `run_strategy`/API path → over-merge). Now a single 12px. The 0-regressions /
+> dominance claims hold, but the exact per-image %/self-loop numbers in this
+> section were measured before the fix — re-run the production pipeline to refresh
+> them. (The standalone `bench_degree_budget.py` was unaffected — it calls the fn
+> directly, always single-extend.)
+
 **Strategy:** `wire_detection/core/join_strategies.py` — 12+ composable strategies,
 registry-based. `DEFAULT_STRATEGY = "degree_budget"`. Strategies compose:
 1. Pin localization — static OBB pins + DBSCAN clustering (SPICE-active types)
