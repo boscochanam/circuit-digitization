@@ -6,6 +6,8 @@ requires-python = ">=3.13"
 dependencies = [
     "albumentations>=2.0.8",
     "fastapi>=0.136.1",
+    "huggingface-hub>=1.19.0",
+    "matplotlib>=3.11.0",
     "numpy>=2.4.4",
     "opencv-python>=4.13.0.92",
     "pydantic>=2.13.4",

@@ -51,3 +51,9 @@ class EvalConfig(BaseModel):
     dist_thresh: int = 20
     dataset: str = ""
     max_images: int = 200
+
+
+class ComponentDetectionConfig(BaseModel):
+    source: Literal["model", "ground_truth", "roboflow"] = "model"
+    model_path: str = "models/component_detection/yolo26m_obb_16class_aug.pt"
+    confidence_threshold: float = 0.5
