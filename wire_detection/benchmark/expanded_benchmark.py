@@ -34,7 +34,13 @@ HDC_SPLITS = ["train", "valid", "test"]
 
 
 def find_hdc_label_by_prefix(image_name: str) -> Path | None:
-    """Find HDC label by filename prefix matching (handles .rf.XXXX suffixes)."""
+    """Find HDC label by filename prefix matching (handles .rf.XXXX suffixes).
+
+    .. warning::
+       Returns the FIRST match — may be from an augmented version whose labels
+       do NOT align with the original image.  Prefer :func:`find_exact_match`
+       when loading labels for occlusion on original images.
+    """
     for split in HDC_SPLITS:
         label_dir = HDC_BASE / split / "labels"
         matches = sorted(label_dir.glob(f"{image_name}_jpg.rf.*.txt"))
@@ -51,7 +57,35 @@ def find_hdc_label_by_prefix(image_name: str) -> Path | None:
     return None
 
 
-# Cache: image_name -> components
+def find_exact_match(image_name: str, orig_gray: np.ndarray) -> tuple[Path, Path] | None:
+    """Find the Roboflow version pixel-identical to ``orig_gray`` and its label.
+
+    CRITICAL (Jun 2026): Each Roboflow image has multiple ``.rf.<hash>`` versions —
+    some augmented, some untouched.  ``find_rob_image()`` returns the first match
+    (sorted by filename), which may be augmented.  Its labels are in a different
+    coordinate space and will produce wrong occlusion polygons on the original.
+
+    This function finds the version with pixel error < 0.01 (identical) and
+    returns its label path.  Always prefer this over ``find_hdc_label_by_prefix``
+    when the caller loads the original (non-augmented) image.
+    """
+    stem = f"{image_name}_jpg"
+    for split in HDC_SPLITS:
+        img_dir = ROB_IMAGES_BASE / split / "images"
+        label_dir = ROB_IMAGES_BASE / split / "labels"
+        if not img_dir.exists():
+            continue
+        for f in sorted(img_dir.glob(f"{stem}.rf.*.jpg")):
+            rob = cv2.imread(str(f), cv2.IMREAD_GRAYSCALE)
+            if rob is not None and rob.shape == orig_gray.shape:
+                err = np.mean(np.abs(orig_gray.astype(float) - rob.astype(float)))
+                if err < 0.01:  # pixel-identical
+                    label = label_dir / f"{f.stem}.txt"
+                    if label.exists():
+                        return (f, label)
+    return None
+
+
 # Cache: image_name -> components
 _component_cache: dict[str, list] = {}
 def load_components(image_name: str, w: int, h: int) -> list:
@@ -86,19 +120,24 @@ def preload_all_images():
         image_name = gt_file.stem.replace("_jpg", "")
         image_path = GT_IMAGES / f"{image_name}_jpg.jpg"
 
-        # Use Roboflow augmented image (matches label orientation)
-        rob_path = find_rob_image(image_name)
-        load_path = rob_path if rob_path else image_path
-        gray = cv2.imread(str(load_path), cv2.IMREAD_GRAYSCALE)
+        # Load the ORIGINAL image (correct for evaluation)
+        gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
         if gray is None:
-            # Fallback to original
-            gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
-            if gray is None:
-                continue
+            continue
 
         h, w = gray.shape
         gt_lines = ref.load_ground_truth(gt_file, w, h)
-        components = load_components(image_name, w, h)
+
+        # CRITICAL (Jun 2026): Use exact-match Roboflow label for occlusion.
+        # find_hdc_label_by_prefix() returns the FIRST match which may be from
+        # an augmented version — its labels are in the wrong coordinate space
+        # for the original image, causing incorrect occlusion polygons.
+        exact = find_exact_match(image_name, gray)
+        if exact:
+            _, label_path = exact
+            components = ref.parse_components(label_path, w, h)
+        else:
+            components = load_components(image_name, w, h)
         if not components:
             continue
         data.append((image_name, gray, gt_lines, components))
