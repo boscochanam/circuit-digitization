@@ -188,6 +188,18 @@ def test_degree_budget_completion_beats_graph_rescue():
     assert cand["wheat_prec_L3"] >= base["wheat_prec_L3"] - 1e-6   # not precision-for-recall
 
 
+@pytest.mark.parametrize("spec", CATALOG, ids=[c.name for c in CATALOG])
+def test_degree_budget_clean_via_production_pins(spec):
+    """degree_budget (the default) must recover clean circuits via the PRODUCTION
+    discovered-pins path (run_strategy -> make_pins), not just the true-pins path.
+    Guards against base over-extend over-merge -- e.g. the double-extend bug
+    (registry extend + internal extend = 24px) that shorted the clean wheatstone."""
+    components, wires, _ = synthesize_clean(spec)
+    _, net = run_strategy("degree_budget", wires, components)   # make_pins path
+    _p, _r, f1 = _prf(intended_pairs(spec), _comp_pairs(net))
+    assert f1 == pytest.approx(1.0), f"{spec.name}: degree_budget clean (make_pins) F1={f1:.3f}"
+
+
 def test_degree_budget_tracks_wires_and_curbs_self_loops():
     """The two production-blocking fixes (PR #64 handoff), measured the same way
     the real benchmark does (score_netlist): (1) wire tracking is populated -- was
