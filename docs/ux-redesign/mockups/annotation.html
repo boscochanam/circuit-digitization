@@ -1,0 +1,719 @@
+<!--
+  Circuit Digitization / Wire Detection Tuner — ANNOTATION-PARADIGM redesign
+  Self-contained dark-theme desktop mockup (1440x900). Inline CSS only.
+  IA: thin LEFT tool/layer/nav rail · CENTER photo canvas (hero) · ONE RIGHT contextual inspector
+      thin TOP status bar (fix -> complete -> simulate) · collapsed BOTTOM output drawer.
+  A little vanilla JS toggles the inspector tabs / bottom drawer; everything reads correctly with JS off.
+-->
+<style>
+  :root{
+    --bg:#0c0d10; --bg-1:#111317; --bg-2:#16191f; --bg-3:#1c2027; --bg-hover:#222732;
+    --line:#262b34; --line-2:#323844; --line-3:#3d4654;
+    --tx:#e7eaf0; --tx-2:#9aa3b2; --tx-3:#6b7382; --tx-4:#4d5564;
+    --accent:#5b8cff; --accent-dim:#27406e; --accent-bg:#13203a;
+    --ok:#3ecf8e; --ok-bg:#0f2a20; --ok-line:#1c5240;
+    --warn:#f5b83d; --warn-bg:#2c2310; --warn-line:#5a4716;
+    --danger:#f0716e; --danger-bg:#2c1514; --danger-line:#5a2624;
+    --merge:#5b8cff;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --r:6px;
+  }
+  *{box-sizing:border-box}
+  .app{
+    width:1440px;height:900px;margin:0 auto;background:var(--bg);color:var(--tx);
+    font-family:var(--sans);font-size:13px;line-height:1.45;
+    display:grid;grid-template-rows:38px 1fr;grid-template-columns:54px 232px 1fr 320px;
+    grid-template-areas:"top top top top" "rail nav canvas inspector";
+    overflow:hidden;border:1px solid var(--line);border-radius:8px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  button{font-family:inherit;color:inherit;cursor:pointer}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* ---------- TOP STATUS BAR : fix -> complete -> simulate ---------- */
+  .top{grid-area:top;display:flex;align-items:center;gap:14px;padding:0 12px;
+    background:var(--bg-1);border-bottom:1px solid var(--line);}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:500;letter-spacing:.2px;white-space:nowrap}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .brand small{color:var(--tx-3);font-weight:400;font-size:11px}
+  .flow{display:flex;align-items:center;gap:6px;margin-left:6px}
+  .flow .step{display:flex;align-items:center;gap:6px;padding:3px 9px;border-radius:20px;
+    font-size:12px;color:var(--tx-3);border:1px solid transparent}
+  .flow .step b{font-weight:500}
+  .flow .step.active{color:var(--accent);background:var(--accent-bg);border-color:var(--accent-dim)}
+  .flow .step.done{color:var(--ok)}
+  .flow .arr{color:var(--tx-4);font-size:11px}
+  .top .spacer{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;
+    border-radius:20px;border:1px solid var(--line-2);background:var(--bg-2);color:var(--tx-2)}
+  .pill .ic{width:7px;height:7px;border-radius:50%}
+  .pill.warn{color:var(--warn);border-color:var(--warn-line);background:var(--warn-bg)}
+  .pill.warn .ic{background:var(--warn)}
+  .btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;padding:6px 12px;border-radius:var(--r);
+    border:1px solid var(--line-2);background:var(--bg-2);color:var(--tx);transition:.12s}
+  .btn:hover{background:var(--bg-hover);border-color:var(--line-3)}
+  .btn .k{font-size:10px;color:var(--tx-3);border:1px solid var(--line-2);border-radius:3px;padding:0 4px;margin-left:2px}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+  .btn-primary:hover{background:#6d99ff;border-color:#6d99ff}
+  .btn-primary[disabled],.btn[disabled]{opacity:.4;cursor:not-allowed}
+  .btn-primary.locked{background:var(--bg-2);border-color:var(--warn-line);color:var(--warn);cursor:not-allowed}
+
+  /* ---------- LEFT TOOL RAIL (icons) ---------- */
+  .rail{grid-area:rail;background:var(--bg-1);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px}
+  .tool{width:38px;height:38px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;
+    background:transparent;border:1px solid transparent;color:var(--tx-2);position:relative}
+  .tool svg{width:19px;height:19px}
+  .tool:hover{background:var(--bg-3);color:var(--tx)}
+  .tool.on{background:var(--accent-bg);border-color:var(--accent-dim);color:var(--accent)}
+  .tool .badge{position:absolute;top:2px;right:2px;min-width:15px;height:15px;border-radius:8px;
+    background:var(--danger);color:#fff;font-size:9px;font-weight:500;display:flex;align-items:center;
+    justify-content:center;padding:0 3px}
+  .rail .sep{width:24px;height:1px;background:var(--line);margin:5px 0}
+  .rail .grow{flex:1}
+
+  /* ---------- NAV COLUMN : layers + filmstrip ---------- */
+  .nav{grid-area:nav;background:var(--bg-1);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;overflow:hidden}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;padding:9px 12px 7px;
+    font-size:11px;letter-spacing:.6px;color:var(--tx-3);text-transform:uppercase}
+  .panel-h .act{color:var(--tx-3);font-size:12px}
+  .panel-h .act:hover{color:var(--tx)}
+  .nav-sec{border-bottom:1px solid var(--line)}
+
+  .layer{display:flex;align-items:center;gap:9px;padding:6px 12px;font-size:12.5px;color:var(--tx)}
+  .layer:hover{background:var(--bg-2)}
+  .layer .eye{width:16px;height:16px;color:var(--tx-2);display:flex;align-items:center;flex-shrink:0}
+  .layer.off{color:var(--tx-4)}
+  .layer.off .eye{color:var(--tx-4)}
+  .layer .sw{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+  .layer .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .layer .ct{font-size:11px;color:var(--tx-3);font-variant-numeric:tabular-nums}
+
+  .nav-grow{flex:1;display:flex;flex-direction:column;min-height:0}
+  .ds-row{display:flex;gap:6px;padding:8px 12px 6px}
+  .ds-row select{flex:1;background:var(--bg-2);border:1px solid var(--line-2);color:var(--tx);
+    border-radius:var(--r);padding:5px 7px;font-size:12px;font-family:inherit}
+  .strip{flex:1;overflow-y:auto;padding:2px 8px 8px}
+  .thumb{display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:var(--r);margin-bottom:3px;
+    border:1px solid transparent}
+  .thumb:hover{background:var(--bg-2)}
+  .thumb.sel{background:var(--accent-bg);border-color:var(--accent-dim)}
+  .thumb .mini{width:42px;height:30px;border-radius:3px;background:var(--bg-3);border:1px solid var(--line-2);
+    flex-shrink:0;overflow:hidden}
+  .thumb .meta{flex:1;min-width:0}
+  .thumb .meta .id{font-size:12px;color:var(--tx);font-variant-numeric:tabular-nums}
+  .thumb.sel .meta .id{color:var(--accent)}
+  .thumb .meta .st{font-size:10.5px;color:var(--tx-3)}
+  .st-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .st-dot.ok{background:var(--ok)} .st-dot.inc{background:var(--warn)} .st-dot.no{background:var(--danger)}
+
+  /* ---------- CENTER CANVAS ---------- */
+  .canvas{grid-area:canvas;position:relative;background:
+    repeating-linear-gradient(0deg,#0a0b0e 0 1px,transparent 1px 26px),
+    repeating-linear-gradient(90deg,#0a0b0e 0 1px,transparent 1px 26px),#0e1014;
+    overflow:hidden}
+  .canvas-top{position:absolute;top:10px;left:12px;right:12px;display:flex;align-items:center;
+    gap:8px;z-index:5}
+  .seg{display:inline-flex;background:var(--bg-1);border:1px solid var(--line-2);border-radius:var(--r);overflow:hidden}
+  .seg button{padding:5px 11px;font-size:12px;background:transparent;border:none;color:var(--tx-2);
+    border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:none}
+  .seg button:hover{background:var(--bg-3);color:var(--tx)}
+  .seg button.on{background:var(--accent-bg);color:var(--accent)}
+  .canvas-top .spacer{flex:1}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:4px 9px;border-radius:var(--r);
+    background:var(--bg-1);border:1px solid var(--line-2);color:var(--tx-2)}
+  .zoomctl{position:absolute;bottom:14px;left:12px;display:flex;align-items:center;gap:2px;
+    background:var(--bg-1);border:1px solid var(--line-2);border-radius:var(--r);padding:2px;z-index:5}
+  .zoomctl button{width:28px;height:26px;border:none;background:transparent;color:var(--tx-2);font-size:15px;border-radius:4px}
+  .zoomctl button:hover{background:var(--bg-3);color:var(--tx)}
+  .zoomctl .pct{font-size:11.5px;color:var(--tx-2);padding:0 8px;font-variant-numeric:tabular-nums}
+
+  /* minimap */
+  .minimap{position:absolute;bottom:14px;right:14px;width:150px;height:104px;background:var(--bg-1);
+    border:1px solid var(--line-2);border-radius:var(--r);overflow:hidden;z-index:5}
+  .minimap .mm-h{font-size:9.5px;letter-spacing:.5px;color:var(--tx-3);padding:4px 7px 2px;text-transform:uppercase}
+  .minimap .vp{position:absolute;border:1.5px solid var(--accent);border-radius:2px}
+
+  .stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .photo{position:relative;width:760px;height:520px}
+  .photo-canvas{width:100%;height:100%;background:#f3efe6;border-radius:4px;
+    box-shadow:0 0 0 1px var(--line-2),0 8px 30px rgba(0,0,0,.5)}
+
+  /* on-canvas selection toolbar (non-scaling) */
+  .selbar{position:absolute;display:flex;gap:2px;background:var(--bg-1);border:1px solid var(--line-3);
+    border-radius:var(--r);padding:3px;z-index:6;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  .selbar button{padding:4px 9px;font-size:11.5px;border:none;background:transparent;color:var(--tx);border-radius:4px}
+  .selbar button:hover{background:var(--bg-3)}
+  .selbar button.danger:hover{background:var(--danger-bg);color:var(--danger)}
+  .selbar .vsep{width:1px;background:var(--line);margin:2px 1px}
+
+  /* ---------- RIGHT INSPECTOR ---------- */
+  .inspector{grid-area:inspector;background:var(--bg-1);border-left:1px solid var(--line);
+    display:flex;flex-direction:column;overflow:hidden}
+  .insp-tabs{display:flex;border-bottom:1px solid var(--line);padding:0 6px}
+  .insp-tab{flex:1;padding:9px 4px;font-size:12px;background:transparent;border:none;color:var(--tx-3);
+    border-bottom:2px solid transparent;display:flex;align-items:center;justify-content:center;gap:6px}
+  .insp-tab:hover{color:var(--tx)}
+  .insp-tab.on{color:var(--tx);border-bottom-color:var(--accent)}
+  .insp-tab .n{font-size:10px;min-width:16px;height:15px;border-radius:8px;background:var(--bg-3);
+    color:var(--tx-2);display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
+  .insp-tab.on .n{background:var(--accent);color:#fff}
+  .insp-body{flex:1;overflow-y:auto}
+  .insp-pane{display:none;padding:0}
+  .insp-pane.show{display:block}
+
+  /* completeness card (pinned, always visible in inspector header region) */
+  .complete{margin:12px;border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:8px;padding:12px}
+  .complete .hd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--warn)}
+  .complete .sub{font-size:12px;color:var(--tx-2);margin-top:4px}
+  .complete .bar{height:6px;border-radius:4px;background:var(--bg-3);margin-top:10px;overflow:hidden}
+  .complete .bar i{display:block;height:100%;width:62%;background:var(--warn);border-radius:4px}
+  .complete .meta{display:flex;justify-content:space-between;font-size:11px;color:var(--tx-3);margin-top:6px}
+
+  .sect-h{font-size:11px;letter-spacing:.6px;color:var(--tx-3);text-transform:uppercase;
+    padding:6px 14px;display:flex;align-items:center;justify-content:between;gap:8px}
+  .sect-h .ttl{flex:1}
+  .filters{display:flex;gap:5px;padding:0 12px 8px;flex-wrap:wrap}
+  .fchip{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--line-2);background:var(--bg-2);color:var(--tx-2)}
+  .fchip.on{background:var(--accent-bg);border-color:var(--accent-dim);color:var(--accent)}
+  .fchip.on b{color:var(--accent)}
+
+  /* problem worklist rows */
+  .prob{display:flex;gap:10px;padding:9px 14px;border-left:2px solid transparent;align-items:flex-start}
+  .prob:hover{background:var(--bg-2)}
+  .prob.sel{background:var(--accent-bg);border-left-color:var(--accent)}
+  .prob .ic{width:18px;height:18px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;
+    justify-content:center;font-size:11px;margin-top:1px}
+  .prob .ic.no{background:var(--danger-bg);color:var(--danger)}
+  .prob .ic.inc{background:var(--warn-bg);color:var(--warn)}
+  .prob .ic.float{background:var(--bg-3);color:var(--tx-2)}
+  .prob .ic.ok{background:var(--ok-bg);color:var(--ok)}
+  .prob .tx .t1{font-size:12.5px;color:var(--tx)}
+  .prob .tx .t2{font-size:11px;color:var(--tx-3);margin-top:1px}
+  .prob.resolved .t1{color:var(--tx-3);text-decoration:line-through}
+  .prob .go{margin-left:auto;color:var(--tx-4);align-self:center;font-size:11px}
+  .prob:hover .go{color:var(--accent)}
+
+  /* selected-pin detail editor (CONNECT pane) */
+  .det-head{padding:12px 14px;border-bottom:1px solid var(--line)}
+  .det-head .kick{font-size:11px;color:var(--tx-3);letter-spacing:.4px;text-transform:uppercase}
+  .det-head .nm{font-size:15px;font-weight:500;margin-top:3px;display:flex;align-items:center;gap:8px}
+  .det-head .tag{font-size:10.5px;padding:2px 7px;border-radius:4px;background:var(--danger-bg);
+    color:var(--danger);border:1px solid var(--danger-line)}
+  .kv{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--tx-2)}
+  .kv b{color:var(--tx);font-weight:400;font-variant-numeric:tabular-nums}
+  .det-sec{padding:12px 14px;border-bottom:1px solid var(--line)}
+  .det-sec .lbl{font-size:11px;letter-spacing:.5px;color:var(--tx-3);text-transform:uppercase;margin-bottom:9px}
+  .search{display:flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--line-2);
+    border-radius:var(--r);padding:7px 10px;margin-bottom:8px}
+  .search input{flex:1;background:transparent;border:none;outline:none;color:var(--tx);font-size:12.5px;font-family:inherit}
+  .search input::placeholder{color:var(--tx-4)}
+  .search svg{width:14px;height:14px;color:var(--tx-3)}
+  .opt{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--r);font-size:12.5px}
+  .opt:hover{background:var(--bg-2)}
+  .opt .sw{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+  .opt .nm{flex:1}
+  .opt .dist{font-size:11px;color:var(--tx-3);font-variant-numeric:tabular-nums}
+  .opt.best{background:var(--ok-bg);border:1px solid var(--ok-line)}
+  .opt.best .nm{color:var(--tx)}
+  .opt.best .dist{color:var(--ok)}
+  .opt.dim{opacity:.45}
+  .actions{display:flex;gap:7px;margin-top:11px}
+  .actions .btn{flex:1;justify-content:center}
+  .btn-connect{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+  .btn-connect:hover{background:#6d99ff}
+
+  .det-sec.muted .lbl{margin-bottom:0}
+  .adv{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;
+    font-size:12px;color:var(--tx-2)}
+  .adv:hover{background:var(--bg-2)}
+  .adv .chev{color:var(--tx-3)}
+
+  /* component value editor (when a component is selected — shown as alt example text) */
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:11px;color:var(--tx-3);margin-bottom:5px}
+  .field input,.field select{width:100%;background:var(--bg-2);border:1px solid var(--line-2);color:var(--tx);
+    border-radius:var(--r);padding:7px 10px;font-size:13px;font-family:var(--mono)}
+  .field .hint{font-size:11px;color:var(--tx-4);margin-top:4px}
+
+  /* nothing-selected: detection settings (document state) */
+  .slider{padding:8px 14px}
+  .slider .top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;background:none;border:none;padding:0}
+  .slider .top .v{color:var(--tx);font-family:var(--mono);font-size:12px}
+  .slider .top label{color:var(--tx-2)}
+  .track{height:4px;background:var(--bg-3);border-radius:3px;position:relative}
+  .track i{position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:3px}
+  .track .thumb{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--tx);
+    transform:translate(-50%,-50%);border:2px solid var(--accent)}
+
+  /* ---------- BOTTOM OUTPUT DRAWER (collapsed) ---------- */
+  .drawer{position:absolute;left:286px;right:320px;bottom:0;z-index:7}
+  .drawer-h{display:flex;align-items:center;gap:10px;padding:7px 14px;background:var(--bg-1);
+    border-top:1px solid var(--line);border-bottom:1px solid transparent}
+  .drawer.open .drawer-h{border-bottom:1px solid var(--line)}
+  .drawer-h .tabs{display:flex;gap:2px}
+  .drawer-h .tabs button{font-size:12px;padding:4px 10px;border-radius:var(--r);background:transparent;
+    border:none;color:var(--tx-3)}
+  .drawer-h .tabs button.on{background:var(--bg-3);color:var(--tx)}
+  .drawer-h .tabs button:hover{color:var(--tx)}
+  .drawer-h .chev{margin-left:auto;color:var(--tx-3);background:none;border:none;display:flex;align-items:center;gap:6px;font-size:12px}
+  .drawer-body{display:none;background:var(--bg);border-top:1px solid var(--line);height:172px;overflow:auto}
+  .drawer.open .drawer-body{display:block}
+  .drawer.open{box-shadow:0 -10px 30px rgba(0,0,0,.4)}
+  .netlist{padding:12px 16px;font-family:var(--mono);font-size:12px;line-height:1.75;color:var(--tx-2)}
+  .netlist .cm{color:var(--tx-4)}
+  .netlist .nm{color:var(--accent)}
+  .netlist .vl{color:var(--ok)}
+  .netlist .warn{color:var(--warn)}
+
+  .hl{color:var(--accent)}
+  kbd{font-family:var(--mono);font-size:10.5px;background:var(--bg-3);border:1px solid var(--line-2);
+    border-bottom-width:2px;border-radius:3px;padding:0 5px;color:var(--tx-2)}
+</style>
+
+<h2 class="sr-only">Annotation-style redesign of the wire-detection tuner: a left tool and image rail, a central circuit-photo canvas, and one contextual inspector showing the connection editor and problem worklist, with a fix-complete-simulate status bar on top.</h2>
+
+<div class="app">
+
+  <!-- ================= TOP STATUS BAR ================= -->
+  <header class="top">
+    <div class="brand"><span class="dot"></span>Circuit Digitizer <small>gt_labels · 014 / 94</small></div>
+
+    <div class="flow" role="group" aria-label="Workflow status">
+      <span class="step active"><i data-i="fix"></i><b>Fix</b> · 3 left</span>
+      <span class="arr">›</span>
+      <span class="step"><b>Complete</b></span>
+      <span class="arr">›</span>
+      <span class="step"><b>Simulate</b></span>
+    </div>
+
+    <div class="spacer"></div>
+
+    <span class="pill warn"><span class="ic"></span>Incomplete · 2 pieces, no source</span>
+    <button class="btn"><span>Search</span><span class="k">Ctrl K</span></button>
+    <button class="btn-primary locked" aria-disabled="true" title="Resolve all problems to enable">
+      Simulate <span class="k" style="border-color:var(--warn-line);color:var(--warn)">blocked</span>
+    </button>
+  </header>
+
+  <!-- ================= LEFT TOOL RAIL ================= -->
+  <nav class="rail" aria-label="Tools">
+    <button class="tool on" title="Select / connect (V)" aria-label="Select and connect">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3l14 8-6 1.5L11 19z"/></svg>
+    </button>
+    <button class="tool" title="Pan (H)" aria-label="Pan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 13V5a1.5 1.5 0 013 0v6M11 11V4a1.5 1.5 0 013 0v7M14 11V6a1.5 1.5 0 013 0v8c0 4-2.5 6-6 6s-5-2-6.5-4l-2-3a1.5 1.5 0 012.4-1.7L8 14"/></svg>
+    </button>
+    <button class="tool" title="Connect drag (C)" aria-label="Connect">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="12" r="2.4"/><path d="M8.4 12h7.2"/></svg>
+    </button>
+    <button class="tool" title="Mark source (S)" aria-label="Mark source">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>
+    </button>
+    <div class="sep"></div>
+    <button class="tool" title="Detection settings" aria-label="Detection settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>
+    </button>
+    <button class="tool" title="Output / netlist" aria-label="Output">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+    </button>
+    <div class="grow"></div>
+    <button class="tool" title="Keyboard shortcuts (?)" aria-label="Shortcuts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 113 2.4V14M12 17h.01"/></svg>
+    </button>
+  </nav>
+
+  <!-- ================= NAV COLUMN : layers + filmstrip ================= -->
+  <aside class="nav" aria-label="Layers and images">
+
+    <div class="nav-sec">
+      <div class="panel-h"><span>Overlay layers</span><button class="act" title="Reset">reset</button></div>
+      <div class="layer"><span class="eye">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+        </span><span class="sw" style="background:#888"></span><span class="nm">Source photo</span></div>
+      <div class="layer"><span class="eye">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+        </span><span class="sw" style="background:#e6194b"></span><span class="nm">Nets (topology)</span><span class="ct">9</span></div>
+      <div class="layer"><span class="eye">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+        </span><span class="sw" style="background:var(--warn)"></span><span class="nm">Unconnected pins</span><span class="ct">3</span></div>
+      <div class="layer off"><span class="eye">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.8M9.4 5.3A9.6 9.6 0 0112 5c6.5 0 10 7 10 7a17 17 0 01-2.4 3.2M6.2 6.2A17 17 0 002 12s3.5 7 10 7a9.3 9.3 0 004-.9"/></svg>
+        </span><span class="sw" style="background:#3cb44b"></span><span class="nm">Detection boxes</span></div>
+      <div class="layer off"><span class="eye">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.8M9.4 5.3A9.6 9.6 0 0112 5c6.5 0 10 7 10 7a17 17 0 01-2.4 3.2M6.2 6.2A17 17 0 002 12s3.5 7 10 7a9.3 9.3 0 004-.9"/></svg>
+        </span><span class="sw" style="background:#f58231"></span><span class="nm">Current heatmap</span></div>
+      <div class="layer off"><span class="eye">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.8M9.4 5.3A9.6 9.6 0 0112 5c6.5 0 10 7 10 7a17 17 0 01-2.4 3.2M6.2 6.2A17 17 0 002 12s3.5 7 10 7a9.3 9.3 0 004-.9"/></svg>
+        </span><span class="sw" style="background:#42d4f4"></span><span class="nm">Sim voltages</span></div>
+    </div>
+
+    <div class="nav-grow">
+      <div class="panel-h" style="border-top:none"><span>Dataset images</span><span class="act" style="color:var(--tx-3)">39 done</span></div>
+      <div class="ds-row">
+        <select aria-label="Dataset"><option>gt_labels · 94</option><option>HDC · 1680</option><option>Synthetic</option></select>
+      </div>
+      <div class="strip">
+        <div class="thumb"><span class="st-dot ok"></span><div class="mini"></div><div class="meta"><div class="id">012 · rc-lowpass</div><div class="st">Ready · 1 net</div></div></div>
+        <div class="thumb"><span class="st-dot ok"></span><div class="mini"></div><div class="meta"><div class="id">013 · divider</div><div class="st">Ready</div></div></div>
+        <div class="thumb sel"><span class="st-dot inc"></span><div class="mini"></div><div class="meta"><div class="id">014 · rlc-series</div><div class="st">Incomplete · 3 pins</div></div></div>
+        <div class="thumb"><span class="st-dot no"></span><div class="mini"></div><div class="meta"><div class="id">015 · bridge</div><div class="st">No source</div></div></div>
+        <div class="thumb"><span class="st-dot inc"></span><div class="mini"></div><div class="meta"><div class="id">016 · transistor-amp</div><div class="st">Incomplete · 5 pins</div></div></div>
+        <div class="thumb"><span class="st-dot ok"></span><div class="mini"></div><div class="meta"><div class="id">017 · led-array</div><div class="st">Ready</div></div></div>
+        <div class="thumb"><span class="st-dot inc"></span><div class="mini"></div><div class="meta"><div class="id">018 · filter-2nd</div><div class="st">Incomplete · 2 pins</div></div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= CENTER CANVAS ================= -->
+  <main class="canvas" aria-label="Circuit canvas">
+
+    <div class="canvas-top">
+      <div class="seg" role="group" aria-label="Base view">
+        <button class="on">Source</button>
+        <button>Threshold</button>
+        <button>Detected</button>
+      </div>
+      <div class="spacer"></div>
+      <span class="chip"><span style="width:7px;height:7px;border-radius:50%;background:var(--warn);display:inline-block"></span>3 unconnected pins on this image</span>
+      <span class="chip">Zoom lock</span>
+    </div>
+
+    <div class="stage">
+      <div class="photo">
+        <!-- fake hand-drawn circuit photo + topology overlay -->
+        <svg class="photo-canvas" viewBox="0 0 760 520" xmlns="http://www.w3.org/2000/svg" role="img"
+             aria-label="Hand-drawn RLC series circuit photo with detection overlays">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+              <path d="M0 1L6 4L0 7z" fill="#5b8cff"/>
+            </marker>
+          </defs>
+          <!-- paper grain tint -->
+          <rect x="0" y="0" width="760" height="520" fill="#f3efe6"/>
+          <rect x="0" y="0" width="760" height="520" fill="#000" opacity="0.015"/>
+
+          <!-- hand-drawn ink wires (slightly wobbly strokes) -->
+          <g stroke="#2b2a27" stroke-width="3.2" fill="none" stroke-linecap="round" opacity="0.82">
+            <!-- top rail V1 -> R1 -->
+            <path d="M150 130 Q 220 127 290 130"/>
+            <!-- R1 -> L1 -->
+            <path d="M390 130 Q 460 132 520 130"/>
+            <!-- right rail down -->
+            <path d="M610 160 Q 612 250 610 330"/>
+            <!-- bottom rail back toward C1 -->
+            <path d="M610 360 Q 480 392 360 388"/>
+            <!-- left rail down from V1 -->
+            <path d="M120 160 Q 118 270 120 360"/>
+          </g>
+
+          <!-- net colour wash (topology overlay) over the wires -->
+          <g stroke-width="3.4" fill="none" stroke-linecap="round" opacity="0.9">
+            <path d="M150 130 Q 220 127 290 130" stroke="#3cb44b"/>
+            <path d="M390 130 Q 460 132 520 130" stroke="#4363d8"/>
+            <path d="M610 160 Q 612 250 610 330" stroke="#f58231"/>
+            <path d="M120 160 Q 118 270 120 360" stroke="#911eb4"/>
+          </g>
+
+          <!-- component boxes -->
+          <!-- V1 source (left) -->
+          <g>
+            <circle cx="120" cy="145" r="22" fill="#fff" stroke="#2b2a27" stroke-width="2.6"/>
+            <path d="M120 134v22M111 145h18" stroke="#2b2a27" stroke-width="2" fill="none"/>
+            <text x="120" y="110" font-family="monospace" font-size="17" fill="#2b2a27" text-anchor="middle" font-weight="bold">V1</text>
+            <text x="120" y="186" font-family="monospace" font-size="12" fill="#7a756b" text-anchor="middle">5V</text>
+          </g>
+          <!-- R1 resistor (top middle) -->
+          <g>
+            <rect x="290" y="112" width="100" height="36" rx="4" fill="#fff" stroke="#2b2a27" stroke-width="2.6"/>
+            <path d="M298 130l8-9 11 18 11-18 11 18 11-18 11 18 8-9" stroke="#2b2a27" stroke-width="2" fill="none"/>
+            <text x="340" y="100" font-family="monospace" font-size="17" fill="#2b2a27" text-anchor="middle" font-weight="bold">R1</text>
+            <text x="340" y="168" font-family="monospace" font-size="12" fill="#7a756b" text-anchor="middle">10k</text>
+          </g>
+          <!-- L1 inductor (top right) -->
+          <g>
+            <rect x="520" y="112" width="90" height="36" rx="4" fill="#fff" stroke="#2b2a27" stroke-width="2.6"/>
+            <path d="M528 132c6-12 12-12 18 0s12 12 18 0 12-12 18 0" stroke="#2b2a27" stroke-width="2" fill="none"/>
+            <text x="565" y="100" font-family="monospace" font-size="17" fill="#2b2a27" text-anchor="middle" font-weight="bold">L1</text>
+            <text x="565" y="168" font-family="monospace" font-size="12" fill="#7a756b" text-anchor="middle">10m</text>
+          </g>
+          <!-- C1 capacitor (bottom middle) -->
+          <g>
+            <rect x="300" y="362" width="60" height="46" rx="4" fill="#fff" stroke="#2b2a27" stroke-width="2.6"/>
+            <path d="M322 372v26M338 372v26" stroke="#2b2a27" stroke-width="2.4" fill="none"/>
+            <text x="330" y="354" font-family="monospace" font-size="17" fill="#2b2a27" text-anchor="middle" font-weight="bold">C1</text>
+            <text x="330" y="428" font-family="monospace" font-size="12" fill="#7a756b" text-anchor="middle">100n</text>
+          </g>
+
+          <!-- GOOD connected wire-end dots (green) -->
+          <g>
+            <circle cx="150" cy="130" r="5" fill="#3cb44b" stroke="#fff" stroke-width="1.5"/>
+            <circle cx="290" cy="130" r="5" fill="#3cb44b" stroke="#fff" stroke-width="1.5"/>
+            <circle cx="120" cy="167" r="5" fill="#3cb44b" stroke="#fff" stroke-width="1.5"/>
+          </g>
+
+          <!-- dashed blue MERGE / suggested-join link -->
+          <path d="M390 130 Q 455 110 520 130" stroke="#5b8cff" stroke-width="2.2" stroke-dasharray="6 5"
+                fill="none" marker-end="url(#arrow)" opacity="0.95"/>
+          <text x="455" y="103" font-family="monospace" font-size="11" fill="#5b8cff" text-anchor="middle">join · 14px</text>
+
+          <!-- AMBER unconnected-pin rings (the core fix targets) -->
+          <g fill="none" stroke="#f5b83d" stroke-width="2.6">
+            <!-- L1 bottom-right dangling pin -->
+            <circle cx="610" cy="160" r="11"/>
+            <!-- C1 top pin dangling -->
+            <circle cx="330" cy="362" r="11"/>
+            <!-- C1 bottom pin dangling (selected) -->
+            <circle cx="330" cy="408" r="13" stroke="#5b8cff" stroke-width="3"/>
+          </g>
+          <!-- red dead-end dot on the selected pin -->
+          <circle cx="330" cy="408" r="5" fill="#f0716e" stroke="#fff" stroke-width="1.5"/>
+          <circle cx="610" cy="160" r="5" fill="#f0716e" stroke="#fff" stroke-width="1.5"/>
+          <circle cx="330" cy="362" r="5" fill="#f0716e" stroke="#fff" stroke-width="1.5"/>
+        </svg>
+
+        <!-- non-scaling selection toolbar anchored to the selected amber pin (C1.2) -->
+        <div class="selbar" style="left:332px;bottom:62px">
+          <button title="Connect to nearest valid pin">⌁ Connect</button>
+          <button>Join</button>
+          <span class="vsep"></span>
+          <button>Mark source</button>
+          <button class="danger">Disconnect</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- zoom controls -->
+    <div class="zoomctl">
+      <button title="Zoom out">−</button>
+      <span class="pct">88%</span>
+      <button title="Zoom in">+</button>
+      <button title="Fit (F)" style="font-size:12px">⤢</button>
+    </div>
+
+    <!-- minimap coloured by completeness -->
+    <div class="minimap" aria-label="Minimap">
+      <div class="mm-h">Overview</div>
+      <svg viewBox="0 0 150 104" width="150" height="104">
+        <rect x="0" y="14" width="150" height="90" fill="#0a0b0e"/>
+        <g stroke-width="2" fill="none" opacity="0.85">
+          <path d="M30 38 H58" stroke="#3cb44b"/><path d="M78 38 H104" stroke="#4363d8"/>
+          <path d="M122 44 V70" stroke="#f58231"/><path d="M24 44 V72" stroke="#911eb4"/>
+        </g>
+        <circle cx="122" cy="44" r="4" fill="none" stroke="#f5b83d" stroke-width="2"/>
+        <circle cx="66" cy="74" r="4" fill="none" stroke="#f5b83d" stroke-width="2"/>
+        <circle cx="66" cy="82" r="4" fill="none" stroke="#5b8cff" stroke-width="2"/>
+        <rect class="vp" x="14" y="30" width="92" height="56"/>
+      </svg>
+    </div>
+  </main>
+
+  <!-- ================= RIGHT CONTEXTUAL INSPECTOR ================= -->
+  <aside class="inspector" aria-label="Inspector">
+    <div class="insp-tabs" role="tablist">
+      <button class="insp-tab on" data-pane="connect" role="tab">Connect</button>
+      <button class="insp-tab" data-pane="problems" role="tab">Problems <span class="n">3</span></button>
+      <button class="insp-tab" data-pane="document" role="tab">Detect</button>
+    </div>
+
+    <div class="insp-body">
+
+      <!-- ===== PANE: CONNECT (a pin is selected → the editor) ===== -->
+      <section class="insp-pane show" data-pane="connect" role="tabpanel">
+
+        <!-- pinned completeness gate -->
+        <div class="complete" aria-label="Completeness">
+          <div class="hd"><span style="width:9px;height:9px;border-radius:50%;background:var(--warn);display:inline-block"></span>Incomplete</div>
+          <div class="sub">2 separate pieces · no source wired in</div>
+          <div class="bar"><i></i></div>
+          <div class="meta"><span>3 of 8 pins to connect</span><span>62%</span></div>
+        </div>
+
+        <div class="det-head">
+          <div class="kick">Selected pin</div>
+          <div class="nm">C1.2 <span class="tag">dead-end</span></div>
+          <div class="kv"><span>Component</span><b>C1 · capacitor · 100n</b></div>
+          <div class="kv"><span>Net</span><b>none (isolated)</b></div>
+          <div class="kv"><span>Position</span><b>330, 408</b></div>
+        </div>
+
+        <div class="det-sec">
+          <div class="lbl">Connect to pin</div>
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input placeholder="Search pins…  or drag from the amber ring" value="" aria-label="Search pins"/>
+          </div>
+          <div class="opt best">
+            <span class="sw" style="background:#911eb4"></span>
+            <span class="nm">V1.2 <span style="color:var(--tx-3)">· left rail</span></span>
+            <span class="dist">↳ 38px · nearest</span>
+          </div>
+          <div class="opt">
+            <span class="sw" style="background:#f58231"></span>
+            <span class="nm">L1.2 <span style="color:var(--tx-3)">· right rail</span></span>
+            <span class="dist">142px</span>
+          </div>
+          <div class="opt dim">
+            <span class="sw" style="background:#4363d8"></span>
+            <span class="nm">R1.2 <span style="color:var(--tx-3)">· same net as R1.1</span></span>
+            <span class="dist">already wired</span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-connect">⌁ Connect <span class="k" style="border-color:#7da3ff;color:#dce6ff">C</span></button>
+            <button class="btn" style="flex:0 0 auto">Join</button>
+            <button class="btn" style="flex:0 0 auto" title="Auto-connect to nearest good pin">⚡ Quick fix</button>
+          </div>
+        </div>
+
+        <div class="adv" role="button" tabindex="0">
+          <span>Manual edits · 4</span>
+          <span class="chev">▸</span>
+        </div>
+        <div class="adv" role="button" tabindex="0" style="border-top:1px solid var(--line)">
+          <span>Overrides JSON · copy / import</span>
+          <span class="chev">▸</span>
+        </div>
+        <div class="adv" role="button" tabindex="0" style="border-top:1px solid var(--line)">
+          <span>Legend — dots, rings &amp; colours</span>
+          <span class="chev">▸</span>
+        </div>
+      </section>
+
+      <!-- ===== PANE: PROBLEMS (worklist) ===== -->
+      <section class="insp-pane" data-pane="problems" role="tabpanel">
+        <div class="complete">
+          <div class="hd"><span style="width:9px;height:9px;border-radius:50%;background:var(--warn);display:inline-block"></span>3 problems · work to zero</div>
+          <div class="sub">Click a row to fly there · <kbd>F8</kbd> next problem</div>
+        </div>
+        <div class="filters">
+          <span class="fchip on">All <b>3</b></span>
+          <span class="fchip">No source 1</span>
+          <span class="fchip">Unconnected 2</span>
+          <span class="fchip">Floating 0</span>
+        </div>
+        <div class="prob sel">
+          <span class="ic inc">⚠</span>
+          <div class="tx"><div class="t1">C1.2 unconnected</div><div class="t2">capacitor pin · dead-end net · 330, 408</div></div>
+          <span class="go">go ›</span>
+        </div>
+        <div class="prob">
+          <span class="ic inc">⚠</span>
+          <div class="tx"><div class="t1">L1.2 unconnected</div><div class="t2">inductor pin · dangling right rail · 610, 160</div></div>
+          <span class="go">go ›</span>
+        </div>
+        <div class="prob">
+          <span class="ic no">⏍</span>
+          <div class="tx"><div class="t1">No source in circuit</div><div class="t2">mark V1 as source to enable simulate</div></div>
+          <span class="go">go ›</span>
+        </div>
+        <div class="sect-h" style="margin-top:6px"><span class="ttl">Resolved this session</span></div>
+        <div class="prob resolved">
+          <span class="ic ok">✓</span>
+          <div class="tx"><div class="t1">R1.1 → V1.1</div><div class="t2">joined · 11px gap</div></div>
+        </div>
+        <div class="prob resolved">
+          <span class="ic ok">✓</span>
+          <div class="tx"><div class="t1">C1.1 → R1.2</div><div class="t2">connected</div></div>
+        </div>
+      </section>
+
+      <!-- ===== PANE: DETECT / document state (nothing selected) ===== -->
+      <section class="insp-pane" data-pane="document" role="tabpanel">
+        <div class="sect-h" style="margin-top:8px"><span class="ttl">Detection · tune once</span><span style="color:var(--tx-3);font-size:12px;text-transform:none;letter-spacing:0">preset: hdc-v2</span></div>
+        <div class="slider">
+          <div class="top"><label>Sauvola k</label><span class="v">0.285</span></div>
+          <div class="track"><i style="width:42%"></i><span class="thumb" style="left:42%"></span></div>
+        </div>
+        <div class="slider">
+          <div class="top"><label>Window</label><span class="v">67</span></div>
+          <div class="track"><i style="width:43%"></i><span class="thumb" style="left:43%"></span></div>
+        </div>
+        <div class="slider">
+          <div class="top"><label>CCL min area</label><span class="v">28</span></div>
+          <div class="track"><i style="width:28%"></i><span class="thumb" style="left:28%"></span></div>
+        </div>
+        <div class="adv" role="button" tabindex="0" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+          <span>Advanced · dedup, anchors, close-kernel</span><span class="chev">▸</span>
+        </div>
+
+        <div class="sect-h" style="margin-top:12px"><span class="ttl">Component value</span></div>
+        <div style="padding:0 14px 14px">
+          <div class="field"><label>Name · type</label><input value="C1 · capacitor" readonly></div>
+          <div class="field"><label>Value</label><input value="100n" placeholder="100n"><div class="hint">C / L tagged “no DC” — only R and V change the voltage map.</div></div>
+          <button class="btn" style="width:100%;justify-content:center">Save value</button>
+        </div>
+      </section>
+
+    </div>
+  </aside>
+
+  <!-- ================= BOTTOM OUTPUT DRAWER (collapsed by default) ================= -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-h">
+      <div class="tabs">
+        <button class="on">Netlist</button>
+        <button>Warnings <span style="color:var(--warn)">2</span></button>
+        <button>Graph</button>
+        <button>Raw JSON</button>
+      </div>
+      <button class="chev" id="drawerToggle" aria-expanded="false">
+        <span id="drawerLabel">Output</span><span id="drawerCaret">▴</span>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <pre class="netlist">* RLC series — gt_labels/014  <span class="cm">(2 pieces · incomplete)</span>
+<span class="nm">V1</span> n1 0 <span class="vl">DC 5</span>            <span class="cm">; source — not yet marked</span>
+<span class="nm">R1</span> n1 n2 <span class="vl">10k</span>
+<span class="nm">L1</span> n2 <span class="warn">?</span>  <span class="vl">10m</span>          <span class="warn">; L1.2 unconnected</span>
+<span class="nm">C1</span> <span class="warn">?</span>  <span class="warn">?</span>  <span class="vl">100n</span>         <span class="warn">; C1.1, C1.2 unconnected</span>
+<span class="cm">.op</span>
+<span class="cm">.end</span>
+</pre>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function(){
+    // Inspector tab switching
+    var tabs = document.querySelectorAll('.insp-tab');
+    var panes = document.querySelectorAll('.insp-pane');
+    tabs.forEach(function(t){
+      t.addEventListener('click', function(){
+        tabs.forEach(function(x){x.classList.remove('on')});
+        t.classList.add('on');
+        var p = t.getAttribute('data-pane');
+        panes.forEach(function(pn){
+          pn.classList.toggle('show', pn.getAttribute('data-pane')===p);
+        });
+      });
+    });
+    // Bottom drawer toggle
+    var drawer = document.getElementById('drawer');
+    var toggle = document.getElementById('drawerToggle');
+    var caret = document.getElementById('drawerCaret');
+    toggle.addEventListener('click', function(){
+      var open = drawer.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open ? 'true':'false');
+      caret.textContent = open ? '▾' : '▴';
+    });
+    // Filter chips
+    document.querySelectorAll('.fchip').forEach(function(c){
+      c.addEventListener('click', function(){
+        c.parentNode.querySelectorAll('.fchip').forEach(function(x){x.classList.remove('on')});
+        c.classList.add('on');
+      });
+    });
+    // Layer eye toggle (visual only)
+    document.querySelectorAll('.layer').forEach(function(l){
+      l.addEventListener('click', function(){ l.classList.toggle('off'); });
+    });
+  })();
+</script>

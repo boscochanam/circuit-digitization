@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440, initial-scale=1">
+<title>Circuit Tuner — IDE redesign</title>
+<style>
+/* ============================================================
+   CIRCUIT DIGITIZATION TUNER — "IDE / DOCKED-PANEL" REDESIGN
+   Dark theme, VS Code / DevTools grammar.
+   Activity bar (modes) | mode sidebar | canvas | inspector | output dock
+   One accent colour (cyan). Semantic status tokens. Keyboard-first.
+   ============================================================ */
+:root{
+  /* --- surfaces (near-black, layered) --- */
+  --bg-0:#0d1117;          /* app background        */
+  --bg-1:#11161d;          /* panels                */
+  --bg-2:#161c25;          /* raised panels / rows  */
+  --bg-3:#1c2530;          /* hover / inputs        */
+  --bg-4:#232e3b;          /* active / selected     */
+  --canvas:#0a0e13;        /* the photo canvas      */
+  /* --- borders / lines --- */
+  --line:#222c38;
+  --line-soft:#1a2029;
+  --line-strong:#2d3a49;
+  /* --- text --- */
+  --tx-0:#e8eef5;          /* primary               */
+  --tx-1:#aab6c4;          /* secondary             */
+  --tx-2:#6f7e8e;          /* tertiary / labels     */
+  --tx-3:#4a5663;          /* faint                 */
+  /* --- ONE accent --- */
+  --acc:#39c0d6;           /* cyan                  */
+  --acc-dim:#1c5862;
+  --acc-bg:rgba(57,192,214,.12);
+  /* --- semantic status tokens (Primer-style roles) --- */
+  --ok:#3fb950;            /* success / connected / ready  */
+  --ok-bg:rgba(63,185,80,.12);
+  --warn:#e3a008;          /* attention / unconnected pin  */
+  --warn-bg:rgba(227,160,8,.13);
+  --danger:#f15a5a;        /* error / no source / dead-end */
+  --danger-bg:rgba(241,90,90,.12);
+  --merge:#5b8def;         /* blue dashed merge link       */
+  --merge-bg:rgba(91,141,239,.14);
+  /* net categorical palette (dark-tuned, contrast-sequenced) */
+  --net-a:#5b8def; --net-b:#3fb950; --net-c:#e3a008;
+  --net-d:#c678dd; --net-e:#39c0d6; --net-f:#f0883e;
+  --mono:"SF Mono",ui-monospace,"Cascadia Mono","Consolas","Roboto Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  background:var(--bg-0);
+  color:var(--tx-0);
+  font-size:13px;
+  line-height:1.45;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.app{
+  width:1440px;height:900px;margin:0 auto;
+  display:grid;
+  grid-template-rows:36px 1fr 26px;            /* titlebar / body / statusbar */
+  background:var(--bg-0);
+  overflow:hidden;
+}
+/* generic helpers ------------------------------------------------ */
+.mono{font-family:var(--mono)}
+.lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--tx-2);font-weight:600}
+.kbd{
+  font-family:var(--mono);font-size:10px;line-height:1;
+  padding:2px 5px;border:1px solid var(--line-strong);border-radius:4px;
+  background:var(--bg-2);color:var(--tx-1);box-shadow:0 1px 0 var(--line);
+}
+.dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.scroll{overflow-y:auto}
+.scroll::-webkit-scrollbar{width:10px;height:10px}
+.scroll::-webkit-scrollbar-thumb{background:#28323f;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+.scroll::-webkit-scrollbar-thumb:hover{background:#36424f;background-clip:padding-box}
+.scroll::-webkit-scrollbar-track{background:transparent}
+
+/* ============================================================
+   TITLE BAR
+   ============================================================ */
+.titlebar{
+  grid-row:1;display:flex;align-items:center;gap:14px;
+  padding:0 12px;background:var(--bg-1);border-bottom:1px solid var(--line);
+  -webkit-app-region:drag;
+}
+.tb-dots{display:flex;gap:7px}
+.tb-dots i{width:11px;height:11px;border-radius:50%;display:block}
+.tb-dots i:nth-child(1){background:#ff5f57}
+.tb-dots i:nth-child(2){background:#febc2e}
+.tb-dots i:nth-child(3){background:#28c840}
+.tb-title{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx-1)}
+.tb-title b{color:var(--tx-0);font-weight:600}
+.tb-title .crumb{color:var(--tx-3)}
+.tb-spacer{flex:1}
+/* fake command-palette launcher in the titlebar (always reachable) */
+.palette-launch{
+  display:flex;align-items:center;gap:10px;
+  width:340px;padding:4px 8px 4px 10px;
+  background:var(--bg-0);border:1px solid var(--line);border-radius:7px;
+  color:var(--tx-2);font-size:12px;cursor:pointer;
+}
+.palette-launch:hover{border-color:var(--line-strong);background:var(--bg-2)}
+.palette-launch svg{flex:0 0 auto}
+.palette-launch .pl-txt{flex:1;text-align:left}
+.tb-icobtn{
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  color:var(--tx-2);border:1px solid transparent;border-radius:6px;cursor:pointer;background:none;
+}
+.tb-icobtn:hover{color:var(--tx-0);background:var(--bg-2)}
+.tb-icobtn.on{color:var(--acc);background:var(--acc-bg)}
+
+/* ============================================================
+   BODY GRID:  activitybar | sidebar | center(canvas+dock) | inspector
+   ============================================================ */
+.body{
+  grid-row:2;display:grid;
+  grid-template-columns:52px 240px 1fr 320px;
+  min-height:0;overflow:hidden;
+}
+
+/* ---------- ACTIVITY BAR (modes) ---------- */
+.activity{
+  background:var(--bg-1);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px;
+}
+.act-btn{
+  position:relative;width:40px;height:40px;border-radius:8px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  color:var(--tx-2);cursor:pointer;border:none;background:none;
+}
+.act-btn .at{font-size:8px;letter-spacing:.3px;text-transform:uppercase;font-weight:600}
+.act-btn:hover{color:var(--tx-0);background:var(--bg-2)}
+.act-btn.active{color:var(--acc)}
+.act-btn.active::before{
+  content:"";position:absolute;left:-8px;top:7px;bottom:7px;width:2px;
+  background:var(--acc);border-radius:2px;
+}
+.act-badge{
+  position:absolute;top:4px;right:3px;min-width:15px;height:15px;padding:0 3px;
+  background:var(--warn);color:#241c00;border-radius:8px;
+  font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);
+}
+.act-sep{width:24px;height:1px;background:var(--line);margin:5px 0}
+.act-bottom{margin-top:auto;display:flex;flex-direction:column;gap:4px;align-items:center}
+
+/* ---------- MODE SIDEBAR ---------- */
+.sidebar{
+  background:var(--bg-1);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
+}
+.side-head{
+  height:34px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:0 8px 0 12px;border-bottom:1px solid var(--line);
+}
+.side-head .lbl{font-size:10px}
+.side-head-actions{display:flex;gap:2px}
+.mini-btn{
+  width:22px;height:22px;border-radius:5px;border:none;background:none;color:var(--tx-2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.mini-btn:hover{background:var(--bg-3);color:var(--tx-0)}
+.side-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+
+/* dataset selector */
+.ds-row{display:flex;gap:6px;padding:10px 12px 8px}
+.ds-seg{
+  flex:1;display:flex;background:var(--bg-0);border:1px solid var(--line);border-radius:7px;padding:2px;
+}
+.ds-seg button{
+  flex:1;border:none;background:none;color:var(--tx-2);font-size:11px;font-weight:600;
+  padding:4px 0;border-radius:5px;cursor:pointer;font-family:var(--mono);
+}
+.ds-seg button.on{background:var(--bg-3);color:var(--tx-0)}
+.ds-seg button:hover:not(.on){color:var(--tx-1)}
+
+/* search box */
+.search{
+  margin:0 12px 8px;display:flex;align-items:center;gap:7px;
+  background:var(--bg-0);border:1px solid var(--line);border-radius:7px;padding:5px 8px;
+}
+.search:focus-within{border-color:var(--acc-dim)}
+.search input{
+  flex:1;background:none;border:none;outline:none;color:var(--tx-0);font-size:12px;font-family:var(--sans);
+}
+.search input::placeholder{color:var(--tx-3)}
+.search .sc{color:var(--tx-3);font-size:10px;font-family:var(--mono)}
+
+/* film-strip / image list with per-image completeness status */
+.imglist{flex:1;min-height:0;overflow-y:auto;padding:2px 8px 8px}
+.imgitem{
+  display:flex;align-items:center;gap:9px;padding:6px 7px;border-radius:7px;cursor:pointer;
+  border:1px solid transparent;
+}
+.imgitem:hover{background:var(--bg-2)}
+.imgitem.sel{background:var(--bg-4);border-color:var(--line-strong)}
+.imgthumb{
+  width:42px;height:30px;border-radius:4px;flex:0 0 auto;border:1px solid var(--line);
+  background:#0a0e13;position:relative;overflow:hidden;
+}
+.imgthumb svg{position:absolute;inset:0}
+.imgmeta{flex:1;min-width:0}
+.imgmeta .nm{font-family:var(--mono);font-size:11.5px;color:var(--tx-0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.imgmeta .st{font-size:10px;color:var(--tx-2);display:flex;align-items:center;gap:5px;margin-top:1px}
+.stchip{display:inline-flex;align-items:center;gap:4px}
+.imgitem.sel .imgthumb{border-color:var(--acc-dim)}
+
+/* collapsible "advanced detection" disclosure inside Tune sidebar */
+.disclosure{border-top:1px solid var(--line);flex:0 0 auto}
+.disc-head{
+  display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;color:var(--tx-1);
+  font-size:11px;font-weight:600;user-select:none;
+}
+.disc-head:hover{background:var(--bg-2)}
+.disc-head .chev{transition:transform .15s;color:var(--tx-2)}
+.disclosure.open .disc-head .chev{transform:rotate(90deg)}
+.disc-head .lbl{margin-left:auto}
+.disc-body{display:none;padding:4px 12px 14px}
+.disclosure.open .disc-body{display:block}
+
+/* sliders */
+.slider{margin:11px 0}
+.slider-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.slider-top .nm{font-size:11px;color:var(--tx-1)}
+.slider-top .vl{font-family:var(--mono);font-size:11px;color:var(--acc);font-weight:600}
+.track{height:4px;background:var(--bg-3);border-radius:3px;position:relative}
+.track .fill{position:absolute;left:0;top:0;bottom:0;background:var(--acc);border-radius:3px}
+.track .knob{
+  position:absolute;top:50%;width:13px;height:13px;border-radius:50%;
+  background:var(--tx-0);border:2px solid var(--acc);transform:translate(-50%,-50%);
+  box-shadow:0 1px 4px rgba(0,0,0,.5);
+}
+
+/* ---------- CENTER (canvas + output dock) ---------- */
+.center{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg-0)}
+.canvas-wrap{flex:1;min-height:0;position:relative;background:var(--canvas);overflow:hidden}
+
+/* canvas top toolbar (scoped: view actions live next to the canvas) */
+.canvas-bar{
+  position:absolute;top:0;left:0;right:0;height:40px;z-index:6;
+  display:flex;align-items:center;gap:8px;padding:0 10px;
+  background:linear-gradient(180deg,rgba(13,17,23,.96),rgba(13,17,23,.55) 70%,transparent);
+}
+.cb-group{display:flex;align-items:center;gap:2px;background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:3px}
+.cb-btn{
+  height:26px;padding:0 9px;display:flex;align-items:center;gap:6px;border-radius:6px;
+  border:none;background:none;color:var(--tx-2);font-size:11px;font-weight:600;cursor:pointer;
+}
+.cb-btn:hover{color:var(--tx-0);background:var(--bg-3)}
+.cb-btn.on{color:var(--acc);background:var(--acc-bg)}
+.cb-btn.ico{padding:0 7px}
+.cb-spacer{flex:1}
+.cb-zoom{display:flex;align-items:center;gap:0;background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:3px}
+.cb-zoom .z{width:26px;height:26px;border:none;background:none;color:var(--tx-1);cursor:pointer;border-radius:6px;font-size:14px}
+.cb-zoom .z:hover{background:var(--bg-3);color:var(--tx-0)}
+.cb-zoom .pct{font-family:var(--mono);font-size:11px;color:var(--tx-1);min-width:42px;text-align:center}
+
+/* the fake circuit photo */
+.photo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.photo svg{width:760px;height:520px;filter:drop-shadow(0 8px 30px rgba(0,0,0,.5))}
+
+/* minimap (React-Flow style, coloured by completeness) */
+.minimap{
+  position:absolute;right:12px;bottom:12px;width:168px;height:116px;z-index:6;
+  background:rgba(13,17,23,.85);border:1px solid var(--line-strong);border-radius:8px;
+  overflow:hidden;backdrop-filter:blur(3px);
+}
+.minimap .mm-cap{position:absolute;top:5px;left:8px;font-size:8.5px;letter-spacing:.6px}
+.minimap .vp{position:absolute;border:1.5px solid var(--acc);border-radius:3px;background:var(--acc-bg)}
+.minimap svg{position:absolute;inset:0}
+
+/* floating selection mini-toolbar (non-scaling, anchored to selected pin) */
+.pin-toolbar{
+  position:absolute;z-index:7;display:flex;background:var(--bg-2);
+  border:1px solid var(--line-strong);border-radius:9px;padding:3px;gap:2px;
+  box-shadow:0 8px 26px rgba(0,0,0,.55);
+}
+.pin-toolbar button{
+  height:28px;padding:0 10px;border:none;background:none;color:var(--tx-1);
+  font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;
+}
+.pin-toolbar button:hover{background:var(--bg-4);color:var(--tx-0)}
+.pin-toolbar button.acc{color:var(--acc)}
+.pin-toolbar .sep{width:1px;background:var(--line);margin:4px 1px}
+
+/* small on-canvas hint chip */
+.hint-chip{
+  position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;
+  background:rgba(13,17,23,.9);border:1px solid var(--line-strong);border-radius:20px;
+  padding:6px 13px;font-size:11px;color:var(--tx-1);display:flex;align-items:center;gap:9px;
+  backdrop-filter:blur(3px);
+}
+
+/* ---------- OUTPUT DOCK (bottom, tabbed) ---------- */
+.dock{
+  flex:0 0 198px;display:flex;flex-direction:column;
+  background:var(--bg-1);border-top:1px solid var(--line);min-height:0;
+}
+.dock-tabs{
+  height:32px;flex:0 0 auto;display:flex;align-items:stretch;gap:0;
+  border-bottom:1px solid var(--line);padding-left:6px;
+}
+.dock-tab{
+  display:flex;align-items:center;gap:7px;padding:0 13px;border:none;background:none;cursor:pointer;
+  color:var(--tx-2);font-size:11.5px;font-weight:600;position:relative;
+}
+.dock-tab:hover{color:var(--tx-0)}
+.dock-tab.on{color:var(--tx-0)}
+.dock-tab.on::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--acc)}
+.dock-tab .cnt{font-family:var(--mono);font-size:9px;background:var(--bg-3);color:var(--tx-1);padding:1px 5px;border-radius:8px}
+.dock-tab.adv{margin-left:auto;color:var(--tx-3)}
+.dock-tab.adv:hover{color:var(--tx-1)}
+.dock-tabs-right{margin-left:auto;display:flex;align-items:center;gap:2px;padding-right:6px}
+.dock-body{flex:1;min-height:0;overflow:auto;padding:10px 14px}
+
+/* netlist code block */
+.netlist{font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--tx-1)}
+.netlist .cm{color:var(--tx-3)}
+.netlist .kw{color:var(--acc)}
+.netlist .nm2{color:var(--net-b)}
+.netlist .nd{color:var(--net-a)}
+.netlist .warnline{background:var(--warn-bg);border-left:2px solid var(--warn);padding-left:6px;margin-left:-8px}
+.netlist .val{color:var(--tx-0)}
+
+/* ---------- INSPECTOR (right, context-sensitive) ---------- */
+.inspector{
+  background:var(--bg-1);border-left:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
+}
+.insp-head{
+  height:34px;flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  padding:0 10px 0 12px;border-bottom:1px solid var(--line);
+}
+.insp-head .ic{width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:var(--acc)}
+.insp-head .ti{font-size:12px;font-weight:600;color:var(--tx-0)}
+.insp-head .sub{font-family:var(--mono);font-size:10px;color:var(--tx-2)}
+.insp-body{flex:1;min-height:0;overflow-y:auto}
+
+/* completeness gate card (hero status) */
+.gate{margin:12px;padding:12px;border-radius:10px;border:1px solid var(--line-strong);background:var(--bg-2)}
+.gate.incomplete{border-color:rgba(227,160,8,.4);background:linear-gradient(180deg,var(--warn-bg),var(--bg-2))}
+.gate-top{display:flex;align-items:center;gap:9px}
+.gate-ico{
+  width:30px;height:30px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  background:var(--warn-bg);color:var(--warn);
+}
+.gate-ttl{font-size:13px;font-weight:700;color:var(--tx-0);line-height:1.2}
+.gate-sub{font-size:10.5px;color:var(--tx-2);margin-top:1px}
+.gate-prog{margin-top:11px}
+.gate-bar{height:6px;border-radius:4px;background:var(--bg-0);overflow:hidden;display:flex}
+.gate-bar i{display:block;height:100%}
+.gate-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--tx-2)}
+.gate-meta b{font-family:var(--mono);color:var(--tx-0)}
+
+/* primary simulate button (disabled until complete) */
+.sim-btn{
+  margin:0 12px 6px;display:flex;align-items:center;justify-content:center;gap:8px;
+  width:calc(100% - 24px);height:34px;border-radius:8px;cursor:not-allowed;
+  border:1px solid var(--line-strong);background:var(--bg-2);color:var(--tx-3);
+  font-size:12px;font-weight:700;
+}
+.sim-btn .kbd{opacity:.6}
+
+/* section header inside inspector */
+.sec{padding:13px 12px 6px;display:flex;align-items:center;gap:8px}
+.sec .lbl{flex:0 0 auto}
+.sec .rule{flex:1;height:1px;background:var(--line)}
+.sec .cnt{font-family:var(--mono);font-size:9.5px;color:var(--tx-2)}
+
+/* problems worklist (VS Code style) */
+.prob-filters{display:flex;gap:5px;padding:2px 12px 8px;flex-wrap:wrap}
+.fchip{
+  font-size:10px;font-weight:600;padding:3px 8px;border-radius:14px;cursor:pointer;
+  border:1px solid var(--line);color:var(--tx-2);background:var(--bg-0);display:flex;align-items:center;gap:5px;
+}
+.fchip.on{border-color:var(--acc-dim);color:var(--tx-0);background:var(--acc-bg)}
+.fchip .n{font-family:var(--mono);opacity:.8}
+.worklist{padding:0 8px}
+.prob{
+  display:flex;gap:9px;padding:8px 8px;border-radius:8px;cursor:pointer;align-items:flex-start;
+  border:1px solid transparent;
+}
+.prob:hover{background:var(--bg-2)}
+.prob.active{background:var(--bg-4);border-color:var(--acc-dim)}
+.prob-ico{width:16px;height:16px;flex:0 0 auto;margin-top:1px;display:flex;align-items:center;justify-content:center}
+.prob-main{flex:1;min-width:0}
+.prob-ttl{font-size:12px;color:var(--tx-0);font-weight:600}
+.prob-loc{font-family:var(--mono);font-size:10px;color:var(--tx-2);margin-top:1px}
+.prob.active .prob-loc{color:var(--acc)}
+.prob-go{color:var(--tx-3);flex:0 0 auto;align-self:center}
+.prob:hover .prob-go{color:var(--tx-1)}
+
+/* contextual editor (selected pin) -------------------------------- */
+.ctx{margin:6px 12px 0;border:1px solid var(--acc-dim);border-radius:10px;background:var(--bg-2);overflow:hidden}
+.ctx-head{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--bg-3);border-bottom:1px solid var(--line)}
+.ctx-head .pid{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--tx-0)}
+.ctx-head .tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+  padding:2px 7px;border-radius:10px;background:var(--danger-bg);color:var(--danger)}
+.ctx-body{padding:10px 11px}
+.ctx-lead{font-size:11px;color:var(--tx-1);margin-bottom:9px}
+.ctx-lead b{color:var(--tx-0)}
+
+/* searchable pin picker */
+.picker{background:var(--bg-0);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.picker-search{display:flex;align-items:center;gap:7px;padding:7px 9px;border-bottom:1px solid var(--line)}
+.picker-search input{flex:1;background:none;border:none;outline:none;color:var(--tx-0);font-size:11.5px}
+.picker-search input::placeholder{color:var(--tx-3)}
+.pick-opt{display:flex;align-items:center;gap:9px;padding:7px 9px;cursor:pointer;border-top:1px solid var(--line-soft)}
+.pick-opt:hover{background:var(--bg-3)}
+.pick-opt.hl{background:var(--acc-bg)}
+.pick-net{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.pick-nm{font-family:var(--mono);font-size:11.5px;color:var(--tx-0)}
+.pick-dist{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--tx-2)}
+.pick-valid{font-size:9px;font-weight:700;color:var(--ok);display:flex;align-items:center;gap:3px}
+
+/* action buttons */
+.acts{display:flex;gap:7px;margin-top:11px}
+.act{
+  flex:1;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:11.5px;font-weight:700;cursor:pointer;border:1px solid var(--line-strong);
+}
+.act.primary{background:var(--acc);color:#04161a;border-color:var(--acc)}
+.act.primary:hover{filter:brightness(1.08)}
+.act.ghost{background:var(--bg-3);color:var(--tx-1)}
+.act.ghost:hover{background:var(--bg-4);color:var(--tx-0)}
+.act.danger{background:var(--bg-3);color:var(--danger);border-color:rgba(241,90,90,.3)}
+.act.danger:hover{background:var(--danger-bg)}
+.act .kbd{padding:1px 4px;font-size:9px}
+
+/* overlay layers list = layer manager (each row toggles its overlay) */
+.layers{padding:2px 8px 12px}
+.layer{
+  display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px;cursor:pointer;
+}
+.layer:hover{background:var(--bg-2)}
+.eye{width:16px;height:16px;flex:0 0 auto;color:var(--tx-2);display:flex;align-items:center;justify-content:center}
+.layer.on .eye{color:var(--acc)}
+.layer.off .lnm{color:var(--tx-3)}
+.lswatch{width:11px;height:11px;border-radius:3px;flex:0 0 auto;border:1px solid rgba(255,255,255,.12)}
+.lnm{flex:1;font-size:11.5px;color:var(--tx-1)}
+.lkey{font-family:var(--mono);font-size:9px;color:var(--tx-3)}
+.opacity-row{display:flex;align-items:center;gap:9px;padding:8px 10px 4px}
+.opacity-row .lbl{flex:0 0 auto}
+
+/* legend (progressively disclosed) */
+.legend-disc{margin:4px 12px 16px;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.legend-disc .disc-head{padding:8px 10px}
+.legend-disc.open .disc-body{display:block;padding:4px 11px 11px}
+.leg{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:11px;color:var(--tx-1)}
+.leg .gly{width:18px;display:flex;justify-content:center;flex:0 0 auto}
+.ring{width:11px;height:11px;border-radius:50%;border:2px solid var(--warn)}
+.ring.r{border-color:var(--danger)}
+.solid{width:9px;height:9px;border-radius:50%}
+
+/* ============================================================
+   STATUS BAR
+   ============================================================ */
+.statusbar{
+  grid-row:3;display:flex;align-items:center;gap:0;
+  background:var(--acc);color:#04161a;font-size:11px;font-weight:600;
+}
+.statusbar.incomplete{background:var(--warn);color:#241c00}
+.sb-seg{display:flex;align-items:center;gap:6px;padding:0 11px;height:100%;cursor:default}
+.sb-seg.btn{cursor:pointer}
+.sb-seg.btn:hover{background:rgba(0,0,0,.12)}
+.sb-seg.dim{opacity:.78}
+.sb-spacer{flex:1}
+.sb-div{width:1px;height:14px;background:rgba(0,0,0,.18)}
+.sb-seg .mono{font-family:var(--mono);font-weight:700}
+
+/* ============================================================
+   COMMAND PALETTE OVERLAY (Ctrl+K) — shown by default in mockup,
+   dismissible via JS, but reads fine static.
+   ============================================================ */
+.palette-scrim{
+  position:fixed;inset:0;background:rgba(5,8,11,.55);backdrop-filter:blur(2px);
+  display:flex;justify-content:center;align-items:flex-start;padding-top:96px;z-index:50;
+}
+.palette{
+  width:560px;background:var(--bg-1);border:1px solid var(--line-strong);border-radius:12px;
+  box-shadow:0 24px 80px rgba(0,0,0,.6);overflow:hidden;
+}
+.palette-in{display:flex;align-items:center;gap:11px;padding:13px 15px;border-bottom:1px solid var(--line)}
+.palette-in input{flex:1;background:none;border:none;outline:none;color:var(--tx-0);font-size:15px;font-family:var(--sans)}
+.palette-in input::placeholder{color:var(--tx-3)}
+.palette-grp{padding:7px 15px 3px}
+.palette-list{max-height:330px;overflow-y:auto;padding-bottom:6px}
+.prow{display:flex;align-items:center;gap:12px;padding:9px 15px;cursor:pointer}
+.prow.hl{background:var(--acc-bg)}
+.prow:hover{background:var(--bg-2)}
+.prow .pico{width:18px;color:var(--tx-2);display:flex;justify-content:center;flex:0 0 auto}
+.prow.hl .pico{color:var(--acc)}
+.prow .ptxt{flex:1;font-size:13px;color:var(--tx-0)}
+.prow .ptxt .alias{color:var(--tx-3);font-size:11px;margin-left:6px}
+.prow .pkbd{display:flex;gap:4px}
+.palette-foot{display:flex;align-items:center;gap:16px;padding:9px 15px;border-top:1px solid var(--line);font-size:10.5px;color:var(--tx-2)}
+.palette-foot .ft{display:flex;align-items:center;gap:6px}
+.hidden{display:none !important}
+
+svg{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ TITLE BAR ============ -->
+  <div class="titlebar">
+    <div class="tb-dots"><i></i><i></i><i></i></div>
+    <div class="tb-title">
+      <b>Circuit Tuner</b>
+      <span class="crumb">/</span>
+      <span>gt_labels</span>
+      <span class="crumb">/</span>
+      <span class="mono" style="color:var(--tx-1)">circuit_037.png</span>
+    </div>
+    <div class="tb-spacer"></div>
+    <div class="palette-launch" onclick="document.getElementById('palette').classList.remove('hidden')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <span class="pl-txt">Search commands &amp; jump to image…</span>
+      <span class="kbd">Ctrl K</span>
+    </div>
+    <div class="tb-spacer"></div>
+    <button class="tb-icobtn" title="Toggle output dock">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg>
+    </button>
+    <button class="tb-icobtn on" title="Focus mode (collapse panels) — Ctrl+.">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg>
+    </button>
+  </div>
+
+  <!-- ============ BODY ============ -->
+  <div class="body">
+
+    <!-- ---------- ACTIVITY BAR ---------- -->
+    <nav class="activity">
+      <button class="act-btn" title="Tune — detection &amp; image navigation">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+        <span class="at">Tune</span>
+      </button>
+      <button class="act-btn active" title="Connect — fix &amp; complete the circuit">
+        <span class="act-badge">3</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="12" r="2.6"/><path d="M6 9.4V5m12 13.6V19"/></svg>
+        <span class="at">Connect</span>
+      </button>
+      <button class="act-btn" title="Simulate — voltage / current results">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/></svg>
+        <span class="at">Sim</span>
+      </button>
+      <button class="act-btn" title="Inspect — netlist, warnings, graph">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 2 4-6"/></svg>
+        <span class="at">Data</span>
+      </button>
+      <div class="act-bottom">
+        <button class="act-btn" title="Keyboard shortcuts (?)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M7 13h10"/></svg></button>
+        <button class="act-btn" title="Settings"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      </div>
+    </nav>
+
+    <!-- ---------- MODE SIDEBAR (Connect mode active → shows images for navigation) ---------- -->
+    <aside class="sidebar">
+      <div class="side-head">
+        <span class="lbl">Images · gt_labels</span>
+        <div class="side-head-actions">
+          <button class="mini-btn" title="Grid view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+          <button class="mini-btn" title="Collapse"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+        </div>
+      </div>
+      <div class="side-body">
+
+        <div class="ds-row">
+          <div class="ds-seg">
+            <button class="on">GT</button>
+            <button>HDC</button>
+            <button>Synth</button>
+          </div>
+        </div>
+
+        <div class="search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tx-3)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Filter images…" value="">
+          <span class="sc">94</span>
+        </div>
+
+        <div class="imglist scroll">
+          <!-- each row carries per-image completeness status for triage -->
+          <div class="imgitem">
+            <div class="imgthumb">
+              <svg viewBox="0 0 42 30"><rect x="6" y="9" width="9" height="6" fill="none" stroke="#3fb950" stroke-width="1"/><rect x="27" y="9" width="9" height="6" fill="none" stroke="#3fb950" stroke-width="1"/><path d="M15 12h12M11 9V4M31 9V4" stroke="#3fb950" stroke-width="1" fill="none"/></svg>
+            </div>
+            <div class="imgmeta">
+              <div class="nm">circuit_035</div>
+              <div class="st"><span class="stchip"><span class="dot" style="background:var(--ok)"></span>Ready</span></div>
+            </div>
+          </div>
+          <div class="imgitem">
+            <div class="imgthumb">
+              <svg viewBox="0 0 42 30"><rect x="6" y="9" width="9" height="6" fill="none" stroke="#3fb950" stroke-width="1"/><rect x="27" y="9" width="9" height="6" fill="none" stroke="#3fb950" stroke-width="1"/><path d="M15 12h12" stroke="#3fb950" stroke-width="1" fill="none"/></svg>
+            </div>
+            <div class="imgmeta">
+              <div class="nm">circuit_036</div>
+              <div class="st"><span class="stchip"><span class="dot" style="background:var(--ok)"></span>Ready</span></div>
+            </div>
+          </div>
+          <div class="imgitem sel">
+            <div class="imgthumb">
+              <svg viewBox="0 0 42 30"><rect x="5" y="8" width="8" height="6" fill="none" stroke="#e3a008" stroke-width="1"/><rect x="28" y="8" width="8" height="6" fill="none" stroke="#5b8def" stroke-width="1"/><rect x="16" y="18" width="8" height="5" fill="none" stroke="#c678dd" stroke-width="1"/><path d="M13 11h6" stroke="#5b8def" stroke-width="1"/><circle cx="9" cy="8" r="2" fill="none" stroke="#e3a008" stroke-width="1"/></svg>
+            </div>
+            <div class="imgmeta">
+              <div class="nm">circuit_037</div>
+              <div class="st"><span class="stchip"><span class="dot" style="background:var(--warn)"></span>3 to fix</span></div>
+            </div>
+          </div>
+          <div class="imgitem">
+            <div class="imgthumb">
+              <svg viewBox="0 0 42 30"><rect x="6" y="12" width="9" height="6" fill="none" stroke="#f15a5a" stroke-width="1"/><rect x="27" y="12" width="9" height="6" fill="none" stroke="#5b8def" stroke-width="1"/></svg>
+            </div>
+            <div class="imgmeta">
+              <div class="nm">circuit_038</div>
+              <div class="st"><span class="stchip"><span class="dot" style="background:var(--danger)"></span>No source</span></div>
+            </div>
+          </div>
+          <div class="imgitem">
+            <div class="imgthumb">
+              <svg viewBox="0 0 42 30"><rect x="6" y="9" width="9" height="6" fill="none" stroke="#3fb950" stroke-width="1"/><rect x="27" y="9" width="9" height="6" fill="none" stroke="#3fb950" stroke-width="1"/><path d="M15 12h12M11 9V4M31 9V4M21 15v6" stroke="#3fb950" stroke-width="1" fill="none"/></svg>
+            </div>
+            <div class="imgmeta">
+              <div class="nm">circuit_039</div>
+              <div class="st"><span class="stchip"><span class="dot" style="background:var(--ok)"></span>Ready</span></div>
+            </div>
+          </div>
+          <div class="imgitem">
+            <div class="imgthumb">
+              <svg viewBox="0 0 42 30"><rect x="7" y="8" width="8" height="6" fill="none" stroke="#e3a008" stroke-width="1"/><rect x="26" y="14" width="8" height="6" fill="none" stroke="#3fb950" stroke-width="1"/><path d="M15 11h8" stroke="#3fb950" stroke-width="1"/></svg>
+            </div>
+            <div class="imgmeta">
+              <div class="nm">circuit_040</div>
+              <div class="st"><span class="stchip"><span class="dot" style="background:var(--warn)"></span>1 to fix</span></div>
+            </div>
+          </div>
+          <div class="imgitem">
+            <div class="imgthumb">
+              <svg viewBox="0 0 42 30"><rect x="6" y="9" width="9" height="6" fill="none" stroke="#3fb950" stroke-width="1"/><rect x="27" y="9" width="9" height="6" fill="none" stroke="#3fb950" stroke-width="1"/><path d="M15 12h12" stroke="#3fb950" stroke-width="1"/></svg>
+            </div>
+            <div class="imgmeta">
+              <div class="nm">circuit_041</div>
+              <div class="st"><span class="stchip"><span class="dot" style="background:var(--ok)"></span>Ready</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced detection sliders: tune-once, progressively disclosed -->
+        <details class="disclosure" id="discDetect">
+          <summary class="disc-head" style="list-style:none">
+            <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3"/></svg>
+            <span>Detection settings</span>
+            <span class="lbl">Advanced</span>
+          </summary>
+          <div class="disc-body">
+            <div class="slider">
+              <div class="slider-top"><span class="nm">Sauvola threshold (k)</span><span class="vl mono">0.34</span></div>
+              <div class="track"><div class="fill" style="width:42%"></div><div class="knob" style="left:42%"></div></div>
+            </div>
+            <div class="slider">
+              <div class="slider-top"><span class="nm">Window size</span><span class="vl mono">25 px</span></div>
+              <div class="track"><div class="fill" style="width:58%"></div><div class="knob" style="left:58%"></div></div>
+            </div>
+            <div class="slider">
+              <div class="slider-top"><span class="nm">CCL min area</span><span class="vl mono">14</span></div>
+              <div class="track"><div class="fill" style="width:30%"></div><div class="knob" style="left:30%"></div></div>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </aside>
+
+    <!-- ---------- CENTER: CANVAS + OUTPUT DOCK ---------- -->
+    <section class="center">
+      <div class="canvas-wrap">
+
+        <!-- canvas-scoped toolbar -->
+        <div class="canvas-bar">
+          <div class="cb-group">
+            <button class="cb-btn ico on" title="Select / pan (V)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 4 7 16 2.5-7L20 11z"/></svg></button>
+            <button class="cb-btn ico" title="Connect tool (C)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="12" r="2.2"/></svg></button>
+            <button class="cb-btn ico" title="Probe (P)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 0 6M12 22v-6M2 12h6M22 12h-6"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+          <div class="cb-group">
+            <button class="cb-btn on" title="Topology overlay">Topology</button>
+            <button class="cb-btn" title="Source photo">Source</button>
+            <button class="cb-btn" title="Detection boxes">Detection</button>
+          </div>
+          <div class="cb-spacer"></div>
+          <button class="cb-btn" style="background:var(--bg-1);border:1px solid var(--line);border-radius:8px" title="Fit view (F)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8V5a2 2 0 0 1 2-2h3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3"/></svg>
+            Fit
+          </button>
+          <div class="cb-zoom">
+            <button class="z">−</button><span class="pct">100%</span><button class="z">+</button>
+          </div>
+        </div>
+
+        <!-- THE FAKE CIRCUIT PHOTO (topology overlay on dimmed photo) -->
+        <div class="photo">
+          <svg viewBox="0 0 760 520" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="paper" width="22" height="22" patternUnits="userSpaceOnUse">
+                <rect width="22" height="22" fill="#0c1218"/>
+                <path d="M22 0H0V22" stroke="#10171f" stroke-width="1" fill="none"/>
+              </pattern>
+              <filter id="sketch"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.4"/></filter>
+            </defs>
+            <!-- dimmed "photo" background paper -->
+            <rect x="0" y="0" width="760" height="520" fill="url(#paper)"/>
+            <rect x="0" y="0" width="760" height="520" fill="#0a0e13" opacity="0.45"/>
+
+            <!-- faint hand-drawn pencil strokes (the underlying photo) -->
+            <g stroke="#3a4654" stroke-width="2.4" fill="none" opacity="0.5" filter="url(#sketch)" stroke-linecap="round">
+              <rect x="120" y="150" width="86" height="44"/>           <!-- R1 -->
+              <path d="M340 150 h70 M340 194 h70 M340 150 v44 M410 150 v44 M352 158 v28 M364 186 v-28 M376 158 v28 M388 186 v-28 M400 158 v28"/> <!-- C1 zigzag-ish cap plates -->
+              <circle cx="200" cy="370" r="26"/>                        <!-- V1 -->
+              <rect x="540" y="150" width="86" height="44"/>           <!-- R2 -->
+            </g>
+
+            <!-- NET-COLOURED WIRES (topology) -->
+            <g stroke-width="3" fill="none" stroke-linecap="round">
+              <!-- net A (blue) top rail -->
+              <path d="M206 172 H340" stroke="var(--net-a)"/>
+              <path d="M410 172 H540" stroke="var(--net-a)"/>
+              <!-- net B (green) bottom rail / source + -->
+              <path d="M200 344 V250 H120 V172" stroke="var(--net-b)"/>
+              <path d="M626 172 V300 H460" stroke="var(--net-b)" opacity=".0"/>
+              <!-- net E (cyan) right side -->
+              <path d="M626 194 V330 H300" stroke="var(--net-e)"/>
+              <path d="M200 396 V440 H300 V330" stroke="var(--net-e)"/>
+              <!-- short dangling stub off C1 right plate (the fragment) -->
+              <path d="M410 172 H470" stroke="var(--net-a)"/>
+            </g>
+
+            <!-- DASHED BLUE MERGE LINK (suggested join) -->
+            <path d="M470 172 L540 172" stroke="var(--merge)" stroke-width="2.4" stroke-dasharray="5 5" fill="none">
+              <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1.2s" repeatCount="indefinite"/>
+            </path>
+
+            <!-- COMPONENT BOXES (status-tinted) -->
+            <!-- R1 -->
+            <g>
+              <rect x="120" y="150" width="86" height="44" rx="0" fill="rgba(63,185,80,.08)" stroke="var(--net-b)" stroke-width="1.5"/>
+              <text x="163" y="143" fill="var(--tx-0)" font-family="var(--mono)" font-size="14" font-weight="700" text-anchor="middle">R1</text>
+              <text x="163" y="176" fill="var(--tx-1)" font-family="var(--mono)" font-size="12" text-anchor="middle">10kΩ</text>
+              <text x="163" y="208" fill="var(--ok)" font-family="var(--mono)" font-size="10" text-anchor="middle">100%</text>
+            </g>
+            <!-- C1 (selected — highlighted) -->
+            <g>
+              <rect x="334" y="146" width="82" height="52" rx="0" fill="rgba(57,192,214,.10)" stroke="var(--acc)" stroke-width="2"/>
+              <text x="375" y="139" fill="var(--tx-0)" font-family="var(--mono)" font-size="14" font-weight="700" text-anchor="middle">C1</text>
+              <text x="375" y="220" fill="var(--warn)" font-family="var(--mono)" font-size="10" text-anchor="middle">50% · 1 pin open</text>
+            </g>
+            <!-- V1 source -->
+            <g>
+              <circle cx="200" cy="370" r="26" fill="rgba(63,185,80,.08)" stroke="var(--net-b)" stroke-width="1.5"/>
+              <path d="M200 358 v10 M195 363 h10 M200 376 v6 M196 379 h8" stroke="var(--tx-1)" stroke-width="1.6" fill="none"/>
+              <text x="200" y="416" fill="var(--tx-0)" font-family="var(--mono)" font-size="14" font-weight="700" text-anchor="middle">V1</text>
+              <text x="237" y="345" fill="var(--tx-1)" font-family="var(--mono)" font-size="12">5V</text>
+            </g>
+            <!-- R2 -->
+            <g>
+              <rect x="540" y="150" width="86" height="44" fill="rgba(241,90,90,.07)" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <text x="583" y="143" fill="var(--tx-0)" font-family="var(--mono)" font-size="14" font-weight="700" text-anchor="middle">R2</text>
+              <text x="583" y="176" fill="var(--tx-1)" font-family="var(--mono)" font-size="12" text-anchor="middle">2.2kΩ</text>
+              <text x="583" y="208" fill="var(--danger)" font-family="var(--mono)" font-size="10" text-anchor="middle">0% · floating</text>
+            </g>
+
+            <!-- endpoint dots: green = connected, red = dangling -->
+            <circle cx="206" cy="172" r="5" fill="var(--net-b)" stroke="#0a0e13" stroke-width="2"/>
+            <circle cx="340" cy="172" r="5" fill="var(--net-a)" stroke="#0a0e13" stroke-width="2"/>
+
+            <!-- AMBER UNCONNECTED-PIN RINGS (the 3 problems) -->
+            <g>
+              <!-- P1: C1 right plate open -->
+              <circle cx="470" cy="172" r="11" fill="none" stroke="var(--warn)" stroke-width="2.5"/>
+              <circle cx="470" cy="172" r="4" fill="var(--warn)"/>
+              <!-- P2: R2 left pin floating -->
+              <circle cx="540" cy="172" r="11" fill="none" stroke="var(--warn)" stroke-width="2.5"/>
+              <circle cx="540" cy="172" r="4" fill="var(--warn)"/>
+              <!-- P3: R2 right pin floating (red — fully dangling, no net) -->
+              <circle cx="626" cy="172" r="11" fill="none" stroke="var(--danger)" stroke-width="2.5"/>
+              <circle cx="626" cy="172" r="4" fill="var(--danger)"/>
+            </g>
+
+            <!-- selection halo around active problem pin P1 -->
+            <circle cx="470" cy="172" r="18" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.9">
+              <animateTransform attributeName="transform" type="rotate" from="0 470 172" to="360 470 172" dur="8s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+        </div>
+
+        <!-- floating pin mini-toolbar anchored near selected pin P1 -->
+        <div class="pin-toolbar" style="left:560px;top:118px">
+          <button class="acc"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="12" r="2.2"/></svg> Connect</button>
+          <div class="sep"></div>
+          <button>Join</button>
+          <button>Disconnect</button>
+        </div>
+
+        <!-- on-canvas hint -->
+        <div class="hint-chip">
+          <span style="color:var(--tx-2)">Drag from a</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;color:var(--warn)"><span class="ring" style="width:9px;height:9px;border-width:2px"></span>amber pin</span>
+          <span style="color:var(--tx-2)">to connect · valid targets highlight live</span>
+        </div>
+
+        <!-- MINIMAP coloured by completeness -->
+        <div class="minimap">
+          <span class="mm-cap lbl">Overview</span>
+          <svg viewBox="0 0 168 116">
+            <rect x="24" y="34" width="20" height="11" fill="none" stroke="var(--net-b)" stroke-width="1.5"/>
+            <rect x="74" y="33" width="18" height="12" fill="none" stroke="var(--acc)" stroke-width="1.5"/>
+            <rect x="118" y="34" width="20" height="11" fill="none" stroke="var(--danger)" stroke-width="1.5"/>
+            <circle cx="46" cy="80" r="6" fill="none" stroke="var(--net-b)" stroke-width="1.5"/>
+            <path d="M44 39h30M92 39h26" stroke="var(--net-a)" stroke-width="1.2"/>
+            <!-- problem markers -->
+            <circle cx="104" cy="39" r="3.5" fill="var(--warn)"/>
+            <circle cx="118" cy="39" r="3.5" fill="var(--warn)"/>
+            <circle cx="138" cy="39" r="3.5" fill="var(--danger)"/>
+            <rect class="vp" x="80" y="20" width="56" height="40" style="position:static" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/>
+          </svg>
+        </div>
+
+      </div>
+
+      <!-- OUTPUT DOCK -->
+      <div class="dock">
+        <div class="dock-tabs">
+          <button class="dock-tab on">Netlist</button>
+          <button class="dock-tab">Warnings <span class="cnt">2</span></button>
+          <button class="dock-tab">Sim output</button>
+          <button class="dock-tab adv" title="Developer surfaces, hidden by default">Raw JSON</button>
+          <button class="dock-tab adv">Graph</button>
+          <div class="dock-tabs-right">
+            <button class="mini-btn" title="Copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg></button>
+            <button class="mini-btn" title="Collapse dock"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+          </div>
+        </div>
+        <div class="dock-body scroll">
+          <pre class="netlist">* <span class="cm">Circuit circuit_037 — auto-generated SPICE netlist</span>
+<span class="kw">V1</span> <span class="nd">N1</span> <span class="nd">0</span>      DC <span class="val">5</span>
+<span class="kw">R1</span> <span class="nd">N1</span> <span class="nd">N2</span>     <span class="val">10k</span>
+<span class="kw">C1</span> <span class="nd">N2</span> <span class="nd">N3</span>     <span class="val">100n</span>
+<span class="warnline"><span class="kw">R2</span> <span class="nd">?</span>  <span class="nd">?</span>       <span class="val">2.2k</span>   <span class="cm">; ⚠ floating — both pins unconnected</span></span>
+.<span class="kw">op</span>
+.<span class="kw">end</span>   <span class="cm">; ✗ not simulatable until R2 is wired (2 pins) + C1 right plate joined</span></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- INSPECTOR (context-sensitive: a pin is selected) ---------- -->
+    <aside class="inspector">
+      <div class="insp-head">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="12" r="2.4"/></svg></span>
+        <span class="ti">Connect</span>
+        <span class="sub">· 3 issues</span>
+      </div>
+      <div class="insp-body scroll">
+
+        <!-- COMPLETENESS GATE (hero) -->
+        <div class="gate incomplete">
+          <div class="gate-top">
+            <div class="gate-ico">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            </div>
+            <div>
+              <div class="gate-ttl">Incomplete circuit</div>
+              <div class="gate-sub">3 fixes from simulatable</div>
+            </div>
+          </div>
+          <div class="gate-prog">
+            <div class="gate-bar">
+              <i style="width:72%;background:var(--ok)"></i>
+              <i style="width:28%;background:var(--warn)"></i>
+            </div>
+            <div class="gate-meta">
+              <span><b>5</b>/7 nets joined</span>
+              <span>1 source · <b style="color:var(--warn)">3</b> open pins</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="sim-btn" title="Resolve all problems to enable">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/></svg>
+          Simulate
+          <span class="kbd">F5</span>
+        </button>
+
+        <!-- PROBLEMS WORKLIST -->
+        <div class="sec">
+          <span class="lbl">Needs attention</span>
+          <span class="rule"></span>
+          <span class="cnt">3</span>
+        </div>
+        <div class="prob-filters">
+          <span class="fchip on">All <span class="n">3</span></span>
+          <span class="fchip">Open pin <span class="n">2</span></span>
+          <span class="fchip">Floating <span class="n">1</span></span>
+          <span class="fchip">No source <span class="n">0</span></span>
+        </div>
+
+        <div class="worklist">
+          <!-- active problem = C1 right plate -->
+          <div class="prob active">
+            <span class="prob-ico"><span class="ring" style="width:13px;height:13px"></span></span>
+            <div class="prob-main">
+              <div class="prob-ttl">C1 right plate open</div>
+              <div class="prob-loc">pin C1.2 · net N3 · dead-end</div>
+            </div>
+            <span class="prob-go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
+          </div>
+          <div class="prob">
+            <span class="prob-ico"><span class="ring" style="width:13px;height:13px"></span></span>
+            <div class="prob-main">
+              <div class="prob-ttl">R2 left pin floating</div>
+              <div class="prob-loc">pin R2.1 · no net</div>
+            </div>
+            <span class="prob-go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
+          </div>
+          <div class="prob">
+            <span class="prob-ico"><span class="ring r" style="width:13px;height:13px"></span></span>
+            <div class="prob-main">
+              <div class="prob-ttl">R2 right pin floating</div>
+              <div class="prob-loc">pin R2.2 · no net</div>
+            </div>
+            <span class="prob-go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
+          </div>
+        </div>
+
+        <!-- CONTEXTUAL EDITOR for the selected pin -->
+        <div class="sec">
+          <span class="lbl">Fix selected pin</span>
+          <span class="rule"></span>
+          <span class="kbd">F8 next</span>
+        </div>
+        <div class="ctx">
+          <div class="ctx-head">
+            <span class="pid">C1.2</span>
+            <span class="sub mono" style="color:var(--tx-2)">net N3</span>
+            <span class="tag">open</span>
+          </div>
+          <div class="ctx-body">
+            <div class="ctx-lead">Connect <b>C1 right plate</b> to a nearby pin or net to complete this fragment.</div>
+
+            <!-- searchable pin picker -->
+            <div class="picker">
+              <div class="picker-search">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--tx-3)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input placeholder="Search pins / nets…" value="R2">
+              </div>
+              <div class="pick-opt hl">
+                <span class="pick-net" style="background:var(--danger)"></span>
+                <span class="pick-nm">R2.1</span>
+                <span class="pick-valid"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>valid</span>
+                <span class="pick-dist">~38 px</span>
+              </div>
+              <div class="pick-opt">
+                <span class="pick-net" style="background:var(--net-a)"></span>
+                <span class="pick-nm">R2.2 · N4</span>
+                <span class="pick-dist">~124 px</span>
+              </div>
+              <div class="pick-opt">
+                <span class="pick-net" style="background:var(--net-a)"></span>
+                <span class="pick-nm">net N1 (V1+)</span>
+                <span class="pick-dist">rail</span>
+              </div>
+            </div>
+
+            <div class="acts">
+              <button class="act primary">Connect <span class="kbd" style="background:rgba(0,0,0,.2);border-color:rgba(0,0,0,.3);color:#04161a">C</span></button>
+              <button class="act ghost">Join <span class="kbd">J</span></button>
+            </div>
+            <div class="acts" style="margin-top:7px">
+              <button class="act ghost" style="flex:0 0 auto;padding:0 12px">⚡ Quick Fix</button>
+              <button class="act danger" style="flex:1">Disconnect <span class="kbd">D</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- OVERLAY LAYER MANAGER -->
+        <div class="sec">
+          <span class="lbl">Layers</span>
+          <span class="rule"></span>
+        </div>
+        <div class="layers">
+          <div class="layer on">
+            <span class="eye"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span class="lswatch" style="background:linear-gradient(90deg,var(--net-a),var(--net-b),var(--net-e))"></span>
+            <span class="lnm">Nets &amp; wires</span><span class="lkey">1</span>
+          </div>
+          <div class="layer on">
+            <span class="eye"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span class="lswatch" style="background:var(--warn)"></span>
+            <span class="lnm">Unconnected pins</span><span class="lkey">2</span>
+          </div>
+          <div class="layer on">
+            <span class="eye"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span class="lswatch" style="background:var(--merge)"></span>
+            <span class="lnm">Merge suggestions</span><span class="lkey">3</span>
+          </div>
+          <div class="layer off">
+            <span class="eye"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.9 4.2A11 11 0 0 1 12 4c6.5 0 10 7 10 7a13 13 0 0 1-2 2.9M6 6a13 13 0 0 0-4 6s3.5 7 10 7a11 11 0 0 0 5-1.2M1 1l22 22"/></svg></span>
+            <span class="lswatch" style="background:linear-gradient(90deg,#5b8def,#f15a5a)"></span>
+            <span class="lnm">Voltage map</span><span class="lkey">4</span>
+          </div>
+          <div class="layer off">
+            <span class="eye"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.9 4.2A11 11 0 0 1 12 4c6.5 0 10 7 10 7a13 13 0 0 1-2 2.9M6 6a13 13 0 0 0-4 6s3.5 7 10 7a11 11 0 0 0 5-1.2M1 1l22 22"/></svg></span>
+            <span class="lswatch" style="background:var(--acc)"></span>
+            <span class="lnm">Current heatmap</span><span class="lkey">5</span>
+          </div>
+          <div class="opacity-row">
+            <span class="lbl">Opacity</span>
+            <div class="track" style="flex:1"><div class="fill" style="width:85%"></div><div class="knob" style="left:85%"></div></div>
+            <span class="mono" style="font-size:10px;color:var(--tx-2)">85%</span>
+          </div>
+        </div>
+
+        <!-- LEGEND (progressively disclosed) -->
+        <details class="legend-disc disclosure">
+          <summary class="disc-head" style="list-style:none">
+            <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <span>What the dots &amp; rings mean</span>
+          </summary>
+          <div class="disc-body">
+            <div class="leg"><span class="gly"><span class="solid" style="background:var(--ok)"></span></span>Green dot — endpoint on a good net</div>
+            <div class="leg"><span class="gly"><span class="solid" style="background:var(--danger)"></span></span>Red dot — dangling wire end</div>
+            <div class="leg"><span class="gly"><span class="ring"></span></span>Amber ring — pin reaches no other part</div>
+            <div class="leg"><span class="gly"><span class="ring r"></span></span>Red ring — pin on no net at all</div>
+            <div class="leg"><span class="gly"><svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="var(--merge)" stroke-width="2" stroke-dasharray="3 3"/></svg></span>Blue dashes — suggested merge</div>
+          </div>
+        </details>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============ STATUS BAR ============ -->
+  <div class="statusbar incomplete">
+    <span class="sb-seg btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      Incomplete — 3 pieces to wire · no source missing
+    </span>
+    <div class="sb-div"></div>
+    <span class="sb-seg dim btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg> 2 warnings</span>
+    <div class="sb-spacer"></div>
+    <span class="sb-seg dim">Selected <span class="mono">C1.2</span> · net <span class="mono">N3</span></span>
+    <div class="sb-div"></div>
+    <span class="sb-seg dim">gt_labels <span class="mono">3 / 94</span></span>
+    <div class="sb-div"></div>
+    <span class="sb-seg dim">join: <span class="mono">graph_rescue</span></span>
+    <div class="sb-div"></div>
+    <span class="sb-seg btn"><span class="dot" style="background:#04161a"></span> Connected</span>
+  </div>
+
+</div>
+
+<!-- ============ COMMAND PALETTE (Ctrl+K) ============ -->
+<div class="palette-scrim hidden" id="palette" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="palette">
+    <div class="palette-in">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--tx-2)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input placeholder="Type a command or image name…" value="conn" autofocus>
+      <span class="kbd">Esc</span>
+    </div>
+    <div class="palette-grp lbl">Suggested · selection: C1.2</div>
+    <div class="palette-list">
+      <div class="prow hl">
+        <span class="pico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="12" r="2.2"/></svg></span>
+        <span class="ptxt">Connect pin to nearest valid<span class="alias">⚡ Quick Fix</span></span>
+        <span class="pkbd"><span class="kbd">C</span></span>
+      </div>
+      <div class="prow">
+        <span class="pico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+        <span class="ptxt">Go to next problem<span class="alias">walk the worklist</span></span>
+        <span class="pkbd"><span class="kbd">F8</span></span>
+      </div>
+      <div class="prow">
+        <span class="pico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/></svg></span>
+        <span class="ptxt">Run simulation<span class="alias">(disabled — circuit incomplete)</span></span>
+        <span class="pkbd"><span class="kbd">F5</span></span>
+      </div>
+      <div class="prow">
+        <span class="pico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="ptxt">Toggle Voltage map layer</span>
+        <span class="pkbd"><span class="kbd">4</span></span>
+      </div>
+      <div class="prow">
+        <span class="pico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
+        <span class="ptxt">Compare join strategies…<span class="alias">graph_rescue vs production</span></span>
+        <span class="pkbd"><span class="kbd">Adv</span></span>
+      </div>
+      <div class="prow">
+        <span class="pico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></span>
+        <span class="ptxt">Jump to image…<span class="alias">circuit_038 · No source</span></span>
+        <span class="pkbd"><span class="kbd">Ctrl P</span></span>
+      </div>
+    </div>
+    <div class="palette-foot">
+      <span class="ft"><span class="kbd">↑</span><span class="kbd">↓</span> navigate</span>
+      <span class="ft"><span class="kbd">↵</span> run</span>
+      <span class="ft"><span class="kbd">Esc</span> dismiss</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// Minimal, optional progressive-enhancement: palette + disclosures.
+// Everything reads correctly with JS disabled.
+(function(){
+  var pal=document.getElementById('palette');
+  document.addEventListener('keydown',function(e){
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();pal.classList.remove('hidden');}
+    if(e.key==='Escape')pal.classList.add('hidden');
+  });
+  // open the Detection disclosure default-closed; legend default-closed (native <details>)
+})();
+</script>
+</body>
+</html>

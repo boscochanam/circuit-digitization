@@ -1,0 +1,1026 @@
+<!--
+  Circuit Digitization / Wire Detection Tuner — GUIDED redesign mockup
+  Paradigm: focus+context guided workflow. Top stepper drives progressive
+  disclosure; a persistent completeness/health meter is always visible.
+  Self-contained: inline <style>, system fonts, tiny vanilla JS for tab/step
+  toggles. Renders correctly with JS disabled (step 2 "Connect" is the default
+  active state baked into the markup).
+-->
+<style>
+  :root {
+    --bg:            #0c0d10;
+    --bg-1:          #121317;
+    --bg-2:          #16181d;
+    --bg-3:          #1c1f26;
+    --bg-hover:      #22252e;
+    --line:          #25282f;
+    --line-2:        #313640;
+    --txt:           #e7e9ee;
+    --txt-2:         #a4a9b4;
+    --txt-3:         #6b7280;
+    --accent:        #5b8cff;
+    --accent-dim:    #2a3a63;
+    --accent-bg:     #16213d;
+    --amber:         #e6a23c;
+    --amber-bg:      #2c2113;
+    --green:         #46c08a;
+    --green-bg:      #112a20;
+    --red:           #e2584d;
+    --red-bg:        #2c1614;
+    --net-a:         #5b8cff;
+    --net-b:         #d4537e;
+    --net-c:         #1d9e75;
+    --net-d:         #ba7517;
+    --radius:        8px;
+    --radius-lg:     11px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+
+  .app {
+    width: 1440px; max-width: 100%; height: 900px;
+    margin: 0 auto;
+    background: var(--bg);
+    color: var(--txt);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.45;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    height: 46px; flex: 0 0 46px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 14px;
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 9px; }
+  .brand-mark {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--accent-bg); border: 1px solid var(--accent-dim);
+    display: grid; place-items: center; color: var(--accent);
+  }
+  .brand-name { font-weight: 500; letter-spacing: .2px; }
+  .brand-sub { color: var(--txt-3); font-size: 11px; }
+  .topbar-sep { width: 1px; height: 22px; background: var(--line); }
+
+  /* image nav inline */
+  .imgnav { display: flex; align-items: center; gap: 4px; }
+  .imgnav .pill {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 7px; padding: 4px 9px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--txt-2);
+  }
+  .imgnav .pill b { color: var(--txt); font-weight: 500; }
+  .iconbtn {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: transparent; border: 1px solid var(--line);
+    color: var(--txt-2); cursor: pointer;
+    display: grid; place-items: center; font-size: 14px;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .iconbtn:hover { background: var(--bg-hover); color: var(--txt); border-color: var(--line-2); }
+
+  .topbar-spacer { flex: 1; }
+
+  .kbd-hint { color: var(--txt-3); font-size: 11px; display:flex; gap:6px; align-items:center;}
+  .kbd {
+    font-family: var(--mono); font-size: 10.5px;
+    background: var(--bg-3); border: 1px solid var(--line-2);
+    border-bottom-width: 2px;
+    border-radius: 5px; padding: 1px 5px; color: var(--txt-2);
+  }
+
+  /* ---------- Stepper ---------- */
+  .stepper {
+    height: 54px; flex: 0 0 54px;
+    display: flex; align-items: stretch; gap: 0;
+    padding: 0 12px;
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--line);
+  }
+  .step {
+    display: flex; align-items: center; gap: 11px;
+    padding: 0 18px 0 14px;
+    cursor: pointer; position: relative;
+    color: var(--txt-3);
+    transition: color .12s;
+  }
+  .step:hover { color: var(--txt-2); }
+  .step + .step::before {
+    content: ""; position: absolute; left: 0; top: 50%;
+    width: 18px; height: 1px; background: var(--line-2);
+    transform: translateX(-100%);
+  }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1.5px solid var(--line-2);
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 500;
+    flex: 0 0 24px; color: var(--txt-2);
+    background: var(--bg-2);
+  }
+  .step-label { font-size: 12.5px; }
+  .step-label small { display: block; font-size: 10.5px; color: var(--txt-3); margin-top: 1px; }
+
+  .step.done { color: var(--txt-2); }
+  .step.done .step-num { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .step.active { color: var(--txt); }
+  .step.active .step-num {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .step.active::after {
+    content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px;
+    height: 2px; background: var(--accent); border-radius: 2px;
+  }
+  .step.locked { opacity: .55; cursor: not-allowed; }
+  .step.locked .step-num i { font-size: 11px; }
+
+  .stepper-spacer { flex: 1; }
+
+  /* persistent health meter — always visible, right of stepper */
+  .health {
+    display: flex; align-items: center; gap: 12px;
+    align-self: center; padding: 6px 12px; margin-right: 2px;
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .health-ring { position: relative; width: 34px; height: 34px; }
+  .health-ring svg { transform: rotate(-90deg); }
+  .health-ring .pct {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 10px; font-weight: 500; color: var(--amber);
+  }
+  .health-text { line-height: 1.3; }
+  .health-text .ht-status {
+    font-size: 12px; font-weight: 500; color: var(--amber);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .health-text .ht-detail { font-size: 10.5px; color: var(--txt-3); }
+  .sim-gate {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 14px; border-radius: var(--radius);
+    background: var(--bg-3); border: 1px solid var(--line-2);
+    color: var(--txt-3); font-weight: 500; font-size: 12.5px;
+    cursor: not-allowed;
+  }
+  .sim-gate i { font-size: 14px; }
+
+  /* ---------- Body ---------- */
+  .body { flex: 1; display: flex; min-height: 0; }
+
+  /* Left rail */
+  .rail {
+    width: 244px; flex: 0 0 244px;
+    background: var(--bg-1);
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .rail-head {
+    padding: 11px 13px 9px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .rail-title { font-size: 11px; text-transform: uppercase; letter-spacing: .7px; color: var(--txt-3); font-weight: 500; }
+  .rail-count { font-size: 11px; color: var(--txt-3); font-family: var(--mono); }
+
+  .ds-tabs { display: flex; gap: 4px; padding: 0 11px 10px; }
+  .ds-tab {
+    flex: 1; padding: 5px 0; text-align: center;
+    font-size: 11.5px; border-radius: 6px; cursor: pointer;
+    background: var(--bg-2); border: 1px solid var(--line); color: var(--txt-2);
+    transition: all .12s;
+  }
+  .ds-tab.on { background: var(--accent-bg); border-color: var(--accent-dim); color: var(--accent); }
+  .ds-tab:hover:not(.on) { background: var(--bg-hover); }
+  .ds-tab small { display:block; font-size:9.5px; color: var(--txt-3); font-family: var(--mono); }
+
+  .thumbs {
+    flex: 1; overflow-y: auto; min-height: 0;
+    padding: 4px 9px 9px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 7px;
+    align-content: start;
+  }
+  .thumb {
+    aspect-ratio: 4/3; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--bg-2);
+    position: relative; overflow: hidden;
+    display: grid; place-items: center;
+    transition: border-color .12s;
+  }
+  .thumb:hover { border-color: var(--line-2); }
+  .thumb.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .thumb .tnum {
+    position: absolute; top: 3px; left: 4px; font-size: 9px;
+    font-family: var(--mono); color: var(--txt-3); background: rgba(0,0,0,.45);
+    padding: 0 3px; border-radius: 3px;
+  }
+  .thumb .tstatus {
+    position: absolute; bottom: 3px; right: 4px;
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .ts-done { background: var(--green); }
+  .ts-todo { background: var(--amber); }
+  .ts-none { background: var(--txt-3); }
+  .thumb svg { width: 78%; height: 78%; opacity: .55; }
+
+  /* Advanced detection disclosure (collapsed by default — step 1 concern) */
+  .rail-adv { border-top: 1px solid var(--line); }
+  .adv-sum {
+    list-style: none; cursor: pointer;
+    padding: 10px 13px; display: flex; align-items: center; gap: 8px;
+    color: var(--txt-2); font-size: 12px; user-select: none;
+  }
+  .adv-sum::-webkit-details-marker { display: none; }
+  .adv-sum i.chev { margin-left: auto; transition: transform .15s; color: var(--txt-3); }
+  details[open] .adv-sum i.chev { transform: rotate(180deg); }
+  .adv-sum .badge-soft {
+    font-size: 10px; color: var(--txt-3); background: var(--bg-3);
+    border: 1px solid var(--line); border-radius: 10px; padding: 1px 7px;
+  }
+  .adv-body { padding: 2px 13px 13px; }
+  .slider-row { margin-bottom: 11px; }
+  .slider-row .sl-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .slider-row .sl-label { font-size: 11.5px; color: var(--txt-2); }
+  .slider-row .sl-val { font-size: 11px; font-family: var(--mono); color: var(--accent); }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+    background: var(--bg-3); border-radius: 3px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid var(--bg-1);
+  }
+  .adv-reset { width:100%; margin-top:4px; font-size:11.5px; }
+
+  /* Center canvas */
+  .canvas-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+  .canvas-toolbar {
+    height: 38px; flex: 0 0 38px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-1);
+  }
+  /* layer toggles grouped by intent */
+  .layergrp { display: flex; align-items: center; gap: 2px; padding: 2px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; }
+  .layergrp-label { font-size: 10px; color: var(--txt-3); padding: 0 6px 0 4px; text-transform: uppercase; letter-spacing:.5px;}
+  .layer {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 9px; border-radius: 6px; cursor: pointer;
+    font-size: 11.5px; color: var(--txt-2); border: 1px solid transparent;
+    transition: all .12s;
+  }
+  .layer:hover { background: var(--bg-hover); }
+  .layer.on { background: var(--bg-3); color: var(--txt); border-color: var(--line-2); }
+  .layer .swatch { width: 9px; height: 9px; border-radius: 3px; }
+  .layer .ring-swatch { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--amber); }
+
+  .ctb-spacer { flex: 1; }
+  .zoomctl { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .zoomctl button { width: 28px; height: 26px; background: var(--bg-2); border: none; color: var(--txt-2); cursor: pointer; font-size: 14px; }
+  .zoomctl button:hover { background: var(--bg-hover); color: var(--txt); }
+  .zoomctl .zlvl { padding: 0 9px; font-size: 11px; font-family: var(--mono); color: var(--txt-2); border-left: 1px solid var(--line); border-right: 1px solid var(--line); line-height: 26px; }
+
+  .canvas { flex: 1; position: relative; min-height: 0; overflow: hidden; }
+  .canvas-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: .35;
+  }
+  .canvas-stage { position: absolute; inset: 0; display: grid; place-items: center; }
+  .schematic { width: 660px; max-width: 92%; }
+
+  /* minimap */
+  .minimap {
+    position: absolute; right: 12px; bottom: 12px;
+    width: 150px; height: 104px;
+    background: var(--bg-1); border: 1px solid var(--line-2);
+    border-radius: 8px; overflow: hidden; padding: 6px;
+  }
+  .minimap .mm-label { position:absolute; top:4px; left:7px; font-size:9px; color: var(--txt-3); text-transform: uppercase; letter-spacing:.5px;}
+  .minimap svg { width: 100%; height: 100%; }
+
+  /* selection floating toolbar */
+  .float-tools {
+    position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
+    display: flex; gap: 4px; padding: 4px;
+    background: var(--bg-1); border: 1px solid var(--line-2);
+    border-radius: 9px;
+  }
+  .float-tools button {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 6px;
+    background: transparent; border: 1px solid transparent;
+    color: var(--txt-2); font-size: 11.5px; cursor: pointer;
+  }
+  .float-tools button:hover { background: var(--bg-hover); color: var(--txt); }
+  .float-tools button.primary { background: var(--accent); color: #fff; }
+  .float-tools button.primary:hover { background: #6f9bff; }
+  .float-tools .ft-sep { width:1px; background: var(--line); margin: 3px 2px; }
+
+  /* Right inspector */
+  .inspector {
+    width: 332px; flex: 0 0 332px;
+    background: var(--bg-1);
+    border-left: 1px solid var(--line);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .insp-head {
+    padding: 11px 14px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .insp-eyebrow { font-size: 10.5px; text-transform: uppercase; letter-spacing: .7px; color: var(--accent); font-weight: 500; margin-bottom: 4px; }
+  .insp-title { font-size: 14px; font-weight: 500; }
+  .insp-sub { font-size: 11.5px; color: var(--txt-3); margin-top: 2px; }
+
+  .insp-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+
+  /* Problems worklist */
+  .section { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 9px;
+  }
+  .section-head h4 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--txt-2); font-weight: 500; }
+  .filterchips { display: flex; gap: 4px; }
+  .fchip { font-size: 10px; padding: 2px 7px; border-radius: 10px; border: 1px solid var(--line); color: var(--txt-3); cursor: pointer; background: var(--bg-2); }
+  .fchip.on { background: var(--accent-bg); border-color: var(--accent-dim); color: var(--accent); }
+
+  .problem {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 9px 10px; border-radius: 8px; cursor: pointer;
+    border: 1px solid transparent; margin-bottom: 5px;
+    transition: background .12s, border-color .12s;
+  }
+  .problem:hover { background: var(--bg-2); }
+  .problem.sel { background: var(--accent-bg); border-color: var(--accent-dim); }
+  .pico { flex: 0 0 22px; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 12px; margin-top: 1px; }
+  .pico.amber { background: var(--amber-bg); color: var(--amber); }
+  .pico.red { background: var(--red-bg); color: var(--red); }
+  .pbody { flex: 1; min-width: 0; }
+  .ptitle { font-size: 12.5px; color: var(--txt); font-weight: 500; }
+  .pmeta { font-size: 11px; color: var(--txt-3); margin-top: 1px; }
+  .pmeta code { font-family: var(--mono); color: var(--txt-2); }
+  .pjump { flex: 0 0 auto; color: var(--txt-3); font-size: 13px; align-self: center; }
+  .problem:hover .pjump { color: var(--accent); }
+
+  .resolved {
+    display: flex; gap: 10px; align-items: center;
+    padding: 7px 10px; opacity: .65; font-size: 12px; color: var(--txt-2);
+  }
+  .resolved .pico.green { background: var(--green-bg); color: var(--green); }
+  .resolved del { color: var(--txt-3); }
+
+  /* Context-sensitive connection editor (selection-driven) */
+  .ctx-card { margin: 0 0 4px; }
+  .ctx-sel {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 11px; background: var(--bg-2);
+    border: 1px solid var(--line-2); border-radius: 9px;
+    margin-bottom: 11px;
+  }
+  .ctx-sel .dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--amber); flex:0 0 10px; }
+  .ctx-sel .cs-name { font-family: var(--mono); font-size: 12.5px; color: var(--txt); }
+  .ctx-sel .cs-meta { font-size: 11px; color: var(--txt-3); }
+  .ctx-sel .cs-net { margin-left: auto; font-size: 10.5px; font-family: var(--mono); color: var(--net-b); background: var(--bg-3); padding: 2px 7px; border-radius: 5px; }
+
+  .field-label { font-size: 11px; color: var(--txt-3); margin-bottom: 6px; display:block; }
+  .search {
+    position: relative; margin-bottom: 8px;
+  }
+  .search i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--txt-3); font-size: 13px; }
+  .search input {
+    width: 100%; height: 32px; padding: 0 10px 0 30px;
+    background: var(--bg-2); border: 1px solid var(--line-2);
+    border-radius: 7px; color: var(--txt); font-size: 12px;
+    font-family: var(--sans);
+  }
+  .search input:focus { outline: none; border-color: var(--accent-dim); box-shadow: 0 0 0 2px var(--accent-bg); }
+  .search input::placeholder { color: var(--txt-3); }
+
+  .pinlist { display: flex; flex-direction: column; gap: 3px; margin-bottom: 12px; }
+  .pinopt {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 9px; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--bg-2);
+    transition: all .12s;
+  }
+  .pinopt:hover { border-color: var(--accent-dim); background: var(--bg-hover); }
+  .pinopt.recommend { border-color: var(--accent-dim); background: var(--accent-bg); }
+  .pinopt .pin-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+  .pinopt .pin-name { font-family: var(--mono); font-size: 12px; color: var(--txt); }
+  .pinopt .pin-dist { margin-left: auto; font-size: 10.5px; color: var(--txt-3); font-family: var(--mono); }
+  .pinopt .pin-tag { font-size: 9.5px; color: var(--accent); background: var(--bg-1); border: 1px solid var(--accent-dim); border-radius: 9px; padding: 1px 7px; }
+  .pinopt.invalid { opacity: .42; cursor: not-allowed; }
+  .pinopt.invalid .pin-dist { color: var(--red); }
+
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .actbtn {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 0; border-radius: 8px; cursor: pointer;
+    font-size: 12.5px; font-weight: 500;
+    border: 1px solid var(--line-2); background: var(--bg-2); color: var(--txt);
+    transition: all .12s;
+  }
+  .actbtn:hover { background: var(--bg-hover); }
+  .actbtn.connect { grid-column: 1 / -1; background: var(--accent); border-color: var(--accent); color: #fff; }
+  .actbtn.connect:hover { background: #6f9bff; }
+  .actbtn.danger { color: var(--red); }
+  .actbtn.danger:hover { background: var(--red-bg); border-color: var(--red); }
+  .actbtn i { font-size: 14px; }
+
+  /* values mini editor (component context) */
+  .val-row { display: flex; align-items: center; gap: 9px; padding: 6px 0; }
+  .val-row .vdot { width: 9px; height: 9px; border-radius: 3px; }
+  .val-row .vname { font-family: var(--mono); font-size: 12px; width: 26px; }
+  .val-row input { flex: 1; height: 28px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; color: var(--txt); padding: 0 9px; font-family: var(--mono); font-size: 12px; }
+  .val-row .notag { font-size: 9.5px; color: var(--txt-3); border: 1px solid var(--line); border-radius: 9px; padding: 1px 6px; }
+
+  .hintbox {
+    display: flex; gap: 9px; padding: 9px 11px;
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-left: 2px solid var(--accent); border-radius: 0 7px 7px 0;
+    font-size: 11.5px; color: var(--txt-2); margin-top: 4px;
+  }
+  .hintbox i { color: var(--accent); font-size: 14px; flex: 0 0 auto; margin-top: 1px; }
+
+  /* Bottom dock — netlist, progressively disclosed */
+  .dock {
+    flex: 0 0 auto;
+    background: var(--bg-1);
+    border-top: 1px solid var(--line);
+  }
+  .dock-tabs {
+    display: flex; align-items: center; gap: 2px;
+    padding: 0 12px; height: 34px;
+    border-bottom: 1px solid var(--line);
+  }
+  .dtab {
+    padding: 0 12px; height: 34px; line-height: 34px;
+    font-size: 12px; color: var(--txt-3); cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .dtab.on { color: var(--txt); border-bottom-color: var(--accent); }
+  .dtab:hover:not(.on) { color: var(--txt-2); }
+  .dtab.adv { margin-left: auto; color: var(--txt-3); font-size: 11px; display:flex; align-items:center; gap:5px;}
+  .dock-body { height: 124px; display: flex; }
+  .netlist {
+    flex: 1; padding: 11px 14px; overflow-y: auto;
+    font-family: var(--mono); font-size: 12px; line-height: 1.7;
+    color: var(--txt-2);
+  }
+  .netlist .nl-dim { color: var(--txt-3); }
+  .netlist .nl-comp { color: var(--net-c); }
+  .netlist .nl-node { color: var(--accent); }
+  .netlist .nl-blocked {
+    color: var(--amber); display: inline-flex; align-items: center; gap: 6px;
+  }
+  .netlist .nl-card-head { color: var(--txt-3); margin-bottom: 4px; font-family: var(--sans); font-size: 11px; text-transform: uppercase; letter-spacing:.5px;}
+  .dock-side {
+    flex: 0 0 260px; border-left: 1px solid var(--line);
+    padding: 11px 14px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat {
+    background: var(--bg-2); border-radius: 7px; padding: 8px 10px;
+  }
+  .stat .s-label { font-size: 10px; color: var(--txt-3); text-transform: uppercase; letter-spacing:.4px;}
+  .stat .s-val { font-size: 18px; font-weight: 500; margin-top: 2px; font-family: var(--mono); }
+  .stat .s-val.warn { color: var(--amber); }
+
+  .legend-foot { display: flex; gap: 14px; padding: 6px 14px; border-top: 1px solid var(--line); font-size: 10.5px; color: var(--txt-3); align-items:center; }
+  .legend-foot .lg { display: flex; align-items: center; gap: 5px; }
+  .legend-foot .lg .d { width: 9px; height: 9px; border-radius: 50%; }
+  .legend-foot .lg .ring { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--amber); }
+
+  /* generic */
+  .muted { color: var(--txt-3); }
+</style>
+
+<div class="sr-only">Guided redesign of the circuit wire-detection tuner: a four-step workflow stepper drives progressive disclosure across a left image rail, a center circuit canvas with overlays, and a right problems-and-connection inspector, with an always-visible completeness meter.</div>
+
+<div class="app">
+
+  <!-- ================= TOP BAR ================= -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><i class="ti ti-circuit-resistor" style="font-size:14px"></i></div>
+      <div>
+        <div class="brand-name">Circuit Digitizer</div>
+      </div>
+      <span class="brand-sub">photo → netlist</span>
+    </div>
+
+    <div class="topbar-sep"></div>
+
+    <div class="imgnav">
+      <button class="iconbtn" aria-label="Previous image"><i class="ti ti-chevron-left"></i></button>
+      <span class="pill"><i class="ti ti-photo" style="font-size:13px"></i> <b>gt_labels</b> / <b>047</b> <span class="muted">of 94</span></span>
+      <button class="iconbtn" aria-label="Next image"><i class="ti ti-chevron-right"></i></button>
+    </div>
+
+    <div class="topbar-spacer"></div>
+
+    <div class="kbd-hint">
+      <i class="ti ti-command" style="font-size:13px"></i> Actions
+      <span class="kbd">Ctrl</span><span class="kbd">K</span>
+    </div>
+    <div class="topbar-sep"></div>
+    <button class="iconbtn" aria-label="Focus mode"><i class="ti ti-layout-sidebar-right-collapse"></i></button>
+    <button class="iconbtn" aria-label="Keyboard shortcuts"><i class="ti ti-keyboard"></i></button>
+  </div>
+
+  <!-- ================= STEPPER + HEALTH METER ================= -->
+  <div class="stepper">
+    <div class="step done">
+      <span class="step-num"><i class="ti ti-check"></i></span>
+      <span class="step-label">Detect &amp; tune<small>14 parts found</small></span>
+    </div>
+    <div class="step active">
+      <span class="step-num">2</span>
+      <span class="step-label">Connect points<small>3 left to wire</small></span>
+    </div>
+    <div class="step">
+      <span class="step-num">3</span>
+      <span class="step-label">Verify complete<small>1 piece, source in</small></span>
+    </div>
+    <div class="step locked">
+      <span class="step-num"><i class="ti ti-lock"></i></span>
+      <span class="step-label">Simulate<small>needs complete</small></span>
+    </div>
+
+    <div class="stepper-spacer"></div>
+
+    <div class="health">
+      <div class="health-ring">
+        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+          <circle cx="17" cy="17" r="14" fill="none" stroke="#25282f" stroke-width="4"/>
+          <circle cx="17" cy="17" r="14" fill="none" stroke="#e6a23c" stroke-width="4"
+                  stroke-linecap="round" stroke-dasharray="87.9" stroke-dashoffset="22"/>
+        </svg>
+        <span class="pct">75%</span>
+      </div>
+      <div class="health-text">
+        <div class="ht-status"><i class="ti ti-alert-triangle" style="font-size:13px"></i> Incomplete</div>
+        <div class="ht-detail">2 pieces · 3 pins loose · source wired</div>
+      </div>
+      <div class="sim-gate" title="Resolve all problems to enable simulation">
+        <i class="ti ti-player-play"></i> Simulate
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= BODY ================= -->
+  <div class="body">
+
+    <!-- ---------- LEFT RAIL: navigation (primary in step 1) ---------- -->
+    <aside class="rail">
+      <div class="rail-head">
+        <span class="rail-title">Dataset</span>
+        <span class="rail-count">94 imgs</span>
+      </div>
+      <div class="ds-tabs">
+        <div class="ds-tab on">gt_labels<small>94</small></div>
+        <div class="ds-tab">HDC<small>1680</small></div>
+        <div class="ds-tab">synth<small>240</small></div>
+      </div>
+
+      <div class="thumbs">
+        <!-- 10 thumbnails with per-image completeness status -->
+        <div class="thumb"><span class="tnum">045</span><span class="tstatus ts-done"></span>
+          <svg viewBox="0 0 80 60"><rect x="14" y="24" width="20" height="10" rx="2" fill="none" stroke="#5b8cff" stroke-width="2"/><line x1="34" y1="29" x2="58" y2="29" stroke="#5b8cff" stroke-width="2"/><line x1="6" y1="29" x2="14" y2="29" stroke="#5b8cff" stroke-width="2"/></svg></div>
+        <div class="thumb"><span class="tnum">046</span><span class="tstatus ts-done"></span>
+          <svg viewBox="0 0 80 60"><circle cx="20" cy="30" r="9" fill="none" stroke="#1d9e75" stroke-width="2"/><rect x="44" y="25" width="18" height="10" rx="2" fill="none" stroke="#1d9e75" stroke-width="2"/><line x1="29" y1="30" x2="44" y2="30" stroke="#1d9e75" stroke-width="2"/></svg></div>
+        <div class="thumb sel"><span class="tnum">047</span><span class="tstatus ts-todo"></span>
+          <svg viewBox="0 0 80 60"><rect x="14" y="12" width="18" height="9" rx="2" fill="none" stroke="#e7e9ee" stroke-width="2"/><rect x="46" y="12" width="18" height="9" rx="2" fill="none" stroke="#e7e9ee" stroke-width="2"/><line x1="32" y1="16" x2="46" y2="16" stroke="#e7e9ee" stroke-width="2"/><circle cx="20" cy="42" r="7" fill="none" stroke="#e7e9ee" stroke-width="2"/><circle cx="60" cy="42" r="3.5" fill="none" stroke="#e6a23c" stroke-width="2"/></svg></div>
+        <div class="thumb"><span class="tnum">048</span><span class="tstatus ts-todo"></span>
+          <svg viewBox="0 0 80 60"><rect x="18" y="16" width="20" height="11" rx="2" fill="none" stroke="#888" stroke-width="2"/><rect x="18" y="36" width="20" height="11" rx="2" fill="none" stroke="#888" stroke-width="2"/><circle cx="62" cy="40" r="3" fill="none" stroke="#e6a23c" stroke-width="2"/></svg></div>
+        <div class="thumb"><span class="tnum">049</span><span class="tstatus ts-done"></span>
+          <svg viewBox="0 0 80 60"><rect x="16" y="26" width="18" height="9" rx="2" fill="none" stroke="#d4537e" stroke-width="2"/><rect x="46" y="26" width="18" height="9" rx="2" fill="none" stroke="#d4537e" stroke-width="2"/><line x1="34" y1="30" x2="46" y2="30" stroke="#d4537e" stroke-width="2"/></svg></div>
+        <div class="thumb"><span class="tnum">050</span><span class="tstatus ts-none"></span>
+          <svg viewBox="0 0 80 60"><circle cx="40" cy="30" r="11" fill="none" stroke="#888" stroke-width="2"/></svg></div>
+        <div class="thumb"><span class="tnum">051</span><span class="tstatus ts-done"></span>
+          <svg viewBox="0 0 80 60"><rect x="30" y="14" width="20" height="10" rx="2" fill="none" stroke="#ba7517" stroke-width="2"/><rect x="30" y="36" width="20" height="10" rx="2" fill="none" stroke="#ba7517" stroke-width="2"/><line x1="40" y1="24" x2="40" y2="36" stroke="#ba7517" stroke-width="2"/></svg></div>
+        <div class="thumb"><span class="tnum">052</span><span class="tstatus ts-todo"></span>
+          <svg viewBox="0 0 80 60"><rect x="14" y="26" width="18" height="9" rx="2" fill="none" stroke="#888" stroke-width="2"/><circle cx="58" cy="30" r="8" fill="none" stroke="#888" stroke-width="2"/></svg></div>
+      </div>
+
+      <!-- Advanced detection — collapsed by default (tune-once concern) -->
+      <details class="rail-adv">
+        <summary class="adv-sum">
+          <i class="ti ti-adjustments-alt" style="font-size:14px"></i>
+          Detection tuning
+          <span class="badge-soft">advanced</span>
+          <i class="ti ti-chevron-down chev"></i>
+        </summary>
+        <div class="adv-body">
+          <div class="slider-row">
+            <div class="sl-top"><span class="sl-label">Sauvola k</span><span class="sl-val">0.285</span></div>
+            <input type="range" min="0.05" max="0.6" step="0.005" value="0.285">
+          </div>
+          <div class="slider-row">
+            <div class="sl-top"><span class="sl-label">Window</span><span class="sl-val">67</span></div>
+            <input type="range" min="3" max="151" step="2" value="67">
+          </div>
+          <div class="slider-row">
+            <div class="sl-top"><span class="sl-label">CCL min area</span><span class="sl-val">28</span></div>
+            <input type="range" min="0" max="100" step="1" value="28">
+          </div>
+          <button class="iconbtn adv-reset" style="width:100%; border-radius:7px;">Reset to preset defaults</button>
+        </div>
+      </details>
+    </aside>
+
+    <!-- ---------- CENTER CANVAS ---------- -->
+    <section class="canvas-wrap">
+      <div class="canvas-toolbar">
+        <div class="layergrp">
+          <span class="layergrp-label">Topology</span>
+          <span class="layer on"><span class="swatch" style="background:var(--net-a)"></span> Nets</span>
+          <span class="layer on"><span class="ring-swatch"></span> Loose pins</span>
+          <span class="layer"><span class="swatch" style="background:var(--txt-3)"></span> Detection</span>
+        </div>
+        <div class="layergrp">
+          <span class="layergrp-label">Sim</span>
+          <span class="layer"><i class="ti ti-bolt" style="font-size:12px;color:var(--txt-3)"></i> Voltage</span>
+          <span class="layer"><i class="ti ti-wave-sine" style="font-size:12px;color:var(--txt-3)"></i> Current</span>
+        </div>
+
+        <div class="ctb-spacer"></div>
+
+        <button class="iconbtn" aria-label="Fit to view"><i class="ti ti-maximize"></i></button>
+        <div class="zoomctl">
+          <button aria-label="Zoom out"><i class="ti ti-minus"></i></button>
+          <span class="zlvl">112%</span>
+          <button aria-label="Zoom in"><i class="ti ti-plus"></i></button>
+        </div>
+      </div>
+
+      <div class="canvas">
+        <div class="canvas-grid"></div>
+
+        <!-- selection floating toolbar (non-scaling, anchored to selected pin) -->
+        <div class="float-tools">
+          <button><i class="ti ti-arrows-join-2"></i> Join</button>
+          <div class="ft-sep"></div>
+          <button class="primary"><i class="ti ti-plug-connected"></i> Connect to R2.2 <span class="kbd" style="background:#3a5bbd;border-color:#3a5bbd;color:#dce6ff">C</span></button>
+          <div class="ft-sep"></div>
+          <button class="danger" style="color:var(--red)"><i class="ti ti-unlink"></i> Disconnect</button>
+        </div>
+
+        <div class="canvas-stage">
+          <!-- Fake hand-drawn circuit photo as inline SVG schematic -->
+          <svg class="schematic" viewBox="0 0 660 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Circuit schematic with two unconnected pins ringed amber and one dashed merge link">
+            <defs>
+              <pattern id="paper" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(8)">
+                <rect width="6" height="6" fill="#15161a"/>
+                <circle cx="1" cy="1" r="0.4" fill="#1d1f25"/>
+              </pattern>
+            </defs>
+            <rect x="0" y="0" width="660" height="420" rx="10" fill="url(#paper)" stroke="#262932" stroke-width="1.5"/>
+
+            <!-- ===== Net A (blue) — top loop: V1 -> R1 -> node ===== -->
+            <!-- V1 voltage source (left) -->
+            <g>
+              <circle cx="80" cy="170" r="26" fill="none" stroke="#5b8cff" stroke-width="2.4"/>
+              <line x1="80" y1="158" x2="80" y2="150" stroke="#5b8cff" stroke-width="2"/>
+              <line x1="74" y1="153" x2="86" y2="153" stroke="#5b8cff" stroke-width="2"/>
+              <line x1="76" y1="187" x2="84" y2="187" stroke="#5b8cff" stroke-width="2"/>
+              <text x="80" y="174" text-anchor="middle" fill="#8fb2ff" font-family="ui-monospace,monospace" font-size="15" font-weight="600">V1</text>
+              <text x="80" y="217" text-anchor="middle" fill="#6b7280" font-family="ui-monospace,monospace" font-size="11">5 V</text>
+            </g>
+            <!-- wire V1 top -> R1 left (net A blue) -->
+            <line x1="80" y1="144" x2="80" y2="90" stroke="#5b8cff" stroke-width="2.6"/>
+            <line x1="80" y1="90" x2="170" y2="90" stroke="#5b8cff" stroke-width="2.6"/>
+            <!-- green connected endpoint dots -->
+            <circle cx="80" cy="90" r="4.5" fill="#46c08a"/>
+
+            <!-- R1 resistor (top, blue net) -->
+            <g>
+              <rect x="170" y="76" width="86" height="28" rx="3" fill="#0f1320" stroke="#5b8cff" stroke-width="2.4"/>
+              <text x="213" y="95" text-anchor="middle" fill="#8fb2ff" font-family="ui-monospace,monospace" font-size="14" font-weight="600">R1</text>
+              <text x="213" y="62" text-anchor="middle" fill="#6b7280" font-family="ui-monospace,monospace" font-size="11">1 kΩ</text>
+            </g>
+            <circle cx="170" cy="90" r="4.5" fill="#46c08a"/>
+            <!-- R1 right -> junction node (blue) -->
+            <line x1="256" y1="90" x2="360" y2="90" stroke="#5b8cff" stroke-width="2.6"/>
+            <circle cx="256" cy="90" r="4.5" fill="#46c08a"/>
+            <!-- junction node dot -->
+            <circle cx="360" cy="90" r="5" fill="#5b8cff"/>
+            <circle cx="360" cy="90" r="9" fill="none" stroke="#5b8cff" stroke-width="1.4" opacity="0.5"/>
+
+            <!-- ===== Net C (teal) — right branch R2 down to ground ===== -->
+            <line x1="360" y1="90" x2="360" y2="150" stroke="#1d9e75" stroke-width="2.6"/>
+            <circle cx="360" cy="150" r="4.5" fill="#46c08a"/>
+            <!-- R2 resistor (vertical, teal) -->
+            <g>
+              <rect x="346" y="150" width="28" height="84" rx="3" fill="#0f1320" stroke="#1d9e75" stroke-width="2.4"/>
+              <text x="360" y="197" text-anchor="middle" fill="#5dcaa5" font-family="ui-monospace,monospace" font-size="14" font-weight="600">R2</text>
+              <text x="392" y="197" fill="#6b7280" font-family="ui-monospace,monospace" font-size="11">2.2 kΩ</text>
+            </g>
+            <!-- R2 bottom pin: LOOSE (amber ring) — does not reach ground -->
+            <line x1="360" y1="234" x2="360" y2="262" stroke="#1d9e75" stroke-width="2.6"/>
+            <circle cx="360" cy="262" r="4.5" fill="#e2584d"/>
+            <circle cx="360" cy="262" r="11" fill="none" stroke="#e6a23c" stroke-width="2.4"/>
+            <text x="360" y="290" text-anchor="middle" fill="#e6a23c" font-family="ui-monospace,monospace" font-size="10.5">loose · R2.2</text>
+
+            <!-- ===== Net B (pink) — C1 capacitor branch, fragment ===== -->
+            <!-- C1 capacitor (lower middle) -->
+            <g>
+              <line x1="470" y1="160" x2="470" y2="200" stroke="#d4537e" stroke-width="2.6"/>
+              <line x1="494" y1="160" x2="494" y2="200" stroke="#d4537e" stroke-width="2.6"/>
+              <line x1="482" y1="120" x2="482" y2="160" stroke="#d4537e" stroke-width="2.6"/>
+              <line x1="482" y1="200" x2="482" y2="240" stroke="#d4537e" stroke-width="2.6"/>
+              <text x="520" y="184" fill="#e88aab" font-family="ui-monospace,monospace" font-size="14" font-weight="600">C1</text>
+              <text x="520" y="200" fill="#6b7280" font-family="ui-monospace,monospace" font-size="11">100 nF</text>
+            </g>
+            <!-- C1 top pin: LOOSE (amber ring) — selected -->
+            <circle cx="482" cy="120" r="4.5" fill="#e2584d"/>
+            <circle cx="482" cy="120" r="13" fill="none" stroke="#e6a23c" stroke-width="2.8"/>
+            <circle cx="482" cy="120" r="18" fill="none" stroke="#5b8cff" stroke-width="1.6" stroke-dasharray="2 3" opacity="0.85"/>
+            <text x="482" y="104" text-anchor="middle" fill="#e6a23c" font-family="ui-monospace,monospace" font-size="10.5" font-weight="600">selected · C1.1</text>
+            <!-- C1 bottom pin: connected green to a stub -->
+            <line x1="482" y1="240" x2="482" y2="270" stroke="#d4537e" stroke-width="2.6"/>
+            <circle cx="482" cy="270" r="4.5" fill="#46c08a"/>
+            <line x1="482" y1="270" x2="360" y2="270" stroke="#d4537e" stroke-width="2.6" opacity="0.6"/>
+
+            <!-- ===== dashed BLUE merge/join suggestion link ===== -->
+            <!-- proposed connect: C1 top (loose) -> junction node on net A -->
+            <path d="M 482 120 Q 430 60 360 90" fill="none" stroke="#5b8cff"
+                  stroke-width="2" stroke-dasharray="6 5" opacity="0.9"/>
+            <circle cx="430" cy="74" r="9" fill="#16213d" stroke="#5b8cff" stroke-width="1.4"/>
+            <text x="430" y="78" text-anchor="middle" fill="#8fb2ff" font-family="ui-monospace,monospace" font-size="10" font-weight="600">＋</text>
+
+            <!-- ground symbol (target for R2 — currently unreached) -->
+            <g opacity="0.85">
+              <line x1="200" y1="300" x2="200" y2="320" stroke="#6b7280" stroke-width="2.4"/>
+              <line x1="186" y1="320" x2="214" y2="320" stroke="#6b7280" stroke-width="2.4"/>
+              <line x1="190" y1="326" x2="210" y2="326" stroke="#6b7280" stroke-width="2.4"/>
+              <line x1="194" y1="332" x2="206" y2="332" stroke="#6b7280" stroke-width="2.4"/>
+              <text x="200" y="352" text-anchor="middle" fill="#6b7280" font-family="ui-monospace,monospace" font-size="11">GND (0)</text>
+            </g>
+            <!-- V1 bottom -> ground (net, connected) -->
+            <line x1="80" y1="196" x2="80" y2="320" stroke="#5b8cff" stroke-width="2.6"/>
+            <line x1="80" y1="320" x2="200" y2="320" stroke="#6b7280" stroke-width="2.6"/>
+            <circle cx="80" cy="320" r="4.5" fill="#46c08a"/>
+          </svg>
+        </div>
+
+        <!-- minimap colored by completeness -->
+        <div class="minimap">
+          <span class="mm-label">Overview</span>
+          <svg viewBox="0 0 150 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="14" y="34" width="22" height="9" rx="2" fill="none" stroke="#5b8cff" stroke-width="1.6"/>
+            <rect x="68" y="20" width="9" height="22" rx="2" fill="none" stroke="#1d9e75" stroke-width="1.6"/>
+            <rect x="96" y="38" width="9" height="20" rx="2" fill="none" stroke="#d4537e" stroke-width="1.6"/>
+            <line x1="36" y1="38" x2="68" y2="24" stroke="#5b8cff" stroke-width="1.4"/>
+            <!-- amber blips = remaining problems -->
+            <circle cx="72" cy="58" r="4" fill="none" stroke="#e6a23c" stroke-width="2"/>
+            <circle cx="96" cy="30" r="4" fill="none" stroke="#e6a23c" stroke-width="2"/>
+            <rect x="46" y="14" width="60" height="44" rx="3" fill="none" stroke="#5b8cff" stroke-width="1" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- RIGHT INSPECTOR ---------- -->
+    <aside class="inspector">
+      <div class="insp-head">
+        <div class="insp-eyebrow">Step 2 · Connect points</div>
+        <div class="insp-title">Fix worklist</div>
+        <div class="insp-sub">Work each item to zero, then the meter turns green.</div>
+      </div>
+
+      <div class="insp-scroll">
+
+        <!-- PROBLEMS WORKLIST — the spine of the workflow -->
+        <div class="section">
+          <div class="section-head">
+            <h4>Needs attention · 3</h4>
+            <div class="filterchips">
+              <span class="fchip on">All</span>
+              <span class="fchip">Loose</span>
+              <span class="fchip">Source</span>
+            </div>
+          </div>
+
+          <!-- selected problem -->
+          <div class="problem sel">
+            <div class="pico amber"><i class="ti ti-point"></i></div>
+            <div class="pbody">
+              <div class="ptitle">Loose pin · <code style="font-family:var(--mono)">C1.1</code></div>
+              <div class="pmeta">Capacitor top terminal on its own net</div>
+            </div>
+            <i class="ti ti-target pjump"></i>
+          </div>
+
+          <div class="problem">
+            <div class="pico amber"><i class="ti ti-point"></i></div>
+            <div class="pbody">
+              <div class="ptitle">Loose pin · <code>R2.2</code></div>
+              <div class="pmeta">Resistor bottom never reaches ground</div>
+            </div>
+            <i class="ti ti-target pjump"></i>
+          </div>
+
+          <div class="problem">
+            <div class="pico red"><i class="ti ti-plug-x"></i></div>
+            <div class="pbody">
+              <div class="ptitle">Fragment · 2 pieces</div>
+              <div class="pmeta">C1 branch not joined to main loop</div>
+            </div>
+            <i class="ti ti-target pjump"></i>
+          </div>
+
+          <!-- already resolved -->
+          <div class="resolved">
+            <div class="pico green"><i class="ti ti-check"></i></div>
+            <del>No source — add a voltage source</del>
+            <span style="margin-left:auto; font-size:10.5px;">V1 wired</span>
+          </div>
+        </div>
+
+        <!-- CONTEXT-SENSITIVE EDITOR — driven by the selected pin -->
+        <div class="section">
+          <div class="section-head">
+            <h4>Connect selected pin</h4>
+            <span class="muted" style="font-size:11px;">drag from pin too</span>
+          </div>
+
+          <div class="ctx-sel">
+            <span class="dot"></span>
+            <div>
+              <div class="cs-name">C1.1</div>
+              <div class="cs-meta">capacitor · top terminal</div>
+            </div>
+            <span class="cs-net">net&nbsp;7</span>
+          </div>
+
+          <span class="field-label">Connect to nearest valid pin</span>
+          <div class="search">
+            <i class="ti ti-search"></i>
+            <input type="text" placeholder="Search pins or nets…  (R2.2, junction, net 3)" value="">
+          </div>
+
+          <div class="pinlist">
+            <div class="pinopt recommend">
+              <span class="pin-dot" style="background:var(--net-a)"></span>
+              <span class="pin-name">node J3</span>
+              <span class="pin-tag">nearest · valid</span>
+              <span class="pin-dist">18 px</span>
+            </div>
+            <div class="pinopt">
+              <span class="pin-dot" style="background:var(--net-a)"></span>
+              <span class="pin-name">R1.2</span>
+              <span class="pin-dist">41 px</span>
+            </div>
+            <div class="pinopt invalid">
+              <span class="pin-dot" style="background:var(--net-b)"></span>
+              <span class="pin-name">C1.2</span>
+              <span class="pin-dist">same part</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="actbtn connect"><i class="ti ti-plug-connected"></i> Connect to node J3</button>
+            <button class="actbtn"><i class="ti ti-arrows-join-2"></i> Join nets</button>
+            <button class="actbtn danger"><i class="ti ti-unlink"></i> Disconnect</button>
+          </div>
+
+          <div class="hintbox">
+            <i class="ti ti-bulb"></i>
+            <span>Connecting <code style="font-family:var(--mono);color:var(--txt)">C1.1 → J3</code> merges 2 pieces into 1. The circuit becomes simulatable.</span>
+          </div>
+        </div>
+
+        <!-- COMPONENT VALUES — single canonical place, in context -->
+        <div class="section" style="border-bottom:none;">
+          <div class="section-head">
+            <h4>Values · R / C / L / V</h4>
+            <span class="muted" style="font-size:11px;">4 editable</span>
+          </div>
+          <div class="val-row">
+            <span class="vdot" style="background:var(--net-a)"></span>
+            <span class="vname">V1</span>
+            <input value="5" >
+          </div>
+          <div class="val-row">
+            <span class="vdot" style="background:var(--net-a)"></span>
+            <span class="vname">R1</span>
+            <input value="1k">
+          </div>
+          <div class="val-row">
+            <span class="vdot" style="background:var(--net-c)"></span>
+            <span class="vname">R2</span>
+            <input value="2.2k">
+          </div>
+          <div class="val-row">
+            <span class="vdot" style="background:var(--net-b)"></span>
+            <span class="vname">C1</span>
+            <input value="100n">
+            <span class="notag">no DC</span>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- ================= BOTTOM DOCK (progressively disclosed output) ================= -->
+  <div class="dock">
+    <div class="dock-tabs">
+      <span class="dtab on">Netlist</span>
+      <span class="dtab">Warnings <span style="color:var(--amber)">2</span></span>
+      <span class="dtab adv"><i class="ti ti-code"></i> Advanced · Raw JSON · Topology graph · Join check</span>
+    </div>
+    <div class="dock-body">
+      <div class="netlist">
+        <div class="nl-card-head">SPICE netlist — preview (updates live as you connect)</div>
+        <span class="nl-dim">* circuit gt_labels/047</span><br>
+        <span class="nl-comp">V1</span> <span class="nl-node">N1</span> <span class="nl-node">0</span> <span class="nl-dim">5</span><br>
+        <span class="nl-comp">R1</span> <span class="nl-node">N1</span> <span class="nl-node">N3</span> <span class="nl-dim">1k</span><br>
+        <span class="nl-comp">R2</span> <span class="nl-node">N3</span> <span class="nl-blocked"><i class="ti ti-alert-triangle" style="font-size:12px"></i>?</span> <span class="nl-dim">2.2k&nbsp;&nbsp;; loose pin R2.2</span><br>
+        <span class="nl-comp">C1</span> <span class="nl-blocked"><i class="ti ti-alert-triangle" style="font-size:12px"></i>?</span> <span class="nl-node">N5</span> <span class="nl-dim">100n&nbsp;&nbsp;; loose pin C1.1</span><br>
+        <span class="nl-dim">.op</span><br>
+        <span class="nl-dim">.end</span>
+      </div>
+      <div class="dock-side">
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Nets</div><div class="s-val">4</div></div>
+          <div class="stat"><div class="s-label">Pieces</div><div class="s-val warn">2</div></div>
+          <div class="stat"><div class="s-label">Parts</div><div class="s-val">14</div></div>
+          <div class="stat"><div class="s-label">Loose</div><div class="s-val warn">3</div></div>
+        </div>
+        <div class="hintbox" style="margin-top:2px;">
+          <i class="ti ti-lock" style="color:var(--txt-3)"></i>
+          <span class="muted">Simulation unlocks at <b style="color:var(--txt-2)">1 piece · 0 loose</b>.</span>
+        </div>
+      </div>
+    </div>
+    <div class="legend-foot">
+      <span style="color:var(--txt-2)">Legend</span>
+      <span class="lg"><span class="d" style="background:var(--green)"></span> connected end</span>
+      <span class="lg"><span class="d" style="background:var(--red)"></span> dead end</span>
+      <span class="lg"><span class="ring"></span> loose pin</span>
+      <span class="lg"><span class="d" style="background:var(--net-a)"></span> net colour = electrical node</span>
+      <span class="lg" style="margin-left:auto;"><span style="border-top:2px dashed var(--accent); width:16px; display:inline-block; height:0;"></span> proposed connection</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Tiny, optional enhancers. Markup already renders correctly with JS off.
+  (function () {
+    // Stepper: clicking a non-locked step moves the active highlight.
+    document.querySelectorAll('.step').forEach(function (s) {
+      if (s.classList.contains('locked')) return;
+      s.addEventListener('click', function () {
+        document.querySelectorAll('.step').forEach(function (x) {
+          if (!x.classList.contains('done')) x.classList.remove('active');
+        });
+        s.classList.add('active');
+      });
+    });
+    // Problems worklist: clicking selects (simulates pan-to-pin).
+    document.querySelectorAll('.problem').forEach(function (p) {
+      p.addEventListener('click', function () {
+        document.querySelectorAll('.problem').forEach(function (x) { x.classList.remove('sel'); });
+        p.classList.add('sel');
+      });
+    });
+    // Layer toggles.
+    document.querySelectorAll('.layer').forEach(function (l) {
+      l.addEventListener('click', function () { l.classList.toggle('on'); });
+    });
+    // Dataset tabs.
+    document.querySelectorAll('.ds-tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.ds-tab').forEach(function (x) { x.classList.remove('on'); });
+        t.classList.add('on');
+      });
+    });
+    // Dock tabs.
+    document.querySelectorAll('.dtab').forEach(function (t) {
+      if (t.classList.contains('adv')) return;
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.dtab').forEach(function (x) { if(!x.classList.contains('adv')) x.classList.remove('on'); });
+        t.classList.add('on');
+      });
+    });
+  })();
+</script>
