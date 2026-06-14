@@ -81,6 +81,48 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 - CLI: `wire-vlm classify`, `wire-vlm sweep`, `wire-vlm audit-pipeline`
 - Doc: `docs/vlm-experiments.md`
 
+## Component Detection Model (Jun 2026)
+
+**Location:** `models/component_detection/best.pt` (46MB, not in git — see .gitignore)
+
+**Model:** YOLO26M-OBB, trained on CGHD dataset (same dataset used for wire detection pipeline)
+- **16 classes** (merged from 61 original — class merging was critical)
+- **2,652 train / 468 val** images, 85/15 random split
+- **Excluded drafter_0** (different drawing style from all other drafters)
+
+### Performance (Best: Run 2)
+| Metric | Value |
+|--------|-------|
+| mAP50 | **88.5%** |
+| mAP50-95 | 78.3% |
+| Precision | 95.6% |
+| Recall | 88.6% |
+| Epochs | 200 |
+
+### Per-Class Recall
+- **Perfect:** operational_amplifier (100%)
+- **Strong (>90%):** inductor, voltage_source, capacitor, transistor, resistor, diode, integrated_circuit, other
+- **Moderate (80-90%):** gnd, text, junction, terminal, switch, vss
+- **Weak (<80%):** crossover (70.7%) — crossing wires visually ambiguous
+
+### Training Config
+- Augmentations: mosaic=1.0, mixup=0.15, degrees=10, translate=0.2, scale=0.5, shear=2, fliplr=0.5, flipud=0.1, erasing=0.4, hsv, randaugment
+- Optimizer: AdamW, lr0=0.001, cos_lr=true
+- Image size: 1024, Batch: 17
+
+### Key Learnings
+1. **Class merging:** 61→16 classes improved mAP from ~50% to 85%
+2. **Augmentations:** +3.5% mAP over no-augmentation baseline
+3. **M model > L model:** Smaller model generalizes better on this dataset size with augmentations
+4. **Crossover remains hardest:** Two crossing wires look identical to regular wires
+
+### Usage
+```python
+from ultralytics import YOLO
+model = YOLO('models/component_detection/best.pt')
+results = model('path/to/image.jpg', task='obb')
+```
+
 ## Common Errors Agents Make
 1. ✗ Skipping occlusion entirely → FP count explodes
 2. ✗ Filling with white (255) instead of median color → edges become wires
