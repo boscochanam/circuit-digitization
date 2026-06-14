@@ -4,33 +4,39 @@ The wire detection pipeline **WILL NOT WORK** without these three preprocessing 
 
 ## MANDATORY Preprocessing (in order)
 
-### 1. HDC Label Matching
-Each image needs YOLO-OBB component labels from roboflow_test2.
+### 1. Component Detection (Single Source of Truth)
 
-**🚨 CRITICAL — Exact-Match Label Selection (Jun 2026):**
-Each Roboflow image has **multiple** `.rf.<hash>` versions — some augmented, some pixel-identical to the original. `find_roboflow_image()` returns the first match (sorted by filename), which may be augmented. Its labels are in a **different coordinate space** and will produce wrong occlusion polygons on the original image.
+**🚨 CRITICAL — Use the trained model for all component detection.**
 
-**Always use `find_exact_match_roboflow()`** from `wire_detection/data/dataset.py` (or `find_exact_match()` from `expanded_benchmark.py`). This finds the Roboflow version with pixel error < 0.01 (identical to original) and returns its labels. These labels are in the **same coordinate space** as the original image, so occlusion polygons are correct.
+The trained YOLO model at `models/component_detection/yolo26m_obb_16class_aug.pt` is the **single source of truth** for component labels. This replaces Roboflow's pre-trained model.
 
 ```python
-# CORRECT — exact-match labels (same coord space as original)
-from wire_detection.data.dataset import find_exact_match_roboflow
-result = find_exact_match_roboflow(orig_path, hdc_base=HDC_BASE)
-if result:
-    rob_path, label_path = result
-    components = ref.parse_components(label_path, w, h)
+from ultralytics import YOLO
 
-# WRONG — first-match labels (may be augmented, wrong coord space)
-from wire_detection.data.dataset import find_roboflow_image
-rob_path = find_roboflow_image(orig_path)  # may return augmented version!
+model = YOLO('models/component_detection/yolo26m_obb_16class_aug.pt')
+results = model('path/to/image.jpg', task='obb')
+
+# Extract component bounding boxes from results
+for result in results:
+    if result.obb:
+        for i in range(len(result.obb.cls)):
+            cls_id = int(result.obb.cls[i])
+            bbox = result.obb.xyxy[i].tolist()  # [x1, y1, x2, y2]
+            conf = float(result.obb.conf[i])
 ```
 
+**Why this matters:** Previous pipeline used Roboflow's pre-trained model (non-standard class IDs like 37, 14, 55). Our trained model has consistent 16-class labels that map directly to circuit components.
+
+**Legacy: Roboflow Label Matching (deprecated)**
+The Roboflow model at `roboflow_test2/` is kept for reference but should NOT be used for new work. If you must use it (e.g., for backward compatibility with existing eval scripts):
+
+- **Always use `find_exact_match_roboflow()`** from `wire_detection/data/dataset.py`
+- Each Roboflow image has multiple `.rf.<hash>` versions — some augmented, some pixel-identical
+- `find_roboflow_image()` returns the first match (may be augmented, wrong coordinate space)
 - Paths: `/home/claw/circuit-digitization/roboflow_test2/{train,valid,test}/labels/`
-- Augmented images: `/home/claw/circuit-digitization/roboflow_test2/{train,valid,test}/images/`
 - Images: `/home/claw/workspace/ground_truth/labels_few_annot/images/`
 - Labels: `/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images/`
 - Matches: **134 images** with both GT wire labels and HDC component labels (3,524 total wire annotations)
-- **28 of 30 poor images** have augmented Roboflow versions — using first-match labels causes incorrect occlusion
 
 ### 2. Component Occlusion  
 Fill each component polygon with **local median color** (NOT white, NOT black — use `np.median()` of local region).
@@ -125,16 +131,17 @@ results = model('path/to/image.jpg', task='obb')
 ```
 
 ## Common Errors Agents Make
-1. ✗ Skipping occlusion entirely → FP count explodes
-2. ✗ Filling with white (255) instead of median color → edges become wires
-3. ✗ Not cropping to ROI → scanner borders detected as wires  
-4. ✗ Forgetting coordinate offset after crop → lines in wrong position
-5. ✗ Using merge or length filter → 64 TPs destroyed
-6. ✗ Using old params (otsu, dilate=5, min_area=30, dedup_dist=12) → wrong pipeline
-7. ✗ Not matching HDC labels → no occlusion at all
-8. ✗ Using pixel-diff matching instead of prefix matching → only finds 23/134 images
-9. ✗ Using `find_roboflow_image()` (first-match) instead of `find_exact_match_roboflow()` → labels from augmented version applied to original image → wrong occlusion polygons. **Always use exact-match.**
-10. ✗ Using original GT image with first-match Roboflow labels → 28/30 poor images have augmented versions with different coordinate space. Use `find_exact_match_roboflow()` to get labels in the same coordinate space as the original.
+1. ✗ Using Roboflow model instead of trained model → wrong class IDs (37, 14, 55), inconsistent labels. **Use `models/component_detection/yolo26m_obb_16class_aug.pt`**
+2. ✗ Skipping occlusion entirely → FP count explodes
+3. ✗ Filling with white (255) instead of median color → edges become wires
+4. ✗ Not cropping to ROI → scanner borders detected as wires  
+5. ✗ Forgetting coordinate offset after crop → lines in wrong position
+6. ✗ Using merge or length filter → 64 TPs destroyed
+7. ✗ Using old params (otsu, dilate=5, min_area=30, dedup_dist=12) → wrong pipeline
+8. ✗ Not matching HDC labels → no occlusion at all
+9. ✗ Using pixel-diff matching instead of prefix matching → only finds 23/134 images
+10. ✗ Using `find_roboflow_image()` (first-match) instead of `find_exact_match_roboflow()` → labels from augmented version applied to original image → wrong occlusion polygons. **Always use exact-match.**
+11. ✗ Using original GT image with first-match Roboflow labels → 28/30 poor images have augmented versions with different coordinate space. Use `find_exact_match_roboflow()` to get labels in the same coordinate space as the original.
 
 ## Netlist / SPICE / Topology Pipeline
 
