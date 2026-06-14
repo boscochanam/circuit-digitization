@@ -24,7 +24,6 @@ LineDetection/
 ### Pipeline Module
 
 The core detection pipeline — a chain of independent stages. Each stage implements the `PipelineStage` ABC:
-
 ```python
 class PipelineStage(ABC):
     name: str
@@ -33,6 +32,30 @@ class PipelineStage(ABC):
 ```
 
 Stages are composed by the `Pipeline` class and built from config via `PipelineFactory`. See [Pipeline Overview](pipeline/overview.md).
+
+### Component Detection
+
+The component detection module uses a trained YOLO26M-OBB model as the single source of truth for component labels.
+
+**Model:** `models/component_detection/yolo26m_obb_16class_aug.pt`
+**HuggingFace:** [boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector)
+**Performance:** 88.5% mAP50, 88.6% recall on CGHD-1152 dataset
+
+**Usage:**
+```python
+from wire_detection.data.component_loader import load_components
+
+# Uses config from defaults.yaml (component_detection.source)
+components = load_components(image_path)
+```
+
+**Config toggle** (`wire_detection/config/defaults.yaml`):
+```yaml
+component_detection:
+  source: model  # "model" | "ground_truth" | "roboflow"
+  model_path: models/component_detection/yolo26m_obb_16class_aug.pt
+  confidence_threshold: 0.5
+```
 
 ### API Module
 

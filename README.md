@@ -97,20 +97,26 @@ anchor filter(endpoint_dist=12, link_dist=8) → Output Lines
 
 **Skipping any of these steps will break reproducibility. The pipeline produces garbage without them.**
 
-#### 1. HDC Label Matching
-Each circuit image needs its corresponding YOLO-OBB component labels from roboflow_test2. **Use filename prefix matching** (not pixel-difference) — HDC files have `.rf.XXXX` suffixes from Roboflow augmentation. Pixel-diff comparison only finds 23 of 134 images.
+#### 1. Component Detection
+
+Use the trained YOLO model for all component detection. The model is the **single source of truth**.
 
 ```python
-# Find matching HDC label by filename prefix
-for split in ["train", "valid", "test"]:
-    label_dir = HDC_BASE / split / "labels"
-    matches = sorted(label_dir.glob(f"{image_name}_jpg.rf.*.txt"))
-    if matches:
-        return matches[0]  # Labels are identical across augments
+from wire_detection.data.component_loader import load_components
+
+# Uses config from defaults.yaml (component_detection.source)
+components = load_components(image_path)
+
+# Or override source explicitly
+components = load_components(image_path, source="ground_truth")
 ```
 
+**Model:** `models/component_detection/yolo26m_obb_16class_aug.pt` (88.5% mAP50)
+**HuggingFace:** [boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector)
+**Dataset:** [CGHD-1152 (Kaggle)](https://www.kaggle.com/datasets/johannesbayer/cghd1152)
+
 #### 2. Component Occlusion
-Fill every HDC component polygon with the **local median pixel color**. This prevents component edges/text from producing false wire detections. Margin: 15% of bbox size, min 5px.
+Fill every component polygon with the **local median pixel color**. This prevents component edges/text from producing false wire detections. Margin: 15% of bbox size, min 5px.
 
 ```python
 for cls_id, polygon, (x1, y1, x2, y2) in components:
@@ -141,7 +147,7 @@ cropped = occluded_image[ry1:ry2, rx1:rx2]
   "sauvola_k": 0.285, "sauvola_window": 67, "close_kernel": 3,
   "ccl_min_area": 28, "endpoint_mode": "pca", "dedup_mode": "overlap",
   "dedup_angle": 12, "dedup_dist": 8,
-  "anchor_filter_enabled": true, "anchor_endpoint_dist": 12, "anchor_link_dist": 8
+  "anchor_filter_enabled": true, "anchor_endpoint_dist": 16, "anchor_link_dist": 8
 }
 ```
 **Do NOT use merge or length filter — both are proven harmful (destroy 64 TPs).**
