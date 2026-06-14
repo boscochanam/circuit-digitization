@@ -34,3 +34,8 @@ stage_params:
   dedup:
     angle_thresh: 10
     dist_thresh: 18
+
+component_detection:
+  source: model  # "model" | "ground_truth" | "roboflow"
+  model_path: models/component_detection/yolo26m_obb_16class_aug.pt
+  confidence_threshold: 0.5
