@@ -118,6 +118,8 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 
 **Location:** `models/component_detection/yolo26m_obb_16class_aug.pt` (46MB, not in git — see .gitignore)
 **SHA256:** `d700b33f90191968af9f7f2798fff5e90a3f1ea473b811adc241bc570987264d`
+**HuggingFace:** [boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector)
+**Dataset:** [CGHD-1152 (Kaggle)](https://www.kaggle.com/datasets/johannesbayer/cghd1152)
 
 **Model:** YOLO26M-OBB, trained on CGHD dataset (same dataset used for wire detection pipeline)
 - **16 classes** (merged from 61 original — class merging was critical)
