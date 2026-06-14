@@ -57,6 +57,33 @@ Crop to union of all component bounding boxes + 10px padding in all directions.
 - Anchor filter: endpoint_dist=**16**, link_dist=8
 - **NO merge, NO length filter** — both destroy TPs
 
+## Component Detection Config
+
+Toggle between component label sources via `wire_detection/config/defaults.yaml`:
+
+```yaml
+component_detection:
+  source: model  # "model" | "ground_truth" | "roboflow"
+  model_path: models/component_detection/yolo26m_obb_16class_aug.pt
+  confidence_threshold: 0.5
+```
+
+**Sources:**
+- `model` — Trained YOLO26M-OBB (default, single source of truth)
+- `ground_truth` — GT annotation files (for benchmarking/evaluation)
+- `roboflow` — Legacy Roboflow model (deprecated, emits warning)
+
+**Usage:**
+```python
+from wire_detection.data.component_loader import load_components
+
+# Uses config from defaults.yaml
+components = load_components(image_path)
+
+# Override source explicitly
+components = load_components(image_path, source="ground_truth")
+```
+
 ## Expanded Benchmark (134 images, all 36 configs)
 Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 
