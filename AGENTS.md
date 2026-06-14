@@ -144,12 +144,12 @@ The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netl
 
 ## Netlist / Joining (COMPLETE — `graph_rescue` is default)
 
-**Status:** Node joining is substantially complete. The endpoint-graph join
-(`graph_rescue`) is the default strategy and beats the original production join
-on **53/58 images** with 100% effective wire usage and 84% connectivity.
+**Status:** Node joining is substantially complete. `degree_budget`
+(graph_rescue + floating-pin recovery) is the promoted default strategy.
+Beats graph_rescue on **92/133 images** with 0 regressions.
 
 **Strategy:** `wire_detection/core/join_strategies.py` — 12+ composable strategies,
-registry-based. `DEFAULT_STRATEGY = "graph_rescue"`. Strategies compose:
+registry-based. `DEFAULT_STRATEGY = "degree_budget"`. Strategies compose:
 1. Pin localization — static OBB pins + DBSCAN clustering (SPICE-active types)
 2. Wire conditioning — optional end-extension
 3. Attach — which pins each wire-end connects to
@@ -167,16 +167,17 @@ registry-based. `DEFAULT_STRATEGY = "graph_rescue"`. Strategies compose:
 - **Join Check** UI tab (`JoinCheckPanel.tsx`, `/api/join_overlay`) — cycle strategies, view metrics + overlays
 
 **Key numbers (134-image GT set, fresh best_candidate_v4 detection):**
-| Strategy | balanced | composite | wires-used% | nets/comp | self-loop | floating |
-|----------|----------|-----------|-------------|-----------|-----------|----------|
-| **graph_rescue** (default) | **0.1247** | 0.1176 | **97.7** | 0.123 | 233 | 276 |
-| graph_scale | 0.1261 | 0.1163 | 97.5 | 0.157 | 96 | 454 |
-| graph_dir_30 | 0.1262 | 0.1128 | 97.6 | 0.153 | 110 | 409 |
-| graph_full | 0.1262 | 0.1195 | 97.7 | 0.120 | 233 | 288 |
-| junction_extend_n1 | 0.1954 | 0.1096 | 83.4 | 0.142 | 72 | 415 |
-| production (old) | 0.2504 | 0.1140 | 73.0 | 0.119 | 224 | 266 |
+| Strategy | balanced | composite | wires-used% | nets/comp | self-loop | floating | % Connected |
+|----------|----------|-----------|-------------|-----------|-----------|----------|-------------|
+| **degree_budget** (default) | **0.3100** | 0.2861 | **99.3** | 0.158 | 433 | 948 | **81.9%** |
+| graph_rescue | 0.3732 | 0.3718 | 99.4 | 0.117 | 208 | 1629 | 68.8% |
+| graph_scale | 0.3691 | 0.3635 | 99.5 | 0.135 | 77 | 1724 | 67.0% |
+| graph_dir_30 | 0.3697 | 0.3632 | 99.5 | 0.131 | 85 | 1709 | 67.3% |
+| graph_full | 0.3747 | 0.3739 | 99.4 | 0.116 | 207 | 1641 | 68.6% |
+| junction_extend_n1 | 0.4411 | 0.3483 | 83.2 | 0.143 | 45 | 1690 | 68.0% |
+| production (old) | 0.4738 | 0.3299 | 77.1 | 0.109 | 441 | 1175 | 77.5% |
 
-Graph strategies dominate the top 5. `graph_rescue` uses 97.7% of wires (vs production's 73%) while keeping low over-merge.
+`degree_budget` = graph_rescue + floating-pin recovery. +13.1pp connectivity over graph_rescue, 0 regressions.
 
 Full details: `docs/research/join-verification.md`
 
