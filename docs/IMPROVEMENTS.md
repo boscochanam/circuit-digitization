@@ -3,17 +3,29 @@
 > **For next agent:** This is a temp scratchpad of validated improvement leads.
 > Real + synthetic benchmarks are complete. These are ranked by expected impact.
 
-> **STATUS UPDATE — degree_budget PROMOTED to default join.** Items #1 (self-loops)
-> and #2 (wire tracking) are fixed AND validated on real images (40-image subset):
-> self-loops 4.4 → **1.38** (now below graph_rescue's 1.82), wire coverage 0% →
-> **83%** (matches graph_rescue's 85%), connectivity **+16.5%** with *fewer*
-> floating components. degree_budget_completion was moved to
-> `wire_detection/core/completion.py`, registered as the `degree_budget` join
-> strategy, and is now `DEFAULT_STRATEGY`. graph_rescue stays as fallback
-> (`?strategy=graph_rescue`). Caveat: connectivity gain still lacks net-level GT
-> (#20), but real self-loops + floating both *dropped*, which is consistent with
-> recovering real connections rather than over-merging. Run the full 153-image
-> bench to confirm the subset numbers.
+> **STATUS — degree_budget is the PROMOTED default join, fully validated.** Items
+> #1 (self-loops) and #2 (wire tracking) are fixed, and the base now applies
+> graph_rescue's 12px extend, so `degree_budget = graph_rescue + completion`
+> (strictly additive). **Full real bench** (`bench_degree_budget.py`, 134 of 153
+> images): **0 regressions** (114 improved / 20 same), connectivity 63.1% →
+> **88.6%**, self-loops **1.37 = graph_rescue** (down from pre-fix 4.4), wire
+> coverage **87% = graph_rescue**. Synthetic: clean F1 = 1.0, mean-err F1 0.969 vs
+> graph_rescue 0.944. Code in `wire_detection/core/completion.py`, registered as
+> `degree_budget`, now `DEFAULT_STRATEGY` (graph_rescue stays as
+> `?strategy=graph_rescue`). See **AGENTS.md** for the production-pipeline join
+> table — its absolute % differ (component source = trained model vs the HDC-label
+> bench here), but both show **0 regressions** and degree_budget dominant. Residual:
+> connectivity gain still lacks net-level GT (#20), but self-loops, floating, and
+> giant-nets all stayed at/below graph_rescue — consistent with recovering real
+> connections, not over-merging.
+>
+> **Sweep fix (double-extend):** the registry entry *also* carried `extend=12`, so
+> via `run_strategy` (the API + `--compare`) the base wires were extended twice
+> (24px) -> over-merge: clean wheatstone fell to F1 0.889 and self-loops/giant-nets
+> inflated. (The direct-call bench never hit it, so the bug was production-only.)
+> Removed the registry extend; `degree_budget_completion()` keeps its single 12px.
+> A new guard test (`test_degree_budget_clean_via_production_pins`) checks clean
+> recovery through the discovered-pins path so this cannot recur.
 
 ---
 
@@ -35,18 +47,18 @@ complete to a given net. The other pin must find a different net.
 - Connectivity: should stay at 83.8% (real), 0.970 (synthetic)
 - Wire coverage: should stay ~82% (real)
 
-**File (corrected):** `wire_detection/synthgt/candidate_joins.py` → `degree_budget_completion()`.
-NOT `core/joining.py` — degree_budget lives in the synthgt module; it was evaluated
-on real data but never moved to core. So "promote to default" (#3) also requires
-registering it as a core join strategy first — that step is NOT yet done.
+**File:** `wire_detection/core/completion.py` → `degree_budget_completion()` (moved
+here from the synthgt module during promotion; `synthgt/candidate_joins.py`
+re-exports it). Registered as the `degree_budget` core join strategy and is now
+`DEFAULT_STRATEGY` — core registration is **DONE**.
 
 **✅ DONE (synthetic-validated):** added a self-loop guard — the completion
 b-matching refuses to merge two nets that already share a component (one pin per
 component per net), and skips any match that would. Synthetic self-loops/image
 0.37 → **0.15** at L4 (now *below* graph_rescue's 0.17); mean-err F1 unchanged at
-0.972; connectivity 99–100%. **✅ Real-validated** (40-image subset, gt153 + hdc):
-self-loops 4.4 → **1.38** (below graph_rescue's 1.82), connectivity +16.5%,
-floating components 7.75 → 4.60. Target (4.4 → ~1–2) met.
+0.972; connectivity 99–100%. **✅ Real-validated (full 134-image bench):**
+self-loops 4.4 → **1.37** (= graph_rescue, was ~2x above pre-fix), connectivity
+63.1% → 88.6%, floating 8.09 → 2.61, **0 regressions**. Target met.
 
 ---
 
@@ -66,8 +78,9 @@ and carries each base node's wire indices onto the final node its pins landed in
 `degree_budget_completion` passes its graph_rescue base through. Completion edges
 are wireless by nature (inferred, like a manual pin-to-pin merge) and add none.
 Synthetic `pct_wires_used` 0% → **100%** (matches graph_rescue) at every error
-level. **✅ Real-validated** (40-image subset): `pct_wires_used` 0% → **83.4%**,
-matching graph_rescue's 84.5% (target ~82%).
+level. **✅ Real-validated (full 134-image bench):** `pct_wires_used` 0% →
+**87.2%**, exactly matching graph_rescue (since the base now uses the same
+12px-extended wires).
 
 ---
 
