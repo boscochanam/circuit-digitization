@@ -66,10 +66,45 @@ INERT_TYPES = {"junction", "terminal", "gnd", "antenna", "probe", "crossover", "
 # ── attach rules: given an endpoint, which pins does the wire tie? ──
 
 def attach_all(ep, pins, radius, components=None):
+    """Return every pin within *radius* pixels of the endpoint.
+
+    This is the production (over-merging) attach rule: a wire endpoint grabs
+    ALL pins in range, which can merge unrelated components that happen to be
+    close together.  Used as a baseline to compare against stricter rules.
+
+    Args:
+        ep: Wire endpoint coordinates as (x, y).
+        pins: List of ComponentPin objects to consider.
+        radius: Maximum Euclidean distance (pixels) from endpoint to pin.
+        components: Unused by this rule; accepted for API uniformity with
+            other attach functions that need the component list.
+
+    Returns:
+        List of ComponentPin objects whose position is within *radius* of *ep*.
+    """
     return [p for p in pins if math.hypot(ep[0] - p.x, ep[1] - p.y) <= radius]
 
 
 def attach_nearest_k(ep, pins, radius, k, components=None):
+    """Return up to *k* nearest pins within *radius* of the endpoint.
+
+    A stricter alternative to ``attach_all`` that limits how many pins a wire
+    endpoint can grab, reducing over-merge at the cost of potentially leaving
+    genuine junctions unconnected when k is too low.
+
+    Args:
+        ep: Wire endpoint coordinates as (x, y).
+        pins: List of ComponentPin objects to consider.
+        radius: Maximum Euclidean distance (pixels) from endpoint to pin.
+            Pins farther than this are excluded regardless of *k*.
+        k: Maximum number of pins to return.  If fewer than *k* pins are
+            within *radius*, returns however many exist.
+        components: Unused by this rule; accepted for API uniformity.
+
+    Returns:
+        List of at most *k* ComponentPin objects, sorted by ascending
+        distance from *ep*.
+    """
     near = [(math.hypot(ep[0] - p.x, ep[1] - p.y), p) for p in pins]
     near = sorted((dp for dp in near if dp[0] <= radius), key=lambda dp: dp[0])
     return [p for _d, p in near[:k]]
@@ -338,10 +373,41 @@ DEFAULT_STRATEGY = "degree_budget"
 
 
 def list_strategies():
+    """Return a summary list of all registered join strategies.
+
+    Each entry contains 'name' (machine key), 'label' (human-readable), and
+    'desc' (one-line description).  The order matches ``STRATEGIES`` and is
+    used by the UI and experiment CLI to present options.
+
+    Returns:
+        List of dicts with keys 'name', 'label', 'desc'.
+    """
     return [{"name": s["name"], "label": s["label"], "desc": s["desc"]} for s in STRATEGIES]
 
 
 def _build_with_pins(s, wires, components, pins):
+    """Dispatch to the correct netlist builder for a strategy configuration.
+
+    Routes to one of five builder backends based on ``s["kind"]``:
+
+    - **production**: ``build_netlist`` — the legacy all-within-radius merge.
+    - **mutual**: ``build_mutual`` — symmetric nearest-endpoint attach.
+    - **graph**: ``build_endpoint_graph`` — unified endpoint-graph model.
+    - **completion**: ``degree_budget_completion`` — graph_rescue + floating-pin recovery.
+    - **all / nearest / anchored / density**: ``build_variant`` with a lambda
+      wrapping the corresponding ``attach_*`` function.
+
+    Args:
+        s: Strategy config dict from ``STRATEGIES``.  Must contain 'kind'
+            and 'radius'; may contain 'k', 'graph' kwargs, etc.
+        wires: List of ((x1,y1), (x2,y2)) wire endpoint pairs.
+        components: List of (cls_id, vertices, bbox) component tuples.
+        pins: Pre-built pin list (from ``make_pins`` or
+            ``make_pins_junction_aware``).
+
+    Returns:
+        A Netlist object with populated .nodes and .pin_to_node.
+    """
     radius, kind, k = s["radius"], s["kind"], s.get("k", 1)
     if kind == "production":
         return build_netlist(wires, components, pins, max_pin_dist=radius)
