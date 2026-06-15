@@ -36,6 +36,46 @@ def bbox_distance(ep: tuple[float, float], bbox: tuple[float, float, float, floa
     return math.hypot(ep[0] - cx, ep[1] - cy)
 
 
+def _point_to_segment_dist(px: float, py: float, ax: float, ay: float, bx: float, by: float) -> float:
+    """Minimum distance from point (px,py) to segment (ax,ay)-(bx,by)."""
+    dx, dy = bx - ax, by - ay
+    len_sq = dx * dx + dy * dy
+    if len_sq == 0:
+        return math.hypot(px - ax, py - ay)
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / len_sq))
+    cx = ax + t * dx
+    cy = ay + t * dy
+    return math.hypot(px - cx, py - cy)
+
+
+def obb_distance(ep: tuple[float, float], vertices: list[tuple[float, float]]) -> float:
+    """Minimum distance from a point to a rotated rectangle defined by 4 vertices.
+
+    If the point is inside the polygon the distance is 0.
+    Otherwise returns the minimum distance to any of the 4 edges.
+    """
+    px, py = ep
+    n = len(vertices)
+    # ---- winding-number point-in-polygon test (convex rect) ----
+    inside = False
+    for i in range(n):
+        x1, y1 = vertices[i]
+        x2, y2 = vertices[(i + 1) % n]
+        if ((y1 > py) != (y2 > py)) and (px < (x2 - x1) * (py - y1) / (y2 - y1) + x1):
+            inside = not inside
+    if inside:
+        return 0.0
+    # ---- min distance to edges ----
+    best = float("inf")
+    for i in range(n):
+        ax, ay = vertices[i]
+        bx, by = vertices[(i + 1) % n]
+        d = _point_to_segment_dist(px, py, ax, ay, bx, by)
+        if d < best:
+            best = d
+    return best
+
+
 def assignment_radius(bbox: tuple[float, float, float, float], tau_pin: float) -> float:
     """Generous assignment radius: max(tau_pin, 0.5 × component diagonal)."""
     x1, y1, x2, y2 = bbox
@@ -59,7 +99,11 @@ def assign_endpoint_to_component(
     best_dist = float("inf")
     for ci, comp in enumerate(components):
         bbox = comp[2]
-        d = bbox_distance(ep, bbox)
+        vertices = comp[1]
+        if vertices is not None and len(vertices) == 4:
+            d = obb_distance(ep, vertices)
+        else:
+            d = bbox_distance(ep, bbox)
         r = assignment_radius(bbox, tau_pin)
         if d <= r and d < best_dist:
             best_dist = d
@@ -73,39 +117,19 @@ def pick_pin_for_component(
     comp_bbox: tuple[float, float, float, float],
     pins: list,
 ) -> int | None:
-    """Determine which pin (0 or 1) an endpoint connects to, based on geometry.
+    """Determine which pin (0 or 1) an endpoint connects to.
 
-    Uses the same logic as join_graph.py Step 2a:
-    - Horizontal component (w > h): pin 0 on left, pin 1 on right
-    - Vertical component (h > w): pin 0 on top, pin 1 on bottom
-    - Square: pin 0 on left, pin 1 on right (horizontal bias)
-    - Falls back to nearest pin if no pin with target index found
+    Uses nearest-pin routing: the endpoint joins whichever pin of this
+    component is closest in Euclidean distance.  This replaces the old
+    left/right/top/bottom geometric heuristic which broke when wires
+    approached from a direction the heuristic didn't expect (e.g. a
+    vertically-wired capacitor classified as "horizontal" because w > h,
+    causing both endpoints to route to the same pin).
     """
-    x1, y1, x2, y2 = comp_bbox
-    comp_cx = (x1 + x2) / 2.0
-    comp_cy = (y1 + y2) / 2.0
-    comp_w = x2 - x1
-    comp_h = y2 - y1
-
-    # Determine target pin index based on geometry
-    if comp_w > comp_h:
-        target_pin_idx = 0 if ep[0] < comp_cx else 1
-    elif comp_h > comp_w:
-        target_pin_idx = 0 if ep[1] < comp_cy else 1
-    else:
-        target_pin_idx = 0 if ep[0] < comp_cx else 1
-
-    # Find pins for this component
     comp_pins = [p for p in pins if p.component_idx == comp_idx]
     if not comp_pins:
         return None
 
-    # Try to find pin with target index
-    for p in comp_pins:
-        if p.pin_idx == target_pin_idx:
-            return target_pin_idx
-
-    # Fallback: nearest pin
     nearest = min(comp_pins, key=lambda p: math.hypot(ep[0] - p.x, ep[1] - p.y))
     return nearest.pin_idx
 

@@ -269,6 +269,30 @@ def build_endpoint_graph(
                 if bk is not None:
                     uf.union(ekey(wi, end), bk)
 
+    # --- degree-based pin pruning: for each component with >2 pins, keep only
+    # the 2 pins that have the strongest wire-endpoint connections.  The extra
+    # OBB-edge-midpoint pins (needed so the join CAN pick the right pair) must
+    # not leak into the netlist where they'd create spurious short-circuits. ---
+    comp_pin_counts = defaultdict(list)  # comp_idx → [pin]
+    for p in pins:
+        comp_pin_counts[p.component_idx].append(p)
+    for ci, cpins in comp_pin_counts.items():
+        if len(cpins) <= 2:
+            continue
+        # Score each pin by the number of wire-endpoint nodes in its UF set
+        scores = []
+        for p in cpins:
+            root = uf.find(pkey(p))
+            # count unique wire endpoints sharing this root
+            n_eps = sum(1 for wi, end, _ in eps if uf.find(ekey(wi, end)) == root)
+            scores.append((n_eps, p.pin_idx, p))
+        scores.sort(reverse=True)  # most-connected first
+        drop = scores[2:]  # everything beyond the top-2
+        for _, _, p in drop:
+            # Disconnect the dropped pin from the UF so it doesn't end up in a net
+            pk = pkey(p)
+            uf.parent[pk] = pk  # isolate: make it its own root (no wire endpoint shares it)
+
     # project onto pins → nets
     groups = defaultdict(list)
     for p in pins:

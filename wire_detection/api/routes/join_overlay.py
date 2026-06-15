@@ -67,8 +67,8 @@ def _put(canvas, text, org, color, scale=0.40):
 def _render_all(gray, wires, components, pins, netlist, max_pin_dist):
     canvas = _dim(gray)
     for comp in components:
-        x1, y1, x2, y2 = comp[2]
-        cv2.rectangle(canvas, (x1, y1), (x2, y2), (70, 70, 55), 1)
+        pts = np.array(comp[1], dtype=np.int32).reshape((-1, 1, 2))
+        cv2.polylines(canvas, [pts], True, (70, 70, 55), 1, cv2.LINE_AA)
     nets = [n for n in netlist.nodes if len(n.pins) >= 2]
     for node in nets:
         for wi in node.wires:
@@ -88,8 +88,8 @@ def _render_all(gray, wires, components, pins, netlist, max_pin_dist):
 def _render_one(gray, wires, components, pins, netlist, node, max_pin_dist, rank, total):
     canvas = _dim(gray)
     for comp in components:
-        x1, y1, x2, y2 = comp[2]
-        cv2.rectangle(canvas, (x1, y1), (x2, y2), (70, 70, 55), 1)
+        pts = np.array(comp[1], dtype=np.int32).reshape((-1, 1, 2))
+        cv2.polylines(canvas, [pts], True, (70, 70, 55), 1, cv2.LINE_AA)
     for ep1, ep2 in wires:
         cv2.line(canvas, ep1, ep2, (60, 60, 60), 1, cv2.LINE_AA)
     extra = 0
@@ -109,8 +109,8 @@ def _render_one(gray, wires, components, pins, netlist, node, max_pin_dist, rank
         comp = components[p.component_idx]
         tn = COMPONENT_NAMES.get(comp[0], f"cls_{comp[0]}")
         comp_types[tn] = comp_types.get(tn, 0) + 1
-        x1, y1, x2, y2 = comp[2]
-        cv2.rectangle(canvas, (x1, y1), (x2, y2), C_PRIMARY, 2)
+        pts = np.array(comp[1], dtype=np.int32).reshape((-1, 1, 2))
+        cv2.polylines(canvas, [pts], True, C_PRIMARY, 2, cv2.LINE_AA)
         cv2.circle(canvas, (p.x, p.y), 6, C_PRIMARY, -1, cv2.LINE_AA)
         cv2.circle(canvas, (p.x, p.y), 6, (20, 20, 20), 1, cv2.LINE_AA)
         _put(canvas, f"{tn[:8]}.{p.pin_name}", (p.x + 7, p.y), C_PRIMARY, 0.42)

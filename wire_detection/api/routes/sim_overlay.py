@@ -129,8 +129,8 @@ async def sim_overlay(data: SimOverlayRequest):
 
         canvas = _dim(gray)
         for comp in components:
-            x1, y1, x2, y2 = comp[2]
-            cv2.rectangle(canvas, (x1, y1), (x2, y2), (70, 70, 55), 1)
+            pts = np.array(comp[1], dtype=np.int32).reshape((-1, 1, 2))
+            cv2.polylines(canvas, [pts], True, (70, 70, 55), 1, cv2.LINE_AA)
         GREY = (120, 120, 120)
         for n in netlist.nodes:
             if not n.pins:

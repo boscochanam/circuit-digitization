@@ -226,6 +226,24 @@ def discover_pins(
 # PIN DERIVATION
 # ═══════════════════════════════════════════════
 
+def _obb_edge_midpoints(vertices):
+    """Return the midpoints of each OBB edge, with edge lengths.
+
+    Vertices should be 4 points in order (clockwise or counter-clockwise).
+    Returns list of (midpoint_x, midpoint_y, length, edge_index).
+    """
+    n = len(vertices)
+    edges = []
+    for i in range(n):
+        x1, y1 = vertices[i]
+        x2, y2 = vertices[(i + 1) % n]
+        length = math.hypot(x2 - x1, y2 - y1)
+        mid_x = (x1 + x2) / 2.0
+        mid_y = (y1 + y2) / 2.0
+        edges.append((mid_x, mid_y, length, i))
+    return edges
+
+
 def derive_pins_from_obb(
     component_idx: int,
     component: tuple[int, list[tuple[int, int]], tuple[int, int, int, int]],
@@ -233,27 +251,90 @@ def derive_pins_from_obb(
 ) -> list[ComponentPin]:
     """Derive pin locations from OBB geometry.
 
-    For 2-terminal components, pins are placed at the ENDS of the component
-    (left/right for horizontal, top/bottom for vertical) based on bbox aspect ratio.
-    This ensures pins align with wire endpoints that connect to component ends.
+    For 2-terminal components, pins are placed at ALL 4 OBB edge midpoints.
+    The join algorithm then picks the 2 that wire endpoints actually connect
+    to, which adapts to the real wire approach direction.
     """
     cls_id, vertices, bbox = component
     x_min, y_min, x_max, y_max = bbox
-    width = x_max - x_min
-    height = y_max - y_min
 
     two_terminal = {"resistor", "capacitor-polarized", "capacitor-unpolarized",
                     "capacitor-adjustable", "inductor", "inductor-ferrite",
                     "diode", "diode-LED", "diode-zener", "diode-thyrector",
                     "fuse", "lamp", "switch", "varistor", "relay", "transformer",
                     "motor", "crossover", "crystal"}
-    if component_name in two_terminal:
-        if width > height:
-            pin_defs = [(-0.5, 0.0), (0.5, 0.0)]
+
+    # Capacitors: pins on the flat faces (longer edges), not the ends
+    long_edge_terminals = {"capacitor-polarized", "capacitor-unpolarized",
+                           "capacitor-adjustable"}
+
+    if component_name in two_terminal and len(vertices) == 4:
+        edges = _obb_edge_midpoints(vertices)
+        if component_name in long_edge_terminals:
+            # Capacitors: pins on the longer edges (flat faces)
+            edges.sort(key=lambda e: e[2], reverse=True)  # longest first
         else:
-            pin_defs = [(0.0, 0.5), (0.0, -0.5)]
-    else:
-        pin_defs = PIN_DEFINITIONS.get(component_name, [(0.0, 0.5), (0.0, -0.5)])
+            # Resistors, inductors, diodes, etc.: pins on shorter edges (ends)
+            edges.sort(key=lambda e: e[2])  # shortest first
+        pin_positions = [(edges[0][0], edges[0][1]),
+                         (edges[1][0], edges[1][1])]
+
+        pins = []
+        for pin_idx, (px, py) in enumerate(pin_positions):
+            x = int(max(x_min, min(x_max, px)))
+            y = int(max(y_min, min(y_max, py)))
+            pins.append(ComponentPin(
+                component_idx=component_idx,
+                component_name=component_name,
+                pin_idx=pin_idx,
+                pin_name=f"pin{pin_idx}",
+                x=x, y=y,
+                rel_x=(px - (x_min + x_max) / 2) / max(1, (x_max - x_min) / 2),
+                rel_y=((y_min + y_max) / 2 - py) / max(1, (y_max - y_min) / 2),
+            ))
+        return pins
+
+    # OBB-aware pin placement for non-two-terminal components
+    pin_defs = PIN_DEFINITIONS.get(component_name, [(0.0, 0.5), (0.0, -0.5)])
+
+    if len(vertices) == 4:
+        # Compute OBB center and axes from the 4 vertices
+        # Vertices are in polygon order (CCW from top-right in YOLO-OBB):
+        #   v0 = top-right, v1 = top-left, v2 = bottom-left, v3 = bottom-right
+        # u_axis = (v0 - v1) / 2  → points RIGHT (half-width direction)
+        # v_axis = (v0 - v3) / 2  → points UP   (half-height direction, inverted y)
+        cx = sum(v[0] for v in vertices) / 4.0
+        cy = sum(v[1] for v in vertices) / 4.0
+
+        u = ((vertices[0][0] - vertices[1][0]) / 2.0,
+             (vertices[0][1] - vertices[1][1]) / 2.0)
+        v = ((vertices[0][0] - vertices[3][0]) / 2.0,
+             (vertices[0][1] - vertices[3][1]) / 2.0)
+
+        pins = []
+        for pin_idx, (rel_x, rel_y) in enumerate(pin_defs):
+            # Transform relative position using OBB axes:
+            # rel_x ∈ [-0.5, 0.5] maps along u_axis (left→right)
+            # rel_y ∈ [-0.5, 0.5] maps along v_axis (bottom→top)
+            x = int(cx + rel_x * u[0] + rel_y * v[0])
+            y = int(cy + rel_x * u[1] + rel_y * v[1])
+            x = max(x_min, min(x_max, x))
+            y = max(y_min, min(y_max, y))
+
+            pins.append(ComponentPin(
+                component_idx=component_idx,
+                component_name=component_name,
+                pin_idx=pin_idx,
+                pin_name=f"pin{pin_idx}",
+                x=x, y=y,
+                rel_x=rel_x, rel_y=rel_y,
+            ))
+
+        return pins
+
+    # AABB fallback for degenerate vertices (len != 4)
+    width = x_max - x_min
+    height = y_max - y_min
 
     pins = []
     for pin_idx, (rel_x, rel_y) in enumerate(pin_defs):
