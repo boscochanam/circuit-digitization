@@ -16,6 +16,7 @@ dependencies = [
     "scikit-image>=0.26.0",
     "scikit-learn>=1.5",
     "scipy>=1.17.1",
+    "ultralytics>=8.4.67",
     "uvicorn>=0.46.0",
 ]
 

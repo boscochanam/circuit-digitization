@@ -109,6 +109,14 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 - **Median F1: 1.000**
 - **4 images** (3%) — F1 < 0.50 (dense circuits where large component occlusion eats wire endpoints)
 
+### Best Paper Showcase Examples (a16)
+Verified visually — clean wire detection, correct joins, good complexity range:
+- **C84_D2_P1** — 42 wires, 4 nets, 44 components, F1=1.000. Dense but clean. Best all-around showcase.
+- **C29_D2_P4** — 26 wires, 7 nets, 22 components, F1=1.000. Medium complexity, good variety.
+- **C34_D1_P1** — 19 wires, 4 nets, 24 components, F1=1.000. Simpler, easy to follow.
+- **C63_D2_P3** — 72 wires, F1=1.000. Max complexity stress test.
+- Visualization script: `~/workspace/ieee-paper/generate_candidates_v2.py`
+
 ## VLM Quality Assessment
 - Module: `wire_detection.vlm` — classify images by paper type via VLM or programmatic scores
 - CLI: `wire-vlm classify`, `wire-vlm sweep`, `wire-vlm audit-pipeline`
@@ -253,16 +261,13 @@ registry-based. `DEFAULT_STRATEGY = "degree_budget"`. Strategies compose:
 - `wire_detection/benchmark/netlist_viz.py` — image-grounded overlays (`_joins.png`) + per-net stepper
 - **Join Check** UI tab (`JoinCheckPanel.tsx`, `/api/join_overlay`) — cycle strategies, view metrics + overlays
 
-**Key numbers (134-image GT set, fresh best_candidate_v4 detection, post double-extend fix Jun 2026):**
+**Key numbers (134-image GT set, fresh best_candidate_v4 detection, post OBB/capacitor fix Jun 15 2026):**
 | Strategy | balanced | composite | wires-used% | nets/comp | self-loop | floating | giant |
 |----------|----------|-----------|-------------|-----------|-----------|----------|-------|
-| **degree_budget** (default) | **0.2679** | **0.2662** | 99.4 | 0.204 | 208 | 1069 | 115 |
-| graph_rescue | 0.3732 | 0.3718 | 99.4 | 0.117 | 208 | 1629 | 107 |
-| graph_scale | 0.3691 | 0.3635 | 99.5 | 0.135 | 77 | 1724 | 100 |
-| graph_dir_30 | 0.3697 | 0.3632 | 99.5 | 0.131 | 85 | 1709 | 105 |
-| graph_full | 0.3747 | 0.3739 | 99.4 | 0.116 | 207 | 1641 | 107 |
-| junction_extend_n1 | 0.4411 | 0.3483 | 83.2 | 0.143 | 45 | 1690 | 86 |
-| production (old) | 0.4738 | 0.3299 | 77.1 | 0.109 | 441 | 1175 | 109 |
+| **degree_budget** (default) | **0.2710** | **0.2689** | 99.4 | 0.213 | 213 | 1084 | 109 |
+| graph_scale | 0.3610 | 0.3584 | 99.5 | 0.149 | 62 | 1726 | 86 |
+| graph_dir_30 | 0.3613 | 0.3588 | 99.5 | 0.145 | 71 | 1711 | 94 |
+| graph_rescue | 0.3679 | 0.3676 | 99.4 | 0.124 | 213 | 1607 | 102 |
 
 `degree_budget` = graph_rescue + floating-pin recovery. Lowest balanced+composite, 0 regressions.
 
@@ -291,9 +296,17 @@ from wire_detection.core.component_assignment import (
 4. **Tests** should verify that both pipeline and visualization produce identical assignments
 
 **Assignment algorithm (must match everywhere):**
-- Distance from endpoint to bbox (0 if inside, else to nearest edge)
-- Assignment radius: `max(tau_pin, 0.5 × component diagonal)`
-- Pin selection: horizontal → left/right, vertical → top/bottom
+- Distance from endpoint to **OBB** (0 if inside rotated rect, else to nearest OBB edge)
+- Falls back to AABB distance when OBB vertices unavailable
+- Assignment radius: `max(tau_pin, 0.5 × component diagonal)` (still uses AABB diagonal)
+- Pin selection: nearest-pin Euclidean routing (`pick_pin_for_component`)
+
+**OBB changes (Jun 15 2026):**
+- `component_assignment.py`: `assign_endpoint_to_component` uses `obb_distance()` (point-to-rotated-rectangle) instead of `bbox_distance()` (AABB)
+- `netlist.py`: `derive_pins_from_obb` places pins at OBB edge midpoints:
+  - Two-terminal: capacitors use **longest** edges (flat faces), others use **shortest** edges (ends)
+  - Non-two-terminal: uses OBB axes instead of AABB dimensions
+- `join_graph.py`: degree-based pin pruning — for components with >2 pins (e.g. from 4-edge midpoint placement), keeps only the 2 most-connected pins to prevent spurious short-circuits
 
 **Known gotchas:**
 - `core/netlist.py` imports `sklearn` but `scikit-learn` is **missing from

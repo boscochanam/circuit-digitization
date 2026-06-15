@@ -409,8 +409,9 @@ async def current_overlay(data: SimOverlayRequest):
                 col = _TYPE_COLORS.get(comp_name[0], GREY)
             else:
                 col = GREY
-            cv2.rectangle(canvas, (x1, y1), (x2, y2), col, -1)
-            cv2.rectangle(canvas, (x1, y1), (x2, y2), (40, 40, 40), 1)
+            pts = np.array(comp[1], dtype=np.int32).reshape((-1, 1, 2))
+            cv2.fillPoly(canvas, [pts], col, cv2.LINE_AA)
+            cv2.polylines(canvas, [pts], True, (40, 40, 40), 1, cv2.LINE_AA)
 
             # Label significant currents (>1% of max)
             if ci > 0.01 * imax and imax > 0:

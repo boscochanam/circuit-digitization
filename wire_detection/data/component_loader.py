@@ -72,6 +72,10 @@ def load_components(
     Returns:
         List of (class_id, polygon_points, bounding_box) tuples.
         bounding_box is (x1, y1, x2, y2) in pixel coordinates.
+
+    Raises:
+        FileNotFoundError: If the model file is missing (model source only).
+        ValueError: If source is unknown or required args are missing.
     """
     if config is None:
         config = ComponentDetectionConfig()
@@ -82,23 +86,48 @@ def load_components(
         return _load_from_model(image_path, config)
     elif source == "ground_truth":
         if gt_label_path is None or image_w is None or image_h is None:
-            raise ValueError("gt_label_path, image_w, image_h required for ground_truth source")
+            raise ValueError(
+                f"gt_label_path, image_w, image_h required for ground_truth source "
+                f"(got gt_label_path={gt_label_path}, image_w={image_w}, image_h={image_h})"
+            )
         return _load_from_gt(gt_label_path, image_w, image_h)
     elif source == "roboflow":
         if rob_label_path is None or image_w is None or image_h is None:
-            raise ValueError("rob_label_path, image_w, image_h required for roboflow source")
+            raise ValueError(
+                f"rob_label_path, image_w, image_h required for roboflow source "
+                f"(got rob_label_path={rob_label_path}, image_w={image_w}, image_h={image_h})"
+            )
         return _load_from_roboflow(rob_label_path, image_w, image_h)
     else:
-        raise ValueError(f"Unknown source: {source}")
+        raise ValueError(
+            f"Unknown component detection source: {source!r}. "
+            f"Valid sources: 'model', 'ground_truth', 'roboflow'"
+        )
 
 
 def _load_from_model(
     image_path: str | Path,
     config: ComponentDetectionConfig,
 ) -> list[tuple[int, list[tuple[int, int]], tuple[int, int, int, int]]]:
-    """Load components using the trained YOLO model."""
+    """Load components using the trained YOLO model.
+
+    Returns empty list (with warning) for missing or unreadable images instead
+    of raising exceptions.  Model-not-found still raises so callers can
+    distinguish a missing model from a missing image.
+    """
     from ultralytics import YOLO
 
+    image_path = Path(image_path)
+
+    # --- Validate image exists ---
+    if not image_path.exists():
+        log.warning("Image not found: %s — returning empty component list", image_path)
+        return []
+    if not image_path.is_file():
+        log.warning("Image path is not a file: %s — returning empty component list", image_path)
+        return []
+
+    # --- Validate model exists (raise — callers must know) ---
     model_path = Path(config.model_path)
     if not model_path.exists():
         raise FileNotFoundError(
@@ -106,9 +135,23 @@ def _load_from_model(
             f"SHA256: d700b33f90191968af9f7f2798fff5e90a3f1ea473b811adc241bc570987264d"
         )
 
-    model = YOLO(str(model_path))
-    results = model(str(image_path), task="obb", conf=config.confidence_threshold)
+    try:
+        model = YOLO(str(model_path))
+    except Exception as exc:
+        log.error("Failed to load YOLO model from %s: %s", model_path, exc)
+        raise RuntimeError(f"Cannot load model {model_path}: {exc}") from exc
 
+    # --- Run inference ---
+    try:
+        results = model(str(image_path), task="obb", conf=config.confidence_threshold)
+    except Exception as exc:
+        log.warning(
+            "Inference failed on %s: %s — returning empty component list",
+            image_path, exc,
+        )
+        return []
+
+    # --- Parse results ---
     components = []
     for result in results:
         if result.obb is None:
@@ -123,7 +166,10 @@ def _load_from_model(
             polygon_pts = [(int(p[0]), int(p[1])) for p in polygon]
             components.append((cls_id, polygon_pts, (x1, y1, x2, y2)))
 
-    log.info(f"Model detected {len(components)} components in {Path(image_path).name}")
+    if not components:
+        log.info("No components detected in %s", image_path.name)
+    else:
+        log.info("Model detected %d components in %s", len(components), image_path.name)
     return components
 
 
@@ -132,28 +178,42 @@ def _load_from_gt(
     img_w: int,
     img_h: int,
 ) -> list[tuple[int, list[tuple[int, int]], tuple[int, int, int, int]]]:
-    """Load components from ground truth YOLO-OBB label file."""
+    """Load components from ground truth YOLO-OBB label file.
+
+    Returns empty list (with warning) for missing or unreadable labels.
+    """
     label_path = Path(label_path)
     if not label_path.exists():
+        log.warning("Label file not found: %s — returning empty component list", label_path)
+        return []
+    if not label_path.is_file():
+        log.warning("Label path is not a file: %s — returning empty component list", label_path)
         return []
 
-    components = []
-    with open(label_path) as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) != 9:
-                continue
-            cls_id = int(parts[0])
-            coords = [float(x) for x in parts[1:9]]
-            # Denormalize from YOLO format
-            xs = [int(coords[i] * img_w) for i in range(0, 8, 2)]
-            ys = [int(coords[i + 1] * img_h) for i in range(0, 8, 2)]
-            polygon = [(xs[i], ys[i]) for i in range(4)]
-            x1, y1 = min(xs), min(ys)
-            x2, y2 = max(xs), max(ys)
-            components.append((cls_id, polygon, (x1, y1, x2, y2)))
+    try:
+        components = []
+        with open(label_path) as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) != 9:
+                    continue
+                cls_id = int(parts[0])
+                coords = [float(x) for x in parts[1:9]]
+                # Denormalize from YOLO format
+                xs = [int(coords[i] * img_w) for i in range(0, 8, 2)]
+                ys = [int(coords[i + 1] * img_h) for i in range(0, 8, 2)]
+                polygon = [(xs[i], ys[i]) for i in range(4)]
+                x1, y1 = min(xs), min(ys)
+                x2, y2 = max(xs), max(ys)
+                components.append((cls_id, polygon, (x1, y1, x2, y2)))
+    except (ValueError, UnicodeDecodeError) as exc:
+        log.warning(
+            "Failed to parse label file %s: %s — returning empty component list",
+            label_path, exc,
+        )
+        return []
 
-    log.debug(f"GT loaded {len(components)} components from {label_path.name}")
+    log.debug("GT loaded %d components from %s", len(components), label_path.name)
     return components
 
 
