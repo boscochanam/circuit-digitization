@@ -127,6 +127,49 @@ class SpiceGenerator:
         netlist: Netlist | None = None,
         value_overrides: dict[str, str] | None = None,
     ) -> str:
+        """Generate a SPICE netlist from circuit component and netlist data.
+
+        Builds a runnable ngspice netlist by mapping detected circuit components
+        to SPICE device statements. The algorithm:
+
+        1. **Node remapping**: Maps internal node IDs to SPICE node names (GND →
+           "0", others → "N{id}"). Locates the ground node from any component
+           typed "gnd".
+
+        2. **Pin mapping**: Inverts the netlist structure into a
+           (component_idx, pin_idx) → node_id lookup so each component's pins
+           can be resolved to SPICE node names.
+
+        3. **Device emission**: For each component, resolves the SPICE prefix
+           (R/C/L for passives, V for sources, D for diodes, Q for transistors)
+           and emits the appropriate device line. Components without SPICE models
+           (ICs, motors, etc.) are skipped. Switches are modeled as tiny
+           resistors (0.001Ω). Diodes get DMOD/LEDMOD subcircuit models;
+           transistors get NPN/PNP models.
+
+        4. **Island energisation**: Uses union-find to detect disconnected
+           sub-circuits (islands). Injects 5V test sources (+ ground returns)
+           into islands that lack a voltage source, so every island has a DC
+           operating point solvable by ngspice.
+
+        5. **Grounding**: Adds ``.options rshunt=1e12`` so floating/degenerate
+           nodes from imperfect joins don't cause singular-matrix errors.
+
+        Args:
+            components: List of (cls_id, vertices, bbox) tuples from the
+                component detector. Each bbox is (x1, y1, x2, y2).
+            netlist: A Netlist object with .nodes (NetNode list) and
+                .pin_to_node mapping. If None, an empty netlist is assumed.
+            value_overrides: Optional dict mapping SPICE device names
+                (e.g. "R1", "C3") to human-readable value strings
+                (e.g. "10k", "4.7u") that override defaults.
+
+        Returns:
+            A complete SPICE netlist string (lines joined by newlines)
+            ready to write to a .cir file and simulate with ngspice.
+            Includes a header comment, device lines, .model statements,
+            .options, .op, and .end directives.
+        """
         if components is None:
             components = []
         if netlist is None:
