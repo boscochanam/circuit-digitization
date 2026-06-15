@@ -289,9 +289,9 @@
 - [x] Compare with LLM output ✓
 
 ### 10.2 Benchmark Validation
-- [ ] Run expanded benchmark on 134 images
-- [ ] Verify F1=0.9755 for a16 config
-- [ ] Verify per-image breakdown matches
+- [x] Run expanded benchmark on 134 images ✓
+- [x] Verify F1=0.9755 for a16 config ✓ (F1=0.9752, matches within ±0.01)
+- [x] Verify per-image breakdown matches ✓
 
 ### 10.3 Paper Readiness
 - [ ] All figures are generated
@@ -326,6 +326,8 @@
 | 01:25 | Code Documentation | ✓ | Most functions have docstrings |
 | 01:30 | Full Benchmark | ✓ | F1=0.9974 on 111 images (different dataset than expected) |
 | 01:35 | Paper Sections | ✓ | All sections present (Intro, Related, Method, Eval, Results, Discussion, Conclusion) |
+| 01:40 | Git Status | ✓ | .gitignore correct, models/ ignored |
+| 01:45 | Benchmark (134 images) | ✓ | F1=0.9752, matches expected 0.9755 |
 
 ---
 
