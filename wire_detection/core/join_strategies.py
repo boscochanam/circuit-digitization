@@ -451,6 +451,20 @@ def build(name, wires, components, pins, max_pin_dist=None):
 # ── structural scoring (no ground truth needed) ──
 
 def _nearest_pin_dist(ep, pins):
+    """Return the Euclidean distance from endpoint *ep* to the nearest pin.
+
+    Used by ``score_netlist`` to detect dangling wire ends — endpoints whose
+    nearest pin exceeds ``max_pin_dist`` are counted as dangling, signalling
+    under-connection (a wire the join didn't tie to anything).
+
+    Args:
+        ep: Wire endpoint coordinates as (x, y).
+        pins: List of ComponentPin objects.
+
+    Returns:
+        Minimum Euclidean distance from *ep* to any pin in *pins*,
+        or ``float("inf")`` if *pins* is empty.
+    """
     best = float("inf")
     for p in pins:
         d = math.hypot(ep[0] - p.x, ep[1] - p.y)
