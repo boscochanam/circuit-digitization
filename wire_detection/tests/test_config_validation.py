@@ -114,7 +114,7 @@ class TestValidConfigs:
         """String paths are coerced to Path objects."""
         cfg = DatasetConfig(key="x", path="/some/path", image_glob="*.png")
         assert isinstance(cfg.path, Path)
-        assert str(cfg.path) == "/some/path"
+        assert cfg.path == Path("/some/path")  # Path compare: OS-agnostic separators
 
     # --- SDGConfig ---
     def test_sdg_defaults(self):
