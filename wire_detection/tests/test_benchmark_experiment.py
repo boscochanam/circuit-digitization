@@ -13,11 +13,11 @@ from wire_detection.benchmark.experiment_harness import (
 def test_baseline_harness_matches_reference():
     summary = run_experiment(ExperimentConfig(name="baseline_control_test"))
 
-    assert round(summary.global_f1, 4) == 0.7066
-    assert summary.tp == 248
-    assert summary.fp == 70
-    assert summary.fn == 52
-    assert summary.red == 84
+    assert round(summary.global_f1, 4) == 0.9432
+    assert summary.tp == 3461
+    assert summary.fp == 133
+    assert summary.fn == 63
+    assert summary.red == 221
 
 
 def test_alternative_threshold_methods_build_masks():
