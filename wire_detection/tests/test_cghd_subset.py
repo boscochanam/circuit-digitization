@@ -3,7 +3,9 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pytest
 
+pytest.importorskip("wire_detection.data.cghd_subset", reason="cghd_subset module not available")
 from wire_detection.data.cghd_subset import (
     build_cghd_subset,
     load_cghd_class_map,

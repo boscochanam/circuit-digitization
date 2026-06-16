@@ -1007,7 +1007,11 @@ GT_LABELS_DIR = Path(
 )
 HDC_LABELS_BASE = Path(__file__).resolve().parents[2] / "roboflow_test2"
 
+_has_gt_data = GT_IMAGES_DIR.is_dir()
+_has_hdc_data = HDC_LABELS_BASE.is_dir()
 
+
+@pytest.mark.skipif(not _has_gt_data, reason="GT dataset not present")
 class TestDatasetImageCount:
     """Phase 5.1: verify ground-truth image directory has expected count."""
 
@@ -1019,6 +1023,7 @@ class TestDatasetImageCount:
         assert count < 2000, f"Unexpected image count {count}"
 
 
+@pytest.mark.skipif(not _has_gt_data, reason="GT dataset not present")
 class TestDatasetLabelCount:
     """Phase 5.1: verify ground-truth label directory has expected count."""
 
@@ -1030,6 +1035,7 @@ class TestDatasetLabelCount:
         assert count < 500, f"Unexpected label count {count}"
 
 
+@pytest.mark.skipif(not _has_gt_data, reason="GT dataset not present")
 class TestDatasetFilenameMatch:
     """Phase 5.1: each GT label file should have a matching image file."""
 
@@ -1061,6 +1067,7 @@ class TestDatasetFilenameMatch:
         assert len(missing) < len(jpg_files), "No images have matching labels"
 
 
+@pytest.mark.skipif(not _has_gt_data, reason="GT dataset not present")
 class TestDatasetLabelFormat:
     """Phase 5.1: verify YOLO-OBB label format (class_id + 8 normalized coords)."""
 
@@ -1107,6 +1114,7 @@ class TestDatasetLabelFormat:
         assert not empty, f"Empty label files: {empty}"
 
 
+@pytest.mark.skipif(not _has_gt_data, reason="GT dataset not present")
 class TestDatasetNoEmptyLabels:
     """Phase 5.1: no label file should be completely empty."""
 
@@ -1120,6 +1128,7 @@ class TestDatasetNoEmptyLabels:
         assert not empty_files, f"Empty label files: {empty_files}"
 
 
+@pytest.mark.skipif(not _has_hdc_data, reason="HDC dataset not present")
 class TestHDCLabelsExist:
     """Phase 5.1: verify HDC (component) labels exist in roboflow_test2."""
 

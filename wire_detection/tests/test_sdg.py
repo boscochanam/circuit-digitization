@@ -50,18 +50,20 @@ def test_background_noise():
 def test_export_yolov8_pose():
     lines = [((10, 20), (100, 200))]
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-        export_yolov8_pose(lines, (640, 640), f.name)
-        with open(f.name) as f2:
-            content = f2.read()
-        assert len(content) > 0
-        Path(f.name).unlink()
+        name = f.name
+    export_yolov8_pose(lines, (640, 640), name)
+    with open(name) as f2:
+        content = f2.read()
+    assert len(content) > 0
+    Path(name).unlink()
 
 
 def test_export_lines():
     lines = [((10, 20), (100, 200))]
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-        export_lines(lines, f.name)
-        with open(f.name) as f2:
-            content = f2.read()
-        assert "10 20 100 200" in content
-        Path(f.name).unlink()
+        name = f.name
+    export_lines(lines, name)
+    with open(name) as f2:
+        content = f2.read()
+    assert "10 20 100 200" in content
+    Path(name).unlink()
