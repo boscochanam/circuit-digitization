@@ -148,7 +148,7 @@ regression signal, with the real benchmark remaining the decisive setting.
     det/.style={box, draw=blue!70!black, fill=blue!8},
     pre/.style={box, draw=purple!70!black, fill=purple!8},
     wire/.style={box, draw=green!50!black, fill=green!10},
-    join/.style={box, draw=teal!70!black, fill=teal!10},
+    jnode/.style={box, draw=teal!70!black, fill=teal!10},
     sim/.style={box, draw=red!60!black, fill=red!8},
     arrow/.style={-{Latex[length=3mm,width=2mm]}, line width=1pt, draw=gray!75!black},
     group/.style={rounded corners=8pt, draw=#1!40, fill=#1!4, line width=0.8pt, inner sep=8pt},
@@ -159,8 +159,8 @@ regression signal, with the real benchmark remaining the decisive setting.
 \node[pre] (pre)    at (7.6,0)  {\textbf{Guided preprocessing}\\median occlusion\\+ ROI crop};
 \node[wire](wirex)  at (11.4,0) {\textbf{Wire extraction}\\Sauvola $\to$ CCL\\$\to$ PCA endpoints};
 
-\node[join](base)   at (3.8,-3) {\textbf{Endpoint-graph base}\\union-find + dead-end\\rescue};
-\node[join](budget) at (7.6,-3) {\textbf{Degree-budget completion}\\float-pin demands +\\min-cost matching};
+\node[jnode](base)   at (3.8,-3) {\textbf{Endpoint-graph base}\\union-find + dead-end\\rescue};
+\node[jnode](budget) at (7.6,-3) {\textbf{Degree-budget completion}\\float-pin demands +\\min-cost matching};
 \node[sim] (spice)  at (11.4,-3){\textbf{SPICE export}\\\texttt{ngspice}\\DC operating point};
 \node[io]  (output) at (15.0,-3){\textbf{Output}\\simulatable\\netlist};
 

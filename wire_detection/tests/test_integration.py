@@ -18,7 +18,9 @@ HDC_DIR = Path("/home/claw/circuit-digitization/roboflow_test2")
 HAND_DRAWN_IMAGES = sorted(HAND_DRAWN_DIR.glob("train/images/*.jpg"))
 HAND_DRAWN_LABELS = sorted(HAND_DRAWN_DIR.glob("train/labels/*.txt"))
 HAS_HAND_DRAWN = len(HAND_DRAWN_IMAGES) > 0
+HAS_HDC = HDC_DIR.is_dir() and any(HDC_DIR.glob("train/images/*.jpg"))
 skip_no_hand_drawn = pytest.mark.skipif(not HAS_HAND_DRAWN, reason="hand_drawn images not available locally")
+skip_no_hdc = pytest.mark.skipif(not HAS_HDC, reason="HDC dataset not available locally")
 
 BASELINE_CONFIG = {
     "stages": ["threshold", "invert", "dilate", "ccl", "contour_extract", "dedup", "length_filter"],
@@ -215,6 +217,7 @@ class TestDatasetRegistryE2E:
         except (KeyError, ValueError):
             pytest.skip("hand_drawn dataset not configured")
 
+    @skip_no_hdc
     def test_hdc_images_are_found(self):
         registry = DatasetRegistry()
         images = registry.list_images("hdc")
@@ -251,6 +254,7 @@ class TestAPI:
             pytest.skip("hand_drawn dataset not available")
         assert len(data) >= 1
 
+    @skip_no_hdc
     def test_list_endpoint_default(self, api_client):
         resp = api_client.get("/api/list")
         assert resp.status_code == 200
@@ -319,6 +323,7 @@ class TestAPI:
         assert "ccl" in stages
         assert "dedup" in stages
 
+    @skip_no_hdc
     def test_hdc_process(self, api_client):
         resp = api_client.post("/api/process", json={
             "img_idx": 0,

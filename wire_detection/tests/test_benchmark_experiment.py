@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
+from pathlib import Path
 
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig,
@@ -9,7 +11,10 @@ from wire_detection.benchmark.experiment_harness import (
     run_experiment,
 )
 
+_has_hdc_data = Path("/home/claw/circuit-digitization/roboflow_test2").is_dir()
 
+
+@pytest.mark.skipif(not _has_hdc_data, reason="HDC dataset not present")
 def test_baseline_harness_matches_reference():
     summary = run_experiment(ExperimentConfig(name="baseline_control_test"))
 
