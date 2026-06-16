@@ -65,7 +65,7 @@ def annotate_panel(img: np.ndarray, title: str, subtitle: str) -> np.ndarray:
     return np.vstack([banner, img])
 
 
-def resize_panel(img: np.ndarray, width: int = 220) -> np.ndarray:
+def resize_panel(img: np.ndarray, width: int = 300) -> np.ndarray:
     h, w = img.shape[:2]
     scale = width / float(w)
     new_h = max(1, int(round(h * scale)))

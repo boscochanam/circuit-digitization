@@ -2,7 +2,7 @@ The method is organized as a component guided wire extraction pipeline. Oriented
 
 \subsection*{Datasets and benchmark definition}
 
-Two data sources were used. Component priors were obtained from the CGHD1152 handwritten circuit corpus and its HDC recognition subset, which provide oriented component annotations across 58 classes \cite{Thoma2021}. Wire extraction was evaluated on 23 hand drawn schematic images at 704 by 704 px resolution with 300 manually annotated wire segments in YOLO OBB format. Each quadrilateral annotation was converted into a centerline segment through the short edge midpoint procedure used by the benchmark evaluator.
+Two data sources were used. Component priors were obtained from the CGHD1152 handwritten circuit corpus and its HDC recognition subset, which provide oriented component annotations across 58 classes \cite{Thoma2021}. The oriented bounding box detector was implemented using the Ultralytics YOLO framework \cite{UltralyticsYOLO}. Wire extraction was evaluated on 23 hand drawn schematic images at 704 by 704 px resolution with 300 manually annotated wire segments in YOLO OBB format. Each quadrilateral annotation was converted into a centerline segment through the short edge midpoint procedure used by the benchmark evaluator.
 
 Evaluation was performed with the repository metric in which a detected segment is counted as a true positive when its endpoints lie within a mean 20 px tolerance of the nearest ground truth segment. Precision, recall, F1 score, and redundant detections were reported. During the later hybrid development stage, a secondary synthetic sanity check was also maintained by running each candidate configuration on procedurally generated wire images from the repository synthetic data generator. Because these synthetic images do not provide external component priors, they were used as a stability check rather than as the primary model selection signal.
 
@@ -10,7 +10,7 @@ Evaluation was performed with the repository metric in which a detected segment 
 
 For each benchmark image, the corresponding HDC component label file was matched by pixel comparison across augmentation variants. This step was required because multiple transformed copies of the same base image were present in the component dataset. Once the correct label file had been identified, component polygons and text polygons were parsed and used in two preprocessing operations.
 
-First, each polygon was occluded with the local median intensity estimated from a margin around the polygon. This operation suppressed symbol strokes and printed text that would otherwise be converted into false wire evidence. Second, the image was cropped to the union of all component boxes with 10 px padding. This operation reduced border clutter and focused subsequent processing on the circuit region.
+First, each polygon was occluded with the local median intensity estimated from a margin around the polygon \cite{Bradski2000}. This operation suppressed symbol strokes and printed text that would otherwise be converted into false wire evidence. Second, the image was cropped to the union of all component boxes with 10 px padding. This operation reduced border clutter and focused subsequent processing on the circuit region.
 
 \subsection*{Adaptive threshold mask generation}
 
