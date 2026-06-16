@@ -336,6 +336,15 @@ def derive_pins_from_obb(
     width = x_max - x_min
     height = y_max - y_min
 
+    # For two-terminal components, place pins on the LONG axis to match
+    # actual wire approach direction. The default pin_defs are Y-aligned,
+    # which is wrong for horizontal components.
+    if component_name in two_terminal:
+        if width > height:
+            pin_defs = [(-0.5, 0.0), (0.5, 0.0)]  # LEFT, RIGHT
+        else:
+            pin_defs = [(0.0, 0.5), (0.0, -0.5)]  # TOP, BOTTOM
+
     pins = []
     for pin_idx, (rel_x, rel_y) in enumerate(pin_defs):
         x_center = (x_min + x_max) / 2
