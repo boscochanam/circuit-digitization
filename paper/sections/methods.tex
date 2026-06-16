@@ -1,100 +1,190 @@
-The method is organized as a component guided wire extraction pipeline. Oriented component labels are used to suppress non wire structures before thresholding, while the final wire decision is made by a deterministic graph based postprocessing stage. The benchmark implementation is available in the repository and was validated against the reproduced reference pipeline.
+CircuitDigitizer is organized as a transparent, stage-by-stage pipeline that takes
+a photographed hand-drawn schematic and emits a SPICE netlist. Components are
+localized by a trained oriented detector and used to guide preprocessing; wire
+segments are extracted by a deterministic computer-vision stage; the
+\emph{Degree-Budget Topology Join} converts detected wires and components into a
+connected netlist; and the netlist is exported as SPICE. The full architecture is
+shown in Fig.~\ref{fig:architecture}. The join is the central methodological
+contribution and is described in its own subsection. Every stage is inspectable in
+isolation, and no wire-specific training is required for the extraction or join
+stages.
 
-\subsection*{Datasets and benchmark definition}
+\subsection*{Datasets and evaluation set}
 
-Two data sources were used. Component priors were obtained from the CGHD1152 handwritten circuit corpus and its HDC recognition subset, which provide oriented component annotations across 58 classes \cite{Thoma2021}. The oriented bounding box detector was implemented using the Ultralytics YOLO framework \cite{UltralyticsYOLO}. Wire extraction was evaluated on 23 hand drawn schematic images at 704 by 704 px resolution with 300 manually annotated wire segments in YOLO OBB format. Each quadrilateral annotation was converted into a centerline segment through the short edge midpoint procedure used by the benchmark evaluator.
+Component priors and the component detector were obtained from the CGHD-1152
+hand-drawn circuit corpus, which provides oriented component annotations
+\cite{Thoma2021}. The pipeline is evaluated on a set of 134 hand-drawn schematic
+photographs for which both component annotations and manually verified wire
+annotations are available (3{,}524 wire segments in total). Wire extraction is
+scored with the repository metric: a detected segment is a true positive when its
+endpoints fall within a 20~px mean tolerance of the nearest ground-truth segment,
+and precision, recall, and F1 are reported. Because real schematics provide no
+\emph{net-level} ground truth --- there is no annotation of which terminals are
+electrically common --- the join is evaluated both by a structural connectivity
+metric on the real set and by a synthetic ground-truth harness (described below)
+that supplies net-level truth by construction.
 
-Evaluation was performed with the repository metric in which a detected segment is counted as a true positive when its endpoints lie within a mean 20 px tolerance of the nearest ground truth segment. Precision, recall, F1 score, and redundant detections were reported. During the later hybrid development stage, a secondary synthetic sanity check was also maintained by running each candidate configuration on procedurally generated wire images from the repository synthetic data generator. Because these synthetic images do not provide external component priors, they were used as a stability check rather than as the primary model selection signal.
+\subsection*{Component detection}
 
-\subsection*{Component guided preprocessing}
+Components are localized with an oriented-bounding-box detector
+(YOLO26M-OBB \cite{UltralyticsYOLO}) trained on CGHD-1152. The original 61 symbol
+classes were merged into 16 functional classes; this merging was the single most
+important design choice and raised mean average precision from roughly 50\% to the
+final 88.5\% mAP50 (78.3\% mAP50-95). The detector is the single source of truth
+for component identity and location, replacing earlier reliance on pre-trained
+third-party labels with non-standard class indices. Detection runs in
+approximately one second per image on CPU.
 
-For each benchmark image, the corresponding HDC component label file was matched by pixel comparison across augmentation variants. This step was required because multiple transformed copies of the same base image were present in the component dataset. Once the correct label file had been identified, component polygons and text polygons were parsed and used in two preprocessing operations.
+\subsection*{Component-guided preprocessing}
 
-First, each polygon was occluded with the local median intensity estimated from a margin around the polygon \cite{Bradski2000}. This operation suppressed symbol strokes and printed text that would otherwise be converted into false wire evidence. Second, the image was cropped to the union of all component boxes with 10 px padding. This operation reduced border clutter and focused subsequent processing on the circuit region.
+Each detected component polygon is occluded by filling it with the local median
+intensity estimated from a margin around the polygon (15\% of the bounding-box
+size, minimum 5~px) \cite{Bradski2000}. This suppresses symbol strokes and printed
+text that would otherwise be converted into spurious wire evidence, while leaving
+junction points intact. The image is then cropped to the union of all component
+boxes plus 10~px of padding, which removes scanner borders and paper edges; the
+crop offset is tracked so that extracted endpoints can be mapped back to image
+coordinates.
 
-\subsection*{Adaptive threshold mask generation}
+\subsection*{Wire extraction}
 
-Wire evidence was generated from Sauvola thresholding \cite{Sauvola2000}. This choice was retained because local adaptive thresholding has repeatedly been found to outperform global thresholding on degraded document content and thin foreground strokes \cite{Otsu1979,Niblack1986,Gatos2006,Shafait2008,Su2013}. The local threshold was computed in a 67 by 67 window with primary parameter $k = 0.285$. A secondary Sauvola mask at $k = 0.25$ was also generated. In the final hybrid method, these masks were treated as conservative evidence sources, while a gated adaptive Gaussian recovery branch was introduced to recover weak traces that were missed by the primary branch.
+Wire evidence is produced by Sauvola adaptive thresholding \cite{Sauvola2000} in a
+$67 \times 67$ window with $k = 0.285$, chosen because local adaptive thresholding
+preserves thin foreground strokes on degraded document content far better than
+global methods. The binary mask is closed with a $3 \times 3$ elliptical kernel,
+labeled into connected components (minimum area 28~px), and each component is
+reduced to a line segment whose endpoints are obtained by principal-component
+analysis rather than by extremal pixels. Near-duplicate segments are removed by an
+overlap test (angle $12^\circ$, distance 8~px), and an anchor filter
+(endpoint distance 16~px, link distance 8~px) discards floating endpoints that do
+not reach a component or another wire. No global line-merging or length-filtering
+stage is used; both were found to destroy true positives.
 
-This stage was designed to preserve faint traces while avoiding excessive sensitivity to low frequency paper intensity variation. In contrast with the earlier merge based pipeline, no global line merging stage was introduced at this point. Instead, the permissive branch was allowed to contribute only when candidate paths were supported by component proximity and graph consistency tests.
+\subsection*{The Degree-Budget Topology Join}
 
-Additional threshold families were also evaluated within the same benchmark harness. Global Otsu thresholding, triangle thresholding, adaptive mean thresholding, adaptive Gaussian thresholding, and simple fusion variants were substituted into the same downstream extraction and evaluation procedure. This comparison was introduced to test whether the strongest result depended specifically on Sauvola thresholding or on later graph based reasoning stages.
+The join converts the extracted wires and detected components into electrical
+nodes. It proceeds in two phases: an endpoint-graph base join, followed by a
+degree-budget completion that recovers the connections lost when the detector
+drops or truncates a wire.
 
-\subsection*{Skeleton graph extraction}
+\paragraph{Phase 1 --- endpoint-graph base.}
+Component pins are derived from each oriented box (two terminals on the short-axis
+midpoints for two-terminal parts, class-specific layouts otherwise), and wires are
+extended 12~px along their direction to close occlusion gaps. Wire endpoints and
+pins are treated as nodes of a single graph and merged by union-find under three
+edge types: a wire body links its own two endpoints; two endpoints within a
+scale-relative tolerance $\tau_{\mathrm{join}}$ are joined (fragments, corners);
+and an endpoint binds the pin it points at, assigned component-first --- the
+endpoint is attached to the nearest component by bounding-box proximity and then
+routed to the correct pin by geometry, which handles endpoints that land inside a
+component box but far from its pin. A dead-end rescue gives a wire anchored on one
+pin a longer directional reach toward a pin on a different component, recovering
+strokes the detector cut short. Tolerances are expressed as multiples of the
+median component size so a single rule spans the wide scale range of hand drawings.
 
-The fused binary foreground mask was converted into a one pixel skeleton. Pixels with degree other than two were treated as graph nodes, and skeleton chains between such nodes were traced as candidate paths. Each path was converted into a line hypothesis through its terminal coordinates. Very short paths were removed through a minimum graph path length threshold. This formulation was informed by classic thinning and skeletonization work, in which centerline preservation and topological stability are treated as the key requirements \cite{ZhangSuen1984,Lam1992}.
+\paragraph{Phase 2 --- degree-budget completion.}
+After the base join, a non-inert component terminal whose net touches only its own
+component is \emph{floating}: it is the signature of a wire the detector missed
+entirely, which the base join cannot recover because no stroke connects it.
+Ground (gnd), text, junction, and other single-terminal or non-conductive classes
+are excluded from this notion. Each floating terminal is treated as a unit demand
+to be satisfied by at most one new edge. Candidate completion edges are generated
+to pins on \emph{other} components within a reach of $2.5\,\tau_{\mathrm{pin}}$,
+excluding pins already on the terminal's net; the cost of an edge prefers a
+geometric witness (an actual wire whose two ends lie near the two pins) and falls
+back to pure Euclidean distance when no witness exists, so that genuinely dropped
+wires can still be completed. The resulting bipartite problem --- floating
+terminals against candidate target pins, each target offering up to three slots so
+that legitimate multi-terminal nets are not starved --- is solved as a
+minimum-cost assignment with the Hungarian algorithm \cite{Kuhn1955}, with a
+per-terminal opt-out so that a terminal with no good target is left unconnected
+rather than forced. The chosen matches are applied with a \emph{self-loop guard}:
+a match that would merge two nets already sharing a component is skipped, so a
+two-terminal part can never be shorted onto a single net.
 
-This representation was preferred over direct connected component line fitting because it retained local topology for a longer portion of the pipeline. Junctions, branch terminations, and elongated traces were therefore represented more faithfully than in the earlier contour extremum formulation. It also avoided premature commitment to a single contour extremum pair, which is a known weakness when line evidence is fragmented or when several near collinear alternatives coexist.
+This degree budget is what makes the method safe. Because every floating terminal
+contributes at most one edge and the guard forbids self-loops, the completion
+recovers dropped connections without the all-to-all over-merging that shorts dense
+or bridge-like layouts. Base-join wire indices are carried onto the final nodes so
+that downstream simulation and current visualization retain wire-level provenance;
+completion edges are inferred and carry no wire, exactly as a manually drawn
+connection would.
 
-\subsection*{Candidate scoring and selection}
+\subsection*{SPICE generation}
 
-Each candidate path was assigned a score from four sources of evidence:
-\begin{enumerate}
-    \item geometric length,
-    \item average support across threshold masks,
-    \item proximity of endpoints to component boundaries,
-    \item proximity of endpoints to plausible component side midpoints that act as coarse port surrogates.
-\end{enumerate}
+Each electrical node becomes a SPICE \cite{Nagel1973} node and each simulatable component
+(resistor, capacitor, inductor, diode, voltage source, and similar) becomes a
+device line; a ground node is mapped to node~0 when present. The emitted deck is
+run through \texttt{ngspice} for a DC operating-point analysis, yielding node
+voltages and device currents that are surfaced in the interface.
 
-The scored candidates were then filtered by a topology aware selection stage. A sparse set of non overlapping paths was retained, while weak alternatives that did not add new structural support were removed. This step differed from the earlier deduplication strategy in two important ways. First, candidates were ranked rather than treated symmetrically. Second, acceptance was conditioned on how well a candidate extended the current graph explanation of the circuit.
+\subsection*{Synthetic ground-truth evaluation}
 
-After topology selection, score cluster deduplication was applied to suppress near collinear duplicates. The role of this step was similar in spirit to line selection methods based on Hough style voting or direct line segment detection, but selection was performed over graph paths rather than over edge pixels alone \cite{DudaHart1972,Gioi2010}. In the final hybrid configuration, a secondary adaptive Gaussian branch was executed after the primary topology guided Sauvola pass. Its candidates were admitted only when they remained near components, satisfied explicit anchor requirements, linked coherently to unresolved graph endpoints, and did not create near parallel duplicates around accepted paths. In the last revision stage, the anchor test itself was tightened by using class aware port surrogates derived from oriented component polygons rather than from generic bounding box edges. Two terminal components were therefore encouraged to connect along their short side midpoints, whereas non connective classes such as text and crossover labels were removed from the anchor pool. An additional endpoint driven repair variant was also examined in which recovery candidates were seeded only from dangling endpoints of the conservative topology graph. That variant reduced false positives more aggressively than the permissive hybrid branch, but a larger recall loss was incurred and the overall benchmark score was not improved. The final main method is therefore referred to in this paper as the hybrid recovery method.
-
-\subsection*{Method summary}
-
-The full revised architecture is shown in Fig.~\ref{fig:architecture}. The original connected component branch remained useful as a control, but the strongest performance was obtained when graph extraction and topology aware selection were introduced.
+Because the real set has no net-level ground truth, the join is also evaluated on
+a synthetic harness that runs the loop in the opposite direction. A small catalog
+of circuits with known netlists is authored; each is laid out as a coordinate map
+of component boxes and wire segments of the same form the detector produces;
+detector-style error (endpoint jitter, cut-short truncation, dropped wires,
+wrong-pin snaps, and anchor displacement of 30--80~px) is injected at increasing
+severities; and the \emph{real} join and SPICE generator are run on the perturbed
+map and scored against the authored truth. Two signals are reported: a
+component-connectivity F1 against the authored nets, and whether the recovered
+circuit simulates to the authored operating point. The harness supplies net-level
+truth by construction, doubles as a regression test (the clean, error-free map
+must round-trip to F1 = 1.0), and --- by searching over candidate join algorithms
+against this truth --- was the means by which the Degree-Budget Topology Join was
+discovered and selected over alternatives. Its one caveat is that the injected
+error model is a first-pass approximation rather than a calibrated model of the
+real detector's failure distribution; it is therefore used as a robustness and
+regression signal, with the real benchmark remaining the decisive setting.
 
 \begin{figure}[H]
 \centering
 \resizebox{0.98\textwidth}{!}{%
 \begin{tikzpicture}[
     font=\small,
-    box/.style={rounded corners=4pt, very thick, minimum width=3.2cm, minimum height=1.2cm, align=center, inner sep=5pt},
+    box/.style={rounded corners=4pt, very thick, minimum width=3.0cm, minimum height=1.25cm, align=center, inner sep=5pt},
     io/.style={box, draw=orange!85!black, fill=orange!10},
-    prior/.style={box, draw=blue!70!black, fill=blue!8},
+    det/.style={box, draw=blue!70!black, fill=blue!8},
     pre/.style={box, draw=purple!70!black, fill=purple!8},
-    thr/.style={box, draw=green!50!black, fill=green!10},
-    graph/.style={box, draw=teal!70!black, fill=teal!9},
+    wire/.style={box, draw=green!50!black, fill=green!10},
+    join/.style={box, draw=teal!70!black, fill=teal!10},
+    sim/.style={box, draw=red!60!black, fill=red!8},
     arrow/.style={-{Latex[length=3mm,width=2mm]}, line width=1pt, draw=gray!75!black},
-    dashedarrow/.style={-{Latex[length=2.6mm,width=1.8mm]}, dashed, line width=0.9pt, draw=gray!65!black},
     group/.style={rounded corners=8pt, draw=#1!40, fill=#1!4, line width=0.8pt, inner sep=8pt},
     group/.default=blue
 ]
-\node[io] (input) at (0,0) {\textbf{Input schematic}\\704 $\times$ 704 image};
-\node[prior] (match) at (4.1,0) {\textbf{Prior alignment}\\match benchmark image\\to HDC labels};
-\node[pre] (occlusion) at (8.2,0) {\textbf{Symbol and text suppression}\\local median occlusion};
-\node[pre] (crop) at (12.3,0) {\textbf{ROI crop}\\component union\\with 10 px padding};
+\node[io]  (input)  at (0,0)    {\textbf{Input}\\photographed\\schematic};
+\node[det] (detect) at (3.8,0)  {\textbf{Component detection}\\YOLO26M-OBB\\(16 classes)};
+\node[pre] (pre)    at (7.6,0)  {\textbf{Guided preprocessing}\\median occlusion\\+ ROI crop};
+\node[wire](wirex)  at (11.4,0) {\textbf{Wire extraction}\\Sauvola $\to$ CCL\\$\to$ PCA endpoints};
 
-\node[thr] (maska) at (4.1,-2.75) {\textbf{Primary mask}\\Sauvola\\$k = 0.285$};
-\node[thr] (maskb) at (8.2,-2.75) {\textbf{Secondary mask}\\Sauvola\\$k = 0.25$};
-\node[thr] (fusion) at (12.3,-2.75) {\textbf{Conservative evidence fusion}\\shared support evidence};
+\node[join](base)   at (3.8,-3) {\textbf{Endpoint-graph base}\\union-find + dead-end\\rescue};
+\node[join](budget) at (7.6,-3) {\textbf{Degree-budget completion}\\float-pin demands +\\min-cost matching};
+\node[sim] (spice)  at (11.4,-3){\textbf{SPICE export}\\\texttt{ngspice}\\DC operating point};
+\node[io]  (output) at (15.0,-3){\textbf{Output}\\simulatable\\netlist};
 
-\node[graph] (skeleton) at (4.1,-5.5) {\textbf{Skeleton graph}\\nodes, chains,\\path hypotheses};
-\node[graph] (scoring) at (8.2,-5.5) {\textbf{Path scoring}\\length, mask support,\\boundary and port cues};
-\node[graph] (selection) at (12.3,-5.5) {\textbf{Hybrid recovery and selection}\\adaptive Gaussian recovery\\plus topology pruning};
-\node[io] (output) at (16.4,-5.5) {\textbf{Output}\\wire segments};
-
-\draw[arrow] (input) -- (match);
-\draw[arrow] (match) -- (occlusion);
-\draw[arrow] (occlusion) -- (crop);
-\draw[arrow] (crop.south) |- (maska.north);
-\draw[arrow] (crop.south) -- ++(0,-0.6) -| (maskb.north);
-\draw[arrow] (maska) -- (maskb);
-\draw[dashedarrow] (maska.east) -- (fusion.west);
-\draw[arrow] (maskb) -- (fusion);
-\draw[arrow] (fusion.south) |- (skeleton.north);
-\draw[arrow] (skeleton) -- (scoring);
-\draw[arrow] (scoring) -- (selection);
-\draw[arrow] (selection) -- (output);
+\draw[arrow] (input) -- (detect);
+\draw[arrow] (detect) -- (pre);
+\draw[arrow] (pre) -- (wirex);
+\draw[arrow] (wirex.south) -- ++(0,-0.85) -| (base.north);
+\draw[arrow] (detect.south) -- ++(0,-0.5) -| (base.north);
+\draw[arrow] (base) -- (budget);
+\draw[arrow] (budget) -- (spice);
+\draw[arrow] (spice) -- (output);
 
 \begin{scope}[on background layer]
-\node[group=blue, fit=(input) (match), label={[font=\bfseries\footnotesize, text=blue!60!black]north:Input and prior retrieval}] {};
-\node[group=purple, fit=(occlusion) (crop), label={[font=\bfseries\footnotesize, text=purple!60!black]north:Component guided preprocessing}] {};
-\node[group=green!60!black, fit=(maska) (maskb) (fusion), label={[font=\bfseries\footnotesize, text=green!40!black]north:Adaptive threshold evidence}] {};
-\node[group=teal, fit=(skeleton) (scoring) (selection) (output), label={[font=\bfseries\footnotesize, text=teal!60!black]north:Graph reasoning and final decision}] {};
+\node[group=blue, fit=(input)(detect)(pre)(wirex),
+  label={[font=\bfseries\footnotesize, text=blue!60!black]north:Detection and wire extraction}] {};
+\node[group=teal, fit=(base)(budget)(spice)(output),
+  label={[font=\bfseries\footnotesize, text=teal!60!black]north:Degree-Budget Topology Join and simulation}] {};
 \end{scope}
 \end{tikzpicture}
 }
-\caption{Revised wire extraction architecture. Component priors are first aligned to each benchmark image and used to suppress symbols, text, and border clutter. Conservative Sauvola evidence is fused into a shared support representation, from which a skeleton graph is extracted. Adaptive Gaussian recovery is then used selectively for weak paths before final topology aware selection is applied.}
+\caption{CircuitDigitizer pipeline. A trained oriented detector localizes
+components and guides occlusion and cropping; a deterministic Sauvola-based stage
+extracts wire segments; the Degree-Budget Topology Join builds an endpoint graph
+and then completes floating component terminals with a reach-bounded, self-loop-
+guarded minimum-cost matching; and the connected netlist is exported as SPICE.}
 \label{fig:architecture}
 \end{figure}

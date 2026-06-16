@@ -1,11 +1,37 @@
-Several limitations should still be acknowledged.
+Several limitations should be acknowledged.
 
-First, the method remains dependent on accurate component priors. Incorrect component labels or mismatched augmentation variants can degrade both occlusion and region of interest selection. The revised benchmark scripts now reproduce the intended pairing procedure, but this dependency remains part of the method.
+First, the join is evaluated on real images only by a \emph{structural} connectivity
+metric. Hand-drawn corpora annotate component boxes and wire strokes but not which
+terminals are electrically common, so there is no net-level ground truth on real
+images against which to certify that a recovered connection is the \emph{correct}
+one. The synthetic harness supplies net-level truth by construction and shows the
+completion does not reduce precision there, but a manually net-annotated real
+benchmark remains important future work.
 
-Second, the hardest remaining failures are still recall driven. Very faint strokes and fragmented traces near crowded components are not always preserved, even after threshold fusion and graph selection. This behavior was observed in images such as C101\_D1\_P1 and C10\_D2\_P3.
+Second, the synthetic harness is only as faithful as its error model. The injected
+perturbations (jitter, cut-short, dropped wires, wrong-pin snaps, anchor
+displacement) are a first-pass approximation, not a model calibrated to the real
+detector's measured failure distribution. Synthetic join scores are therefore used
+as robustness and regression signals, with the real benchmark remaining the
+decisive setting; calibrating the error model to the detector is future work.
 
-Third, redundant alternatives can still be produced in dense local structure. The topology aware selection stage reduced this effect substantially, but dense cases such as C105\_D2\_P4 and C102\_D1\_P2 still produced extra segments.
+Third, the recovery has a residual cost. On the densest real layouts the
+degree-budget completion can introduce a small number of two-terminal self-loops
+(a component shorted onto one net). The one-edge-per-terminal budget and the
+self-loop guard bound this effect rather than eliminating it, and it is the price
+of the large reduction in floating terminals that drives the connectivity gain.
 
-Fourth, the benchmark is small. Although the 23 image set is carefully annotated and was sufficient for controlled method comparison, broader generalization across additional drawing styles and acquisition conditions should still be validated.
+Fourth, the hardest detection failures remain recall-driven and concentrated in
+dense drawings: four of the 134 evaluation images score wire F1 below 0.50, where
+large component occlusion removes nearby wire endpoints, and crossover is the
+weakest component class (70.7\% recall) because crossing wires are visually
+ambiguous. The pipeline also remains dependent on accurate component priors, since
+occlusion and region-of-interest selection are driven by the detector.
 
-Finally, the present synthetic generator remained useful for sanity checking, but it was less decisive for the later component guided hybrids because the generated images were not paired with external component priors in the same manner as the real benchmark. A quick learned wire branch was also explored during the present revision, but it did not surpass the deterministic graph based method under the available training setup. The current manuscript is therefore focused on the strongest validated hybrid method rather than on a partially trained learned alternative.
+Fifth, the evaluation, although carefully annotated, draws from a single corpus of
+134 images; generalization across further drawing styles and acquisition
+conditions should be validated. Finally, only components with a known device model
+(resistor, capacitor, inductor, voltage source, diode, transistor) are emitted to
+SPICE; integrated circuits, op-amps, and similar parts are detected and placed in
+the topology but skipped at the simulation stage, so circuits dominated by such
+parts are only partially simulatable.

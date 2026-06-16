@@ -1,13 +1,16 @@
 {\small
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{p{5.0cm}ccccccc}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{p{4.6cm}cccc}
 \toprule
-Method & F1 & Precision & Recall & TP & FP & FN & Red \\
+Join strategy & Connectivity (\%) & Regressions & Synthetic F1 & Clean F1 \\
 \midrule
- Reference baseline & 0.7066 & 0.6169 & 0.8267 & 248 & 70 & 52 & 84 \\
- Refined classical pipeline & 0.7492 & 0.7236 & 0.7767 & 233 & 43 & 67 & 46 \\
- Topology guided skeleton graph & 0.7830 & 0.7411 & 0.8300 & 249 & 48 & 51 & 39 \\
- Hybrid recovery method & 0.8215 & 0.7275 & 0.9433 & 283 & 63 & 17 & 43 \\
+Endpoint-graph base (\textit{graph\_rescue}) & 68.8 & --- & 0.944 & 1.000 \\
+\textbf{Degree-Budget Topology Join} & \textbf{81.9} & \textbf{0} & \textbf{0.969} & 1.000 \\
 \bottomrule
 \end{tabular}
 }
+
+% Connectivity: fraction of components on a multi-component net (134-image set,
+% per paper/DECISIONS.md). Regressions: images where the degree-budget join scores
+% below the base. Synthetic F1: mean across-severity component-connectivity F1 on
+% the synthetic ground-truth harness. Clean F1: round-trip F1 on error-free maps.

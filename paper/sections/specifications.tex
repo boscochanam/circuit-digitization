@@ -4,11 +4,11 @@
 \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.34\textwidth}X}
 \toprule
 Subject area & Computer Science \\
-More specific subject area & Computer vision, document analysis, circuit diagram digitization \\
-Name of the method & Component Guided Wire Extraction With Adaptive Threshold Fusion and Topology Aware Skeleton Graphs \\
-Name and reference of original method & Sauvola adaptive document image binarization \cite{Sauvola2000} and a reproduced repository baseline for circuit wire extraction \\
-Resource availability & Pipeline repository: \url{https://github.com/boscochanam/circuit-digitization}. Component dataset: CGHD1152 and HDC subset documented in the repository. Wire benchmark: 23 annotated images with 300 wire segments, provided by the authors. \\
-Main validation metric & Point based wire segment F1 score with a 20 px endpoint distance tolerance; best result 0.8215 on the 23 image benchmark \\
+More specific subject area & Computer vision, document image analysis, circuit diagram digitization, electronic design automation \\
+Name of the method & CircuitDigitizer, with the Degree-Budget Topology Join as the core netlist-recovery stage \\
+Name and reference of original method & Endpoint-graph wire joining (repository baseline); Sauvola adaptive document binarization \cite{Sauvola2000}; oriented-bounding-box detection with Ultralytics YOLO \cite{UltralyticsYOLO} \\
+Resource availability & Pipeline repository: \url{https://github.com/boscochanam/circuit-digitization}. Component detector (YOLO26M-OBB, 16-class): \url{https://huggingface.co/boscochanam/circuit-component-detector}. Training corpus: CGHD-1152 \cite{Thoma2021}. Evaluation set: 134 manually verified hand-drawn images with paired component and wire annotations, provided by the authors. \\
+Main validation metric & Primary: point-based wire-segment F1 (20~px endpoint tolerance), 0.9755 on 134 images. Secondary: circuit connectivity (fraction of components on a multi-component net), 81.9\% for the Degree-Budget Topology Join versus 68.8\% for the endpoint-graph baseline. \\
 \bottomrule
 \end{tabularx}
 \end{table}

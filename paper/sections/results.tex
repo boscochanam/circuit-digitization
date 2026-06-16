@@ -1,47 +1,110 @@
-The reproduced reference implementation yielded an F1 score of 0.7066 on the 23 image benchmark. When the strongest refined classical pipeline was used, the F1 score increased to 0.7492. The topology guided skeleton graph method increased the benchmark score further to 0.7830. The final hybrid recovery method increased the score again to 0.8215 by supplementing the conservative Sauvola branch with a tightly gated adaptive Gaussian recovery branch and class aware anchor cues.
+The pipeline is validated at three levels: wire extraction against annotated wire
+segments, the Degree-Budget Topology Join against both a real connectivity metric
+and synthetic net-level ground truth, and the emitted netlists against a SPICE
+simulator. An end-to-end vision-language baseline is reported for context.
+
+\subsection*{Component and wire extraction}
+
+The trained oriented detector reached 88.5\% mAP50 (78.3\% mAP50-95, precision
+95.6\%, recall 88.6\%) on the held-out split, with every functional class
+detected; the visually hardest class is crossover (70.7\% recall), where two
+crossing wires are genuinely ambiguous. On the 134-image evaluation set the
+deterministic wire stage achieved a point-based wire F1 of 0.9755 (precision
+0.9729, recall 0.9781) in its best configuration. The distribution is strongly
+skewed toward clean recovery: the median per-image F1 is 1.000, 117 of 134 images
+(87\%) score F1 $\geq 0.90$, and only 4 images (3\%) fall below 0.50 --- dense
+layouts where large component occlusion removes wire endpoints.
+
+A thresholding study (Table~\ref{tab:thresholdcomparison}) substituted other
+binarization families into the same downstream extraction and evaluation logic.
+Sauvola thresholding dominated every alternative: adaptive Gaussian reached
+F1 = 0.928, global Otsu 0.828, and triangle thresholding 0.795. Skeleton-based
+extraction lost substantial recall by breaking thin wires, and threshold-fusion
+variants added nothing over Sauvola alone, confirming that the strong result rests
+on conservative local thresholding rather than on any single fusion trick. A
+parameter sweep over $k$, window size, link distance, and deduplication angle
+moved F1 only marginally, indicating that the extraction stage is robust.
 
 \begin{table}[H]
 \centering
-\caption{Benchmark comparison on 23 hand drawn circuit schematic images with 300 annotated wire segments.}
-\input{tables/main_comparison}
-\label{tab:mainresults}
-\end{table}
-
-The main improvement was not obtained through a single threshold change. Instead, the increase was produced by a sequence of architectural changes. Once connected component fitting was replaced by skeleton graph extraction, and once topology aware selection was introduced, redundant alternatives were removed more effectively while the strongest supported paths were preserved. The final hybrid recovery method then recovered additional weak paths while constraining false positives through component aware gating, explicit anchor requirements, unresolved endpoint linkage, class aware port surrogates, and parallel duplicate rejection. Relative to the reproduced baseline, true positives increased from 248 to 283, false positives decreased from 70 to 63, and the final F1 score rose from 0.7066 to 0.8215.
-
-The contrast between the topology guided and hybrid variants was also informative. The topology guided skeleton graph method retained the highest precision among the leading methods, whereas the hybrid recovery method produced a much larger recall gain. The best overall F1 score was obtained only after the adaptive Gaussian branch was constrained tightly enough to behave as a selective recovery mechanism rather than as a global replacement. In the final variant, recovery candidates were filtered with class aware port cues that removed several structurally implausible attachments, which reduced false positives from 71 to 63 while maintaining most of the recall gain from the earlier hybrid stage.
-
-An additional endpoint driven recovery experiment was then performed in which permissive candidates were seeded only from unresolved endpoints in the conservative topology graph and were accepted only when they repaired short component aware gaps. This modification reduced false positives further relative to the permissive hybrid family, but the best such variant reached an F1 score of 0.7957 because too much recall was surrendered. The result suggested that the conservative topology graph is an effective precision prior, but that a stricter repair only formulation is not sufficient on its own to replace the final hybrid gate.
-
-\subsection*{Thresholding comparison}
-
-Thresholding was then varied while the same benchmark harness, preprocessing, extraction, and evaluation logic were preserved. The objective was to determine whether a different binarization family could improve the present method or reveal a more favorable precision recall tradeoff.
-
-\begin{table}[H]
-\centering
-\caption{Thresholding comparison on the 23 image wire benchmark.}
+\caption{Wire-extraction thresholding comparison on the 134-image benchmark, all run through the identical preprocessing, extraction, and evaluation logic.}
 \input{tables/threshold_comparison}
 \label{tab:thresholdcomparison}
 \end{table}
 
-The comparison showed that global Otsu thresholding was not competitive for this dataset. Both the pure Otsu skeleton method and the Sauvola and Otsu fusion setting produced large false positive counts and substantially lower F1 scores than the final method. Adaptive mean and adaptive Gaussian thresholding were more promising because much higher recall was obtained. The strongest tuned adaptive Gaussian setting reached an F1 score of 0.7576 with recall 0.9533, but this gain in recall was offset by a large increase in false positives. The thresholding study therefore supported two conclusions. First, the strongest global result still depended on Sauvola based local thresholding as the conservative primary branch. Second, adaptive Gaussian thresholding became useful only when it was constrained as a selective recovery branch inside the final hybrid method.
+\subsection*{Topology join}
 
-The same late stage variants were also checked on synthetic images from the repository generator. Those synthetic runs did not separate the leading component guided variants in a meaningful way because the generated images were evaluated without external component priors. Synthetic data were therefore retained as a secondary stability check, while the real 23 image benchmark remained the decisive model selection setting.
+The central result is the connectivity gain from the Degree-Budget Topology Join.
+Connectivity is measured as the fraction of components placed on a net shared with
+at least one other component; a fragmented circuit scores low because its pieces
+are electrically isolated and cannot be simulated. Relative to the endpoint-graph
+base join, the degree-budget completion raises connectivity from 68.8\% to 81.9\%
+(Table~\ref{tab:mainresults}) and does so without a single per-image regression:
+every image is recovered at least as well as the base join. The connectivity gain
+comes from a sharp reduction in floating component terminals: the completion
+reconnects terminals the detector had left dangling. The one-edge-per-terminal
+degree budget and the self-loop guard bound the cost of this recovery, and on the
+synthetic net-level ground truth (below) the join's precision does not fall, which
+indicates the recovered connections are genuine rather than over-merges. On the
+densest real layouts the completion can still introduce a small number of
+two-terminal self-loops; this residual cost is discussed in the Limitations.
 
-\begin{figure}[H]
+\begin{table}[H]
 \centering
-\includegraphics[width=\textwidth]{figures/benchmark_comparison.png}
-\caption{Aggregate benchmark comparison for the reproduced reference baseline, the strongest earlier classical branch, the topology guided skeleton graph method, and the final hybrid recovery method. The hybrid formulation was found to provide the highest F1 score through a large recall gain while preserving substantially better precision than an unconstrained permissive threshold branch.}
-\label{fig:benchmarkcomparison}
-\end{figure}
+\caption{Topology-join comparison. Connectivity is the fraction of components on a multi-component net; self-loops count two-terminal parts shorted onto one net; regressions count images where connectivity falls below the base join.}
+\input{tables/main_comparison}
+\label{tab:mainresults}
+\end{table}
 
-Qualitative behavior is shown in Fig.~\ref{fig:qualitative}. A perfect recovery case is included to demonstrate the expected output on clean circuit structure. A difficult recall case is included to show that weak or fragmented traces are still the dominant failure mode. A redundancy heavy case is also included because densely connected layouts still induce extra line hypotheses even after topology filtering. For each example, intermediate stages are shown so that the effect of occlusion, conservative thresholding, permissive recovery, and final selection can be inspected directly.
+Because the real connectivity metric is structural and cannot certify that a
+recovered connection is the \emph{correct} one, the join was also scored against
+net-level ground truth on the synthetic harness. On a catalog of authored circuits
+spanning series, parallel, bridge, multi-source, and adjacent-loop topologies, the
+clean (error-free) coordinate maps round-trip to a component-connectivity F1 of
+1.000 for the join, confirming the layouts and the join logic are sound. Under the
+injected detector-style error, the degree-budget join attains a mean
+across-severity F1 of 0.969 versus 0.944 for the endpoint-graph base; it wins at
+every severity, and its advantage is concentrated in the dropped-wire regime,
+where the completion recovers connections that no purely geometric join can. This
+is consistent with the real connectivity gain and indicates the gain reflects
+recovered true connections rather than over-merging.
+
+\subsection*{SPICE simulation}
+
+Netlists emitted by the pipeline simulate under \texttt{ngspice}: DC
+operating-point analysis returns node voltages and device currents that obey
+Kirchhoff's current law on the validation circuits. The synthetic harness provides
+a stronger check --- it supplies an analytic operating point for each authored
+circuit --- and the simulated source currents match the authored values for every
+clean circuit (for example, an authored voltage divider returns its exact
+divider current). The same harness shows the qualitative payoff of the join: a
+circuit that is fragmented by a dropped wire simulates as dead, whereas after
+degree-budget completion it simulates to the correct operating point.
+
+\subsection*{Vision-language baseline}
+
+To test whether an off-the-shelf model could replace the structured pipeline, a
+strong vision-language model (Mimo~2.5) was prompted to read the schematics
+directly and emit structured connectivity. On 10 representative images it missed
+between 38\% and 94\% of the topology, producing plausible-looking but
+electrically wrong netlists. The failure mode is informative: the model recognizes
+components and the gist of the drawing but does not reliably track which terminals
+are electrically common, which is exactly the problem the Degree-Budget Topology
+Join solves explicitly and inspectably. (We note that the repository's general VLM
+utility defaults to a different model for paper-type classification; the end-to-end
+topology baseline reported here used Mimo~2.5.)
+
+Representative pipeline stages are shown in Fig.~\ref{fig:qualitative}: for each
+example the input image, the cropped region after component and text suppression,
+the Sauvola wire mask, and the final prediction overlay are shown, so that the
+effect of each stage can be inspected directly.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{figures/qualitative_cases.png}
-\caption{Representative pipeline stages from the final hybrid recovery method. For each example, the input image, cropped region after component and text suppression, conservative Sauvola mask, adaptive Gaussian recovery mask, and final prediction overlay are shown. Green segments denote ground truth and red segments denote predicted wire segments.}
+\caption{Representative pipeline stages. For each example the input image, the
+cropped region after component and text suppression, the Sauvola wire mask, and
+the final prediction overlay are shown. Green segments denote ground truth and red
+segments denote predicted wire segments.}
 \label{fig:qualitative}
 \end{figure}
-
-The present benchmark was also used to compare two conclusions from the earlier draft. First, the old merge based result of 0.647 was no longer supported once the corrected repository benchmark was reproduced. Second, the best current method no longer depends on collinear merging or length filtering. The strongest reproducible result was instead obtained when topology aware pruning was combined with a tightly gated recovery branch after graph extraction.
