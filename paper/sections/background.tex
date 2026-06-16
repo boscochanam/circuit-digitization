@@ -1,11 +1,42 @@
-Digitization of hand drawn circuit schematics has remained challenging because reliable interpretation depends on both symbol localization and recovery of thin connecting wires. Recent progress has been reported in handwritten and engineering diagram recognition through detector based pipelines, graph enhanced postprocessing, and domain specific datasets \cite{Thoma2021,Rachala2022,Shen2023,Schaefer2021,Elyan2020,Lee2020,Yang2024,Hemker2024,MorenoGarcia2024}. In most of these studies, strong performance has been obtained for component or symbol detection, whereas wire or pipeline recovery has remained sensitive to local clutter, rotation, scan noise, and low contrast traces. The resulting gap has limited the direct conversion of offline sketches into simulation ready circuit structure.
+Converting a hand-drawn circuit schematic into a form that an analog simulator can
+run requires more than recognizing the drawing: it requires recovering the
+\emph{electrical topology} --- which component terminals are connected to which.
+Component and symbol recognition for engineering and circuit diagrams has advanced
+considerably through detector-based pipelines, graph-enhanced postprocessing, and
+domain datasets \cite{Thoma2021,Rachala2022,Shen2023,Schaefer2021,Elyan2020,Lee2020,Yang2024,Hemker2024,MorenoGarcia2024}.
+Strong results are routinely reported for symbol detection, yet the conversion all
+the way to a connected, simulatable netlist remains the harder and less solved
+step, because wire recovery is sensitive to clutter, rotation, scan noise, and
+faint traces, and because a single missed stroke leaves the recovered circuit
+fragmented and therefore unsimulatable \cite{Rabby2019,Shen2023,Hemker2024}.
 
-The document analysis literature has shown that binarization and line recovery remain decisive when fine strokes must be preserved. Classical thresholding methods such as Otsu, Niblack, and Sauvola remain widely used because they are interpretable and easy to control \cite{Otsu1979,Niblack1986,Sauvola2000}. Their limitations on degraded documents have been studied extensively, and improved adaptive strategies have been proposed through contrast based thresholding, local background estimation, and efficient integral image implementations \cite{Gatos2006,Shafait2008,Su2013}. At the same time, skeletonization and line extraction have been developed into mature tools for preserving topology and tracing elongated structures \cite{ZhangSuen1984,Lam1992,DudaHart1972,Gioi2010}. These ideas are especially relevant when the objective is not merely foreground segmentation, but recovery of sparse geometric structure from weak and fragmented strokes.
+Wire recovery rests on classical document-analysis tools. Local adaptive
+thresholding (Niblack, Sauvola, and contrast- or background-based refinements)
+preserves thin foreground strokes on degraded documents far better than global
+thresholding \cite{Otsu1979,Niblack1986,Sauvola2000,Gatos2006,Shafait2008,Su2013},
+and skeletonization and line-segment detection are mature tools for tracing
+elongated structure and preserving topology \cite{ZhangSuen1984,Lam1992,DudaHart1972,Gioi2010}.
+These remain decisive when the objective is recovering sparse geometric structure
+from weak, fragmented strokes rather than merely segmenting foreground.
 
-Related work in engineering drawings has also indicated that symbol recognition alone is insufficient. Deep detectors have been used successfully for symbols in piping and instrumentation diagrams, single line electrical drawings, and related symbolic sketches, yet downstream structural inference still requires domain aware processing of lines, ports, and connectivity \cite{Elyan2020,Lee2020,Yang2024,Hemker2024,MorenoGarcia2024}. Hand drawn circuit studies have similarly relied on object detection followed by node or line reasoning, often through Hough based or heuristic geometric procedures \cite{Rachala2022,Rabby2019}. These observations suggest that hybrid methods remain attractive when wire specific labeled data are limited.
+Two gaps motivate the present method. First, recognition alone is insufficient:
+work on piping, single-line, and circuit diagrams consistently finds that symbol
+detection must be followed by domain-aware reasoning over lines, ports, and
+connectivity to yield usable structure \cite{Elyan2020,Lee2020,Yang2024,Hemker2024,Rachala2022}.
+General-purpose vision-language models are an attractive shortcut, but, as our
+vision-language baseline in the Method validation shows, a strong VLM prompted to
+read a schematic end to end recovers the components and gist while missing a large
+fraction of the electrical topology ---
+exactly the part that determines whether the circuit simulates. Explicit,
+inspectable topology reasoning is therefore still needed. Second, the topology step
+is hard to \emph{evaluate}: hand-drawn corpora annotate component boxes and wire
+strokes, but not which terminals are electrically common, so there is no net-level
+ground truth against which to measure or tune a join. This work addresses both: a
+degree-budget topology join that explicitly recovers dropped connections, and a
+synthetic evaluation harness that supplies net-level ground truth by construction
+and was used to select the join.
 
-In the earlier manuscript version, a hybrid strategy was adopted in which component detections were used as priors while wire extraction was performed by a classical pipeline based on Sauvola thresholding, connected component analysis, and segment merging. That formulation established the value of component guided preprocessing, but the strongest validated result from the current repository differs materially from the earlier draft. The merge based wire result of 0.647 no longer reflects the best reproducible method. A reproduced reference pipeline now yields an F1 score of 0.7066, and the strongest validated method in the present work yields an F1 score of 0.8215 on the same 23 image benchmark.
-
-The present revision has therefore been focused on the wire method itself. The key observation was that line fitting directly from connected components compresses image structure too early. Fragmented traces, redundant segments, and ambiguous endpoints were repeatedly produced in dense regions. To address this issue, a skeleton graph representation was introduced. Adaptive threshold masks were converted into graph paths, candidate wire hypotheses were scored by structural and component guided cues, and a topology aware selection step was applied to preserve a sparse and plausible explanation of the circuit layout.
-
-The resulting manuscript has been written as a MethodsX article because the principal contribution is methodological. A reproducible hybrid wire extraction procedure is documented, its behavior is validated on a manually annotated benchmark, and its design choices are presented in a form that can be inspected and reused in related document analysis tasks.
+The manuscript is written as a MethodsX article because the principal contribution
+is methodological: a reproducible, component-guided pipeline whose core stage --
+the Degree-Budget Topology Join -- is documented in enough detail to be inspected,
+reused, and re-evaluated, together with the synthetic protocol used to validate it.

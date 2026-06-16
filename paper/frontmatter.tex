@@ -1,6 +1,8 @@
 \begin{frontmatter}
 
-\title{Component Guided Wire Extraction From Hand Drawn Circuit Schematics Using Adaptive Threshold Fusion and Topology Aware Skeleton Graphs}
+% TITLE PROPOSAL (per paper/DECISIONS.md: method = "Degree-Budget Topology Join",
+% system = "CircuitDigitizer"). Adjust wording as preferred.
+\title{CircuitDigitizer: Recovering Simulatable Netlists from Hand-Drawn Circuit Schematics with a Degree-Budget Topology Join}
 
 \author[scaai]{Bosco Chanam\corref{cor1}}
 \ead{bosco.chanam.btech2021@sitpune.edu.in}
@@ -16,11 +18,39 @@
 \address[usc]{Thomas Lord Department of Computer Science, University of Southern California, Los Angeles, California, United States}
 
 \begin{abstract}
-Digitization of hand drawn circuit schematics remains difficult because thin wire traces are easily corrupted by paper texture, scanner artifacts, uneven lighting, and component overlap. A component guided hybrid method is presented in which oriented component detections are used for occlusion and region of interest definition, while wire extraction is performed with a deterministic computer vision pipeline. In the revised method, adaptive threshold masks are converted into skeleton graphs, a conservative Sauvola branch is supplemented by a gated adaptive Gaussian recovery branch, candidate paths are scored by geometric support and component proximity, and a topology aware selection stage is used to suppress redundant alternatives. In the final variant, recovery candidates are further constrained by anchor requirements, class aware port cues, and parallel duplicate rejection. No wire specific training is required for the main method. On a benchmark of 23 hand drawn circuit images with 300 annotated wire segments, the reproduced reference pipeline achieved a global F1 score of 0.7066. The earlier topology guided skeleton graph method achieved an F1 score of 0.7830. The final hybrid recovery method achieved an F1 score of 0.8215, with precision 0.7275 and recall 0.9433. The method is therefore shown to improve both reproducibility and wire extraction accuracy while preserving a transparent pipeline that can be inspected stage by stage.
+Converting a photographed hand-drawn circuit schematic into a netlist that an
+analog simulator can actually run is hard for a reason that is easy to overlook:
+even when components and wire strokes are detected well, the recovered circuit is
+almost always \emph{fragmented}. Faint or occluded strokes leave component
+terminals unconnected, so the netlist breaks into electrically isolated pieces and
+cannot be simulated. CircuitDigitizer is a transparent, stage-by-stage pipeline
+that addresses this end to end. A trained oriented-bounding-box detector
+(YOLO26M-OBB, 16 classes, 88.5\% mAP50) localizes components and guides occlusion
+and region-of-interest cropping; a deterministic Sauvola-based computer-vision
+stage extracts wire segments (point-based wire F1 = 0.9755 on 134 manually
+verified images); and the central contribution, the \emph{Degree-Budget Topology
+Join}, converts detected wires and components into a connected netlist. The join
+first builds an endpoint graph and then treats every still-floating component
+terminal --- the signature of a wire the detector dropped --- as a demand to be
+satisfied by a reach-bounded minimum-cost matching, capped at one new edge per
+terminal and guarded against self-loops. This recovers dropped connections while
+the bounded edge budget structurally prevents the over-merging that shorts dense
+layouts. Circuit connectivity rises from 68.8\% (a strong endpoint-graph baseline)
+to 81.9\% with no per-image regressions, and the resulting netlists are emitted as
+SPICE for DC operating-point simulation. Because real schematics have no net-level
+ground truth, the join is also evaluated on a synthetic harness that authors known
+circuits, lays them out as detector-style coordinate maps, injects detector-style
+error, and scores the real join and simulator against the authored truth; the same
+harness was used to discover the method. As a baseline, a strong vision-language
+model (Mimo~2.5) prompted to read the same schematics end to end missed 38--94\% of
+the topology, underscoring that explicit, inspectable topology reasoning remains
+necessary. No wire-specific training is required for the extraction or join stages.
 \end{abstract}
 
 \begin{keyword}
-Circuit diagram digitization \sep Wire extraction \sep Skeleton graph \sep Adaptive thresholding \sep Document image analysis \sep Hybrid computer vision
+Circuit diagram digitization \sep Netlist extraction \sep Topology join \sep
+Hand-drawn schematics \sep SPICE simulation \sep Oriented object detection \sep
+Document image analysis
 \end{keyword}
 
 \end{frontmatter}
