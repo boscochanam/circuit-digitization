@@ -206,20 +206,7 @@ def run_pipeline(img_path):
             elif cls_id in RELAY_IDS:
                 draw_obb(join_overlay, verts, (80, 80, 60), 1)
 
-        net_colors = [
-            (180, 80, 20), (20, 120, 180), (20, 160, 80),
-            (160, 40, 160), (40, 160, 160), (180, 140, 40),
-            (100, 60, 180), (60, 180, 100),
-        ]
         nets = [n for n in netlist.nodes if n.wires]
-
-        for ni, node in enumerate(nets):
-            color = net_colors[ni % len(net_colors)]
-            for wi in node.wires:
-                if 0 <= wi < len(lines_global):
-                    ep1, ep2 = lines_global[wi]
-                    cv2.line(join_overlay, ep1, ep2, color, 2, cv2.LINE_AA)
-
         for pin in pins:
             px = int(pin.x) + ox
             py = int(pin.y) + oy
@@ -228,29 +215,6 @@ def run_pipeline(img_path):
 
             if comp_cls not in spice_cls_ids:
                 continue
-
-            pin_net_color = None
-            if is_attached:
-                for ni, node in enumerate(nets):
-                    for np_ in node.pins:
-                        if np_.component_idx == pin.component_idx and np_.pin_idx == pin.pin_idx:
-                            pin_net_color = net_colors[ni % len(net_colors)]
-                            break
-
-            if is_attached and pin_net_color:
-                min_dist = float('inf')
-                best_ep = None
-                for wi in [w for n in nets for w in n.wires
-                          if any(p.component_idx == pin.component_idx and p.pin_idx == pin.pin_idx
-                                 for p in n.pins)]:
-                    if wi < len(lines_global):
-                        for ep in lines_global[wi]:
-                            d = math.hypot(ep[0] - px, ep[1] - py)
-                            if d < min_dist:
-                                min_dist = d
-                                best_ep = ep
-                if best_ep and min_dist < 50:
-                    cv2.line(join_overlay, (px, py), best_ep, pin_net_color, 1, cv2.LINE_AA)
 
             dot_color = (0, 220, 0) if is_attached else (0, 0, 255)
             cv2.circle(join_overlay, (px, py), 4, dot_color, -1, cv2.LINE_AA)
@@ -291,8 +255,8 @@ def save_composite(stages, name, output_path):
 
 if __name__ == '__main__':
     candidates = [
-        ("C245_D2_P1_jpg.jpg", "C245-D2-P1-jpg.png"),
-        ("C236_D2_P3_jpeg.jpg", "C236-D2-P3-jpeg.png"),
+        ("C84_D1_P2_jpg.jpg", "C84-D1-P2-jpg.png"),
+        ("C83_D2_P4_jpg.jpg", "C83-D2-P4-jpg.png"),
     ]
     for fname, out_name in candidates:
         img_path = GT_IMAGES / fname
