@@ -203,10 +203,12 @@ Target venues:
 
 | Venue | Deadline | Odds |
 |-------|----------|------|
-| **MethodsX (Elsevier)** | Rolling (submit ~Jul 2026) | 70-80% |
+| **IEEE Access** | Rolling (submit ~Jul 2026) | 70-80% |
 | **NeurIPS 2026 Workshop** | Aug 29, 2026 | 40-55% |
 
-Strategy: submit MethodsX first (Jul 2026), then NeurIPS Workshop (Aug 29) — MethodsX under review ≠ published — no prior-pub conflict. Two publications from one pipeline.
+Strategy: submit IEEE Access first (Jul 2026), then NeurIPS Workshop (Aug 29) — IEEE Access under review ≠ published — no prior-pub conflict. Two publications from one pipeline.
+
+Paper source: `~/workspace/ieee-paper/` (IEEE conference template)
 
 See `~/workspace/README.md` for full experiment history and publishing timeline.
 
@@ -224,7 +226,7 @@ ui/                 Next.js frontend (tuner UI, Join Check, Topology, Simulation
 docs/               MkDocs documentation
   research/         Experiment logs, synthesis docs, analysis
   archive/          Superseded docs
-paper/              LaTeX paper (MethodsX submission)
+archive/paper-methodsx/  Archived MethodsX draft (superseded by IEEE Access)
 ```
 
 ## Development
