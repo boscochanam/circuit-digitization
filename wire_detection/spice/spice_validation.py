@@ -10,12 +10,12 @@ known theoretical values for simple circuits.  Tests cover:
 
 Usage:
     # Run all tests (standalone)
-    python -m wire_detection.evaluation.spice_validation
+    python -m wire_detection.spice.spice_validation
 
     # Run specific test category
-    python -m wire_detection.evaluation.spice_validation --dc
-    python -m wire_detection.evaluation.spice_validation --ac
-    python -m wire_detection.evaluation.spice_validation --current
+    python -m wire_detection.spice.spice_validation --dc
+    python -m wire_detection.spice.spice_validation --ac
+    python -m wire_detection.spice.spice_validation --current
 """
 from __future__ import annotations
 
