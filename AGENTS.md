@@ -115,7 +115,7 @@ Verified visually — clean wire detection, correct joins, good complexity range
 - **C29_D2_P4** — 26 wires, 7 nets, 22 components, F1=1.000. Medium complexity, good variety.
 - **C34_D1_P1** — 19 wires, 4 nets, 24 components, F1=1.000. Simpler, easy to follow.
 - **C63_D2_P3** — 72 wires, F1=1.000. Max complexity stress test.
-- Visualization script: `~/workspace/ieee-paper/generate_candidates_v2.py`
+- Visualization script: `paper/ieee-paper/generate_candidates_v2.py`
 
 ## VLM Quality Assessment
 - Module: `wire_detection.vlm` — classify images by paper type via VLM or programmatic scores

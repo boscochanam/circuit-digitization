@@ -307,7 +307,7 @@ endpoint-graph join (`graph_rescue`) is the default strategy and is substantiall
 - `docs/connectivity.md`, `docs/expanded-benchmark.md` — method comparison tables.
 - `output/<experiment>/…json` — raw per-run metrics written by the benchmark scripts
   (e.g. `experiment_harness.py`, `connectivity_experiment.py`).
-- `~/workspace/ieee-paper/` — IEEE Access paper (LaTeX + figures).
+- `paper/ieee-paper/` — IEEE Access paper (LaTeX + figures, in this repo).
 
 ## Endpoint-graph join — a better connectivity model (not just a tuned attach rule)
 

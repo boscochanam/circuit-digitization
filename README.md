@@ -208,7 +208,7 @@ Target venues:
 
 Strategy: submit IEEE Access first (Jul 2026), then NeurIPS Workshop (Aug 29) — IEEE Access under review ≠ published — no prior-pub conflict. Two publications from one pipeline.
 
-Paper source: `~/workspace/ieee-paper/` (IEEE conference template)
+Paper source: `paper/ieee-paper/` (IEEE conference template, in this repo)
 
 See `~/workspace/README.md` for full experiment history and publishing timeline.
 
