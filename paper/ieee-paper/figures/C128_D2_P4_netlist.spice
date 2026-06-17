@@ -1,0 +1,39 @@
+* C128_D2_P4 Circuit - Extracted from hand-drawn schematic
+* IC1: 555 Timer (8-pin DIP)
+* Battery powered oscillator/multivibrator circuit
+
+* === COMPONENTS ===
+
+* Voltage Source
+V1 VCC GND 9V
+
+* IC: 555 Timer
+* Pins: 1=GND, 2=TRIG, 3=OUT, 4=RESET, 5=CTRL, 6=THR, 7=DISCH, 8=VCC
+U1 VCC GND TRIG THR DISCH OUT CTRL - 555
+
+* Resistors
+R1 VCC DISCH 10k      ; Bourns, Black-Orange (10kΩ)
+R2 DISCH THR 1M       ; 1MΩ resistor
+R3 VCC LED_ANODE 330  ; Current limiting for LED (placeholder)
+
+* Capacitors
+C1 THR GND 400u       ; Timing capacitor (400μF)
+C2 CTRL GND 47u       ; Control voltage bypass (47μF)
+
+* LED
+D1 LED_ANODE LED_K  ; LED (generic)
+LED_K GND           ; LED cathode to ground
+
+* Output Load (Speaker/Motor)
+RL1 OUT GND 8        ; Speaker/motor impedance (8Ω placeholder)
+
+* === NET CONNECTIONS ===
+* Net VCC:    Pin 8 of U1, R1, R3, Battery+
+* Net GND:    Pin 1 of U1, C1, C2, Battery-, LED_K, RL1
+* Net TRIG:   Pin 2 of U1, connected to THR (pin 6) for astable
+* Net THR:    Pin 6 of U1, R2, C1
+* Net DISCH:  Pin 7 of U1, R1, R2
+* Net OUT:    Pin 3 of U1, RL1
+* Net CTRL:   Pin 5 of U1, C2
+
+.end

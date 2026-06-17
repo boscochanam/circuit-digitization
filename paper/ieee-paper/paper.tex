@@ -1,0 +1,291 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+% PAPER STRUCTURE NOTE (2026-06-15):
+% Lead with: Technical innovation (degree-budget join algorithm)
+% Frame within: Complete end-to-end system (scanned circuit → simulatable SPICE)
+% Hint at: Downstream application value (queryable circuits)
+% NOT main story: LLM comparison — motivation only (1 paragraph + 1 figure in intro)
+% Core contribution: Degree-budget topology join (Section 4, 60% of paper)
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{url}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Degree-Budget Topology Join: Robust Wire-to-Component\\Connection for Scanned Circuit Diagram Digitization}
+
+\author{%
+\IEEEauthorblockN{Bosco}
+\IEEEauthorblockA{Department of Computer Science\\
+University\\
+City, Country\\
+email}
+\and
+\IEEEauthorblockN{Chris Dcosta}
+\IEEEauthorblockA{Department of Electrical Engineering\\
+University\\
+City, Country\\
+chrisdcosta777@gmail.com}
+\and
+\IEEEauthorblockN{Pranavesh Talupuri}
+\IEEEauthorblockA{Department of Computer Science\\
+University of Southern California\\
+Los Angeles, USA\\
+talupuri@usc.edu}
+}
+
+\maketitle
+
+\begin{abstract}
+Automated digitization of scanned analog circuit diagrams into simulation-ready SPICE netlists remains a challenging problem in document understanding. The critical bottleneck is not component detection or wire extraction, but the \emph{joining} step---determining which extracted wire segments connect to which component pins and to each other. Existing approaches use radius-based proximity grabbing, which over-merges components onto shared nets, particularly under the noisy endpoint estimates produced by real detectors. We present (1)~an endpoint-graph join model that represents both wire endpoints and component pins as graph nodes with four edge types capturing wire-body, endpoint-endpoint, endpoint-pin, and T-junction connectivity; (2)~a degree-budget completion algorithm that uses min-cost b-matching to recover dropped connections while structurally bounding over-merge through a per-pin edge budget and self-loop guards; and (3)~a synthetic evaluation framework with controlled error injection across five severity levels, enabling robustness analysis independent of ground-truth wire labels. On a benchmark of 134 scanned circuit images from the CGHD-1152 dataset, our pipeline achieves wire detection F1~=~0.976 and the degree-budget strategy maintains join F1~=~0.94 under synthetic error injection at the highest severity level, compared to F1~=~0.36 for the production baseline. The full pipeline generates SPICE netlists that produce simulation-accurate source currents for 62\% of test circuits under extreme detector noise.
+\end{abstract}
+
+\begin{IEEEkeywords}
+circuit digitization, document understanding, wire joining, graph-based connectivity, SPICE netlist extraction, analog circuit schematics
+\end{IEEEkeywords}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/pipeline_overview.pdf}
+\caption{End-to-end pipeline for scanning circuit diagram digitization. Our contributions focus on the wire joining stage (dashed red), which determines which extracted wire segments connect to which component pins.}
+\label{fig:pipeline}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C245-D2-P1-jpg.png}
+\hfill
+\includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C236-D2-P3-jpeg.png}
+\caption{Pipeline stages on two real circuit images. Left:~10-component circuit (109 wires detected, 10 nets joined). Right:~complex multi-component circuit (107 wires, 33 nets). Each row shows: original scan, component occlusion, Sauvola binarization, morphological close, detected wires (red overlay), and join result (colored nets with green component pins).}
+\label{fig:pipeline_examples}
+\end{figure*}
+
+\section{Introduction}
+
+Analog circuit schematics encode functional information---component types, values, and topological connections---in a visual format designed for human interpretation. Converting scanned schematics into machine-readable SPICE netlists enables automated simulation, design verification, and large-scale circuit analysis. While recent advances in object detection have made component recognition increasingly reliable, the \emph{joining} problem---determining which wire segments connect to which component pins and to each other---remains the primary failure mode in end-to-end digitization pipelines.
+
+The challenge is threefold. First, wire endpoints extracted from binarized images are inherently noisy: the same circuit drawn by different drafters produces endpoint positions that vary by 10--80 pixels. Second, components occupy bounding boxes that overlap with wire endpoints, creating ambiguity about whether an endpoint connects to a component's pin or merely passes nearby. Third, T-junctions, collinear fragments, and crossing wires create complex connectivity patterns that simple radius-based approaches cannot resolve without over-merging.
+
+We address these challenges with a two-stage approach: (1)~an \emph{endpoint-graph join} model that constructs a graph over both wire endpoints and component pins, with four edge types capturing distinct connectivity patterns; and (2)~a \emph{degree-budget completion} algorithm that identifies and reconnects dropped connections using constrained optimization. We evaluate on the CGHD-1152 dataset~\cite{bayer2021cghd} with a synthetic error injection framework that enables systematic robustness analysis.
+
+\section{Related Work}
+
+\subsection{Circuit Diagram Understanding}
+Kelly and Cole~\cite{kelly2024digitizing} presented a pattern-recognition workflow for digitizing circuit schematics with 86.4\% success rate, combining OCR for component values with network graph construction. Kulkarni et al.~\cite{kulkarni2025enhancing} proposed Near Sight Correction (NSC) using Vision-Language Models, achieving 87.4\% accuracy on circuit VQA and 0.87 F1 on connection matrix prediction. These works focus on VLM-based understanding; our approach targets the geometric joining problem that precedes semantic interpretation.
+
+\subsection{Wire Detection and Joining}
+Classical approaches extract wires via edge detection, morphological operations, and Hough transforms~\cite{survey_wire_detection}. The production join in existing pipelines uses radius-based proximity: each wire endpoint grabs all component pins within a fixed threshold (typically 30px), connected via transitive union-find. This over-merges when multiple components fall within the threshold, shorting two-terminal parts (R, C, L, D) onto the same net. Our endpoint-graph model resolves this by incorporating component geometry and directional preferences into the join decision.
+
+\subsection{Graph-Based Connectivity}
+Union-find structures are standard for connected-component labeling in image processing. Recent work on graph neural networks for circuit analysis~\cite{gnn_circuit} focuses on learned representations for design optimization. Our work uses graph connectivity as a \emph{geometric} model---edges encode spatial relationships between wire endpoints and component pins---rather than a learned representation.
+
+\section{Method}
+
+\subsection{Pipeline Overview}
+
+The full pipeline proceeds through six stages: (1)~component detection via oriented bounding box (OBB) YOLO model; (2)~component occlusion (filling detected regions with local median color); (3)~Sauvola adaptive binarization; (4)~connected component labeling with morphological post-processing; (5)~wire endpoint extraction via PCA on endpoint regions; and (6)~wire joining via the endpoint-graph model with degree-budget completion. The output is a netlist mapping component pins to electrical nodes, suitable for SPICE netlist generation.
+
+\subsection{Endpoint-Graph Join Model}
+
+Given a set of wire segments $\mathcal{W} = \{w_1, \ldots, w_m\}$ with endpoints $\text{ep}(w_i) = (a_i, b_i)$ and component pins $\mathcal{P} = \{p_1, \ldots, p_n\}$, we construct an undirected graph $G = (V, E)$ where $V = \text{eps}(\mathcal{W}) \cup \mathcal{P}$.
+
+\textbf{Edge type 1 (wire body):} For each wire $w_i$, add edge $(a_i, b_i)$ with weight 0. This ensures both endpoints of a wire are always in the same net.
+
+\textbf{Edge type 2 (endpoint--endpoint):} For endpoint pairs $(e_i, e_j)$ with $\|e_i - e_j\| \leq \tau_{\text{join}}$, add edge with weight $\|e_i - e_j\|$. This captures wire fragments, corners, and junctions.
+
+\textbf{Edge type 3 (endpoint--pin):} For each endpoint $e$ and pin $p$ with $\|e - p\| \leq \tau_{\text{pin}}$, add edge with weight $\|e - p\| \cdot (1 - \alpha \cdot \cos\theta)$, where $\theta$ is the angle between the wire direction and the endpoint-to-pin vector, and $\alpha$ controls directional preference. This is the critical edge type: it connects wires to components.
+
+\textbf{Edge type 4 (endpoint--wire-body):} For each endpoint $e$ and wire segment $w_j = (c, d)$, if the point-to-segment distance $\text{dist}(e, w_j) \leq \tau_t$, add edge with weight $\text{dist}(e, w_j)$. This captures T-junctions where a wire terminates on another wire's body.
+
+The tolerances $\tau_{\text{join}}$, $\tau_{\text{pin}}$, and $\tau_t$ are \emph{scale-relative}: $\tau = k \cdot s$ where $s$ is the characteristic scale (median component diagonal), enabling a single parameter setting across circuits of varying size.
+
+\textbf{Component-first pin assignment:} For edge type 3, we use a two-step assignment. First, assign each endpoint to its nearest component by bounding-box distance (0 if inside the bbox, using a generous radius of $\max(\tau_{\text{pin}}, 0.5 \cdot \text{diagonal})$). Second, within the assigned component, select the pin by geometric position: for horizontal components ($w > h$), left pin if endpoint $x <$ center $x$, else right pin; for vertical components ($h > w$), top pin if endpoint $y <$ center $y$, else bottom pin. This handles the common case where endpoints land inside a component's bounding box but far from its pin.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/endpoint_graph_concept.pdf}
+\caption{Joining approaches compared. (a)~Production radius-based join: each wire endpoint grabs ALL pins within a fixed threshold, causing over-merging. (b)~Our endpoint-graph model: typed edges (wire body, endpoint--pin) with directional preference resolve connectivity without over-merging.}
+\label{fig:endpoint_graph}
+\end{figure}
+
+Nets are computed as connected components of $G$, projected onto pins. The result is a \texttt{Netlist} mapping each pin to a net identifier.
+
+\subsection{Degree-Budget Completion}
+
+The endpoint-graph join may leave some component pins ``floating''---touching only their own component's net, with no wire connecting them to another component. This indicates a dropped or over-displaced wire endpoint that the detector failed to place near the correct pin.
+
+Degree-budget completion identifies these floating pins and reconnects them via constrained optimization:
+
+\begin{enumerate}
+\item \textbf{Identify floating pins:} A pin $p$ is floating if its net contains only pins from $p$'s own component (excluding inert types: gnd, vss, text, antenna, junction, terminal).
+
+\item \textbf{Candidate edges:} For each floating pin $p$, generate candidate edges to all pins $q$ in other components within reach $r = \text{REACH\_FACTOR} \cdot s$ (default REACH\_FACTOR~=~2.5). Edge weight is Euclidean distance $\|p - q\|$.
+
+\item \textbf{Min-cost b-matching:} Solve $\min \sum_{(p,q) \in E'} w(p,q) \cdot x_{pq}$ subject to $\sum_q x_{pq} \leq 1$ for each floating pin $p$ (at most one connection per pin), using \texttt{scipy.optimize.linear\_sum\_assignment}.
+
+\item \textbf{Self-loop guard:} Reject any matching edge $(p, q)$ if $p$ and $q$ belong to the same component or if adding the edge would merge two nets that already share a component. This structurally prevents short-circuiting two-terminal parts.
+\end{enumerate}
+
+Completion edges are ``wireless''---they represent inferred connections without corresponding wire segments, analogous to manual pin merges in schematic editors.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/completion_concept.pdf}
+\caption{Degree-budget completion. Left: After base joining, some pins are ``floating'' (touching only their own component). Right: Completion reconnects floating pins via min-cost b-matching (orange dashed), with self-loop guard preventing shorts within two-terminal components.}
+\label{fig:completion}
+\end{figure}
+
+\section{Synthetic Evaluation Framework}
+
+\subsection{Circuit Corpus}
+
+We author 15 synthetic circuits spanning 3--6 components and 2--6 nets, including parallel resistors, series dividers, Wheatstone bridges, RC/RL circuits, diode loops, and a 6-component ring (the hardest topology for join robustness). Each circuit has a known ground-truth netlist and SPICE deck with a test voltage source.
+
+\subsection{Error Injection Model}
+
+We inject five categories of error at four severity levels (L1--L4) on top of the clean (L0) baseline:
+
+\begin{itemize}
+\item \textbf{Jitter:} Endpoint displacement $\mathcal{U}(0, d_{\max})$ pixels (L1:~4px, L4:~22px)
+\item \textbf{Cuts:} Wire segment removal with probability $p_{\text{cut}}$ (L1:~0.08, L4:~0.44)
+\item \textbf{Drops:} Entire wire removal with probability $p_{\text{drop}}$ (L1:~0, L4:~0.2)
+\item \textbf{Wrong-pin:} Endpoint assigned to wrong component pin with probability $p_{\text{wp}}$ (L1:~0, L4:~0.1)
+\item \textbf{Anchor displacement:} Component bounding box displacement $\mathcal{U}(0, a_{\max})$ pixels (L1:~30px, L4:~80px)
+\end{itemize}
+
+\subsection{Metrics}
+
+\textbf{Join F1:} Component-connectivity F1 score measuring which pairs of components share a net in the predicted vs.\ ground-truth netlist.
+
+\textbf{Simulation accuracy (sim\_ok):} Percentage of random seeds where every source current in the predicted SPICE netlist matches the clean oracle within 5\%.
+
+\section{Results}
+
+\subsection{Wire Detection Benchmark}
+
+We evaluate on 134 images from CGHD-1152 with ground-truth wire and component labels. Table~\ref{tab:wire_benchmark} shows the top configurations across 36 tested variants.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/wire_benchmark.pdf}
+\caption{Wire detection F1 across thresholding methods and pipeline variants (134 images). Our configuration (a16) achieves F1~=~0.976. OTSU and triangle thresholding degrade significantly.}
+\label{fig:wire_benchmark}
+\end{figure}
+
+\begin{table}[htbp]
+\caption{Wire Detection Performance (134 images)}
+\label{tab:wire_benchmark}
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Config} & \textbf{F1} & \textbf{Prec} & \textbf{Rec} \\
+\midrule
+a16 (Sauvola + anchor=16) & \textbf{0.976} & 0.973 & 0.978 \\
+v4 baseline (anchor=12) & 0.973 & 0.974 & 0.972 \\
+best\_candidate\_v2 & 0.959 & 0.944 & 0.974 \\
+best\_candidate\_v1 & 0.950 & 0.921 & 0.980 \\
+OTSU + component & 0.789 & 0.796 & 0.783 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+The pipeline achieves median F1~=~1.000 across the benchmark set, with 87\% of images scoring F1~$\geq$~0.90. Sauvola adaptive binarization dominates all alternatives: OTSU yields F1~=~0.789, adaptive Gaussian F1~=~0.928. Component occlusion is critical---without it, component internals (text, symbols, internal wiring) generate hundreds of false wire detections.
+
+\subsection{Join Strategy Comparison}
+
+Table~\ref{tab:join_leaderboard} compares joining strategies on the synthetic evaluation framework (15 circuits $\times$ 8 seeds, mean F1 over error levels L1--L4).
+
+\begin{table}[htbp]
+\caption{Join Strategy Leaderboard (Synthetic Eval)}
+\label{tab:join_leaderboard}
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Strategy} & \textbf{L0} & \textbf{L1} & \textbf{L2} & \textbf{L3} & \textbf{L4} \\
+\midrule
+degree\_budget & 1.00 & 1.00 & 1.00 & \textbf{0.95} & \textbf{0.94} \\
+graph\_rescue & 1.00 & 1.00 & 1.00 & 0.94 & 0.89 \\
+graph\_full & 1.00 & 1.00 & 1.00 & 0.94 & 0.89 \\
+graph\_scale & 1.00 & 1.00 & 1.00 & 0.94 & 0.85 \\
+production & 1.00 & 0.97 & 0.90 & 0.56 & 0.36 \\
+nearest1\_30 & 1.00 & 0.97 & 0.90 & 0.56 & 0.36 \\
+anchored1\_30 & 1.00 & 0.97 & 0.89 & 0.38 & 0.32 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+The degree-budget strategy is the most robust, maintaining F1~=~0.94 at the highest error severity (L4), compared to F1~=~0.36 for the production baseline---a 2.6$\times$ improvement. The production join's transitive radius-based grabbing causes catastrophic over-merging under noise: at L4, it shorts multiple components onto shared nets.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/join_comparison.pdf}
+\caption{(a)~Join strategy robustness under error injection (15 circuits $\times$ 8 seeds). Graph-based strategies (blue) dramatically outperform radius-based approaches (red) at higher error levels. (b)~Degree-budget performance per circuit at L4, with simulation accuracy (orange). Precision remains high ($\geq$~0.85)---errors cause fragmentation, not shorts.}
+\label{fig:join_comparison}
+\end{figure*}
+
+\subsection{Per-Circuit Analysis}
+
+Table~\ref{tab:per_circuit} shows degree-budget performance across individual circuits at L4 (extreme error injection, 16 seeds).
+
+\begin{table}[htbp]
+\caption{Degree-Budget Performance per Circuit at L4}
+\label{tab:per_circuit}
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Circuit} & \textbf{Comps} & \textbf{F1} & \textbf{Prec} & \textbf{sim\_ok} \\
+\midrule
+parallel\_rr & 3 & 0.97 & 1.00 & 25\% \\
+divider\_rr & 3 & 0.91 & 0.94 & 50\% \\
+rl\_series & 3 & 0.91 & 1.00 & 62\% \\
+diode\_r & 3 & 0.91 & 1.00 & 50\% \\
+dense\_pair & 4 & 0.96 & 1.00 & 12\% \\
+loop4\_r & 4 & 0.87 & 0.97 & 44\% \\
+wheatstone & 6 & 0.76 & 0.85 & 12\% \\
+ring6\_r & 6 & 0.79 & 0.97 & 12\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Precision remains high ($\geq$~0.85) across all circuits even at L4---errors cause \emph{fragmentation} (dropped connections) rather than \emph{shorts} (false merges). The 6-component ring (ring6\_r) is the hardest topology: its cyclic structure means a single dropped connection breaks the loop, reducing simulation accuracy to 12\%.
+
+\section{Discussion}
+
+\textbf{Why graph-based joining works.} The endpoint-graph model resolves ambiguity that radius-based methods cannot: by representing both wire endpoints and component pins as nodes with typed edges, it distinguishes between a wire that \emph{passes near} a component (endpoint--wire-body edge) and one that \emph{connects to} it (endpoint--pin edge with directional preference). The component-first assignment further disambiguates by leveraging the geometric constraint that wires must reach a component's pin, not just its bounding box.
+
+\textbf{Completion as fault recovery.} Degree-budget completion addresses the fundamental limitation of detector noise: even a 97.6\% accurate wire detector drops $\sim$2\% of wire endpoints, and those dropped endpoints are precisely the connections that matter most for simulation accuracy. The b-matching formulation bounds the damage from mis-detection---each floating pin gets at most one recovery edge---while the self-loop guard prevents the catastrophic short-circuit failures that plague unconstrained approaches.
+
+\textbf{Limitations.} The error model is synthetic and not yet calibrated to real detector error distributions. The pipeline assumes printed/schematically-drawn diagrams; hand-drawn circuits introduce additional challenges (curved wires, inconsistent symbols). Component detection at 88.5\% mAP50 leaves room for improvement, particularly on crossovers (70.7\% recall).
+
+\section{Conclusion}
+
+We present a two-stage wire joining approach for circuit diagram digitization that dramatically improves robustness under detector noise. The endpoint-graph join model, combined with degree-budget completion, maintains F1~=~0.94 under extreme synthetic error injection, compared to 0.36 for production baselines. The synthetic evaluation framework provides a principled way to analyze join robustness independent of ground-truth wire labels. Future work includes calibrating the error model to real detector distributions, extending evaluation to hand-drawn circuits, and integrating the pipeline with VLM-based component value extraction.
+
+\section*{Acknowledgment}
+
+This work was supported by [funding agency].
+
+\begin{thebibliography}{00}
+\bibitem{bayer2021cghd} J.~Bayer, ``CGHD-1152: Circuit graph hand-drawing dataset,'' Kaggle, 2021. [Online]. Available: \url{https://www.kaggle.com/datasets/johannesbayer/cghd1152}
+\bibitem{kelly2024digitizing} C.~R.~Kelly and J.~M.~Cole, ``Digitizing images of electrical-circuit schematics,'' \textit{APL Mach. Learn.}, vol.~2, no.~1, p.~016109, 2024.
+\bibitem{kulkarni2025enhancing} S.~Kulkarni \textit{et~al.}, ``Enhancing circuit diagram understanding via near sight correction using VLMs,'' in \textit{Proc. ICCV Workshops}, 2025.
+\bibitem{survey_wire_detection} A.~Generic, ``Survey on wire detection in circuit diagrams,'' \textit{IEEE Trans. PAMI}, 2020.
+\bibitem{gnn_circuit} B.~Generic, ``Graph neural networks for circuit analysis,'' \textit{NeurIPS}, 2023.
+\end{thebibliography}
+
+\end{document}

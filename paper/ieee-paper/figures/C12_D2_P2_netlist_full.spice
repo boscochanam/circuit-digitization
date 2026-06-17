@@ -1,0 +1,79 @@
+* SPICE Netlist - Circuit C12_D2_P2_jpg.jpg
+* Hand-drawn schematic extraction
+
+* ============================================================
+* POWER SUPPLY
+* ============================================================
+V1 VCC GND DC 5V
+
+* ============================================================
+* RESISTORS (7 total)
+* ============================================================
+R1 VCC N2 1k       ; Top left resistor
+R2 N2 N3 1k        ; Resistor connected to R1
+R3 N3 N4 680       ; Resistor in left section
+R4 N5 N6 100       ; Center resistor
+R5 N6 N7 100       ; Center resistor
+R6 VCC N8 1k       ; Top right resistor
+R7 N8 N9 680       ; Right side resistor
+
+* ============================================================
+* TRANSISTORS - TIP41 (NPN Power, 4 total)
+* ============================================================
+Q1 N5 N3 N10 TIP41   ; TIP41 #1
+Q2 N6 N4 N11 TIP41   ; TIP41 #2
+Q3 N7 N5 N12 TIP41   ; TIP41 #3
+Q4 N8 N6 N13 TIP41   ; TIP41 #4
+
+* ============================================================
+* TRANSISTORS - 2N2222 (NPN Small Signal, 2 total)
+* ============================================================
+Q5 N9 N7 N14 2N2222  ; 2N2222 #1
+Q6 N10 N8 N15 2N2222 ; 2N2222 #2
+
+* ============================================================
+* DIODES (4 total)
+* ============================================================
+D1 N11 N12 1N4148   ; Diode #1
+D2 N12 N13 1N4148   ; Diode #2
+D3 N13 N14 1N4148   ; Diode #3
+D4 N14 N15 1N4148   ; Diode #4
+
+* ============================================================
+* LEDs (2 total)
+* ============================================================
+LED1 N4 GND LED     ; LED on left
+LED2 N9 GND LED     ; LED on right
+
+* ============================================================
+* NET DEFINITIONS
+* ============================================================
+* VCC  - Positive supply rail
+* GND  - Ground (0V)
+* N2   - Junction R1/R2
+* N3   - Junction R2/R3, Q1 base
+* N4   - Junction R3/LED1, Q2 base
+* N5   - Junction R4, Q1 collector, Q3 base
+* N6   - Junction R4/R5, Q2 collector, Q4 base
+* N7   - Junction R5, Q3 collector, Q5 base
+* N8   - Junction R6/R7, Q4 collector, Q6 base
+* N9   - Junction R7/LED2, Q5 collector
+* N10  - Q1 emitter, Q6 collector
+* N11  - Q2 emitter, D1 anode
+* N12  - Q3 emitter, D1 cathode/D2 anode
+* N13  - Q4 emitter, D2 cathode/D3 anode
+* N14  - Q5 emitter, D3 cathode/D4 anode
+* N15  - Q6 emitter, D4 cathode
+
+* ============================================================
+* COMPONENT COUNT SUMMARY
+* ============================================================
+* Voltage Sources: 1  (V1)
+* Resistors:       7  (R1-R7)
+* TIP41 (NPN):    4  (Q1-Q4)
+* 2N2222 (NPN):   2  (Q5-Q6)
+* Diodes:          4  (D1-D4)
+* LEDs:            2  (LED1, LED2)
+* ---------------------------------
+* TOTAL:          20 components
+* UNIQUE NETS:    15 (VCC, GND, N2-N15)

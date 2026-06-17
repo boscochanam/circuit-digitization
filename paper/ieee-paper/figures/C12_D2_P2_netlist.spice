@@ -1,0 +1,63 @@
+* Circuit Schematic Extraction - C12_D2_P2_jpg.jpg
+* Extracted from hand-drawn schematic
+
+* Voltage Source
+V1 VCC GND 5V
+
+* Resistors
+R1 VCC 2 1k
+R2 2 3 1k
+R3 3 4 680
+R4 5 6 100
+R5 6 7 100
+R6 VCC 8 1k
+R7 8 9 680
+
+* Transistors - TIP41 (NPN Power Transistors)
+Q1 5 3 10 TIP41
+Q2 6 4 11 TIP41
+Q3 7 5 12 TIP41
+Q4 8 6 13 TIP41
+
+* Transistors - 2N2222 (Small Signal NPN)
+Q5 9 7 14 2N2222
+Q6 10 8 15 2N2222
+
+* Diodes
+D1 11 12 1N4148
+D2 12 13 1N4148
+D3 13 14 1N4148
+D4 14 15 1N4148
+
+* LEDs
+LED1 4 GND RED
+LED2 9 GND RED
+
+* Ground connections
+* Net GND is common ground
+
+* Net list summary:
+* Net 1: VCC (positive supply)
+* Net 2: Junction R1-R2
+* Net 3: Junction R2-R3, Q1 base
+* Net 4: Junction R3-LED1, Q2 base
+* Net 5: Junction R4-Q1 collector
+* Net 6: Junction R4-R5, Q2 collector
+* Net 7: Junction R5-Q3 collector
+* Net 8: Junction R6-R7, Q4 collector
+* Net 9: Junction R7-LED2, Q5 collector
+* Net 10: Q1 emitter, Q6 collector
+* Net 11: Q2 emitter, D1 anode
+* Net 12: Q3 emitter, D1 cathode/D2 anode
+* Net 13: Q4 emitter, D2 cathode/D3 anode
+* Net 14: Q5 emitter, D3 cathode/D4 anode
+* Net 15: Q6 emitter, D4 cathode
+
+* Component count:
+* - Voltage sources: 1
+* - Resistors: 7
+* - Transistors (TIP41): 4
+* - Transistors (2N2222): 2
+* - Diodes: 4
+* - LEDs: 2
+* Total: 20 components
