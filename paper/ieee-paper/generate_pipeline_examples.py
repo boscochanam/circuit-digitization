@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-"""Generate pipeline example figures for the IEEE paper.
-Produces 2x3 grid composites for C245-D2-P1 and C236-D2-P3.
-"""
+"""Pipeline visualization using trained YOLO model for component detection.
+Shows all real component pins (not just SPICE passives)."""
 import os, sys, cv2, math
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 from pathlib import Path
 
 sys.path.insert(0, '/home/claw/circuit-digitization')
@@ -16,17 +12,13 @@ from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig, build_component_mask, crop_to_roi, shift_components,
     detect_wires_experiment, sauvola_binary,
 )
-from wire_detection.core.join_strategies import run_strategy, make_pins, DEFAULT_STRATEGY
+from wire_detection.core.join_strategies import run_strategy, DEFAULT_STRATEGY
 from wire_detection.core.component_classes import COMPONENT_TYPES
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
-RELAY_IDS = {cid for cid, name in COMPONENT_TYPES.items()
-             if name in ("junction", "terminal", "gnd", "crossover")}
-SPICE_CLASSES = {
-    "resistor", "capacitor-unpolarized", "capacitor-polarized",
-    "inductor", "diode", "voltage-AC", "voltage-DC",
-}
-spice_cls_ids = {cid for cid, name in COMPONENT_TYPES.items() if name in SPICE_CLASSES}
-
+# Config
 cfg = ExperimentConfig(
     name="a16", sauvola_k=0.285, sauvola_window=67, close_kernel=3,
     ccl_min_area=28, endpoint_mode="pca", dedup_mode="overlap",
@@ -35,106 +27,53 @@ cfg = ExperimentConfig(
 )
 
 GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
-HDC_SPLITS = ["train", "valid", "test"]
 OUTPUT = Path("/home/claw/circuit-digitization/paper/ieee-paper/figures/pipeline_examples")
 OUTPUT.mkdir(parents=True, exist_ok=True)
 
-
-def find_hdc_label_by_prefix(image_name):
-    """Find the Roboflow/HDC label file matching an image name prefix."""
-    for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
-        if not label_dir.exists():
-            continue
-        matches = sorted(label_dir.glob(f"{image_name}_jpg.rf.*.txt"))
-        if matches:
-            return matches[0]
-        # Also try jpeg suffix
-        matches = sorted(label_dir.glob(f"{image_name}_jpeg.rf.*.txt"))
-        if matches:
-            return matches[0]
-    return None
+# Classes that are "relay" / structural — don't show as pins
+SKIP_PIN_TYPES = {
+    "junction", "terminal", "gnd", "crossover", "vss",
+    "text", "unknown", "mechanical", "optical",
+    "probe", "probe-current", "probe-voltage",
+}
+SKIP_PIN_IDS = {cid for cid, name in COMPONENT_TYPES.items() if name in SKIP_PIN_TYPES}
 
 
-def find_exact_match_hdc(image_name, orig_gray):
-    """Find the exact pixel-matching Roboflow image and label."""
-    for suffix in ["_jpg", "_jpeg"]:
-        stem = f"{image_name}{suffix}"
-        best_match = None
-        best_diff = float('inf')
-        for split in HDC_SPLITS:
-            img_dir = HDC_BASE / split / "images"
-            label_dir = HDC_BASE / split / "labels"
-            if not img_dir.exists():
-                continue
-            for f in sorted(img_dir.glob(f"{stem}.rf.*.jpg")):
-                rob = cv2.imread(str(f), cv2.IMREAD_GRAYSCALE)
-                if rob is not None and rob.shape == orig_gray.shape:
-                    diff = np.mean(np.abs(rob.astype(float) - orig_gray.astype(float)))
-                    if diff < best_diff:
-                        best_diff = diff
-                        lbl = label_dir / f.name.replace('.jpg', '.txt')
-                        if lbl.exists():
-                            best_match = (lbl, f, diff)
-        if best_match and best_match[2] < 1.0:
-            return best_match[0], best_match[1]
-    return None, None
-
-
-def load_hdc_labels(label_path, img_wh):
-    """Load YOLO-OBB labels preserving true OBB vertices."""
-    w, h = img_wh
+def load_yolo_components(image_path):
+    """Run trained YOLO model and return components in standard format."""
+    from ultralytics import YOLO
+    model_path = "models/component_detection/yolo26m_obb_16class_aug.pt"
+    model = YOLO(model_path)
+    results = model(str(image_path), task="obb", conf=0.5)
+    
     components = []
-    with open(label_path) as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) < 9:
-                continue
-            cls_id = int(parts[0])
-            coords = [float(x) for x in parts[1:9]]
-            xs = [coords[i] * w for i in range(0, 8, 2)]
-            ys = [coords[i] * h for i in range(1, 8, 2)]
-            pts = [(int(xs[i]), int(ys[i])) for i in range(4)]
-            x1, x2 = min(xs), max(xs)
-            y1, y2 = min(ys), max(ys)
-            components.append((cls_id, pts, (int(x1), int(y1), int(x2), int(y2))))
+    for result in results:
+        if result.obb is None:
+            continue
+        for i in range(len(result.obb.cls)):
+            cls_id = int(result.obb.cls[i])
+            bbox = result.obb.xyxy[i].tolist()
+            x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+            polygon = result.obb.xyxyxyxy[i].tolist()
+            polygon_pts = [(int(p[0]), int(p[1])) for p in polygon]
+            components.append((cls_id, polygon_pts, (x1, y1, x2, y2)))
     return components
 
 
 def draw_obb(img, vertices, color, thickness=1):
-    """Draw oriented bounding box using true 4-corner polygon."""
     pts = np.array(vertices, dtype=np.int32).reshape((-1, 1, 2))
     cv2.polylines(img, [pts], True, color, thickness, cv2.LINE_AA)
 
 
 def run_pipeline(img_path):
-    """Run the full pipeline and collect stage images."""
     from PIL import Image
-    name = Path(img_path).stem
     pil_img = Image.open(img_path).convert('L')
     gray = np.array(pil_img)
     stages = {}
     stages['original'] = gray.copy()
 
-    # Strip known suffixes to get the base lookup name
-    lookup_name = name
-    for suffix in ('_jpg', '_jpeg', '_png'):
-        if lookup_name.endswith(suffix):
-            lookup_name = lookup_name[:-len(suffix)]
-            break
-
-    hdc_label = find_hdc_label_by_prefix(lookup_name)
-    exact_label, exact_img_path = find_exact_match_hdc(lookup_name, gray)
-
-    comp_labels = []
-    if exact_label:
-        comp_labels = load_hdc_labels(exact_label, (gray.shape[1], gray.shape[0]))
-        if exact_img_path:
-            gray = cv2.imread(str(exact_img_path), cv2.IMREAD_GRAYSCALE)
-            stages['original'] = gray.copy()
-    elif hdc_label:
-        comp_labels = load_hdc_labels(hdc_label, (gray.shape[1], gray.shape[0]))
+    # Use trained YOLO model for component detection
+    comp_labels = load_yolo_components(img_path)
 
     if comp_labels:
         occluded = build_component_mask(gray, comp_labels, cfg.occlusion_margin)
@@ -163,27 +102,19 @@ def run_pipeline(img_path):
                     for (x1, y1), (x2, y2) in lines_local]
     stages['n_wires'] = len(lines_global)
 
-    # Wire overlay with OBB polygons
+    # Wire overlay
     overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
     for (x1, y1), (x2, y2) in lines_global:
         cv2.line(overlay, (x1, y1), (x2, y2), (0, 0, 255), 2, cv2.LINE_AA)
     for comp in comp_labels:
         cls_id, verts, bbox = comp
-        color = (0, 200, 0) if cls_id in spice_cls_ids else (0, 180, 255)
-        draw_obb(overlay, verts, color, 1)
+        if cls_id not in SKIP_PIN_IDS:
+            draw_obb(overlay, verts, (0, 200, 0), 1)
     stages['wire_overlay'] = overlay.copy()
 
-    # Join result
+    # Join result — no colored net lines, just pin dots
     if comp_labels and lines_global:
-        has_relays = any(c[0] in RELAY_IDS for c in comp_labels)
-        if has_relays:
-            # Fallback: use basic pin-based join for circuits with relays
-            pins = make_pins(lines_global, local_components)
-            # Build a simple netlist from wire connections
-            from wire_detection.core.join_strategies import run_strategy
-            pins, netlist = run_strategy(DEFAULT_STRATEGY, lines_global, local_components)
-        else:
-            pins, netlist = run_strategy(DEFAULT_STRATEGY, lines_global, local_components)
+        pins, netlist = run_strategy(DEFAULT_STRATEGY, lines_global, local_components)
 
         attached_pins = set()
         for node in netlist.nodes:
@@ -193,42 +124,39 @@ def run_pipeline(img_path):
         join_overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
         join_overlay = (join_overlay * 0.4 + 40).astype(np.uint8)
 
-        # Draw OBB polygons for SPICE components
+        # Draw OBB polygons for all components
         for comp in comp_labels:
             cls_id, verts, bbox = comp
-            if cls_id in spice_cls_ids:
+            if cls_id not in SKIP_PIN_IDS:
                 draw_obb(join_overlay, verts, (60, 60, 45), 1)
                 cx = sum(v[0] for v in verts) // 4
                 cy = min(v[1] for v in verts) - 4
                 tname = COMPONENT_TYPES.get(cls_id, "?").split("-")[0]
                 cv2.putText(join_overlay, tname, (cx - 15, max(12, cy)),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.35, (160, 160, 140), 1, cv2.LINE_AA)
-            elif cls_id in RELAY_IDS:
-                draw_obb(join_overlay, verts, (80, 80, 60), 1)
 
-        nets = [n for n in netlist.nodes if n.wires]
+        # Draw pin dots for ALL components (not just SPICE passives)
         for pin in pins:
             px = int(pin.x) + ox
             py = int(pin.y) + oy
-            is_attached = (pin.component_idx, pin.pin_idx) in attached_pins
             comp_cls = local_components[pin.component_idx][0]
-
-            if comp_cls not in spice_cls_ids:
+            if comp_cls in SKIP_PIN_IDS:
                 continue
 
+            is_attached = (pin.component_idx, pin.pin_idx) in attached_pins
             dot_color = (0, 220, 0) if is_attached else (0, 0, 255)
             cv2.circle(join_overlay, (px, py), 4, dot_color, -1, cv2.LINE_AA)
             cv2.circle(join_overlay, (px, py), 4, (255, 255, 255), 1, cv2.LINE_AA)
 
         stages['join_overlay'] = join_overlay.copy()
+        nets = [n for n in netlist.nodes if n.wires]
         stages['n_nets'] = len(nets)
-        stages['n_comps'] = sum(1 for c in comp_labels if c[0] in spice_cls_ids)
+        stages['n_comps'] = sum(1 for c in comp_labels if c[0] not in SKIP_PIN_IDS)
 
     return stages
 
 
 def save_composite(stages, name, output_path):
-    """Save 2×3 grid at high resolution (300 dpi)."""
     fig, axes = plt.subplots(2, 3, figsize=(14, 9.5), dpi=300)
     title_map = [
         ('original', 'Original'),
