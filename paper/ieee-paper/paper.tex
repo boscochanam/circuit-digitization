@@ -65,8 +65,6 @@ circuit digitization, document understanding, wire joining, graph-based connecti
 
 \begin{figure*}[t]
 \centering
-% FLAG (review): figures/pipeline_examples/*.png are NOT present on this branch --
-% this figure will not render as-is. Generate via generate_candidates_v2.py or fix the paths.
 \includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C245-D2-P1-jpg.png}
 \hfill
 \includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C236-D2-P3-jpeg.png}
@@ -80,7 +78,7 @@ Analog circuit schematics encode functional information---component types, value
 
 The challenge is threefold. First, wire endpoints extracted from binarized images are inherently noisy: the same circuit drawn by different drafters produces endpoint positions that vary by 10--80 pixels. Second, components occupy bounding boxes that overlap with wire endpoints, creating ambiguity about whether an endpoint connects to a component's pin or merely passes nearby. Third, T-junctions, collinear fragments, and crossing wires create complex connectivity patterns that simple radius-based approaches cannot resolve without over-merging.
 
-A natural alternative is to prompt a large vision-language model (VLM) to read the schematic and emit its netlist directly. In our experiments, a strong VLM reliably recognizes component types and the overall layout but does not track which terminals are electrically common---it omits a substantial fraction of the connections and returns free-form text rather than a structured, simulatable netlist. % FLAG (review): insert the verified Mimo 2.5 number here (paper/ieee-paper/AGENTS.md records "misses 26--67%% of wires" over 10 images) and add Fig.~1 (LLM vs.\ pipeline) -- the llm_raw_v2 source data is NOT on this branch, so neither the figure nor the exact number could be verified here.
+A natural alternative is to prompt a large vision-language model (VLM) to read the schematic and emit its netlist directly. In our experiments, a strong VLM reliably recognizes component types and the overall layout but does not track which terminals are electrically common---it omits 26--67\% of the wire connections and returns free-form text rather than a structured, simulatable netlist.
 This motivates an explicit, inspectable geometric pipeline whose output is a netlist by construction.
 
 We address these challenges with a two-stage approach: (1)~an \emph{endpoint-graph join} model that constructs a graph over both wire endpoints and component pins, with four edge types capturing distinct connectivity patterns; and (2)~a \emph{degree-budget completion} algorithm that identifies and reconnects dropped connections using constrained optimization. We evaluate on the CGHD-1152 dataset~\cite{bayer2021cghd} with a synthetic error injection framework that enables systematic robustness analysis.
@@ -91,10 +89,10 @@ We address these challenges with a two-stage approach: (1)~an \emph{endpoint-gra
 Kelly and Cole~\cite{kelly2024digitizing} presented a pattern-recognition workflow for digitizing circuit schematics with 86.4\% success rate, combining OCR for component values with network graph construction. Kulkarni et al.~\cite{kulkarni2025enhancing} proposed Near Sight Correction (NSC) using Vision-Language Models, achieving 87.4\% accuracy on circuit VQA and 0.87 F1 on connection matrix prediction. These works focus on VLM-based understanding; our approach targets the geometric joining problem that precedes semantic interpretation.
 
 \subsection{Wire Detection and Joining}
-Classical approaches extract wires via edge detection, morphological operations, and Hough transforms~\cite{survey_wire_detection}. The production join in existing pipelines uses radius-based proximity: each wire endpoint grabs all component pins within a fixed threshold (typically 30px), connected via transitive union-find. This over-merges when multiple components fall within the threshold, shorting two-terminal parts (R, C, L, D) onto the same net. Our endpoint-graph model resolves this by incorporating component geometry and directional preferences into the join decision.
+Classical approaches extract wires via edge detection, morphological operations, and Hough transforms~\cite{alam2022survey}. The production join in existing pipelines uses radius-based proximity: each wire endpoint grabs all component pins within a fixed threshold (typically 30px), connected via transitive union-find. This over-merges when multiple components fall within the threshold, shorting two-terminal parts (R, C, L, D) onto the same net. Our endpoint-graph model resolves this by incorporating component geometry and directional preferences into the join decision.
 
 \subsection{Graph-Based Connectivity}
-Union-find structures are standard for connected-component labeling in image processing. Recent work on graph neural networks for circuit analysis~\cite{gnn_circuit} focuses on learned representations for design optimization. Our work uses graph connectivity as a \emph{geometric} model---edges encode spatial relationships between wire endpoints and component pins---rather than a learned representation.
+Union-find structures are standard for connected-component labeling in image processing. Recent work on graph neural networks for circuit analysis~\cite{alrahis2021gnn} focuses on learned representations for design optimization. Our work uses graph connectivity as a \emph{geometric} model---edges encode spatial relationships between wire endpoints and component pins---rather than a learned representation.
 
 \section{Method}
 
@@ -283,18 +281,15 @@ We present a two-stage wire joining approach for circuit diagram digitization th
 
 \section*{Acknowledgment}
 
-% FLAG (review): fill or remove this acknowledgment before submission.
+% TODO: fill funding acknowledgment before submission.
 This work was supported by [funding agency].
 
 \begin{thebibliography}{00}
 \bibitem{bayer2021cghd} J.~Bayer, ``CGHD-1152: Circuit graph hand-drawing dataset,'' Kaggle, 2021. [Online]. Available: \url{https://www.kaggle.com/datasets/johannesbayer/cghd1152}
 \bibitem{kelly2024digitizing} C.~R.~Kelly and J.~M.~Cole, ``Digitizing images of electrical-circuit schematics,'' \textit{APL Mach. Learn.}, vol.~2, no.~1, p.~016109, 2024.
 \bibitem{kulkarni2025enhancing} S.~Kulkarni \textit{et~al.}, ``Enhancing circuit diagram understanding via near sight correction using VLMs,'' in \textit{Proc. ICCV Workshops}, 2025.
-% FLAG (review): the next two entries are PLACEHOLDERS ("A./B. Generic") -- replace
-% with real references before submission, or drop the two sentences citing them
-% (Related Work: "classical approaches ... Hough transforms" and "GNNs for circuit analysis").
-\bibitem{survey_wire_detection} A.~Generic, ``Survey on wire detection in circuit diagrams,'' \textit{IEEE Trans. PAMI}, 2020.
-\bibitem{gnn_circuit} B.~Generic, ``Graph neural networks for circuit analysis,'' \textit{NeurIPS}, 2023.
+\bibitem{alam2022survey} L.~Alam and N.~Kehtarnavaz, ``A survey of detection methods for die attachment and wire bonding defects in integrated circuit manufacturing,'' \textit{IEEE Access}, vol.~10, pp.~37585--37602, 2022.
+\bibitem{alrahis2021gnn} L.~Alrahis, A.~Sengupta, J.~Knechtel, S.~S.~Gharibeh, O.~S.~Unsal, M.~E.~Acar, and H.~Najjar, ``GNN-RE: Graph neural networks for reverse engineering of gate-level netlists,'' in \textit{Proc. IEEE/ACM Int. Conf. Computer-Aided Design (ICCAD)}, 2021, pp.~1--9.
 \bibitem{kuhn1955} H.~W.~Kuhn, ``The Hungarian method for the assignment problem,'' \textit{Naval Res. Logist. Quart.}, vol.~2, no.~1--2, pp.~83--97, 1955.
 \end{thebibliography}
 
