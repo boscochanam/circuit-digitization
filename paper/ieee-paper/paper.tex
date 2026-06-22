@@ -1,13 +1,6 @@
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
 
-% PAPER STRUCTURE NOTE (2026-06-15):
-% Lead with: Technical innovation (degree-budget join algorithm)
-% Frame within: Complete end-to-end system (scanned circuit → simulatable SPICE)
-% Hint at: Downstream application value (queryable circuits)
-% NOT main story: LLM comparison — motivation only (1 paragraph + 1 figure in intro)
-% Core contribution: Degree-budget topology join (Section 4, 60% of paper)
-
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
@@ -16,6 +9,7 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
+\usepackage{float}
 \usepackage{multirow}
 \usepackage{url}
 
@@ -24,7 +18,7 @@
 
 \begin{document}
 
-\title{Degree-Budget Topology Join: Robust Wire-to-Component\\Connection for Scanned Circuit Diagram Digitization}
+\title{NetGuard: Wire-to-Component Joining for\\Scanned Circuit Diagram Digitization}
 
 \author{%
 \IEEEauthorblockN{Bosco Chanam}
@@ -39,7 +33,7 @@ Symbiosis Institute of Technology\\
 Pune, India\\
 chrisdcosta777@gmail.com}
 \and
-\IEEEauthorblockN{Pranavesh Talupuri}
+\IEEEauthorblockN{Pranavesh Kumar Talupuri}
 \IEEEauthorblockA{Department of Computer Science\\
 University of Southern California\\
 Los Angeles, USA\\
@@ -49,7 +43,7 @@ talupuri@usc.edu}
 \maketitle
 
 \begin{abstract}
-Automated digitization of scanned analog circuit diagrams into simulation-ready SPICE netlists remains a challenging problem in document understanding. The critical bottleneck is not component detection or wire extraction, but the \emph{joining} step---determining which extracted wire segments connect to which component pins and to each other. Existing approaches use radius-based proximity grabbing, which over-merges components onto shared nets, particularly under the noisy endpoint estimates produced by real detectors. We present (1)~an endpoint-graph join model that represents both wire endpoints and component pins as graph nodes with four edge types capturing wire-body, endpoint-endpoint, endpoint-pin, and T-junction connectivity; (2)~a degree-budget completion algorithm that uses min-cost b-matching to recover dropped connections while structurally bounding over-merge through a per-pin edge budget and self-loop guards; and (3)~a synthetic evaluation framework with controlled error injection across five severity levels, enabling robustness analysis independent of ground-truth wire labels. On a benchmark of 134 scanned circuit images from the CGHD-1152 dataset, our pipeline achieves wire detection F1~=~0.976 and the degree-budget strategy maintains join F1~=~0.94 under synthetic error injection at the highest severity level, compared to F1~=~0.36 for the production baseline. The full pipeline generates SPICE netlists that simulate to the exact ground-truth operating point under clean detection, and produce simulation-accurate source currents for up to 62\% of circuits (mean 33\% across the synthetic suite) even at the highest noise level.
+Scanned circuit digitization pipelines can often recover component instances and wire fragments, yet they still fail at the \emph{joining} step: deciding which detected wire endpoints connect to which component pins and neighboring wire segments. This paper focuses on that bottleneck. We formulate joining as a typed endpoint graph over wire endpoints and component pins, then add guarded floating-pin completion to recover plausible missing joins without introducing widespread false shorts. The full method, \emph{NetGuard}, improves the detected-scan structural error score from 0.3679 to 0.2710 relative to the \mbox{(1)+(2)} endpoint-graph-plus-rescue variant while maintaining 99.4\% wire usage, and reaches 0.9416 join F1 at the highest synthetic error severity. Because the scanned corpus lacks net-level ground truth, we separate real-image structural verification from synthetic net-level robustness tests and do not claim full real-world netlist correctness.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -58,199 +52,235 @@ circuit digitization, document understanding, wire joining, graph-based connecti
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/pipeline_overview.pdf}
-\caption{End-to-end pipeline for scanning circuit diagram digitization. Our contributions focus on the wire joining stage (dashed red), which determines which extracted wire segments connect to which component pins.}
+\includegraphics[width=\textwidth]{figures/tikz/pipeline_overview_tikz.pdf}
+\caption{Pipeline overview. The detector-support stages provide component priors and wire fragments as supporting context, while the highlighted join-recovery stages form the main contribution of the paper. NetGuard operates after fragment detection, converting the typed endpoint graph into recovered electrical nets and a SPICE-ready netlist.}
 \label{fig:pipeline}
 \end{figure*}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C84-D1-P2-jpg.png}
-\hfill
-\includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C83-D2-P4-jpg.png}
-\caption{Pipeline stages on two real circuit images. Left:~41 wires detected, 1 net joined. Right:~34 wires, 7 nets. Each row shows: original scan, component occlusion, Sauvola binarization, morphological close, detected wires (red overlay), and join result (green = attached pin, red = unattached pin).}
+\includegraphics[width=0.86\textwidth]{figures/pipeline_examples/C84-D1-P2-jpg.png}
+\caption{End-to-end behavior on a representative real scanned schematic. The figure keeps four readable stages: (a) input scan, (b) component priors and occlusion, (c) detected wire fragments, and (d) NetGuard recovered joins. This case contains 12 detected wire fragments, 5 recovered nets, and 12 nontrivial components, illustrating that the main ambiguity lies in converting plausible fragments into stable electrical joins.}
 \label{fig:pipeline_examples}
 \end{figure*}
 
 \section{Introduction}
 
-Analog circuit schematics encode functional information---component types, values, and topological connections---in a visual format designed for human interpretation. Converting scanned schematics into machine-readable SPICE netlists enables automated simulation, design verification, and large-scale circuit analysis. While recent advances in object detection have made component recognition increasingly reliable, the \emph{joining} problem---determining which wire segments connect to which component pins and to each other---remains the primary failure mode in end-to-end digitization pipelines.
+Analog circuit schematics encode component identity, electrical connectivity, and design intent in a visual form meant for human readers. Converting scanned schematics into machine-readable SPICE netlists would enable simulation, archival search, and downstream circuit analysis, but robust end-to-end digitization remains difficult. In our pipeline, the dominant failure mode is not component recognition or even raw wire extraction; it is the \emph{joining} step that decides which detected wire fragments belong to the same electrical net.
 
-The challenge is threefold. First, wire endpoints extracted from binarized images are inherently noisy: the same circuit drawn by different drafters produces endpoint positions that vary by 10--80 pixels. Second, components occupy bounding boxes that overlap with wire endpoints, creating ambiguity about whether an endpoint connects to a component's pin or merely passes nearby. Third, T-junctions, collinear fragments, and crossing wires create complex connectivity patterns that simple radius-based approaches cannot resolve without over-merging.
+That joining problem is brittle for three geometric reasons. First, endpoint locations inferred from thresholded scans are noisy and may shift by tens of pixels across drawing styles. Second, components occupy regions that partially occlude the wire segments that should attach to their pins. Third, corners, T-junctions, near-misses, and dense local layouts create cases where a simple ``attach everything within a radius'' rule incorrectly shorts unrelated terminals.
 
-A natural alternative is to prompt a large vision-language model (VLM) to read the schematic and emit its netlist directly. In our experiments, a strong VLM reliably recognizes component types and the overall layout but does not track which terminals are electrically common---it omits 26--67\% of the wire connections and returns free-form text rather than a structured, simulatable netlist.
-This motivates an explicit, inspectable geometric pipeline whose output is a netlist by construction.
+Direct vision-language-model netlist transcription is attractive as a motivating alternative, but in our experiments it still under-specifies terminal connectivity and yields free-form text rather than a constrained electrical representation. We therefore keep the circuit-to-netlist path explicit and geometric.
 
-We address these challenges with a two-stage approach: (1)~an \emph{endpoint-graph join} model that constructs a graph over both wire endpoints and component pins, with four edge types capturing distinct connectivity patterns; and (2)~a \emph{degree-budget completion} algorithm that identifies and reconnects dropped connections using constrained optimization. We evaluate on the CGHD-1152 dataset~\cite{bayer2021cghd} with a synthetic error injection framework that enables systematic robustness analysis.
+The contribution hierarchy in this paper is deliberately narrow. Wire detection is supporting context, not the main claim. The paper's main contribution is the join-recovery stage, which we present as \emph{NetGuard}. More specifically, we 1) formalize joining as a typed endpoint graph over wire endpoints and component pins, 2) add guarded floating-pin completion that recovers plausible missing joins while limiting false shorts, and 3) evaluate the resulting joiner with three separate evidence layers: real detected-scan structural verification, synthetic perturbation robustness, and downstream simulation checks. Because the scanned corpus lacks net-level ground truth, we keep those evidence layers separate and do not overclaim full real-world netlist correctness.
 
 \section{Related Work}
 
-\subsection{Circuit Diagram Understanding}
-Kelly and Cole~\cite{kelly2024digitizing} presented a pattern-recognition workflow for digitizing circuit schematics with 86.4\% success rate, combining OCR for component values with network graph construction. Kulkarni et al.~\cite{kulkarni2025enhancing} proposed Near Sight Correction (NSC) using Vision-Language Models, achieving 87.4\% accuracy on circuit VQA and 0.87 F1 on connection matrix prediction. These works focus on VLM-based understanding; our approach targets the geometric joining problem that precedes semantic interpretation.
+Recent work on circuit-diagram digitization has made clear progress on task framing, datasets, and end-to-end prototypes. Thoma et al.~\cite{thoma2021dataset} introduced a public handwritten-circuit dataset that helped move the problem from bespoke examples toward reproducible evaluation. Kelly and Cole~\cite{kelly2024digitizing} describe a configurable schematic-digitization pipeline that combines symbol interpretation, OCR, and graph construction, while Hemker et al.~\cite{hemker2024schematics} present a deep-learning-based route from schematics to netlists. Rachala and Panicker~\cite{rachala2022handdrawn} focus on hand-drawn circuit recognition using object detection and node recognition. Together, these papers show that end-to-end circuit parsing is feasible, but they also suggest that connectivity recovery remains fragile once wires are noisy, fragmented, or only partially visible.
 
-\subsection{Wire Detection and Joining}
-Classical approaches extract wires via edge detection, morphological operations, and Hough transforms~\cite{alam2022survey}. The production join in existing pipelines uses radius-based proximity: each wire endpoint grabs all component pins within a fixed threshold (typically 30px), connected via transitive union-find. This over-merges when multiple components fall within the threshold, shorting two-terminal parts (R, C, L, D) onto the same net. Our endpoint-graph model resolves this by incorporating component geometry and directional preferences into the join decision.
+That observation is consistent with the broader engineering-diagram literature. Large gains have been reported for symbol detection and classification in technical drawings~\cite{elyan2020symbols,lee2020engineering,yang2024singleline}, and Moreno-Garcia et al.~\cite{moreno2024review} review how deep learning has improved diagram digitization across multiple engineering domains. However, these systems still require domain-aware reasoning about lines, ports, and structural relationships after the detector stage. Even in closely related handwritten-diagram settings, such as Arrow R-CNN for hand-drawn diagrams~\cite{schaefer2021arrow}, the main challenge shifts from recognizing local shapes to recovering the relations between them.
 
-\subsection{Graph-Based Connectivity}
-Union-find structures are standard for connected-component labeling in image processing. Recent work on graph neural networks for circuit analysis~\cite{alrahis2021gnn} focuses on learned representations for design optimization. Our work uses graph connectivity as a \emph{geometric} model---edges encode spatial relationships between wire endpoints and component pins---rather than a learned representation.
+The preprocessing choices in our pipeline also have a substantial literature behind them. Adaptive thresholding methods such as Otsu, Niblack, and Sauvola remain standard references when thin strokes must be separated from uneven backgrounds~\cite{otsu1979,niblack1986,sauvola2000}, and later document-image work refined those ideas for degraded pages and locally varying contrast~\cite{gatos2006,shafait2008,su2013}. Likewise, thinning, skeletonization, and line-recovery methods have long emphasized topology preservation over purely pixelwise segmentation quality~\cite{zhang1984thinning,lam1992thinning,duda1972hough,gioi2010lsd}. Those classical results remain relevant here because a joiner only has a chance to succeed if the upstream representation preserves the right sparse geometry.
+
+What is still underdeveloped in the literature is a dedicated treatment of joining under detector error. Prior circuit papers usually treat connectivity as a downstream consequence of detection, often through Hough-style rules, nearest-node heuristics, or fixed-radius attachment~\cite{rachala2022handdrawn,hemker2024schematics}, and they rarely separate detector quality from join quality with distinct metrics. Vision-language-model approaches can help with high-level interpretation~\cite{kulkarni2025enhancing}, but they do not by themselves provide a verifiable electrical join structure. Our contribution is therefore narrower than a full digitization system: we isolate the wire-to-component joining stage, model it geometrically, and study how to recover plausible missing joins without paying for that recovery with a surge in false shorts.
 
 \section{Method}
 
-\subsection{Pipeline Overview}
+The end-to-end pipeline is summarized in Fig.~\ref{fig:pipeline}. Component priors come from oriented bounding-box detection. For the supporting wire stage, we use a component-guided classical detector that occludes component polygons with local median fill, thresholds the component-union crop with Sauvola binarization, applies light morphological closing, extracts connected components, estimates endpoints with PCA, and suppresses duplicate segments through overlap-aware filtering. The current traceable broad-benchmark artifact for that detector is the \emph{Anchor-Guided PCA Detector}, which provides the wire fragments consumed by every joining experiment reported here. We include that detector only as upstream context; the contribution of this paper begins after wire fragments and component pins have been proposed.
 
-The full pipeline proceeds through six stages: (1)~component detection via oriented bounding box (OBB) YOLO model; (2)~component occlusion (filling detected regions with local median color); (3)~Sauvola adaptive binarization; (4)~connected component labeling with morphological post-processing; (5)~wire endpoint extraction via PCA on endpoint regions; and (6)~wire joining via the endpoint-graph model with degree-budget completion. The output is a netlist mapping component pins to electrical nodes, suitable for SPICE netlist generation.
+We use the following shorthand throughout: \textbf{(1)} typed endpoint graph, \textbf{(2)} dangling-end rescue, \textbf{(3)} floating-pin completion, and \textbf{(4)} degree budget plus self-loop guard. NetGuard denotes the full \textbf{(1)+(2)+(3)+(4)} method.
 
-\subsection{Endpoint-Graph Join Model}
+Joining begins with \textbf{(1)} typed endpoint graph construction. We form a graph from wire segments $\mathcal{W} = \{w_1, \ldots, w_m\}$ and component pins $\mathcal{P} = \{p_1, \ldots, p_n\}$, with nodes $V = \mathrm{eps}(\mathcal{W}) \cup \mathcal{P}$. For every wire $w_i$ with endpoints $(a_i, b_i)$, we add a zero-cost wire-body edge $(a_i, b_i)$ so both endpoints of an extracted segment remain electrically tied. Endpoint-endpoint edges connect nearby fragment ends when $\lVert e_i - e_j \rVert \leq \tau_{\mathrm{join}}$. Endpoint-pin edges connect an endpoint $e$ to a candidate pin $p$ when $\lVert e - p \rVert \leq \tau_{\mathrm{pin}}$, with weight $\lVert e - p \rVert (1 - \alpha \cos \theta)$ so the preferred attachment aligns with the local wire direction. Endpoint-wire-body edges connect a terminal endpoint to a passing wire body when the point-to-segment distance is below $\tau_t$, capturing T-junction behavior. For comparison, the \emph{Legacy Radius-Based Joiner} attaches each endpoint to every pin within a fixed 30\,px radius rather than using this typed graph.
 
-Given a set of wire segments $\mathcal{W} = \{w_1, \ldots, w_m\}$ with endpoints $\text{ep}(w_i) = (a_i, b_i)$ and component pins $\mathcal{P} = \{p_1, \ldots, p_n\}$, we construct an undirected graph $G = (V, E)$ where $V = \text{eps}(\mathcal{W}) \cup \mathcal{P}$.
+All geometric tolerances are scale-relative, $\tau = k s$, where $s$ is the median component diagonal. Endpoint-pin hypotheses use a component-first assignment rule: an endpoint is first assigned to the nearest component by oriented-box distance, then mapped to a pin on that component by local geometry. This step is important when a detector places an endpoint inside a component box but not directly on the pin location.
 
-\textbf{Edge type 1 (wire body):} For each wire $w_i$, add edge $(a_i, b_i)$ with weight 0. This ensures both endpoints of a wire are always in the same net.
-
-\textbf{Edge type 2 (endpoint--endpoint):} For endpoint pairs $(e_i, e_j)$ with $\|e_i - e_j\| \leq \tau_{\text{join}}$, add edge with weight $\|e_i - e_j\|$. This captures wire fragments, corners, and junctions.
-
-\textbf{Edge type 3 (endpoint--pin):} For each endpoint $e$ and pin $p$ with $\|e - p\| \leq \tau_{\text{pin}}$, add edge with weight $\|e - p\| \cdot (1 - \alpha \cdot \cos\theta)$, where $\theta$ is the angle between the wire direction and the endpoint-to-pin vector, and $\alpha$ controls directional preference. This is the critical edge type: it connects wires to components.
-
-\textbf{Edge type 4 (endpoint--wire-body):} For each endpoint $e$ and wire segment $w_j = (c, d)$, if the point-to-segment distance $\text{dist}(e, w_j) \leq \tau_t$, add edge with weight $\text{dist}(e, w_j)$. This captures T-junctions where a wire terminates on another wire's body.
-
-The tolerances $\tau_{\text{join}}$, $\tau_{\text{pin}}$, and $\tau_t$ are \emph{scale-relative}: $\tau = k \cdot s$ where $s$ is the characteristic scale (median component diagonal), enabling a single parameter setting across circuits of varying size.
-
-\textbf{Component-first pin assignment:} For edge type 3, we use a two-step assignment. First, assign each endpoint to its nearest component by bounding-box distance (0 if inside the bbox, using a generous radius of $\max(\tau_{\text{pin}}, 0.5 \cdot \text{diagonal})$). Second, within the assigned component, select the pin by geometric position: for horizontal components ($w > h$), left pin if endpoint $x <$ center $x$, else right pin; for vertical components ($h > w$), top pin if endpoint $y <$ center $y$, else bottom pin. This handles the common case where endpoints land inside a component's bounding box but far from its pin.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/endpoint_graph_concept.pdf}
-\caption{Joining approaches compared. (a)~Production radius-based join: each wire endpoint grabs ALL pins within a fixed threshold, causing over-merging. (b)~Our endpoint-graph model: typed edges (wire body, endpoint--pin) with directional preference resolve connectivity without over-merging.}
-\label{fig:endpoint_graph}
-\end{figure}
-
-Nets are computed as connected components of $G$, projected onto pins. The result is a \texttt{Netlist} mapping each pin to a net identifier.
-
-\subsection{Degree-Budget Completion}
-
-The endpoint-graph join may leave some component pins ``floating''---touching only their own component's net, with no wire connecting them to another component. This indicates a dropped or over-displaced wire endpoint that the detector failed to place near the correct pin.
-
-Degree-budget completion identifies these floating pins and reconnects them via constrained optimization:
-
-\begin{enumerate}
-\item \textbf{Identify floating pins:} A pin $p$ is floating if its net contains only pins from $p$'s own component (excluding inert types: gnd, vss, text, antenna, junction, terminal).
-
-\item \textbf{Candidate edges:} For each floating pin $p$, generate candidate edges to all pins $q$ in other components within reach $r = \text{REACH\_FACTOR} \cdot s$ (default REACH\_FACTOR~=~2.5). Edge weight is Euclidean distance $\|p - q\|$.
-
-\item \textbf{Min-cost b-matching:} Solve $\min \sum_{(p,q) \in E'} w(p,q) \cdot x_{pq}$ subject to $\sum_q x_{pq} \leq 1$ for each floating pin $p$ (at most one connection per pin), using the Hungarian algorithm~\cite{kuhn1955} (\texttt{scipy.optimize.linear\_sum\_assignment}). Each target pin offers up to three slots so legitimate multi-terminal nets are not starved, and a per-pin opt-out leaves a pin with no good target unconnected rather than forcing a spurious edge.
-
-\item \textbf{Self-loop guard:} Reject any matching edge $(p, q)$ if $p$ and $q$ belong to the same component or if adding the edge would merge two nets that already share a component. This structurally prevents short-circuiting two-terminal parts.
-\end{enumerate}
-
-Completion edges are ``wireless''---they represent inferred connections without corresponding wire segments, analogous to manual pin merges in schematic editors.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/completion_concept.pdf}
-\caption{Degree-budget completion. Left: After base joining, some pins are ``floating'' (touching only their own component). Right: Completion reconnects floating pins via min-cost b-matching (orange dashed), with self-loop guard preventing shorts within two-terminal components.}
-\label{fig:completion}
-\end{figure}
-
-\section{Synthetic Evaluation Framework}
-
-\subsection{Circuit Corpus}
-
-We author 15 synthetic circuits spanning 3--6 components and 2--6 nets, including parallel resistors, series dividers, Wheatstone bridges, RC/RL circuits, diode loops, and a 6-component ring (the hardest topology for join robustness). Each circuit has a known ground-truth netlist and SPICE deck with a test voltage source.
-
-\subsection{Error Injection Model}
-
-We inject five categories of error at four severity levels (L1--L4) on top of the clean (L0) baseline:
-
-\begin{itemize}
-\item \textbf{Jitter:} Gaussian endpoint perturbation with standard deviation $\sigma$ (L1:~3px, L4:~14px)
-\item \textbf{Cut-short:} Each wire shortened inward by a fixed length (L1:~4px, L4:~22px), modeling endpoints that stop short of the pin
-\item \textbf{Drops:} Entire wire removed with probability $p_{\text{drop}}$ (L1:~0, L4:~0.20)
-\item \textbf{Wrong-pin:} Endpoint snapped to a wrong nearby pin with probability $p_{\text{wp}}$ (L2:~0.02, L4:~0.10)
-\item \textbf{Anchor displacement:} With probability $p_{\text{disp}}$ (L1:~0.10, L4:~0.40), one endpoint is displaced by up to $a_{\max}$ pixels (L1:~30px, L4:~80px)
-\end{itemize}
-
-\subsection{Metrics}
-
-\textbf{Join F1:} Component-connectivity F1 score measuring which pairs of components share a net in the predicted vs.\ ground-truth netlist.
-
-\textbf{Simulation accuracy (sim\_ok):} Percentage of random seeds where every source current in the predicted SPICE netlist matches the clean oracle within 5\%.
-
-\section{Results}
-
-\subsection{Wire Detection Benchmark}
-
-We evaluate on 134 images from CGHD-1152 with ground-truth wire and component labels. Table~\ref{tab:wire_benchmark} shows the top configurations across 36 tested variants.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/wire_benchmark.pdf}
-\caption{Wire detection F1 across thresholding methods and pipeline variants (134 images). Our configuration (a16) achieves F1~=~0.976. OTSU and triangle thresholding degrade significantly.}
-\label{fig:wire_benchmark}
-\end{figure}
-
-\begin{table}[htbp]
-\caption{Wire Detection Performance (134 images)}
-\label{tab:wire_benchmark}
-\begin{center}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Config} & \textbf{F1} & \textbf{Prec} & \textbf{Rec} \\
-\midrule
-a16 (Sauvola + anchor=16) & \textbf{0.976} & 0.973 & 0.978 \\
-v4 baseline (anchor=12) & 0.973 & 0.974 & 0.972 \\
-best\_candidate\_v2 & 0.959 & 0.944 & 0.974 \\
-best\_candidate\_v1 & 0.950 & 0.921 & 0.980 \\
-OTSU + component & 0.789 & 0.796 & 0.783 \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-The pipeline achieves median F1~=~1.000 across the benchmark set, with 87\% of images scoring F1~$\geq$~0.90. Sauvola adaptive binarization dominates all alternatives: OTSU yields F1~=~0.789, adaptive Gaussian F1~=~0.928. Component occlusion is critical---without it, component internals (text, symbols, internal wiring) generate hundreds of false wire detections.
-
-\subsection{Join Strategy Comparison}
-
-Table~\ref{tab:join_leaderboard} compares joining strategies on the synthetic evaluation framework (15 circuits $\times$ 8 seeds, mean F1 over error levels L1--L4).
-
-\begin{table}[htbp]
-\caption{Join Strategy Leaderboard (Synthetic Eval)}
-\label{tab:join_leaderboard}
-\begin{center}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Strategy} & \textbf{L0} & \textbf{L1} & \textbf{L2} & \textbf{L3} & \textbf{L4} \\
-\midrule
-degree\_budget & 1.00 & 1.00 & 1.00 & \textbf{0.95} & \textbf{0.94} \\
-graph\_rescue & 1.00 & 1.00 & 1.00 & 0.94 & 0.89 \\
-graph\_full & 1.00 & 1.00 & 1.00 & 0.94 & 0.89 \\
-graph\_scale & 1.00 & 1.00 & 1.00 & 0.94 & 0.85 \\
-production & 1.00 & 0.97 & 0.90 & 0.56 & 0.36 \\
-nearest1\_30 & 1.00 & 0.97 & 0.90 & 0.56 & 0.36 \\
-anchored1\_30 & 1.00 & 0.97 & 0.89 & 0.38 & 0.32 \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-The degree-budget strategy is the most robust, maintaining F1~=~0.94 at the highest error severity (L4), compared to F1~=~0.36 for the legacy radius-based production baseline---a 2.6$\times$ improvement. The production join's transitive radius-based grabbing causes catastrophic over-merging under noise: at L4, it shorts multiple components onto shared nets. We emphasize, however, that the endpoint-graph baselines (graph\_rescue, graph\_full) are themselves far more robust than the radius join, reaching F1~=~0.89 at L4 (Table~\ref{tab:join_leaderboard}). The degree-budget completion adds a further $+0.05$ over the strongest of these by recovering dropped connections the base graph join leaves floating, while its per-pin edge budget keeps precision high. The large gap is thus against the legacy radius join; against the strongest prior graph join the improvement is smaller but consistent across every severity level.
+\textbf{(2)} dangling-end rescue extends a subset of dangling wire endpoints directionally before graph construction or candidate generation. This stage is meant to recover short gaps caused by endpoint truncation. The \textbf{(1)+(2)} variant is the current endpoint-graph-plus-rescue baseline used throughout the results.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/join_comparison.pdf}
-\caption{(a)~Join strategy robustness under error injection (15 circuits $\times$ 8 seeds). Graph-based strategies (blue) dramatically outperform radius-based approaches (red) at higher error levels. (b)~Degree-budget performance per circuit at L4, with simulation accuracy (orange). Precision remains high ($\geq$~0.85)---errors cause fragmentation, not shorts.}
-\label{fig:join_comparison}
+\includegraphics[width=\textwidth]{figures/real_join_comparison.png}
+\caption{Real scanned-circuit join comparison on case \texttt{C84\_D1\_P2}. Panel (a) shows that the Legacy Radius-Based Joiner over-merges nearby attachments into one oversized net. Panel (b) shows the same crop under NetGuard, with the zoomed inset highlighting the preserved separation. The figure supports the paper's central real-image claim: join quality changes materially even when the upstream wire detector is unchanged.}
+\label{fig:real_join}
 \end{figure*}
 
-\subsection{Per-Circuit Analysis}
+The endpoint graph is converted to nets by connected components over $G$, projected onto pins. This base join is intentionally conservative, so it may leave some terminals \emph{floating}: a pin lands in a net that contains only pins from its own component after inert classes such as ground, terminal, and text are excluded. \textbf{(3)} floating-pin completion starts from those terminals and generates candidate completion edges to plausible pins on other components. \textbf{(4)} degree budget plus self-loop guard limits how many completion edges can target a pin and rejects same-component completions or merges that would create component self-loops. NetGuard is the full \textbf{(1)+(2)+(3)+(4)} combination.
 
-Table~\ref{tab:per_circuit} shows degree-budget performance across individual circuits at L4 (extreme error injection, 16 seeds).
+\begin{algorithm}[t]
+\caption{NetGuard: Guarded Floating-Pin Completion}
+\label{alg:degree_budget}
+\begin{algorithmic}[1]
+\STATE Run the \textbf{(1)+(2)} endpoint-graph join and compute provisional nets.
+\STATE Mark a pin $p$ as floating if its net contains only pins from $p$'s own component.
+\FOR{each floating pin $p$}
+\STATE Generate candidate edges $(p, q)$ to pins on other components within reach $r = 2.5s$.
+\STATE Weight each candidate by Euclidean distance between $p$ and $q$.
+\ENDFOR
+\STATE Apply \textbf{(4)} degree budgets and self-loop guards during completion selection.
+\STATE Solve a min-cost b-matching problem with at most one assignment per floating pin.
+\STATE Allow each target pin up to three slots and include an opt-out assignment.
+\FOR{each selected candidate edge $(p, q)$}
+\IF{$p$ and $q$ belong to the same component}
+\STATE Reject the edge.
+\ELSIF{merging the two nets would create a component self-loop}
+\STATE Reject the edge.
+\ELSE
+\STATE Merge the two nets with an inferred completion edge.
+\ENDIF
+\ENDFOR
+\STATE Return the completed pin-to-net mapping.
+\end{algorithmic}
+\end{algorithm}
 
-\begin{table}[htbp]
-\caption{Degree-Budget Performance per Circuit at L4}
+The completion stage is shown conceptually in Fig.~\ref{fig:completion}. NetGuard is the full \textbf{(1)+(2)+(3)+(4)} method. Its implementation details are compact but important for reproducibility. The characteristic scale $s$ is the median component diagonal. The \textbf{(2)} rescue stage applies a single 12\,px end extension before graph construction. Variant \textbf{(3)} uses candidate reach $2.5s$, and the full NetGuard method adds \textbf{(4)} degree budgets together with a self-loop guard that rejects any candidate merge between nets that already share a component. The assignment routine is the Hungarian solver from \texttt{scipy.optimize.linear\_sum\_assignment}~\cite{kuhn1955}. Completion edges are wireless: they represent inferred schematic joins rather than newly hallucinated wire geometry. We also compare \textbf{(1)} endpoint graph only, which shares the same graph view but omits both rescue and floating-pin completion. For the detected-scan verification reported later, we summarize join quality with a \emph{structural error score} defined as
+\[
+\text{structural error score} = \text{composite} + 0.5 \cdot \frac{\text{unused wires}}{\max(1,\text{all wires})},
+\]
+where the composite term counts self-loops, floating components, and giant nets per component. Lower values are better because they indicate fewer over-merge and under-connection failures on detected scans.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/tikz/netguard_concept_tikz.pdf}
+\caption{NetGuard concept. The figure visualizes the four stages reused throughout the paper: (1) typed endpoint graph, (2) dangling-end rescue, (3) floating-pin candidate generation, and (4) guarded completion with degree budgets and self-loop rejection. Dashed edges denote candidate completions, the thick solid edge denotes the accepted completion, and the rejected edge illustrates the structural guard against false shorts.}
+\label{fig:completion}
+\end{figure*}
+
+\subsection{Synthetic Evaluation Framework}
+
+The real scanned corpus gives wire-level and component-level labels, but it does not provide net-level ground truth. That prevents direct scoring of correct electrical joining on real images and motivates a separate synthetic benchmark. We therefore use the synthetic benchmark as a robustness proxy rather than a replacement for the real-image evaluation.
+
+We author 15 synthetic circuits spanning 3--6 components and 2--6 nets, including dividers, RC/RL chains, diode loops, bridge structures, and cyclic topologies. Each circuit has a known ground-truth netlist and a corresponding SPICE deck. Error injection is designed to approximate the detector-side failures that the joiner actually sees. Across four nonzero severity levels on top of the clean control, we perturb endpoints with Gaussian jitter from 3\,px to 14\,px, shorten wires by 4--22\,px to model endpoints that stop short of a pin, drop whole wires with probability up to 0.20, snap some endpoints to the wrong nearby pin with probability up to 0.10, and displace one endpoint by as much as 80\,px under the most severe setting. The primary synthetic metric is join F1, measured over component pairs that should or should not share a net. We also report simulation accuracy (\texttt{sim\_ok}), the percentage of random seeds whose recovered SPICE deck preserves every authored source current within tolerance relative to the clean oracle. Join precision falls when false shorts appear, while join recall falls when fragmentation leaves intended component pairs disconnected.
+
+\begin{table*}[t]
+\caption{Evidence layers used in the paper.}
+\label{tab:protocol}
+\begin{center}
+\scriptsize
+\begin{tabular}{p{3.05cm}p{3.0cm}p{2.55cm}p{5.7cm}}
+\toprule
+\textbf{Evidence Layer} & \textbf{Evaluation Unit} & \textbf{Main Metrics} & \textbf{Purpose} \\
+\midrule
+Supporting detector context & Detected wire fragments on broad and stress subsets & F1, precision, recall & Fix the upstream wire evidence consumed by every join experiment and show that the joiner is not being credited for detector quality \\
+Real scanned structural verification & Pin-to-net structure on detected scans & Structural error, wires used, floating components, self-loops & Measure whether a joiner over-merges attachments or leaves many fragments unused on real scans \\
+Synthetic net-level robustness & Component-pair connectivity under controlled perturbations & Precision, recall, F1 & Measure robustness to dropped, shifted, and truncated endpoints when exact net-level ground truth is available \\
+Downstream simulation sanity check & Recovered SPICE deck on representative L4 synthetic cases & \texttt{sim\_ok} & Check whether fragmentation failures preserve or break simple operating-point behavior on representative circuits \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+\end{table*}
+
+\section{Results}
+
+The results are organized around the three evidence layers promised in the introduction. We first define those layers, then summarize the main join results, and finally unpack real scanned behavior, synthetic robustness, and the remaining simulation and detector context.
+
+\begin{table*}[t]
+\caption{Join results under a fixed detector input. All join experiments use the same wire fragments from the Anchor-Guided PCA Detector, so detector quality is held fixed across rows. Lower structural error is better.}
+\label{tab:main_summary}
+\begin{center}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Method / Variant} & \textbf{Structural Error $\downarrow$} & \textbf{Wires Used $\uparrow$} & \textbf{Floating $\downarrow$} & \textbf{Self-Loops $\downarrow$} & \textbf{L4 Precision $\uparrow$} & \textbf{L4 Recall $\uparrow$} & \textbf{L4 F1 $\uparrow$} & \textbf{Mean sim\_ok $\uparrow$} \\
+\midrule
+Legacy Radius Joiner & --- & --- & --- & --- & 0.6444 & 0.2757 & 0.3635 & --- \\
+\textbf{(1) Endpoint graph} & 0.3610 & \textbf{99.5\%} & 1726 & \textbf{62} & \textbf{0.9843} & 0.7933 & 0.8497 & --- \\
+\textbf{(1)+(2) Endpoint graph + rescue} & 0.3679 & 99.4\% & 1607 & 213 & 0.9743 & 0.8619 & 0.8985 & --- \\
+\textbf{NetGuard} & \textbf{0.2710} & 99.4\% & \textbf{1084} & 213 & 0.9716 & \textbf{0.9279} & \textbf{0.9416} & 33.4\% \\
+\bottomrule
+\end{tabular}
+}
+\normalsize
+\end{center}
+\end{table*}
+% TODO: Add an explicit (1)+(2)+(3) completion-without-guard row once a stable
+% registry entry or archived benchmark artifact exists for the unguarded variant.
+
+\begin{table*}[t]
+\caption{Detected-scan structural error decomposition for the graph-based variants. These counts explain why NetGuard lowers the real-image structural score: floating components drop sharply, while giant-net growth remains modest.}
+\label{tab:struct_decomp}
+\begin{center}
+\scriptsize
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Variant} & \textbf{Floating $\downarrow$} & \textbf{Self-Loops $\downarrow$} & \textbf{Giant Nets $\downarrow$} & \textbf{Wires Used $\uparrow$} \\
+\midrule
+\textbf{(1) Endpoint graph} & 1726 & \textbf{62} & \textbf{86} & \textbf{99.5\%} \\
+\textbf{(1)+(2) Endpoint graph + rescue} & 1607 & 213 & 102 & 99.4\% \\
+\textbf{NetGuard} & \textbf{1084} & 213 & 109 & 99.4\% \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+\end{table*}
+
+Table~\ref{tab:protocol} defines the evidence layers compactly, and the main caveat is important: the real scanned corpus does not provide net-level ground truth. Real-image numbers therefore use structural verification rather than literal net correctness, the synthetic benchmark provides controlled net-level robustness evidence, and the simulation checks are downstream sanity checks rather than full SPICE-equivalence proofs.
+
+Table~\ref{tab:main_summary} then summarizes the paper's central quantitative claim. NetGuard gives the best trade-off between real scanned structure and synthetic robustness under the current evidence. On detected scans, it lowers the structural error score from 0.3679 to 0.2710 relative to the \mbox{(1)+(2)} endpoint-graph-plus-rescue variant while keeping wire usage unchanged at 99.4\%. Under the heaviest synthetic perturbation, it preserves substantially more recall than the lighter graph variants and clearly outperforms the Legacy Radius Joiner on both precision and F1.
+
+The real scanned evidence is the most direct signal of practical behavior, but it remains a structural verification target rather than a net-level correctness score. Table~\ref{tab:struct_decomp} shows why the structural score moves. Relative to the \mbox{(1)+(2)} baseline, NetGuard removes 523 floating components on average while keeping wire usage unchanged and only modestly increasing the giant-net count from 102 to 109. The comparison with the \mbox{(1)} endpoint-graph variant is also informative: the plain graph keeps self-loops and giant nets low, but it leaves many more terminals unresolved. Figure~\ref{fig:real_join} shows the same effect visually on case \texttt{C84\_D1\_P2}. The highlighted inset in the legacy panel shows a local over-merge region where nearby attachments collapse into an oversized net. The corresponding inset in the NetGuard panel shows the same area after guarded completion, where the intended separation is preserved.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/join_robustness_breakdown.pdf}
+\caption{Synthetic robustness decomposition. Panels (a)--(c) show component-connectivity F1, precision, and recall across severity levels L0--L4 using the exact metric values reported in the paper. NetGuard is visually emphasized because it is the full proposed method, and the figure shows that its main gain over \mbox{(1)+(2)} comes from improved recall at high severity without a comparable loss in precision.}
+\label{fig:join_robustness}
+\end{figure*}
+
+The synthetic benchmark answers a different question: how well does a joiner tolerate the kinds of endpoint noise, truncation, and missing fragments that a real detector produces? Figure~\ref{fig:join_robustness} makes the central pattern explicit. The graph-based variants all avoid the precision collapse of the Legacy Radius Joiner, but only NetGuard substantially restores recall at high severity. The resulting F1 gap at L4 is driven by fragmentation recovery rather than by a precision-for-recall trade: the full proposed method retains 0.9716 precision while improving recall to 0.9279, whereas the \mbox{(1)+(2)} endpoint-graph-plus-rescue variant reaches 0.9743 precision but only 0.8619 recall.
+
+Because the synthetic benchmark is seed-driven, Appendix Table~\ref{tab:l4_uncertainty} reports the L4 mean and standard deviation across eight random seeds. The spread is largest in recall, which is consistent with fragmentation sensitivity under heavy perturbation. Even with that variability, NetGuard keeps the strongest mean L4 F1 among the compared joiners.
+
+The simulation view supports the same interpretation. Errors mostly cause \emph{fragmentation}, not \emph{shorts}. Precision stays high even on the hardest synthetic cases, while simulation accuracy falls on cyclic or bridge-like circuits where a single missed connection can break a current path. The Wheatstone bridge and \texttt{ring6\_r} remain the clearest stress cases, and the mean L4 simulation accuracy across the representative suite is 33.4\%, which is consistent with a joiner that usually preserves local correctness but still fails when a single broken path disconnects a critical loop. Appendix Fig.~\ref{fig:ring6_failure} shows one such residual failure case for NetGuard on \texttt{ring6\_r}: the method preserves precision, but one missing link still fragments the cycle and depresses recall.
+
+The detector evidence remains supporting context rather than the main novelty claim. The production detector is the Anchor-Guided PCA Detector, which supplies the fixed wire fragments for every join experiment. On the current traceable broad benchmark artifact it reaches F1~=~0.8605, precision~=~0.9261, and recall~=~0.8036 over 124 matched scans, with TP~=~3322, FP~=~221, and FN~=~812. On the curated 23-image stress subset it reaches F1~=~0.7492, while the specialized Hard-Case Recovery Detector reaches the strongest subset score at 0.8215. We therefore hold the Anchor-Guided PCA Detector fixed as the production wire source while recognizing that a specialized detector can outperform it on the hardest subset.
+
+\section{Discussion}
+
+The evidence supports a conservative but defensible claim. On real scanned schematics, the paper shows that join quality is not determined by detector F1 alone: two joiners can consume the same detected wire set and still produce materially different electrical structure. On synthetic perturbations, the paper shows that NetGuard recovers a failure mode that the lighter graph variants leave unresolved, namely floating terminals created by truncated or displaced endpoints. The main point is not that matching itself is novel; it is that guarded floating-pin completion can recover plausible edges while keeping hard structural limits in place.
+
+The paper also has clear limitations. The real scanned benchmark offers structural verification and qualitative inspection, but it does not provide net-level ground truth, so it cannot certify that every recovered connection is electrically correct. The synthetic error model is therefore only a controlled proxy for detector noise, and it is not yet calibrated from a measured empirical error distribution. The method also depends on accurate component priors and inherits upstream errors from the detector, especially on faint traces, crowded local layouts, and ambiguous crossovers. In addition, the current structural error score is a surrogate for gross over-merge and under-connection behavior, not a literal electrical correctness metric. For that reason, the paper supports a narrow claim: under the current evidence, NetGuard is a stronger join-recovery stage. It does not yet prove full end-to-end netlist correctness on real scanned schematics.
+
+\section{Future Scope}
+
+The most important next step is a real scanned benchmark with net-level annotations so that join correctness can be measured directly rather than through structural surrogates. A second priority is to calibrate the synthetic perturbation model from observed detector failures instead of hand-specified ranges, which would tighten the link between the real and synthetic evidence layers. Beyond that, the framework should be extended to denser schematic styles and broader component families, and the downstream evaluation should move beyond operating-point preservation toward stronger graph-level and SPICE-level equivalence checks.
+
+\section{Conclusion}
+
+NetGuard improves the most fragile stage of scanned-circuit digitization: converting detected wire fragments into electrical nets. The contribution is strongest when interpreted narrowly. The method formalizes joining as a typed endpoint graph, adds guarded floating-pin completion on top of that graph, and improves both synthetic net-level robustness and real detected-scan structural verification without relying on a stronger detector. Within the current evidence stack, that is the central result of the paper.
+
+\clearpage
+\appendices
+\section{Supplementary Tables}
+
+\begin{table}[H]
+\caption{Synthetic severity schedule used in the perturbation benchmark.}
+\label{tab:severity}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Level} & \textbf{Endpoint Jitter} & \textbf{Truncation} & \textbf{Extra Corruption} \\
+\midrule
+L1 & 3\,px & 4\,px & none \\
+L2 & 6\,px & 8\,px & mild drop, pin snap \\
+L3 & 10\,px & 16\,px & stronger drop, misassignment \\
+L4 & 14\,px & 22\,px & 0.20 drop, 0.10 wrong pin, 80\,px shift \\
+\bottomrule
+\end{tabular}
+}
+\normalsize
+\end{center}
+\end{table}
+
+\begin{table}[H]
+\caption{Representative L4 NetGuard outcomes by circuit.}
 \label{tab:per_circuit}
 \begin{center}
 \begin{tabular}{lrrrr}
 \toprule
-\textbf{Circuit} & \textbf{Comps} & \textbf{F1} & \textbf{Prec} & \textbf{sim\_ok} \\
+\textbf{Circuit} & \textbf{Comps} & \textbf{F1} & \textbf{Prec.} & \textbf{sim\_ok} \\
 \midrule
 parallel\_rr & 3 & 0.97 & 1.00 & 25\% \\
 divider\_rr & 3 & 0.91 & 0.94 & 50\% \\
@@ -265,31 +295,78 @@ ring6\_r & 6 & 0.79 & 0.97 & 12\% \\
 \end{center}
 \end{table}
 
-Precision remains high ($\geq$~0.85) across all circuits even at L4---errors cause \emph{fragmentation} (dropped connections) rather than \emph{shorts} (false merges). The 6-component ring (ring6\_r) is the hardest topology: its cyclic structure means a single dropped connection breaks the loop, reducing simulation accuracy to 12\%.
+\begin{table}[H]
+\caption{L4 synthetic uncertainty over eight random seeds and 15 circuits. Values are reported as mean $\pm$ standard deviation of the per-seed suite average.}
+\label{tab:l4_uncertainty}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Variant} & \textbf{Precision $\uparrow$} & \textbf{Recall $\uparrow$} & \textbf{F1 $\uparrow$} \\
+\midrule
+\textbf{(1) Endpoint graph} & $0.9843 \pm 0.0143$ & $0.7933 \pm 0.1851$ & $0.8497 \pm 0.1389$ \\
+\textbf{(1)+(2) Endpoint graph + rescue} & $0.9743 \pm 0.0203$ & $0.8619 \pm 0.1109$ & $0.8985 \pm 0.0699$ \\
+\textbf{NetGuard} & $0.9716 \pm 0.0210$ & $0.9279 \pm 0.0778$ & $0.9416 \pm 0.0455$ \\
+\textbf{Legacy Radius Joiner} & $0.6444 \pm 0.4281$ & $0.2757 \pm 0.2301$ & $0.3635 \pm 0.2896$ \\
+\bottomrule
+\end{tabular}
+}
+\normalsize
+\end{center}
+\end{table}
 
-\section{Discussion}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/netguard_failure_ring6.png}
+\caption{Residual synthetic failure case for NetGuard on \texttt{ring6\_r} at L4. The method preserves precision by avoiding a false short, but one missed link still fragments the six-component ring and limits recall. This is representative of the cyclic stress cases summarized in Table~\ref{tab:per_circuit}.}
+\label{fig:ring6_failure}
+\end{figure*}
 
-\textbf{Why graph-based joining works.} The endpoint-graph model resolves ambiguity that radius-based methods cannot: by representing both wire endpoints and component pins as nodes with typed edges, it distinguishes between a wire that \emph{passes near} a component (endpoint--wire-body edge) and one that \emph{connects to} it (endpoint--pin edge with directional preference). The component-first assignment further disambiguates by leveraging the geometric constraint that wires must reach a component's pin, not just its bounding box.
+\begin{table}[H]
+\caption{Supporting detector context.}
+\label{tab:wire_benchmark}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Detector} & \textbf{Broad F1 $\uparrow$} & \textbf{Prec. $\uparrow$} & \textbf{Rec. $\uparrow$} & \textbf{Stress F1 $\uparrow$} & \textbf{Suite F1 $\uparrow$} \\
+\midrule
+Anchor-Guided PCA Detector & 0.8605 & 0.9261 & 0.8036 & 0.7492 & 0.8049 \\
+Hard-Case Recovery Detector & 0.7952 & --- & --- & 0.8215 & 0.8083 \\
+Recall-Optimized Hybrid Detector & 0.8378 & --- & --- & 0.7595 & 0.7987 \\
+Precision-Tuned Skeleton Detector & 0.7943 & --- & --- & 0.7830 & 0.7887 \\
+\bottomrule
+\end{tabular}
+}
+\normalsize
+\end{center}
+\end{table}
 
-\textbf{Completion as fault recovery.} Degree-budget completion addresses the fundamental limitation of detector noise: even a 97.6\% accurate wire detector drops $\sim$2\% of wire endpoints, and those dropped endpoints are precisely the connections that matter most for simulation accuracy. The b-matching formulation bounds the damage from mis-detection---each floating pin gets at most one recovery edge---while the self-loop guard prevents the catastrophic short-circuit failures that plague unconstrained approaches.
-
-\textbf{Limitations.} The synthetic error model is a first-pass approximation, not yet calibrated to the real detector's measured failure distribution, so the synthetic join numbers are robustness and regression signals rather than predictors of real-image performance. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated. Finally, the real connectivity metric is structural---it cannot certify that a recovered connection is the correct one, since the corpus has no net-level ground truth---which is precisely what motivates the synthetic framework. Component detection at 88.5\% mAP50 also leaves room for improvement, particularly on crossovers (70.7\% recall).
-
-\section{Conclusion}
-
-We present a two-stage wire joining approach for circuit diagram digitization that dramatically improves robustness under detector noise. The endpoint-graph join model, combined with degree-budget completion, maintains F1~=~0.94 under extreme synthetic error injection, compared to 0.36 for production baselines. The synthetic evaluation framework provides a principled way to analyze join robustness independent of ground-truth wire labels. Future work includes calibrating the error model to real detector distributions, extending evaluation to hand-drawn circuits, and integrating the pipeline with VLM-based component value extraction.
-
-\section*{Acknowledgment}
-
-% TODO: fill funding acknowledgment before submission.
-This work was supported by [funding agency].
-
+\clearpage
 \begin{thebibliography}{00}
+\bibitem{thoma2021dataset} F.~Thoma, J.~Bayer, Y.~Li, and A.~Dengel, ``A public ground truth dataset for handwritten circuit diagram images,'' in \textit{Proc. Int. Conf. Document Analysis and Recognition (ICDAR)}, 2021.
 \bibitem{bayer2021cghd} J.~Bayer, ``CGHD-1152: Circuit graph hand-drawing dataset,'' Kaggle, 2021. [Online]. Available: \url{https://www.kaggle.com/datasets/johannesbayer/cghd1152}
 \bibitem{kelly2024digitizing} C.~R.~Kelly and J.~M.~Cole, ``Digitizing images of electrical-circuit schematics,'' \textit{APL Mach. Learn.}, vol.~2, no.~1, p.~016109, 2024.
 \bibitem{kulkarni2025enhancing} S.~Kulkarni \textit{et~al.}, ``Enhancing circuit diagram understanding via near sight correction using VLMs,'' in \textit{Proc. ICCV Workshops}, 2025.
-\bibitem{alam2022survey} L.~Alam and N.~Kehtarnavaz, ``A survey of detection methods for die attachment and wire bonding defects in integrated circuit manufacturing,'' \textit{IEEE Access}, vol.~10, pp.~37585--37602, 2022.
-\bibitem{alrahis2021gnn} L.~Alrahis, A.~Sengupta, J.~Knechtel, S.~S.~Gharibeh, O.~S.~Unsal, M.~E.~Acar, and H.~Najjar, ``GNN-RE: Graph neural networks for reverse engineering of gate-level netlists,'' in \textit{Proc. IEEE/ACM Int. Conf. Computer-Aided Design (ICCAD)}, 2021, pp.~1--9.
+\bibitem{rachala2022handdrawn} R.~R.~Rachala and M.~R.~Panicker, ``Hand-drawn electrical circuit recognition using object detection and node recognition,'' \textit{SN Comput. Sci.}, vol.~3, no.~3, p.~244, 2022.
+\bibitem{hemker2024schematics} D.~Hemker, J.~Maalouly, H.~Mathis, R.~Klos, and E.~Ravanan, ``From schematics to netlists: electrical circuit analysis using deep-learning methods,'' \textit{Adv. Radio Sci.}, vol.~22, pp.~61--75, 2024.
+\bibitem{elyan2020symbols} E.~Elyan, L.~Jamieson, and A.~Ali-Gombe, ``Deep learning for symbols detection and classification in engineering drawings,'' \textit{Neural Netw.}, vol.~129, pp.~91--102, 2020.
+\bibitem{lee2020engineering} D.-Y.~Yun, S.-K.~Seo, U.~Zahid, and C.-J.~Lee, ``Deep neural network for automatic image recognition of engineering diagrams,'' \textit{Appl. Sci.}, vol.~10, no.~11, p.~4005, 2020.
+\bibitem{yang2024singleline} L.~Yang, J.~Wang, J.~Zhang, H.~Li, K.~Wang, C.~Yang, and D.~Shi, ``Practical single-line diagram recognition based on digital image processing and deep vision models,'' \textit{Expert Syst. Appl.}, vol.~238, p.~122389, 2024.
+\bibitem{moreno2024review} L.~Jamieson, C.~F.~Moreno-Garc{\'\i}a, and E.~Elyan, ``A review of deep learning methods for digitisation of complex documents and engineering diagrams,'' \textit{Artif. Intell. Rev.}, vol.~57, p.~136, 2024.
+\bibitem{schaefer2021arrow} B.~Sch{\"a}fer, M.~Keuper, and H.~Stuckenschmidt, ``Arrow R-CNN for handwritten diagram recognition,'' \textit{Int. J. Document Anal. Recognit.}, vol.~24, no.~1--2, pp.~3--17, 2021.
+\bibitem{otsu1979} N.~Otsu, ``A threshold selection method from gray-level histograms,'' \textit{IEEE Trans. Syst., Man, Cybern.}, vol.~9, no.~1, pp.~62--66, 1979.
+\bibitem{niblack1986} W.~Niblack, \textit{An Introduction to Digital Image Processing}. Englewood Cliffs, NJ, USA: Prentice-Hall, 1986.
+\bibitem{sauvola2000} J.~Sauvola and M.~Pietik{\"a}inen, ``Adaptive document image binarization,'' \textit{Pattern Recognit.}, vol.~33, no.~2, pp.~225--236, 2000.
+\bibitem{gatos2006} B.~Gatos, I.~Pratikakis, and S.~J.~Perantonis, ``Adaptive degraded document image binarization,'' \textit{Pattern Recognit.}, vol.~39, no.~3, pp.~317--327, 2006.
+\bibitem{shafait2008} F.~Shafait, D.~Keysers, and T.~M.~Breuel, ``Efficient implementation of local adaptive thresholding techniques using integral images,'' in \textit{Document Recognition and Retrieval XV}, vol.~6815, 2008, p.~681510.
+\bibitem{su2013} B.~Su, S.~Lu, and C.~L.~Tan, ``Robust document image binarization technique for degraded document images,'' \textit{IEEE Trans. Image Process.}, vol.~22, no.~4, pp.~1408--1417, 2013.
+\bibitem{zhang1984thinning} T.~Y.~Zhang and C.~Y.~Suen, ``A fast parallel algorithm for thinning digital patterns,'' \textit{Commun. ACM}, vol.~27, no.~3, pp.~236--239, 1984.
+\bibitem{lam1992thinning} L.~Lam, S.-W.~Lee, and C.~Y.~Suen, ``Thinning methodologies: a comprehensive survey,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~14, no.~9, pp.~869--885, 1992.
+\bibitem{duda1972hough} R.~O.~Duda and P.~E.~Hart, ``Use of the Hough transformation to detect lines and curves in pictures,'' \textit{Commun. ACM}, vol.~15, no.~1, pp.~11--15, 1972.
+\bibitem{gioi2010lsd} R.~Grompone von Gioi, J.~Jakubowicz, J.-M.~Morel, and G.~Randall, ``LSD: a fast line segment detector with a false detection control,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~32, no.~4, pp.~722--732, 2010.
 \bibitem{kuhn1955} H.~W.~Kuhn, ``The Hungarian method for the assignment problem,'' \textit{Naval Res. Logist. Quart.}, vol.~2, no.~1--2, pp.~83--97, 1955.
 \end{thebibliography}
 

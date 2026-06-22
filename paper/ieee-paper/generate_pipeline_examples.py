@@ -1,200 +1,208 @@
-#!/usr/bin/env python3
-"""Pipeline visualization using trained YOLO model for component detection.
-Shows all real component pins (not just SPICE passives)."""
-import os, sys, cv2, math
-import numpy as np
+from __future__ import annotations
+
 from pathlib import Path
 
-sys.path.insert(0, '/home/claw/circuit-digitization')
-os.chdir('/home/claw/circuit-digitization')
-
-from wire_detection.benchmark.experiment_harness import (
-    ExperimentConfig, build_component_mask, crop_to_roi, shift_components,
-    detect_wires_experiment, sauvola_binary,
-)
-from wire_detection.core.join_strategies import run_strategy, DEFAULT_STRATEGY
-from wire_detection.core.component_classes import COMPONENT_TYPES
+import base64
+import cv2
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Config
-cfg = ExperimentConfig(
-    name="a16", sauvola_k=0.285, sauvola_window=67, close_kernel=3,
-    ccl_min_area=28, endpoint_mode="pca", dedup_mode="overlap",
-    dedup_angle=12, dedup_dist=18, anchor_filter_enabled=True,
-    anchor_endpoint_dist=16.0, anchor_link_dist=8.0, extraction_mode="component",
+from wire_detection.api.routes.netlist import _run_preset_pipeline
+from wire_detection.benchmark import reference_pipeline as ref
+from wire_detection.core.component_classes import COMPONENT_TYPES
+from wire_detection.core.join_strategies import make_pins, run_strategy
+from wire_detection.data.dataset import find_exact_match_roboflow
+
+matplotlib.use("Agg")
+
+REPO = Path(__file__).resolve().parents[2]
+PAPER_DIR = Path(__file__).resolve().parent
+FIG_DIR = PAPER_DIR / "figures" / "pipeline_examples"
+GROUND_TRUTH_ROOT = (
+    REPO
+    / "ground_truth"
+    / "chris_ground_truth"
+    / "extracted_full"
+    / "batchv2_annotations_2026_05_30_21_25_03_ultralytics_yolo_oriented_bounding_boxes_1.0"
+    / "task_2293822_annotations_2026_05_30_21_25_03_ultralytics yolo oriented bounding boxes 1.0"
 )
 
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-OUTPUT = Path("/home/claw/circuit-digitization/paper/ieee-paper/figures/pipeline_examples")
-OUTPUT.mkdir(parents=True, exist_ok=True)
+CASES = [
+    ("C84_D1_P2", "C84-D1-P2-jpg.png"),
+]
 
-# Classes that are "relay" / structural — don't show as pins
+COLORS = {
+    "ink": "#1E2F3F",
+    "muted": "#6A7D8F",
+    "panel": "#FBFAF7",
+    "panel_edge": "#D6D1C8",
+    "header": "#243746",
+    "wire": "#A95E52",
+    "component": "#6D8B74",
+    "pin_on": "#2F5D73",
+    "pin_off": "#C47B47",
+}
+
 SKIP_PIN_TYPES = {
-    "junction", "terminal", "gnd", "crossover", "vss",
-    "text", "unknown", "mechanical", "optical",
-    "probe", "probe-current", "probe-voltage",
+    "junction",
+    "terminal",
+    "gnd",
+    "crossover",
+    "vss",
+    "text",
+    "unknown",
+    "mechanical",
+    "optical",
+    "probe",
+    "probe-current",
+    "probe-voltage",
 }
 SKIP_PIN_IDS = {cid for cid, name in COMPONENT_TYPES.items() if name in SKIP_PIN_TYPES}
 
 
-def load_yolo_components(image_path):
-    """Run trained YOLO model and return components in standard format."""
-    from ultralytics import YOLO
-    model_path = "models/component_detection/yolo26m_obb_16class_aug.pt"
-    model = YOLO(model_path)
-    results = model(str(image_path), task="obb", conf=0.5)
-    
-    components = []
-    for result in results:
-        if result.obb is None:
-            continue
-        for i in range(len(result.obb.cls)):
-            cls_id = int(result.obb.cls[i])
-            bbox = result.obb.xyxy[i].tolist()
-            x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
-            polygon = result.obb.xyxyxyxy[i].tolist()
-            polygon_pts = [(int(p[0]), int(p[1])) for p in polygon]
-            components.append((cls_id, polygon_pts, (x1, y1, x2, y2)))
-    return components
-
-
-def draw_obb(img, vertices, color, thickness=1):
+def draw_polygon(image: np.ndarray, vertices: list[tuple[int, int]], color_bgr: tuple[int, int, int], thickness: int = 1) -> None:
     pts = np.array(vertices, dtype=np.int32).reshape((-1, 1, 2))
-    cv2.polylines(img, [pts], True, color, thickness, cv2.LINE_AA)
+    cv2.polylines(image, [pts], True, color_bgr, thickness, cv2.LINE_AA)
 
 
-def run_pipeline(img_path):
-    from PIL import Image
-    pil_img = Image.open(img_path).convert('L')
-    gray = np.array(pil_img)
-    stages = {}
-    stages['original'] = gray.copy()
+def load_case_components(image_path: Path) -> tuple[np.ndarray, list]:
+    gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+    if gray is None:
+        raise FileNotFoundError(image_path)
+    exact = find_exact_match_roboflow(image_path, REPO / "roboflow_test2")
+    if exact is None:
+        raise RuntimeError(f"No exact-match HDC label found for {image_path.name}")
+    _, label_path = exact
+    h, w = gray.shape
+    components = ref.parse_components(label_path, w, h)
+    return gray, components
 
-    # Use trained YOLO model for component detection
-    comp_labels = load_yolo_components(img_path)
 
-    if comp_labels:
-        occluded = build_component_mask(gray, comp_labels, cfg.occlusion_margin)
-        stages['occluded'] = occluded.copy()
-    else:
-        occluded = gray
-        stages['occluded'] = gray.copy()
+def build_stages(case_id: str) -> tuple[dict[str, np.ndarray], dict[str, int]]:
+    image_path = GROUND_TRUTH_ROOT / "images" / "train" / f"{case_id}_jpg.jpg"
+    gray, components = load_case_components(image_path)
+    result = _run_preset_pipeline(gray, "best_candidate_v4", {}, image_path=str(image_path))
 
-    if comp_labels:
-        cropped, ox, oy = crop_to_roi(occluded, comp_labels, cfg.crop_padding)
-        local_components = shift_components(comp_labels, ox, oy)
-    else:
-        cropped, ox, oy = occluded, 0, 0
-        local_components = comp_labels
-    stages['cropped'] = cropped.copy()
+    stages: dict[str, np.ndarray] = {}
+    stages["original"] = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
 
-    binary = sauvola_binary(cropped, cfg.sauvola_k, cfg.sauvola_window)
-    stages['binary'] = binary.copy()
+    def decode_payload(key: str) -> np.ndarray:
+        payload = result.get(key)
+        if not payload:
+            raise RuntimeError(f"Missing {key} payload for {case_id}")
+        raw = base64.b64decode(payload)
+        arr = np.frombuffer(raw, dtype=np.uint8)
+        decoded = cv2.imdecode(arr, cv2.IMREAD_GRAYSCALE)
+        if decoded is None:
+            raise RuntimeError(f"Could not decode {key} payload for {case_id}")
+        return decoded
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (cfg.close_kernel, cfg.close_kernel))
-    closed = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-    stages['closed'] = closed.copy()
+    occluded = decode_payload("overlay")
+    binary = decode_payload("threshold")
+    closed = decode_payload("dilated")
+    lines = result.get("lines", [])
+    pins = make_pins(lines, components)
+    _, net = run_strategy("degree_budget", lines, components, std_pins=pins)
 
-    lines_local = detect_wires_experiment(cropped, local_components, cfg)
-    lines_global = [((int(x1 + ox), int(y1 + oy)), (int(x2 + ox), int(y2 + oy)))
-                    for (x1, y1), (x2, y2) in lines_local]
-    stages['n_wires'] = len(lines_global)
+    stages["occluded"] = cv2.cvtColor(occluded, cv2.COLOR_GRAY2RGB)
+    stages["binary"] = cv2.cvtColor(binary, cv2.COLOR_GRAY2RGB)
+    stages["closed"] = cv2.cvtColor(closed, cv2.COLOR_GRAY2RGB)
 
-    # Wire overlay
-    overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-    for (x1, y1), (x2, y2) in lines_global:
-        cv2.line(overlay, (x1, y1), (x2, y2), (0, 0, 255), 2, cv2.LINE_AA)
-    for comp in comp_labels:
-        cls_id, verts, bbox = comp
+    wire_overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
+    for cls_id, vertices, _ in components:
         if cls_id not in SKIP_PIN_IDS:
-            draw_obb(overlay, verts, (0, 200, 0), 1)
-    stages['wire_overlay'] = overlay.copy()
+            draw_polygon(wire_overlay, vertices, (116, 139, 109), 1)
+    for (x1, y1), (x2, y2) in lines:
+        cv2.line(wire_overlay, (x1, y1), (x2, y2), (82, 94, 169), 2, cv2.LINE_AA)
+    stages["wire_overlay"] = wire_overlay
 
-    # Join result — no colored net lines, just pin dots
-    if comp_labels and lines_global:
-        pins, netlist = run_strategy(DEFAULT_STRATEGY, lines_global, local_components)
-
-        attached_pins = set()
-        for node in netlist.nodes:
+    join_overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
+    join_overlay = np.clip(join_overlay * 0.86 + 12, 0, 255).astype(np.uint8)
+    for cls_id, vertices, _ in components:
+        if cls_id not in SKIP_PIN_IDS:
+            draw_polygon(join_overlay, vertices, (116, 139, 109), 1)
+    attached_pins: set[tuple[int, int]] = set()
+    if net is not None:
+        for node in net.nodes:
             for pin in node.pins:
                 attached_pins.add((pin.component_idx, pin.pin_idx))
-
-        join_overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-        join_overlay = (join_overlay * 0.4 + 40).astype(np.uint8)
-
-        # Draw OBB polygons for all components
-        for comp in comp_labels:
-            cls_id, verts, bbox = comp
-            if cls_id not in SKIP_PIN_IDS:
-                draw_obb(join_overlay, verts, (60, 60, 45), 1)
-                cx = sum(v[0] for v in verts) // 4
-                cy = min(v[1] for v in verts) - 4
-                tname = COMPONENT_TYPES.get(cls_id, "?").split("-")[0]
-                cv2.putText(join_overlay, tname, (cx - 15, max(12, cy)),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.35, (160, 160, 140), 1, cv2.LINE_AA)
-
-        # Draw pin dots for ALL components (not just SPICE passives)
-        for pin in pins:
-            px = int(pin.x) + ox
-            py = int(pin.y) + oy
-            comp_cls = local_components[pin.component_idx][0]
-            if comp_cls in SKIP_PIN_IDS:
-                continue
-
-            is_attached = (pin.component_idx, pin.pin_idx) in attached_pins
-            dot_color = (0, 220, 0) if is_attached else (0, 0, 255)
-            cv2.circle(join_overlay, (px, py), 4, dot_color, -1, cv2.LINE_AA)
-            cv2.circle(join_overlay, (px, py), 4, (255, 255, 255), 1, cv2.LINE_AA)
-
-        stages['join_overlay'] = join_overlay.copy()
-        nets = [n for n in netlist.nodes if n.wires]
-        stages['n_nets'] = len(nets)
-        stages['n_comps'] = sum(1 for c in comp_labels if c[0] not in SKIP_PIN_IDS)
-
-    return stages
-
-
-def save_composite(stages, name, output_path):
-    fig, axes = plt.subplots(2, 3, figsize=(14, 9.5), dpi=300)
-    title_map = [
-        ('original', 'Original'),
-        ('occluded', 'Component Occlusion'),
-        ('binary', 'Sauvola Binarization'),
-        ('closed', 'Morphological Close'),
-        ('wire_overlay', f'Detected Wires ({stages["n_wires"]})'),
-        ('join_overlay', f'Join Result ({stages.get("n_nets", "?")} nets, {stages.get("n_comps", "?")} components)'),
-    ]
-    for ax, (key, title) in zip(axes.flat, title_map):
-        img = stages.get(key)
-        if img is not None:
-            if len(img.shape) == 3:
-                ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-            else:
-                ax.imshow(img, cmap='gray')
-        ax.set_title(title, fontsize=10, fontweight='bold')
-        ax.axis('off')
-    fig.suptitle(name, fontsize=12, fontweight='bold', y=0.99)
-    plt.tight_layout(pad=0.5)
-    plt.savefig(output_path, dpi=300, bbox_inches='tight', pad_inches=0.1)
-    plt.close()
-
-
-if __name__ == '__main__':
-    candidates = [
-        ("C84_D1_P2_jpg.jpg", "C84-D1-P2-jpg.png"),
-        ("C83_D2_P4_jpg.jpg", "C83-D2-P4-jpg.png"),
-    ]
-    for fname, out_name in candidates:
-        img_path = GT_IMAGES / fname
-        if not img_path.exists():
-            print(f"ERROR: Source image not found: {img_path}")
+    for pin in pins:
+        if pin.component_idx >= len(components):
             continue
-        print(f"Processing {out_name} from {img_path}...")
-        stages = run_pipeline(img_path)
-        out_path = OUTPUT / out_name
-        save_composite(stages, f"{out_name.replace('.png','')} — {stages['n_wires']} wires, {stages.get('n_nets','?')} nets",
-                       out_path)
-        print(f"  OK: {stages['n_wires']} wires, {stages.get('n_nets','?')} nets → {out_path}")
-    print(f"\nDone. Files in {OUTPUT}/")
+        cls_id = components[pin.component_idx][0]
+        if cls_id in SKIP_PIN_IDS:
+            continue
+        px = int(pin.x)
+        py = int(pin.y)
+        attached = (pin.component_idx, pin.pin_idx) in attached_pins
+        fill = (115, 93, 47) if attached else (71, 123, 196)
+        cv2.circle(join_overlay, (px, py), 4, fill, -1, cv2.LINE_AA)
+        cv2.circle(join_overlay, (px, py), 4, (255, 255, 255), 1, cv2.LINE_AA)
+    stages["join_overlay"] = join_overlay
+
+    meta = {
+        "wires": len(lines),
+        "components": sum(1 for cls_id, _, _ in components if cls_id not in SKIP_PIN_IDS),
+        "nets": len([node for node in getattr(net, "nodes", []) if node.wires]) if net is not None else 0,
+    }
+    return stages, meta
+
+
+def style_panel(ax: plt.Axes, image: np.ndarray, title: str, subtitle: str | None = None) -> None:
+    ax.imshow(image, cmap=None if image.ndim == 3 else "gray")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(1.0)
+        spine.set_edgecolor(COLORS["panel_edge"])
+    ax.set_facecolor(COLORS["panel"])
+    ax.set_title(title, fontsize=9.5, color=COLORS["ink"], pad=5)
+    if subtitle:
+        ax.text(0.5, -0.08, subtitle, transform=ax.transAxes, ha="center", va="top", fontsize=7.5, color=COLORS["muted"])
+
+
+def save_case(case_id: str, out_name: str) -> None:
+    stages, meta = build_stages(case_id)
+    fig, axes = plt.subplots(1, 4, figsize=(12.8, 3.9), dpi=450)
+    fig.patch.set_facecolor("white")
+
+    panels = [
+        ("original", "(a) Input scan", None),
+        ("occluded", "(b) Component priors", None),
+        ("wire_overlay", "(c) Detected wire fragments", None),
+        ("join_overlay", "(d) NetGuard recovered joins", None),
+    ]
+    for ax, (key, title, subtitle) in zip(axes.flat, panels):
+        style_panel(ax, stages[key], title, subtitle)
+
+    fig.text(0.05, 0.965, case_id.replace("_", "-"), fontsize=12.5, color=COLORS["ink"], weight="semibold")
+    fig.text(
+        0.05,
+        0.925,
+        "Anchor-Guided PCA detection followed by NetGuard",
+        fontsize=9.1,
+        color=COLORS["muted"],
+    )
+    fig.text(
+        0.985,
+        0.925,
+        f"{meta['wires']} fragments | {meta['nets']} nets | {meta['components']} components",
+        fontsize=8.9,
+        color=COLORS["muted"],
+        ha="right",
+    )
+    fig.subplots_adjust(left=0.045, right=0.99, top=0.86, bottom=0.1, wspace=0.08)
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+    fig.savefig(FIG_DIR / out_name, bbox_inches="tight", dpi=400)
+    plt.close(fig)
+
+
+def main() -> None:
+    for case_id, out_name in CASES:
+        save_case(case_id, out_name)
+
+
+if __name__ == "__main__":
+    main()
