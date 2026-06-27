@@ -39,6 +39,18 @@ _INERT_TYPES = {"gnd", "vss", "text", "antenna", "probe", "probe-current",
                 "probe-voltage", "junction", "terminal"}
 REACH_FACTOR = 2.5
 
+# Base endpoint-graph configs the completion can sit on. "rescue" is the original
+# production base (graph_rescue: 12px extend + dead-end rescue). "scale" is the
+# higher-precision graph_scale base (no extend, no rescue) — paired with a larger reach
+# it beats the rescue base on the verified net-GT (see docs/research/experiments/).
+_BASE_GRAPH = dict(tau_pin=0.62, tau_join=0.30, tau_t=0.20, directional=True,
+                   t_junctions=True, scale_rel=True)
+_BASES = {
+    "rescue":  dict(extend=12, kwargs={**_BASE_GRAPH, "dead_end_rescue": True}),
+    "scale":   dict(extend=0,  kwargs={**_BASE_GRAPH}),
+    "scale12": dict(extend=12, kwargs={**_BASE_GRAPH}),
+}
+
 
 def netlist_from_uf(std_pins, parent, base_netlist=None):
     """Materialize a Netlist from a union-find over pin-keys (comp_idx, pin_name).
@@ -84,22 +96,21 @@ def _scale_tau(components, wires):
     return min(60.0, max(24.0, 0.62 * s))
 
 
-def degree_budget_completion(wires, components, std_pins, relax_witness=True):
-    """graph_rescue base + degree-budget completion of floating pins.
+def degree_budget_completion(wires, components, std_pins, relax_witness=True,
+                             base="rescue", reach_factor=REACH_FACTOR, slot_cap=3):
+    """Endpoint-graph base + degree-budget completion of floating pins.
 
-    Returns a Netlist. `relax_witness=True` (the verified variant) also allows
-    pure-distance completion edges when no wire-witness exists, recovering
-    truly-dropped wires.
+    Returns a Netlist. Defaults reproduce the original production strategy exactly
+    (base="rescue", reach_factor=2.5). `base="scale"` with a larger `reach_factor`
+    is the higher-accuracy variant validated on the net-GT. `relax_witness=True`
+    also allows pure-distance completion edges when no wire-witness exists.
     """
     if not std_pins:
         return netlist_from_uf(std_pins, {})
 
-    wires = extend_wires(wires, 12)  # match graph_rescue's 12px endpoint extension
-    base = build_endpoint_graph(
-        wires, components, std_pins,
-        tau_pin=0.62, tau_join=0.30, tau_t=0.20,
-        directional=True, t_junctions=True, scale_rel=True, dead_end_rescue=True,
-    )
+    _cfg = _BASES[base]
+    wires = extend_wires(wires, _cfg["extend"]) if _cfg["extend"] else list(wires)
+    basenl = build_endpoint_graph(wires, components, std_pins, **_cfg["kwargs"])
 
     parent: dict = {}
 
@@ -117,14 +128,14 @@ def degree_budget_completion(wires, components, std_pins, relax_witness=True):
     for p in std_pins:
         find((p.component_idx, p.pin_name))
     node_members = defaultdict(list)
-    for (ci, pin_name), nid in base.pin_to_node.items():
+    for (ci, pin_name), nid in basenl.pin_to_node.items():
         node_members[nid].append((ci, pin_name))
     for keys in node_members.values():
         for k in keys[1:]:
             union(keys[0], k)
 
     tau = _scale_tau(components, wires)
-    reach = REACH_FACTOR * tau
+    reach = reach_factor * tau
     comp_type = {p.component_idx: p.component_name for p in std_pins}
     pin_pos = {(p.component_idx, p.pin_name): (float(p.x), float(p.y)) for p in std_pins}
 
@@ -145,7 +156,7 @@ def degree_budget_completion(wires, components, std_pins, relax_witness=True):
         if root_comps[find(k)] == {ci}:
             floating.append(k)
     if not floating:
-        return netlist_from_uf(std_pins, parent, base_netlist=base)
+        return netlist_from_uf(std_pins, parent, base_netlist=basenl)
 
     wends = [((float(a[0]), float(a[1])), (float(b[0]), float(b[1]))) for (a, b) in wires]
 
@@ -181,9 +192,9 @@ def degree_budget_completion(wires, components, std_pins, relax_witness=True):
                 target_index[tg] = len(targets); targets.append(tg)
             edges.append((fp_index[fp], target_index[tg], cost))
     if not edges:
-        return netlist_from_uf(std_pins, parent, base_netlist=base)
+        return netlist_from_uf(std_pins, parent, base_netlist=basenl)
 
-    nF = len(floating); slot_cap = 3
+    nF = len(floating)
     demand = defaultdict(int)
     for _f, t, _c in edges:
         demand[t] += 1
@@ -220,4 +231,4 @@ def degree_budget_completion(wires, components, std_pins, relax_witness=True):
         merged = net_comps[rf] | net_comps[rt]
         union(fp, tg)
         net_comps[find(fp)] = merged
-    return netlist_from_uf(std_pins, parent, base_netlist=base)
+    return netlist_from_uf(std_pins, parent, base_netlist=basenl)

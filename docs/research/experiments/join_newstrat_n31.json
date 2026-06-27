@@ -1,0 +1,270 @@
+{
+  "per_image": {
+    "C84_D2_P1_jpg": {
+      "comps": 12,
+      "wires": 42,
+      "degree_budget": 0.747,
+      "graph_scale": 0.862,
+      "scale_completion": 0.862,
+      "scale_completion_w": 0.862
+    },
+    "C22_D2_P3_jpg": {
+      "comps": 10,
+      "wires": 25,
+      "degree_budget": 0.826,
+      "graph_scale": 0.769,
+      "scale_completion": 0.884,
+      "scale_completion_w": 0.884
+    },
+    "C29_D2_P4_jpg": {
+      "comps": 7,
+      "wires": 26,
+      "degree_budget": 0.812,
+      "graph_scale": 0.812,
+      "scale_completion": 0.812,
+      "scale_completion_w": 0.812
+    },
+    "C15_D2_P2_jpg": {
+      "comps": 7,
+      "wires": 31,
+      "degree_budget": 0.824,
+      "graph_scale": 0.889,
+      "scale_completion": 0.889,
+      "scale_completion_w": 0.889
+    },
+    "C20_D2_P2_jpg": {
+      "comps": 4,
+      "wires": 11,
+      "degree_budget": 1.0,
+      "graph_scale": 1.0,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C138_D1_P3_jpg": {
+      "comps": 5,
+      "wires": 17,
+      "degree_budget": 0.75,
+      "graph_scale": 0.75,
+      "scale_completion": 0.75,
+      "scale_completion_w": 0.75
+    },
+    "C109_D2_P3_jpg": {
+      "comps": 3,
+      "wires": 7,
+      "degree_budget": 1.0,
+      "graph_scale": 1.0,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C21_D1_P3_jpg": {
+      "comps": 10,
+      "wires": 31,
+      "degree_budget": 0.75,
+      "graph_scale": 0.7,
+      "scale_completion": 0.732,
+      "scale_completion_w": 0.7
+    },
+    "C28_D1_P3_jpg": {
+      "comps": 14,
+      "wires": 41,
+      "degree_budget": 0.593,
+      "graph_scale": 0.875,
+      "scale_completion": 0.842,
+      "scale_completion_w": 0.842
+    },
+    "C113_D2_P3_jpg": {
+      "comps": 3,
+      "wires": 7,
+      "degree_budget": 1.0,
+      "graph_scale": 1.0,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C5_D1_P1_jpg": {
+      "comps": 3,
+      "wires": 7,
+      "degree_budget": 1.0,
+      "graph_scale": 1.0,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C10_D2_P3_jpg": {
+      "comps": 4,
+      "wires": 2,
+      "degree_budget": 0.0,
+      "graph_scale": 0.4,
+      "scale_completion": 0.571,
+      "scale_completion_w": 0.8
+    },
+    "C115_D2_P3_jpg": {
+      "comps": 4,
+      "wires": 7,
+      "degree_budget": 1.0,
+      "graph_scale": 1.0,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C134_D2_P2_jpg": {
+      "comps": 4,
+      "wires": 8,
+      "degree_budget": 1.0,
+      "graph_scale": 1.0,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C134_D2_P4_jpg": {
+      "comps": 4,
+      "wires": 8,
+      "degree_budget": 1.0,
+      "graph_scale": 1.0,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C4_D2_P4_jpg": {
+      "comps": 4,
+      "wires": 14,
+      "degree_budget": 1.0,
+      "graph_scale": 1.0,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C111_D1_P1_jpg": {
+      "comps": 5,
+      "wires": 12,
+      "degree_budget": 1.0,
+      "graph_scale": 0.923,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C137_D1_P2_jpg": {
+      "comps": 5,
+      "wires": 13,
+      "degree_budget": 1.0,
+      "graph_scale": 1.0,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C9_D1_P1_jpg": {
+      "comps": 5,
+      "wires": 12,
+      "degree_budget": 0.941,
+      "graph_scale": 0.941,
+      "scale_completion": 0.941,
+      "scale_completion_w": 0.941
+    },
+    "C9_D1_P3_jpg": {
+      "comps": 5,
+      "wires": 12,
+      "degree_budget": 0.941,
+      "graph_scale": 0.941,
+      "scale_completion": 0.941,
+      "scale_completion_w": 0.941
+    },
+    "C9_D2_P3_jpg": {
+      "comps": 5,
+      "wires": 12,
+      "degree_budget": 0.941,
+      "graph_scale": 0.941,
+      "scale_completion": 0.941,
+      "scale_completion_w": 0.941
+    },
+    "C103_D2_P1_jpg": {
+      "comps": 7,
+      "wires": 4,
+      "degree_budget": 0.308,
+      "graph_scale": 0.0,
+      "scale_completion": 0.429,
+      "scale_completion_w": 0.533
+    },
+    "C112_D1_P1_jpg": {
+      "comps": 7,
+      "wires": 23,
+      "degree_budget": 0.976,
+      "graph_scale": 0.667,
+      "scale_completion": 0.976,
+      "scale_completion_w": 0.976
+    },
+    "C19_D1_P2_jpg": {
+      "comps": 10,
+      "wires": 39,
+      "degree_budget": 0.831,
+      "graph_scale": 0.787,
+      "scale_completion": 0.866,
+      "scale_completion_w": 0.806
+    },
+    "C242_D1_P1_jpg": {
+      "comps": 10,
+      "wires": 58,
+      "degree_budget": 0.893,
+      "graph_scale": 0.893,
+      "scale_completion": 0.931,
+      "scale_completion_w": 0.931
+    },
+    "C2_D2_P1_jpg": {
+      "comps": 10,
+      "wires": 24,
+      "degree_budget": 0.875,
+      "graph_scale": 0.93,
+      "scale_completion": 0.955,
+      "scale_completion_w": 0.955
+    },
+    "C33_D2_P2_jpg": {
+      "comps": 10,
+      "wires": 19,
+      "degree_budget": 0.955,
+      "graph_scale": 0.85,
+      "scale_completion": 0.955,
+      "scale_completion_w": 0.955
+    },
+    "C37_D2_P4_jpg": {
+      "comps": 11,
+      "wires": 35,
+      "degree_budget": 1.0,
+      "graph_scale": 0.878,
+      "scale_completion": 1.0,
+      "scale_completion_w": 1.0
+    },
+    "C66_D2_P4_jpg": {
+      "comps": 12,
+      "wires": 51,
+      "degree_budget": 0.782,
+      "graph_scale": 0.567,
+      "scale_completion": 0.771,
+      "scale_completion_w": 0.771
+    },
+    "C83_D2_P4_jpg": {
+      "comps": 12,
+      "wires": 34,
+      "degree_budget": 0.955,
+      "graph_scale": 0.872,
+      "scale_completion": 0.977,
+      "scale_completion_w": 0.927
+    },
+    "C77_D2_P2_jpg": {
+      "comps": 14,
+      "wires": 34,
+      "degree_budget": 0.746,
+      "graph_scale": 0.719,
+      "scale_completion": 0.909,
+      "scale_completion_w": 0.895
+    }
+  },
+  "mean_f1": {
+    "degree_budget": 0.853049133015369,
+    "graph_scale": 0.8376192545481566,
+    "scale_completion": 0.9010706849335028,
+    "scale_completion_w": 0.9068170398571438
+  },
+  "mean_p": {
+    "degree_budget": 0.8655665758980895,
+    "graph_scale": 0.9203348812687707,
+    "scale_completion": 0.9363076881412257,
+    "scale_completion_w": 0.9360584090294677
+  },
+  "mean_r": {
+    "degree_budget": 0.8786288313412173,
+    "graph_scale": 0.7949216306258408,
+    "scale_completion": 0.8883375266075443,
+    "scale_completion_w": 0.8981812430798997
+  }
+}
