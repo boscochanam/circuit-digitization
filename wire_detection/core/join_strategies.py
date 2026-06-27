@@ -374,15 +374,14 @@ STRATEGIES = [
      "completion": {"base": "scale", "reach_factor": 4.0, "relax_witness": False}},
 ]
 _BY_NAME = {s["name"]: s for s in STRATEGIES}
-# Promoted default: degree_budget = graph_rescue + floating-pin completion. Best
-# join_quality on synthetic ground truth (+0.035 F1, with HIGHER precision) and
-# highest real-image connectivity (+12%), after the self-loop guard + wire-tracking
-# fixes (see docs/synthetic-eval-plan.md + IMPROVEMENTS.md). graph_rescue stays in
-# the registry as the prior default / fallback (select via ?strategy=graph_rescue).
-# CAVEAT: the +12% real connectivity lacks net-level ground truth to fully rule out
-# over-merge (issue #20); on synthetic GT precision rose, but watch real circuits
-# with legitimately-floating terminals.
-DEFAULT_STRATEGY = "degree_budget"
+# Promoted default: scale_completion = graph_scale base (scale-relative endpoint graph, no
+# end-extension/dead-end-rescue → high precision) + degree-budget floating-pin completion at
+# reach 4×tau. On the 31-image HUMAN-VERIFIED net-GT it is the best join: F1 0.90 (P.94/R.89)
+# vs degree_budget 0.85 and the prior graph_rescue 0.81; it also leads on independent synthetic
+# authored GT (0.975 mean-F1), so the win is not net-GT seed bias. The earlier default
+# degree_budget (graph_rescue base + completion) stays registered as a fallback; graph_scale and
+# graph_rescue remain for ablation. See docs/research/experiments/ + join_variant_search.py.
+DEFAULT_STRATEGY = "scale_completion"
 
 
 def list_strategies():
