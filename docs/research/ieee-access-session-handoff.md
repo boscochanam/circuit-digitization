@@ -1,100 +1,181 @@
-# IEEE Access paper push — session handoff (2026-06-27)
+# IEEE Access paper push — session handoff (updated 2026-06-28)
 
-Persistent state for continuing the IEEE Access paper overhaul. Read this first next session.
+Persistent state for continuing the IEEE Access paper overhaul. **Read this first.**
+Supersedes the 2026-06-27 version. Project memory: `ieee-access-paper-push.md`.
 
 ## Goal
-Make `paper/ieee-paper/paper.tex` submittable to **IEEE Access**: correct template, thicker
-related work, close the real-data join-validation gap, substantiate the VLM motivation with a
-first-party Claude experiment, position vs 2026 prior work. Approved plan:
-`~/.claude/plans/flickering-waddling-deer.md`.
+Make `paper/ieee-paper/paper-access.tex` submittable to IEEE Access: correct template, thicker
+related work, **close the real-data join-validation gap with human-verified net-level GT**,
+substantiate the VLM motivation with a first-party Claude experiment, position vs 2026 prior
+work.
 
-## TL;DR status
-- Paper content + template conversion: **largely done** (`paper-access.tex`).
-- Synthetic VLM experiment: **done** (F1 0.99 — clean-condition control).
-- Real VLM + real join table: **run, but against UNVERIFIED, biased net-GT** — numbers are
-  preliminary until the human verification step completes.
-- **Hard blocker:** human-verify the 10-image net-level GT (user is doing this). Everything
-  real re-runs against it afterward.
+---
 
-## Two findings that reshaped the paper (both reflected honestly in paper-access.tex)
-1. **VLMs do connectivity better than the original "omits 26–67%" claim.** Real end-to-end
-   (raw scan, Claude Opus 4.8) ≈ **F1 0.79** (declines with complexity; component detection
-   near-perfect → the gap is connectivity). Far above DiagramNet's Claude-Sonnet-4 (0.265)
-   because our circuits are simpler + stronger model + heavy test-time compute + forgiving
-   pair-F1 + position-matching. → Motivation reframed to: **cost (~10^5 tokens/image),
-   degrades with complexity, no structural guarantee, non-simulatable output** + DiagramNet's
-   collapse on complex diagrams. Framing chosen by user: **clean-control (0.99) + real-gap**.
-2. **degree_budget may NOT be the best real-image strategy.** On 10 images it scored **below
-   graph_rescue** (0.825 vs 0.878). Completion (b-matching) seems to over-merge on noisy
-   *detected* wires — opposite of its synthetic-L4 win (0.94). Decision: **flagged as an open
-   question** in paper Limitations (done). Confirm/retract after GT verification.
+## TL;DR current status (2026-06-28)
+- **Net-level GT: 33 images human-verified by the user** (via a custom local UI). 1 left
+  (C167_D2_P1). This is the big unblock — real numbers are now trustworthy.
+- **Join-strategy ranking settled at N=33: degree_budget WINS** (the promoted flagship is
+  vindicated). graph_scale's earlier N=9 lead was small-sample noise.
+- **VLM connectivity re-scored against verified GT: F1 0.90** (was 0.79 vs the biased GT) —
+  but still only N=9 (new images lack VLM responses).
+- **Two GT bugs found & fixed this session** (see below): a methodological circularity, and a
+  roboflow rotated-label bug.
+- **Remaining:** 2 edit-slips to fix + re-run, optionally finish C167 and scale VLM to N=33,
+  then write the paper sections + tables. Author still owes ORCIDs/bios/funding.
 
-## Numbers so far (ALL real numbers vs UNVERIFIED, graph_scale-biased GT — re-run after verify)
-- **Synthetic VLM connectivity** (15 circuits): mean F1 **0.99** (14/15 perfect; two_sources 0.89). 0% connections omitted. TRUSTWORTHY (GT is authored).
-- **Real VLM end-to-end** (10 imgs): mean F1 **0.79** (P0.78/R0.85), 19% pairs omitted.
-  Per-image: C20 1.00, C109 1.00, C29 0.89, C15 0.88, C84 0.75, C138 0.75, C21 0.71, C28 0.69, C92 0.67, C22 0.59.
-- **Real VLM given-detections** (3-img pilot): C20 1.00, C29 0.81, C84 0.75; mean **0.86**.
-- **Real join F1** (10 imgs, same pair-F1 metric): graph_scale 0.958 **(CIRCULAR — it generated the GT, ignore for ranking)**, graph_rescue 0.878, degree_budget 0.825, production 0.650.
-- **External (cite):** SINA (arXiv 2601.22114, DATE 2026) 96.47% netlist acc, 2.72×. DiagramNet (2605.01338) connection F1: GPT-5 0.029, Claude-Sonnet-4 0.265, Gemini-2.5-Pro 0.008, tuned-3B 0.735.
+---
 
-## ⚠️ Methodological caveat (critical)
-Net-GT was bootstrapped with the **graph_scale** join over PERFECT GT wires. This **biases the
-join ranking toward graph_scale** (it can't be fairly ranked against a GT it made) and makes all
-real numbers provisional. The ONLY fix is human-verified GT — no automatic GT is independent of
-the strategies under test. Both VLM and join real numbers depend on this.
+## RESULTS (numbers to use in the paper)
 
-## THE BLOCKER — human net-GT verification (user task, in progress)
-On **claw** (`ssh claw@192.168.1.22`, repo `/home/claw/circuit-digitization`):
-- Overlays: `output/net_gt_overlays/*.png` (red number = component index; colored dots = proposed net per pin)
-- Checklist: `ground_truth/verify_sheet.md` (each net as component-index groups + types)
-- Edit `ground_truth/real_nets.json`; set `"source": "human-verified"` when done.
-The 10 clean images: C84_D2_P1, C22_D2_P3, C29_D2_P4, C15_D2_P2, C20_D2_P2, C138_D1_P3, C92_D1_P3, C109_D2_P3, C21_D1_P3, C28_D1_P3.
+### Join strategies — real images, connectivity component-pair F1
+| strategy | N=9 (initial) | **N=33 (verified, use this)** |
+|----------|---------------|-------------------------------|
+| **degree_budget** | 0.811 | **0.845  ← best** |
+| graph_scale | 0.851 | 0.811 |
+| graph_rescue | 0.794 | 0.803 |
+| production | 0.631 | 0.676 |
 
-## NEXT STEPS (after GT verified)
-1. Re-pull verified `real_nets.json` from claw.
-2. **Re-score VLM** (responses already saved, no need to re-run subagents):
-   `python -m wire_detection.benchmark.vlm_connectivity_eval wire_detection/benchmark/data/vlm_responses_real_e2e.json --real ground_truth/real_nets.json --e2e`
-   and `... vlm_responses_real_given_detections.json --real ...` (no --e2e).
-3. **Re-run real join table** on claw:
-   `./.venv/bin/python -m wire_detection.benchmark.join_eval_real_f1 --gt ground_truth/real_nets.json`
-   → confirm/retract the degree_budget < graph_rescue finding; set the honest real-image default.
-4. **Finish paper (Workstream F/G, task #7):** write the VLM experiment section (0.99 control +
-   real-gap), add comparison tables (ours vs SINA/DiagramNet; real join table), reframe motivation,
-   loosen the dense abstract sentence, add 36-config sweep appendix. Wire final numbers in.
-5. Optionally scale net-GT beyond 10 images (conservative join + verify) for stronger stats.
+- degree_budget vs graph_scale head-to-head (N=33): **db wins 13, ties 15, gs wins 5**, mean
+  paired diff +0.034. Robust, not outlier-driven.
+- degree_budget won **despite** the GT being seeded by graph_scale (bias would favor gs) →
+  result is conservative/strong.
+- Caveat: 2 edit-slips still in the GT (C8_D1_P3, C105_D1_P4) — C105 inflates db's biggest
+  win; fix and re-run for the final clean number (won't change the ranking).
 
-## Author-supplied (cannot automate)
-ORCIDs, author biographies, funding source — placeholders in `paper-access.tex`.
-Compile `paper-access.tex` on **Overleaf IEEE Access template** (bundles `ieeeaccess.cls`; no
-LaTeX on bosco or claw).
+### VLM (Claude Opus 4.8) connectivity
+| | precision | recall | F1 |
+|---|---|---|---|
+| Synthetic control (15 circuits, authored GT) | — | — | **0.99** |
+| Real end-to-end vs **biased** GT (N=9) | 0.78 | 0.85 | 0.79 |
+| Real end-to-end vs **verified** GT (N=9) | **0.95** | **0.87** | **0.90** |
 
-## File inventory
-**New (this session):**
-- `wire_detection/synthgt/render.py` — clean synthetic schematic renderer
-- `wire_detection/benchmark/vlm_connectivity_eval.py` — VLM prompt/parse/score (synthetic, real-given-detections, real-e2e via --e2e)
-- `wire_detection/benchmark/build_net_gt.py` — net-GT builder (GT_STRATEGY="graph_scale"), overlays, VLM-input overlays, component metadata
-- `wire_detection/benchmark/join_eval_real_f1.py` — real join connectivity-F1 vs net-GT
-- `wire_detection/benchmark/data/vlm_responses_synthetic.json` (15) — F1 0.99
-- `wire_detection/benchmark/data/vlm_responses_real_e2e.json` (10) — F1 0.79
-- `wire_detection/benchmark/data/vlm_responses_real_given_detections.json` (3) — F1 0.86
-- `paper/ieee-paper/paper-access.tex` — IEEE Access conversion (+ Data&Code Availability + degree_budget caveat)
+VLM precision ≈0.95 (rarely invents a wrong connection); it *misses* pairs on complex
+circuits (recall 0.87, 15% of GT pairs omitted). Strengthens the "VLMs CAN do connectivity but
+cost/scale/no-guarantee" motivation. **External cites:** SINA (arXiv 2601.22114, DATE 2026)
+96.47% netlist acc; DiagramNet (2605.01338) connection-F1 GPT-5 0.029 / Claude-Sonnet-4 0.265.
 
-**Modified:**
-- `paper/ieee-paper/paper.tex` — 5 edge types, softened VLM claim, Related Work 6→23 refs (SINA/DiagramNet/AMSnet2.0/AMSBench/Masala-CHAI/instance-seg/JUHCCR/LLM4EDA + grounding; removed off-topic alam2022survey)
-- `README.md`, `AGENTS.md` — doc-sync (default strategy, F1 eval explainer, removed stale scikit-learn gotcha)
-- `wire_detection/core/join_graph.py` — docstring 5 edge types
-- `wire_detection/synthgt/evaluate.py` — DEFAULT_STRATEGY re-exports join_strategies (was stale "graph_rescue")
-- `wire_detection/benchmark/netlist_exploration.py` — removed dup "diac" dict key
-- `pyproject.toml` — added [tool.mypy] (was fully broken: dual-module error)
-- ~65 files — `ruff --fix` cosmetic (unused imports etc.)
+---
 
-**On claw (`/home/claw/circuit-digitization/`):** `ground_truth/real_nets.json` (10-img proposals, UNVERIFIED), `ground_truth/verify_sheet.md`, `output/net_gt_overlays/*.png`, `output/vlm_input_overlays/*.png`, `output/join_eval_real_f1.json`; new scripts synced under `wire_detection/benchmark/` + `synthgt/`.
+## ⚠️ BUG 1 — Methodological circularity (Claude must NOT be GT verifier)
+The paper benchmarks a **VLM = Claude Opus 4.8**. If Claude also verifies the net-GT, the
+answer key is written by the model under test → VLM score is self-flattered (shared visual
+bias). **Decision (user's call): the USER is verifier of record; Claude only PRE-SCREENS.**
+- Claude IS independent of the *join algorithms* (it reads pixels, doesn't run union-find), so
+  Claude's trace is valid for ranking the join table — but NOT for the VLM comparison.
+- Claude's pre-screen used the **graph_scale-colored overlay**, which can reveal graph_scale's
+  *isolated* parts but **structurally cannot reveal its over-splits / mis-joins**. The human
+  pass caught real graph_scale errors Claude missed (C84 rail wrongly split; C29 bridge load
+  mis-placed). This is *why* human verification is required, and it materially changed results.
+
+## ⚠️ BUG 2 — Roboflow rotated/augmented labels (FIXED) — **document, the user asked**
+**Symptom:** component boxes/labels wrong & misaligned on many new-batch images.
+**Root cause:** two data sources must align —
+- component boxes ← roboflow HDC labels (`roboflow_test2/{train,valid,test}/labels/<name>_jpg.rf.<hash>.txt`, OBB format)
+- image + wires ← CGHD `labels_few_annot` (`GT_IMAGES`, `GT_WIRE_LABELS`)
+
+Roboflow exports **multiple AUGMENTED copies per image** (rotations/flips/shifts), each a
+`<name>_jpg.rf.<hash>.txt` with a matching `.rf.<hash>.jpg`. The old `find_hdc_label` returned
+`sorted(matches)[0]` — the lexicographically-first hash, often a **rotated** copy → boxes for a
+transformed image laid over the original → misaligned/"wrong" labels. (Counts seen: C37 had 4
+copies, C5/C84/C133 had 2, etc.)
+**Fix (in `wire_detection/benchmark/build_net_gt.py::find_hdc_label`, UNCOMMITTED):** among all
+copies, pick the **identity** one whose `.rf.<hash>.jpg` matches `GT_IMAGES/<name>_jpg.jpg`
+(min mean abs pixel diff ≈ 0). Falls back to first match if no image comparison possible.
+**Audit result:** original 10 were 0/10 affected (matches[0] happened to be identity → the
+verified-9 GT + VLM 0.90 + N=9 join table all STAND). New batch was **9/25 wrong** before fix,
+0/25 after. Diagnostics written: `check_align.py` (ink fraction inside each box), `audit_picks.py`
+(current vs identity pick), `probe_identity.py` (per-copy ink + image-match).
+**OBB & class mapping are NOT bugs:** `parse_components` takes the axis-aligned box of the 4 OBB
+points (correct); `COMPONENT_TYPES` int→type mapping verified correct against drawn symbols.
+
+## Component-class categorization (used to exclude bad circuits) — **the user asked**
+roboflow `data.yaml` class order is alphabetical-ish (0:and, 1:antenna, 2:capacitor-adjustable,
+…); `COMPONENT_TYPES` mirrors it correctly. `SIMULATABLE_PREFIXES = {R,C,L,V,D,Q,U}`.
+- **SPICE-active (scored):** resistor, capacitor-{unpolarized,polarized,adjustable}, inductor,
+  inductor-ferrite, voltage-{DC,AC,battery}, diode, diode-LED, diode-zener, diode-thyrector,
+  transistor-BJT, transistor-FET, opamp, opamp-schmitt, IC, IC-NE555, IC-voltage-reg.
+- **Structural / ignore (not a circuit element):** junction, terminal, gnd, crossover, wire,
+  text, vss; (probe*, antenna treated as structural too).
+- **OTHER real devices → EXCLUDE the whole circuit:** and/nand/nor/not/or/xor, triac, diac,
+  fuse, varistor, thyristor, relay, switch, transformer, lamp, motor, speaker, microphone,
+  crystal, optocoupler, resistor-adjustable, resistor-photo, transistor-photo, optical,
+  magnetic, mechanical, socket, unknown.
+`gen_batch.py::is_clean()` drops any circuit containing an OTHER device (filtering them would
+leave an unrepresentative net-GT, e.g. C157 = 3 inductors + a filtered-out triac/fuse/varistor).
+**Clean pool = 48 of 134 images.**
+**Known gaps:** (a) a **switch** affects connectivity but is excluded — if switches should be
+nodes, that's a deliberate change to make; (b) genuinely *unlabeled* components (roboflow never
+boxed them) can't be auto-detected → the UI has a manual **exclude** button for those.
+
+---
+
+## THE VERIFICATION UI (how the human verified)
+Run from repo root: `python wire_detection/benchmark/gt_verify_ui.py 8765` → http://127.0.0.1:8765/
+(stdlib only; bosco `.venv/bin/python`). Reads/edits `ground_truth/real_nets_working.json`,
+overlays from `ground_truth/net_gt_ui_overlays/`, bboxes from `ground_truth/net_gt_ui_meta.json`.
+Features: clean wires-only image with client-drawn labelled boxes (R2/C8/Q1 — identical to the
+side panel), zoom/pan, click-to-select, per-net colored connector lines that fill solid when you
+tick **mark ✓**, "N/M reviewed" progress, parts go green when done, **auto-advance**, keyboard
+(←/→ images, `v` save+verify), and an **✗ exclude** button (bad/unlabeled circuits).
+Default view is the **neutral** image (no graph_scale coloring) to avoid biasing the human.
+Saving writes **electrical-only nets** back (`[[ci,"e"],…]`); scoring ignores pin names &
+non-electrical pins (verified in both eval scripts). Excluded imgs get `source="excluded-…"`.
+
+---
+
+## SCORING — how nets become numbers
+Both evals reduce nets to **connected electrical-component PAIRS** (restricted to
+`electrical_idxs`) and P/R/F1 vs GT pairs (`itertools.combinations` per net). Pin names and
+non-electrical pins are ignored — so the UI's electrical-only edits are sufficient.
+- `join_eval_real_f1.py --gt <file>` (run on **claw**: needs YOLO model + detected wires):
+  detects wires, runs each of `[degree_budget, graph_rescue, graph_scale, production]`, scores.
+- `vlm_connectivity_eval.py <responses.json> --real <gt> --e2e` (run on **bosco**: no model):
+  scores saved VLM responses. e2e responses only exist for the original 10 imgs.
+
+---
+
+## NEXT STEPS (in order)
+1. **User:** fix 2 edit-slips in UI then tell Claude to re-run join eval:
+   - C8_D1_P3: transistor in 4 nets (remove from one group).
+   - C105_D1_P4: IC isolated (connect it).  Optionally finish C167_D2_P1.
+2. **Re-pull** `real_nets_working.json` from bosco repo → rebuild `real_nets_verified.json`
+   (images with `human-verified` in source, drop excluded) → push to claw → re-run join eval.
+3. **(Optional) Scale VLM to N=33:** re-run VLM subagents (general-purpose, fresh, one per
+   image) on the new images' raw scans + the vlm_input overlays, save to
+   `wire_detection/benchmark/data/vlm_responses_real_e2e.json`, re-score. Currently VLM = N=9.
+4. **Write paper (Workstream F/G):** VLM section (0.99 control + 0.90 real, P0.95/R0.87),
+   comparison tables (ours vs SINA/DiagramNet; the N=33 join table), reframe motivation to
+   cost/scale/no-guarantee/non-simulatable, add 36-config sweep appendix, loosen dense abstract
+   sentence. Wire in final numbers.
+5. **Commit** the uncommitted fix + new tooling (see file inventory). Compile `paper-access.tex`
+   on Overleaf IEEE Access template (no LaTeX on bosco/claw).
+
+---
+
+## FILE INVENTORY (persisted this session)
+**Repo `wire_detection/benchmark/` (NEW tooling, uncommitted):**
+- `gt_verify_ui.py` — the verification UI (repo-relative paths).
+- `gen_batch.py` — select clean circuits (is_clean) + build proposals + clean overlays + bboxes.
+- `render_verify.py` (graph_scale-colored overlay), `render_neutral.py` (neutral overlay),
+  `export_meta.py` (bboxes + wires-only overlay), `check_align.py` / `audit_picks.py` /
+  `probe_identity.py` (roboflow-alignment diagnostics).
+**Repo `wire_detection/benchmark/build_net_gt.py`** — `find_hdc_label` identity-selection FIX
+(uncommitted). Also the earlier GT_STRATEGY="graph_scale" bootstrap.
+**Repo `ground_truth/`:** `real_nets_verified.json` (33 verified), `real_nets_working.json`
+(34, what the UI edits — has the 1 to-do + the 2 slips), `net_gt_ui_meta.json` (bboxes),
+`net_gt_ui_overlays/*.png` (34 wires-only overlays), `PRESCREEN_FINDINGS.md` (early pre-screen).
+**On claw `/home/claw/circuit-digitization/`:** all the above scripts synced;
+`ground_truth/real_nets_verified.json`; `output/net_gt_*` overlays. claw has CGHD data + model.
+**VLM responses (bosco repo `wire_detection/benchmark/data/`):** vlm_responses_synthetic.json
+(15), vlm_responses_real_e2e.json (10), vlm_responses_real_given_detections.json (3).
 
 ## Environment notes
-- **bosco (this machine):** synthetic-only (no CGHD data, no model). `uv run` works. **Bash sandbox blocks network/ssh — use `dangerouslyDisableSandbox: true` for ssh/scp/uv sync.** Tests: 477 pass.
-- **claw (192.168.1.22):** has CGHD data (`/home/claw/workspace/ground_truth/labels_few_annot/`), `roboflow_test2/`, and the YOLO model. **NO uv — use `./.venv/bin/python`.** git remote `chris` = github.com/ChrisDc777/circuit-digitization.
-- VLM = **Claude Code subagents** (general-purpose, fresh/no-context), one per image; responses saved to benchmark/data/. Re-running needs raw scans re-pulled from claw to a local dir (scratchpad is ephemeral).
-- Connectivity metric = component-pair F1 (`intended_pairs`/`_prf` semantics), restricted to SPICE-active components (SIMULATABLE_PREFIXES R/C/L/V/D/Q/U). Synthetic labels encode idx+1 (R2→idx1); real overlays/e2e use raw indices / position-matching (zero_based).
-
-## Nothing committed
-All work is uncommitted on `main`. Conference `paper.tex` still compiles. Decide commit/branch next session.
+- **bosco (this machine):** synthetic-only (no CGHD data/model). `uv run` / `.venv/bin/python`.
+  Bash sandbox **blocks network/ssh — use `dangerouslyDisableSandbox: true`** for ssh/scp.
+  `pkill`/`kill` are sandbox-restricted (use `dangerouslyDisableSandbox`); note `pgrep -f
+  gt_verify_ui` matches your own command line — check the actual port instead.
+- **claw (`ssh claw@192.168.1.22`, `/home/claw/circuit-digitization`):** CGHD data
+  (`/home/claw/workspace/ground_truth/labels_few_annot/`), `roboflow_test2/`, YOLO model.
+  **NO uv — use `./.venv/bin/python`.** git remote `chris` = github.com/ChrisDc777/...
+- Scratchpad is **ephemeral** — everything important was copied into the repo (above).
+- VLM = Claude Code subagents (general-purpose, fresh/no-context), one per image.

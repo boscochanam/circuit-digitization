@@ -73,13 +73,37 @@ _NET_COLORS = [
 
 
 def find_hdc_label(image_name: str) -> Path | None:
+    """Return the roboflow OBB component label for *image_name*.
+
+    Roboflow exports MULTIPLE augmented copies per source image (rotated / flipped /
+    shifted), each as `<name>.rf.<hash>.txt` with a matching `<name>.rf.<hash>.jpg`.
+    Picking an arbitrary copy yields labels for a *transformed* image, so the component
+    boxes are misaligned with the original GT image. We must select the IDENTITY copy:
+    the one whose exported image matches the GT image. Falls back to the first match if no
+    image comparison is possible (single copy / missing images)."""
+    cands = []  # (split, label_path, ext)
     for split in HDC_SPLITS:
         label_dir = HDC_BASE / split / "labels"
         for ext in ("_jpg", "_png", "_jpeg"):
-            matches = sorted(label_dir.glob(f"{image_name}{ext}.rf.*.txt"))
-            if matches:
-                return matches[0]
-    return None
+            cands += [(split, f, ext) for f in sorted(label_dir.glob(f"{image_name}{ext}.rf.*.txt"))]
+    if not cands:
+        return None
+    if len(cands) == 1:
+        return cands[0][1]
+    gt = cv2.imread(str(GT_IMAGES / f"{image_name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
+    if gt is None:
+        return cands[0][1]
+    best, bestd = cands[0][1], 1e18
+    for split, f, ext in cands:
+        h = f.name.split(".rf.")[1].rsplit(".txt", 1)[0]
+        rip = HDC_BASE / split / "images" / f"{image_name}{ext}.rf.{h}.jpg"
+        ri = cv2.imread(str(rip), cv2.IMREAD_GRAYSCALE)
+        if ri is None or ri.shape != gt.shape:
+            continue
+        d = float(np.abs(ri.astype("int16") - gt.astype("int16")).mean())
+        if d < bestd:
+            best, bestd = f, d
+    return best
 
 
 def parse_components(text: str, w: int, h: int) -> list:
