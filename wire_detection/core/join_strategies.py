@@ -359,6 +359,19 @@ STRATEGIES = [
      # itself (so direct callers match graph_rescue). A registry "extend" here would
      # double it to 24px -> over-merge (broke clean wheatstone, inflated self-loops).
      "radius": 30, "kind": "completion"},
+    # graph_scale base (no extend / no dead-end rescue → higher precision) + the same
+    # degree-budget completion with a larger reach. On the 31-image human-verified net-GT
+    # this beats degree_budget: F1 0.91 vs 0.85 (P .94/.87, R .90/.88). The cleaner base
+    # avoids the rescue base's over-extension; completion recovers recall. See
+    # docs/research/experiments/ and join_variant_search.py.
+    {"name": "scale_completion", "label": "graph_scale base + degree-budget completion (reach 4)",
+     "desc": "graph_scale endpoint graph (scale-relative, directional, T-junctions; no end-extension) then degree-budget floating-pin completion at reach 4×tau. Highest real-image connectivity F1 on the verified net-GT.",
+     "radius": 30, "kind": "completion",
+     "completion": {"base": "scale", "reach_factor": 4.0, "relax_witness": True}},
+    {"name": "scale_completion_w", "label": "graph_scale base + completion, witness-only (reach 4)",
+     "desc": "Like scale_completion but completion edges require a wire-witness (no pure-distance edges). Best F1 on the verified net-GT.",
+     "radius": 30, "kind": "completion",
+     "completion": {"base": "scale", "reach_factor": 4.0, "relax_witness": False}},
 ]
 _BY_NAME = {s["name"]: s for s in STRATEGIES}
 # Promoted default: degree_budget = graph_rescue + floating-pin completion. Best
@@ -416,7 +429,7 @@ def _build_with_pins(s, wires, components, pins):
     if kind == "graph":
         return build_endpoint_graph(wires, components, pins, **s.get("graph", {}))
     if kind == "completion":
-        return degree_budget_completion(wires, components, pins)
+        return degree_budget_completion(wires, components, pins, **s.get("completion", {}))
     if kind == "all":
         attach = lambda ep, pp, comps: attach_all(ep, pp, radius)
     elif kind == "anchored":
