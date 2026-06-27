@@ -11,7 +11,6 @@ from pydantic import BaseModel
 from wire_detection.sdg.backgrounds import BackgroundLoader
 from wire_detection.sdg.primitives import (
     intersect, line_rect_intersection, get_bezier_curve,
-    calculate_bounding_box, normalize_keypoints, get_rect_edge_point,
 )
 from wire_detection.sdg.textures import add_paper_imperfections, draw_tool_stroke
 

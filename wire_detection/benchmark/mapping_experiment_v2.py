@@ -57,8 +57,6 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from scipy.optimize import linear_sum_assignment
-from scipy.spatial import ConvexHull
 
 sys.path.insert(0, "/home/claw/circuit-digitization")
 sys.path.insert(0, "/home/claw/workspace")

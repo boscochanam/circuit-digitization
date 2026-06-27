@@ -13,9 +13,7 @@ All with proper train/test split by image.
 from __future__ import annotations
 
 import json
-import math
 import sys
-import time
 from pathlib import Path
 
 import cv2
@@ -32,7 +30,6 @@ from wire_detection.benchmark.experiment_harness import (
     crop_to_roi,
     detect_wires_experiment,
     shift_components,
-    sauvola_binary,
 )
 
 # ── Paths ──

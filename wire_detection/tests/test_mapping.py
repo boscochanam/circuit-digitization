@@ -5,11 +5,8 @@ using synthetic component data (no real images needed).
 """
 from __future__ import annotations
 
-import math
-import pytest
 
 from wire_detection.benchmark.mapping_phase3 import (
-    get_candidates,
     is_multi_terminal,
     is_two_terminal,
     map_baseline,

@@ -12,7 +12,6 @@ validated analytically.  Tests are grouped into:
 """
 from __future__ import annotations
 
-import math
 import pytest
 
 from wire_detection.core.netlist import (

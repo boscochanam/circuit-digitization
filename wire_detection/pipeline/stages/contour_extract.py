@@ -1,7 +1,6 @@
 from typing import Any
 import numpy as np
 import cv2
-import math
 from wire_detection.pipeline.types import PipelineStage, StageOutput, Line
 from wire_detection.pipeline.stages.ccl import ccl_components
 

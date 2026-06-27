@@ -15,14 +15,12 @@ from __future__ import annotations
 import json
 import math
 import sys
-import time
 from pathlib import Path
 
 import cv2
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold
-from sklearn.metrics import classification_report
 
 sys.path.insert(0, "/home/claw/circuit-digitization")
 sys.path.insert(0, "/home/claw/workspace")

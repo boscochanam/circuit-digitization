@@ -425,7 +425,7 @@ def isolate_nets(stem, gray, wires, components, pins, netlist, out_root, max_pin
         ".warn{color:#ffb169;font-weight:600}</style></head><body>",
         "<div id='bar'><button onclick='step(-1)'>&larr; prev net</button>",
         "<button onclick='step(1)'>next net &rarr;</button>",
-        f"<span id='pos'></span><span style='color:#8a93a6'>", html.escape(stem),
+        "<span id='pos'></span><span style='color:#8a93a6'>", html.escape(stem),
         " &middot; nets ordered by #components joined (worst over-merge first)</span></div>",
         "<div id='stage'><img id='img'></div>",
         "<script>const nets=", json.dumps([{"f": r[0], "id": r[1], "p": r[2], "c": r[3]} for r in rows]), ";",

@@ -20,13 +20,10 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-import cv2
-import numpy as np
 
 sys.path.insert(0, "/home/claw/circuit-digitization")
 sys.path.insert(0, "/home/claw/workspace")
 
-from wire_detection.benchmark import reference_pipeline as ref
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig,
     build_component_mask,
@@ -36,12 +33,7 @@ from wire_detection.benchmark.experiment_harness import (
 )
 from wire_detection.benchmark.connectivity_experiment import (
     connect_nearest_edge,
-    load_components,
-    find_hdc_label,
-    METHODS,
     _line_intersects_rect,
-    _segments_intersect,
-    _on_segment,
 )
 
 # ── Paths ──
@@ -389,24 +381,24 @@ def main():
     from wire_detection.benchmark.connectivity_experiment import preload_all_images
     all_data = preload_all_images()
     
-    print(f"\nRunning pseudo-GT evaluation...")
+    print("\nRunning pseudo-GT evaluation...")
     result = run_pseudo_gt_eval(all_data)
     summary = result["summary"]
     
     print(f"\n{'=' * 60}")
-    print(f"RESULTS")
+    print("RESULTS")
     print(f"{'=' * 60}")
     print(f"  GT wires:           {summary['gt_wires']}")
     print(f"  Detected wires:     {summary['det_wires']}")
     print(f"  Matched pairs:      {summary['matched_wires']} ({summary['match_rate']:.1%} of GT)")
-    print(f"")
+    print("")
     print(f"  GT connect rate:    {summary['gt_connect_rate']:.1%} (sanity: GT endpoints near components)")
     print(f"  Agreement (edge):   {summary['agreement_rate']:.1%} (nearest_edge: same component as GT)")
     print(f"  Mismatch (edge):    {summary['mismatch_rate']:.1%}")
     print(f"  Agreement (ext):    {summary['extension_agreement_rate']:.1%} (extend_along_wire: same component as GT)")
     print(f"  Mismatch (ext):     {summary['extension_mismatch_rate']:.1%}")
     print(f"  Det orphan (GT ok): {summary['det_orphan_gt_connected_rate']:.1%} (GT connects, detected doesn't)")
-    print(f"")
+    print("")
     print(f"  Unambiguous wires:  {summary['unambiguous_wires']} ({summary['unambiguous_rate']:.1%} of matched)")
     print(f"  Ambiguous wires:    {summary['ambiguous_wires']}")
     print(f"  Agree (unambig):    {summary['agree_unambiguous']:.1%} (only clear pseudo-GT)")
@@ -415,7 +407,7 @@ def main():
     
     # Per-component breakdown
     print(f"\n{'─' * 50}")
-    print(f"Per-component-class agreement (top 15):")
+    print("Per-component-class agreement (top 15):")
     print(f"{'─' * 50}")
     sorted_classes = sorted(result["class_breakdown"].items(), key=lambda x: x[1]["total"], reverse=True)
     for name, stats in sorted_classes[:15]:
@@ -423,7 +415,7 @@ def main():
     
     # Worst images
     print(f"\n{'─' * 50}")
-    print(f"Worst images (most mismatches):")
+    print("Worst images (most mismatches):")
     print(f"{'─' * 50}")
     for r in result["worst_images"][:5]:
         print(f"  {r['image']:<30} matched={r['matched']} agree={r['agree']} mismatch={r['mismatch']} orphan={r['det_orphan']}")

@@ -18,8 +18,6 @@ from __future__ import annotations
 import json
 import math
 import sys
-import time
-from dataclasses import dataclass
 from pathlib import Path
 
 import cv2

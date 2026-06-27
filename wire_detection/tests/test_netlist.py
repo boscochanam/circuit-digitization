@@ -5,13 +5,9 @@ pin mapping, validation, and SPICE-like generation using synthetic data.
 """
 from __future__ import annotations
 
-import math
-import pytest
 
 from wire_detection.benchmark.netlist_exploration import (
     ComponentPin,
-    NetNode,
-    Netlist,
     build_netlist,
     derive_pins_from_obb,
     validate_netlist,

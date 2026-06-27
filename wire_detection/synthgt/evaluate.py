@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from itertools import combinations
 
-from wire_detection.core.join_strategies import run_strategy
+from wire_detection.core.join_strategies import DEFAULT_STRATEGY, run_strategy
 from wire_detection.core.simulator import SpiceSimulator
 from wire_detection.core.spice import SpiceGenerator
 from wire_detection.core.netlist import ComponentPin
@@ -32,7 +32,8 @@ from wire_detection.synthgt.synthesize import (
     value_overrides,
 )
 
-DEFAULT_STRATEGY = "graph_rescue"
+# DEFAULT_STRATEGY re-exported from join_strategies (single source of truth) so the
+# synthgt CLI default tracks the production default ("degree_budget").
 
 
 def _comp_pairs(netlist) -> set[tuple[int, int]]:

@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from wire_detection.pipeline.registry import STAGES
-from wire_detection.api.deps import registry, cache, ensure_synthetic_data, log_dataset_inventory
+from wire_detection.api.deps import ensure_synthetic_data, log_dataset_inventory
 
 
 @asynccontextmanager

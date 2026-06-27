@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from typing import Any
 import threading
 import cv2
 import numpy as np

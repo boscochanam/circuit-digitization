@@ -28,7 +28,6 @@ from collections import defaultdict
 from pathlib import Path
 
 import cv2
-import numpy as np
 
 sys.path.insert(0, "/home/claw/circuit-digitization")
 sys.path.insert(0, "/home/claw/workspace")

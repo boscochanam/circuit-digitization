@@ -7,7 +7,10 @@ run the best config (v4 baseline with anchor_endpoint_dist=12) on each,
 and compare F1 scores.
 """
 from __future__ import annotations
-import json, re, sys, time
+import json
+import re
+import sys
+import time
 from dataclasses import asdict
 from pathlib import Path
 
@@ -15,7 +18,7 @@ sys.path.insert(0, '/home/claw/circuit-digitization')
 sys.path.insert(0, '/home/claw/workspace')
 
 from wire_detection.benchmark.expanded_benchmark import (
-    preload_all_images, run_config, _all_image_data
+    preload_all_images, run_config
 )
 from wire_detection.benchmark.experiment_harness import ExperimentConfig
 
@@ -113,7 +116,7 @@ def main():
     print("Preloading all images...")
     drafter_groups = split_by_drafter()
     
-    print(f"\nDrafter distribution:")
+    print("\nDrafter distribution:")
     for d in sorted(drafter_groups.keys()):
         names = [item[0] for item in drafter_groups[d]]
         print(f"  {d}: {len(drafter_groups[d])} images")
@@ -129,7 +132,7 @@ def main():
         print(f"  F1={r['f1']:.4f}  P={r['precision']:.4f}  R={r['recall']:.4f}  TP={r['tp']} FP={r['fp']} FN={r['fn']}")
     
     # Run on ALL
-    print(f"\nRunning v4_baseline on ALL images...", flush=True)
+    print("\nRunning v4_baseline on ALL images...", flush=True)
     all_data = []
     for subset in drafter_groups.values():
         all_data.extend(subset)

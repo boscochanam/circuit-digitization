@@ -33,7 +33,6 @@ DEPENDENCIES:
 
 import math
 import os
-import time
 from pathlib import Path
 import numpy as np
 import cv2
@@ -486,7 +485,7 @@ def main():
     print(f"\n{'=' * 90}")
     print(f"GLOBAL  | F1={gf1:.4f}  TP={tp_t}  FP={fp_t}  FN={fn_t}  Red={red_t}")
     print(f"        | P={p:.4f}  R={r_:.4f}")
-    print(f"Expected | F1=0.7066  TP=248  FP=70  FN=52  Red=84")
+    print("Expected | F1=0.7066  TP=248  FP=70  FN=52  Red=84")
     match = "MATCH" if abs(gf1 - 0.7066) < 0.01 else f"OFF BY {abs(gf1 - 0.7066):.4f}"
     print(f"        | {match}")
     print(f"{'=' * 90}")

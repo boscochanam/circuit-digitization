@@ -34,8 +34,6 @@ from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig,
     build_component_mask,
     crop_to_roi,
-    detect_wires_experiment,
-    shift_components,
 )
 from wire_detection.benchmark.connectivity_experiment import COMPONENT_NAMES
 

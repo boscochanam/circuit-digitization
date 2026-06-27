@@ -1,4 +1,4 @@
-from typing import Any, Protocol
+from typing import Any
 from abc import ABC, abstractmethod
 import numpy as np
 

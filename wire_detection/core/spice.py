@@ -6,7 +6,6 @@ import re
 from wire_detection.core.component_classes import (
     COMPONENT_TYPES,
     PREFIX_MAP,
-    SIMULATABLE_PREFIXES,
 )
 from wire_detection.core.netlist import Netlist
 

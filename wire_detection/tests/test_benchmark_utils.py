@@ -6,12 +6,8 @@ helpers from experiment_harness.py and reference_pipeline.py.
 from __future__ import annotations
 
 import math
-import tempfile
-from pathlib import Path
 
-import cv2
 import numpy as np
-import pytest
 
 from wire_detection.benchmark.mapping_phase3 import (
     get_candidates,
@@ -22,7 +18,6 @@ from wire_detection.benchmark.mapping_phase3 import (
     point_to_polygon_dist,
 )
 from wire_detection.benchmark.experiment_harness import (
-    ExperimentConfig,
     build_component_mask,
     crop_to_roi,
     shift_components,

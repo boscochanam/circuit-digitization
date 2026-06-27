@@ -4,10 +4,9 @@ Verifies that the pipeline works correctly on rotated and noisy variants.
 """
 import numpy as np
 import cv2
-import pytest
 from wire_detection.pipeline.stages.threshold import ThresholdStage
 from wire_detection.pipeline.stages.ccl import ccl_components
-from wire_detection.pipeline.stages.contour_extract import find_endpoints, extract_lines_from_blobs
+from wire_detection.pipeline.stages.contour_extract import extract_lines_from_blobs
 from wire_detection.pipeline.stages.dedup import global_dedup
 
 

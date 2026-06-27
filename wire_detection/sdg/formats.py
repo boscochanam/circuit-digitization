@@ -1,6 +1,3 @@
-from pathlib import Path
-from typing import Any
-import numpy as np
 
 
 def export_yolov8_pose(

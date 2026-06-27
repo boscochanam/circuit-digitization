@@ -4,9 +4,7 @@ Route modules import from here instead of from server.py to avoid circular impor
 """
 from __future__ import annotations
 
-from pathlib import Path
 
-import yaml
 
 from wire_detection.data.dataset import DatasetRegistry
 from wire_detection.api.cache import ImageCache

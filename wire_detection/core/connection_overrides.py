@@ -10,7 +10,6 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Any
 
 OVERRIDES_ROOT = os.environ.get(
     "OVERRIDES_ROOT",

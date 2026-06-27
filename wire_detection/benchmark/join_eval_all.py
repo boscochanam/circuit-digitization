@@ -20,7 +20,6 @@ from collections import defaultdict
 from pathlib import Path
 
 import cv2
-import numpy as np
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
@@ -39,7 +38,6 @@ from wire_detection.core.join_strategies import (  # noqa: E402
     run_strategy,
     score_netlist,
 )
-from wire_detection.core.spice import COMPONENT_NAMES  # noqa: E402
 
 WORKSPACE = Path(os.environ.get("WIRE_WORKSPACE", str(SCRIPT_DIR.parent))).resolve()
 IMAGES_DIR = WORKSPACE / "manually_verified_no_background_data" / "images"

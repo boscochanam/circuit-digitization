@@ -13,7 +13,7 @@ carefully chosen synthetic data.
 from __future__ import annotations
 
 import math
-from typing import List, Tuple
+from typing import Tuple
 
 import pytest
 
@@ -1101,7 +1101,7 @@ class TestDatasetLabelFormat:
                                 errors.append(
                                     f"{txt.name}:{i} coord {j} not a number"
                                 )
-        assert not errors, f"Format errors:\n" + "\n".join(errors[:20])
+        assert not errors, "Format errors:\n" + "\n".join(errors[:20])
 
     def test_label_line_count_nonzero(self):
         """Each checked label file should have at least one annotation line."""
