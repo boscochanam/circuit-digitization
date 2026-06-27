@@ -2,7 +2,6 @@ import time
 from typing import Any
 import numpy as np
 from wire_detection.pipeline.types import Line, PipelineResult
-from wire_detection.pipeline.registry import STAGES
 
 
 class Pipeline:

@@ -1,12 +1,10 @@
-\documentclass[conference]{IEEEtran}
-\IEEEoverridecommandlockouts
-
-% PAPER STRUCTURE NOTE (2026-06-15):
-% Lead with: Technical innovation (degree-budget join algorithm)
-% Frame within: Complete end-to-end system (scanned circuit → simulatable SPICE)
-% Hint at: Downstream application value (queryable circuits)
-% NOT main story: LLM comparison — motivation only (1 paragraph + 1 figure in intro)
-% Core contribution: Degree-budget topology join (Section 4, 60% of paper)
+% ============================================================================
+% IEEE ACCESS version. Requires ieeeaccess.cls + IEEEtran.bst from the IEEE
+% Author Center kit (or compile on the Overleaf "IEEE Access" template, which
+% bundles them). The compilable conference version is preserved in paper.tex.
+% Compile: place ieeeaccess.cls beside this file, then latexmk -pdf paper-access.tex
+% ============================================================================
+\documentclass{ieeeaccess}
 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
@@ -18,33 +16,32 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{url}
+\usepackage{hyperref}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
+\history{Date of publication xxxx 00, 0000, date of current version xxxx 00, 0000.}
+\doi{10.1109/ACCESS.2024.0429000}
+
 \begin{document}
 
-\title{Degree-Budget Topology Join: Robust Wire-to-Component\\Connection for Scanned Circuit Diagram Digitization}
+\title{Degree-Budget Topology Join: Robust Wire-to-Component Connection for Scanned Circuit Diagram Digitization}
 
-\author{%
-\IEEEauthorblockN{Bosco Chanam}
-\IEEEauthorblockA{Symbiosis Centre for Applied AI\\
-Symbiosis Institute of Technology\\
-Pune, India\\
-bosco.chanam.btech2021@sitpune.edu.in}
-\and
-\IEEEauthorblockN{Chris Dcosta}
-\IEEEauthorblockA{Symbiosis Centre for Applied AI\\
-Symbiosis Institute of Technology\\
-Pune, India\\
-chrisdcosta777@gmail.com}
-\and
-\IEEEauthorblockN{Pranavesh Talupuri}
-\IEEEauthorblockA{Department of Computer Science\\
-University of Southern California\\
-Los Angeles, USA\\
-talupuri@usc.edu}
-}
+% ORCID: add each author's ORCID before submission, e.g.
+%   \uppercase{Bosco Chanam}\authorrefmark{1}~\orcidlink{0000-0000-0000-0000}
+\author{\uppercase{Bosco Chanam}\authorrefmark{1},
+\uppercase{Chris Dcosta}\authorrefmark{1},
+\uppercase{and Pranavesh Talupuri}\authorrefmark{2}}
+\address[1]{Symbiosis Centre for Applied AI, Symbiosis Institute of Technology, Pune 412115, India}
+\address[2]{Department of Computer Science, University of Southern California, Los Angeles, CA 90089 USA}
+\tfootnote{This work was supported by [FUNDING AGENCY AND GRANT NUMBER --- fill before submission].}
+
+\markboth
+{Chanam \lowercase{\textit{et al.}}: Degree-Budget Topology Join for Scanned Circuit Diagram Digitization}
+{Chanam \lowercase{\textit{et al.}}: Degree-Budget Topology Join for Scanned Circuit Diagram Digitization}
+
+\corresp{Corresponding author: Bosco Chanam (e-mail: bosco.chanam.btech2021@sitpune.edu.in).}
 
 \maketitle
 
@@ -278,16 +275,21 @@ Precision remains high ($\geq$~0.85) across all circuits even at L4---errors cau
 
 \textbf{Completion as fault recovery.} Degree-budget completion addresses the fundamental limitation of detector noise: even a 97.6\% accurate wire detector drops $\sim$2\% of wire endpoints, and those dropped endpoints are precisely the connections that matter most for simulation accuracy. The b-matching formulation bounds the damage from mis-detection---each floating pin gets at most one recovery edge---while the self-loop guard prevents the catastrophic short-circuit failures that plague unconstrained approaches.
 
-\textbf{Limitations.} The synthetic error model is a first-pass approximation, not yet calibrated to the real detector's measured failure distribution, so the synthetic join numbers are robustness and regression signals rather than predictors of real-image performance. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated. Finally, the real connectivity metric is structural---it cannot certify that a recovered connection is the correct one, since the corpus has no net-level ground truth---which is precisely what motivates the synthetic framework. Component detection at 88.5\% mAP50 also leaves room for improvement, particularly on crossovers (70.7\% recall).
+\textbf{Limitations.} The synthetic error model is a first-pass approximation, not yet calibrated to the real detector's measured failure distribution, so the synthetic join numbers are robustness and regression signals rather than predictors of real-image performance. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated. The real connectivity metric is structural---it cannot certify that a recovered connection is the correct one, since the corpus has no net-level ground truth---which is precisely what motivates the synthetic framework. We note one open question: on a small pilot subset annotated with bootstrapped net-level labels, the degree-budget completion did not consistently improve connectivity F1 over the base endpoint-graph join (\texttt{graph\_rescue}) on \emph{detected} (noisy) wires, in contrast to its clear advantage under the synthetic error model. This suggests the completion step's benefit is sensitive to the real detector's noise statistics; confirming whether completion helps, hurts, or is neutral on real images requires human-verified net-level ground truth, which we are collecting. Component detection at 88.5\% mAP50 also leaves room for improvement, particularly on crossovers (70.7\% recall).
 
 \section{Conclusion}
 
 We present a two-stage wire joining approach for circuit diagram digitization that dramatically improves robustness under detector noise. The endpoint-graph join model, combined with degree-budget completion, maintains F1~=~0.94 under extreme synthetic error injection, compared to 0.36 for production baselines. The synthetic evaluation framework provides a principled way to analyze join robustness independent of ground-truth wire labels. Future work includes calibrating the error model to real detector distributions, extending evaluation to hand-drawn circuits, and integrating the pipeline with VLM-based component value extraction.
 
-\section*{Acknowledgment}
+% Funding moved to \tfootnote in the front matter (IEEE Access convention).
 
-% TODO: fill funding acknowledgment before submission.
-This work was supported by [funding agency].
+\section*{Data and Code Availability}
+The pipeline, evaluation scripts, synthetic-circuit generator, the real net-level
+ground-truth labels (\texttt{ground\_truth/real\_nets.json}), and the Claude-VLM
+connectivity harness are available at
+\url{https://github.com/boscochanam/circuit-digitization}. The component-detection model
+is available at \url{https://huggingface.co/boscochanam/circuit-component-detector}, trained
+on the CGHD-1152 dataset~\cite{bayer2021cghd}.
 
 \begin{thebibliography}{00}
 \bibitem{bayer2021cghd} J.~Bayer, ``CGHD-1152: Circuit graph hand-drawing dataset,'' Kaggle, 2021. [Online]. Available: \url{https://www.kaggle.com/datasets/johannesbayer/cghd1152}
@@ -314,5 +316,25 @@ This work was supported by [funding agency].
 \bibitem{alrahis2021gnn} L.~Alrahis, A.~Sengupta, J.~Knechtel, S.~S.~Gharibeh, O.~S.~Unsal, M.~E.~Acar, and H.~Najjar, ``GNN-RE: Graph neural networks for reverse engineering of gate-level netlists,'' in \textit{Proc. IEEE/ACM Int. Conf. Computer-Aided Design (ICCAD)}, 2021, pp.~1--9.
 \bibitem{kuhn1955} H.~W.~Kuhn, ``The Hungarian method for the assignment problem,'' \textit{Naval Res. Logist. Quart.}, vol.~2, no.~1--2, pp.~83--97, 1955.
 \end{thebibliography}
+
+% ---- Author biographies (IEEE Access requires one for EVERY author) ----
+% Replace the placeholder text; add \begin{IEEEbiography}[{\includegraphics...}]{Name}
+% with a photo if available. Using the no-photo form to compile without image files.
+\begin{IEEEbiographynophoto}{Bosco Chanam}
+received the [degree] from [institution]. His research interests include computer vision,
+document understanding, and circuit digitization. [Fill before submission.]
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Chris Dcosta}
+received the [degree] from [institution]. His research interests include [fill].
+[Fill before submission.]
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Pranavesh Talupuri}
+received the [degree] from [institution]. His research interests include [fill].
+[Fill before submission.]
+\end{IEEEbiographynophoto}
+
+\EOD
 
 \end{document}

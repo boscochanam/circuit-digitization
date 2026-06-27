@@ -6,7 +6,6 @@ mapping algorithms without experiment/evaluation code.
 from __future__ import annotations
 
 import math
-from collections import defaultdict
 
 
 # ═══════════════════════════════════════════════

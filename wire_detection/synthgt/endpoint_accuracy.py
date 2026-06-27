@@ -10,9 +10,9 @@ radius, assign endpoint to that component. Compare vs GT.
 from __future__ import annotations
 import math
 from wire_detection.synthgt.synthesize import (
-    inject_errors, synthesize_clean, pin_positions,
+    inject_errors, synthesize_clean,
 )
-from wire_detection.synthgt.circuits import CATALOG, CATALOG_BY_NAME
+from wire_detection.synthgt.circuits import CATALOG
 from wire_detection.core.join_strategies import make_pins
 
 JOIN_RADIUS = 30  # px — must match the join algorithm's radius

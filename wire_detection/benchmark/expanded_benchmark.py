@@ -4,7 +4,9 @@ EXPANDED BENCHMARK — Run ALL experiment configs across all 134 images.
 Uses filename prefix matching instead of pixel-diff.
 """
 from __future__ import annotations
-import json, math, sys, time
+import json
+import sys
+import time
 from dataclasses import asdict
 from pathlib import Path
 
@@ -14,15 +16,10 @@ import numpy as np
 sys.path.insert(0, '/home/claw/circuit-digitization')
 sys.path.insert(0, '/home/claw/workspace')
 from wire_detection.benchmark import reference_pipeline as ref
-from wire_detection.data.dataset import find_roboflow_image
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig, ImageResult, RunSummary,
-    normalize_image, sauvola_binary, build_component_mask,
-    crop_to_roi, shift_components, extract_line_from_component,
-    dedup_lines, filter_component_connected_lines,
-    add_secondary_recovery_lines, reconnect_lines,
-    detect_wires_experiment, run_experiment,
-    wave1_configs, wave2_configs, wave3_configs, wave4_configs,
+    build_component_mask,
+    crop_to_roi, shift_components, detect_wires_experiment, wave1_configs, wave2_configs, wave3_configs, wave4_configs,
 )
 
 # ── Override data paths ──
@@ -266,7 +263,7 @@ if __name__ == "__main__":
     print(f"Spread: {best.global_f1 - worst.global_f1:.4f}")
 
     # Compare to old reference baseline (which was on 23 images)
-    print(f"\nOld reference baseline (23 images): F1=0.7066")
+    print("\nOld reference baseline (23 images): F1=0.7066")
     ref23 = next((s for s in ranking if s.config.name == "baseline_control"), None)
     if ref23:
         print(f"Baseline on 134 images:              F1={ref23.global_f1:.4f}")

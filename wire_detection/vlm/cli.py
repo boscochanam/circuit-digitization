@@ -31,14 +31,9 @@ from typing import Any
 
 from wire_detection.vlm.vlm_classifier import (
     OpenRouterVLM,
-    ClassificationResult,
     classify_image_direct,
-    classify_vlm_response,
-    classify_programmatic,
-    ProgrammaticScore,
     compute_quality_scores,
     reclassify_dataset,
-    get_verdict,
     DEFAULT_PROMPT,
 )
 
@@ -143,7 +138,6 @@ def cmd_sweep(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     import cv2
-    import numpy as np
 
     patterns = ["*.jpg", "*.jpeg", "*.png"]
     images: list[Path] = []
@@ -286,7 +280,7 @@ def cmd_audit(args: argparse.Namespace) -> None:
         print(json.dumps(audit, indent=2, default=str))
 
     # Print summary
-    print(f"\n=== Drafter Audit ===")
+    print("\n=== Drafter Audit ===")
     print(f"Sampled: {audit['total_images_sampled']} images ({audit['total_drafters']} drafters)")
     for v in ["KEEP", "MIXED", "REJECT"]:
         drafters_in = audit[f"recommended_{v.lower()}"]
@@ -417,7 +411,7 @@ def cmd_audit_pipeline(args: argparse.Namespace) -> None:
             json.dump(audit, f, indent=2, default=str)
 
     # Print summary
-    print(f"\n=== Audit Pipeline Complete ===")
+    print("\n=== Audit Pipeline Complete ===")
     print(f"Reclassified: {len(output)} images -> {reclassified_path}")
     if audit_args.output:
         print(f"Audit: {audit_args.output}")

@@ -1,5 +1,3 @@
-from typing import Any
-import numpy as np
 
 STAGES: dict[str, type] = {}
 BACKENDS: dict[str, type] = {}

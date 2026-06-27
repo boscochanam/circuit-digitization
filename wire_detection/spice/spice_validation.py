@@ -526,11 +526,11 @@ class SpiceValidation:
         try:
             result = simulate_dc(CIRCUITS["dc_voltage_divider_unequal"])
             if not result.ok:
-                return TestResult(name=name, passed=False, message=f"No DC data")
+                return TestResult(name=name, passed=False, message="No DC data")
 
             v_n2 = result.voltages.get("n2", None)
             if v_n2 is None:
-                return TestResult(name=name, passed=False, message=f"Node n2 not found")
+                return TestResult(name=name, passed=False, message="Node n2 not found")
 
             expected = 10.0 * 2000 / (1000 + 2000)  # 6.6667V
             ok, msg = self._assert_close(v_n2, expected, TOL_VOLTAGE, "V(N2)")
@@ -557,7 +557,7 @@ class SpiceValidation:
 
             v_n2 = result.voltages.get("n2", None)
             if v_n2 is None:
-                return TestResult(name=name, passed=False, message=f"Node n2 not found")
+                return TestResult(name=name, passed=False, message="Node n2 not found")
 
             # V(N2) = 10 - I*R1 = 10 - 2mA*1k = 8V
             ok, msg = self._assert_close(v_n2, 8.0, TOL_VOLTAGE, "V(N2)")
@@ -582,7 +582,7 @@ class SpiceValidation:
             # Both resistors have V=10V across them
             v_n1 = result.voltages.get("n1", None)
             if v_n1 is None:
-                return TestResult(name=name, passed=False, message=f"Node n1 not found")
+                return TestResult(name=name, passed=False, message="Node n1 not found")
 
             ok, msg = self._assert_close(v_n1, 10.0, TOL_VOLTAGE, "V(N1)")
             return TestResult(name=name, passed=ok, message=msg, details={"v_n1": v_n1, "voltages": result.voltages})
@@ -607,7 +607,7 @@ class SpiceValidation:
 
             v_n2 = result.voltages.get("n2", None)
             if v_n2 is None:
-                return TestResult(name=name, passed=False, message=f"Node n2 not found")
+                return TestResult(name=name, passed=False, message="Node n2 not found")
 
             # R2||R3 = 1200, V(N2) = 12 * 1200/2200 = 6.5455V
             r23 = 2000 * 3000 / (2000 + 3000)
@@ -687,11 +687,11 @@ class SpiceValidation:
         try:
             result = simulate_ac(CIRCUITS[freq_key])
             if not result.ok:
-                return TestResult(name=test_name, passed=False, message=f"No AC data")
+                return TestResult(name=test_name, passed=False, message="No AC data")
 
             out_data = result.node_data.get("n2", [])
             if not out_data:
-                return TestResult(name=test_name, passed=False, message=f"Node n2 not in node_data")
+                return TestResult(name=test_name, passed=False, message="Node n2 not in node_data")
 
             best_idx = min(range(len(result.frequencies)), key=lambda i: abs(result.frequencies[i] - fc))
             h = out_data[best_idx]
@@ -765,7 +765,7 @@ class SpiceValidation:
 
             v_n1 = result.voltages.get("n1", None)
             if v_n1 is None:
-                return TestResult(name=name, passed=False, message=f"Node n1 not found")
+                return TestResult(name=name, passed=False, message="Node n1 not found")
 
             # I = V/R = 5/1000 = 5mA
             expected_v = 5.0
@@ -801,7 +801,7 @@ class SpiceValidation:
 
             v_n2 = result.voltages.get("n2", None)
             if v_n2 is None:
-                return TestResult(name=name, passed=False, message=f"Node n2 not found")
+                return TestResult(name=name, passed=False, message="Node n2 not found")
 
             # V(N2) = 10 - I*R1 = 10 - (10/3k)*1k = 10 - 3.333 = 6.667V
             expected_v_n2 = 10.0 * 2000 / (1000 + 2000)  # voltage divider: 10 * R2/(R1+R2)
@@ -838,7 +838,7 @@ class SpiceValidation:
 
             v_n2 = result.voltages.get("n2", None)
             if v_n2 is None:
-                return TestResult(name=name, passed=False, message=f"Node n2 not found")
+                return TestResult(name=name, passed=False, message="Node n2 not found")
 
             # Compute currents from voltages (Ohm's law)
             i_r1 = (10.0 - v_n2) / 1000   # current into node N2
@@ -892,7 +892,7 @@ class SpiceValidation:
             has_data = "No. of Data Rows" in output or "n1" in output.lower()
             return TestResult(
                 name=name, passed=has_data,
-                message=f"ngspice ran successfully" if has_data else f"ngspice ran but no data in output",
+                message="ngspice ran successfully" if has_data else "ngspice ran but no data in output",
                 details={"output_lines": len(output.split(chr(10)))},
             )
         except Exception as e:
@@ -1134,8 +1134,8 @@ def print_results(results: list[TestResult]) -> None:
     print(f"{'─'*70}")
     print(f"  Results: {passed}/{total} passed, {failed} failed")
     if not NGSPICE_AVAILABLE:
-        print(f"  ⚠  ngspice not found — all simulation tests ran in MOCK mode")
-        print(f"     Install ngspice for live validation: apt install ngspice")
+        print("  ⚠  ngspice not found — all simulation tests ran in MOCK mode")
+        print("     Install ngspice for live validation: apt install ngspice")
     print(f"{'='*70}\n")
 
 

@@ -15,10 +15,9 @@ without destroying too many true positives.
 from __future__ import annotations
 
 import json
-import math
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
@@ -30,13 +29,9 @@ sys.path.insert(0, "/home/claw/workspace")
 from wire_detection.benchmark import reference_pipeline as ref
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig,
-    ImageResult,
-    RunSummary,
     build_component_mask,
     crop_to_roi,
     detect_wires_experiment,
-    normalize_image,
-    sauvola_binary,
     shift_components,
 )
 from wire_detection.benchmark.connectivity_experiment import (
@@ -473,7 +468,7 @@ def main():
               f"{sum(r.n_wires_filtered for r in results):6d}")
         print("-" * 80)
 
-        print(f"\nFilter stats:")
+        print("\nFilter stats:")
         print(f"  Orphan wires removed:     {total_orphan}")
         print(f"  TP lost (orphan filter):  {total_tp_lost_orphan}")
         print(f"  FP removed (orphan):      {total_fp_rm_orphan}")

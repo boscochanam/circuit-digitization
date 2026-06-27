@@ -9,7 +9,6 @@ from __future__ import annotations
 from wire_detection.core.join_strategies import (
     STRATEGIES,
     list_strategies,
-    make_pins,
     run_strategy,
     score_netlist,
 )

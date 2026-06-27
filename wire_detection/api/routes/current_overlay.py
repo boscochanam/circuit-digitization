@@ -117,7 +117,6 @@ def _parse_spice_names(spice_text, components, netlist):
     N2 and N7. We find the component whose pins connect to those same netlist nodes.
     """
     import re as _re
-    from wire_detection.core.component_classes import COMPONENT_TYPES as _CT
 
     # Parse SPICE device lines
     spice_devices: dict[str, list[str]] = {}

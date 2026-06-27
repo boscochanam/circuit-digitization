@@ -1,5 +1,4 @@
 import argparse
-from pathlib import Path
 import cv2
 import json
 from wire_detection.evaluate.match import evaluate

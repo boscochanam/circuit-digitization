@@ -3,8 +3,8 @@
 A modular Python framework for detecting interconnect wires in circuit schematics — classical CV pipeline, **node joining**, SPICE netlist generation, synthetic data generator, evaluation toolkit, FastAPI backend, and Next.js tuner UI.
 
 > **Full documentation**: [https://boscochanam.github.io/circuit-digitization](https://boscochanam.github.io/circuit-digitization) — or build locally with `uv run mkdocs serve`.
-> **Status**: **Global F1: 0.833** (Anchor Filter + PCA endpoints + Overlap Dedup, 134 images)
-> **Joining**: `graph_rescue` endpoint-graph join — 0.1247 balanced on 134-image GT set, 97.7% wires used
+> **Status**: **Wire detection F1: 0.976** (a16: Sauvola + anchor=16, exact-match eval on 134 images). An earlier looser prefix-match eval reported F1 0.833 — see [Wire detection eval](#two-wire-detection-numbers-0976-vs-0833) below.
+> **Joining**: `degree_budget` endpoint-graph join (default) — 0.2710 balanced on 134-image GT set, 99.4% wires used; beats `graph_rescue` with 0 regressions
 > **Dataset**: 134 circuit schematic images (predominantly 704×704), 3,524 ground-truth wire segments
 
 ---
@@ -38,7 +38,7 @@ Open **http://localhost:4200**. Optional: `docker compose up --build` (see `.env
 
 Wire detection gives a parts list + wires. **Node joining** answers "which component terminals are electrically the same point?" — grouping pins into nets for SPICE simulation.
 
-### Strategy: `graph_rescue` (endpoint-graph join)
+### Strategy: `degree_budget` (endpoint-graph join + completion)
 
 Both wire endpoints AND component pins are graph nodes, connected by 5 edge types:
 1. Wire body (ep1–ep2)
@@ -47,20 +47,20 @@ Both wire endpoints AND component pins are graph nodes, connected by 5 edge type
 4. Endpoint↔wire-body (T-junctions onto rails/buses)
 5. Pin↔wire-body (components tapped onto passing rails)
 
-Scale-relative tolerances handle the ~6× circuit-scale range. Dead-end rescue gives dangling wire-ends a longer directional reach.
+Scale-relative tolerances handle the ~6× circuit-scale range. Dead-end rescue gives dangling wire-ends a longer directional reach. `degree_budget` = `graph_rescue` + floating-pin recovery (min-cost b-matching with a per-pin edge budget and self-loop guards), promoted as the default because it beats `graph_rescue` on 92/133 images with 0 regressions.
 
-### Results (134-image GT set)
+### Results (134-image GT set, post double-extend fix, Jun 2026)
+
+Lower `balanced` is better.
 
 | Strategy | balanced | wires-used% | self-loop | floating |
 |----------|----------|-------------|-----------|----------|
-| **graph_rescue** (default) | **0.1247** | **97.7** | 233 | 276 |
-| graph_scale | 0.1261 | 97.5 | 96 | 454 |
-| graph_dir_30 | 0.1262 | 97.6 | 110 | 409 |
-| graph_full | 0.1262 | 97.7 | 233 | 288 |
-| junction_extend_n1 | 0.1954 | 83.4 | 72 | 415 |
-| production (old) | 0.2504 | 73.0 | 224 | 266 |
+| **degree_budget** (default) | **0.2710** | **99.4** | 213 | 1084 |
+| graph_scale | 0.3610 | 99.5 | 62 | 1726 |
+| graph_dir_30 | 0.3613 | 99.5 | 71 | 1711 |
+| graph_rescue | 0.3679 | 99.4 | 213 | 1607 |
 
-Graph strategies dominate the top 5. `graph_rescue` uses 97.7% of wires (vs production's 73%) while keeping low over-merge.
+`degree_budget` has the lowest (best) balanced score and uses 99.4% of wires. Regenerate with `uv run python scripts/bench_degree_budget.py`.
 
 ### Verification
 
@@ -74,24 +74,35 @@ Full details: `docs/research/join-verification.md`
 
 ## Final Results (Jun 2026)
 
+### Two wire-detection numbers (0.976 vs 0.833)
+
+The repo reports two wire-detection F1 figures on the **same 134 images**. They differ only in how predicted lines are matched to ground truth:
+
+| Eval | F1 | GT matching | Where |
+|------|----|-------------|-------|
+| **a16 (exact-match)** | **0.976** | exact-match labels on original images (strict, current) | AGENTS.md, paper |
+| best_candidate_v4 (prefix-match) | 0.833 | filename prefix matching (looser GT alignment) | tables below |
+
+The **0.976 exact-match number is the headline** (paper Table I). The 0.833 prefix-match number and the tables below predate the corrected eval and are kept for historical comparison. The only config change between v4 baseline and a16 is `anchor_endpoint_dist` 12 → 16.
+
 ### Best Pipeline: Anchor Filter + PCA Endpoints + Overlap Dedup
 
 ```
 occlude components → crop to ROI (10px pad) → Sauvola k=0.285 (w=67) → 
 close(ellipse 3×3) → CCL(min_area=28) → PCA endpoints → overlap dedup(12°,8px) → 
-anchor filter(endpoint_dist=12, link_dist=8) → Output Lines
+anchor filter(endpoint_dist=16, link_dist=8) → Output Lines
 ```
 
-**Benchmarked on 134 images (3,524 ground-truth wire annotations) across 36 config variants (wave1-4).**
+**Benchmarked on 134 images (3,524 ground-truth wire annotations) across 36 config variants (wave1-4). Figures below are the legacy prefix-match eval — see the table above for the corrected exact-match F1 = 0.976.**
 
-| Metric | Value |
+| Metric | Value (prefix-match eval) |
 |--------|-------|
-| **Global F1** | **0.833** |
-| Precision | **0.876** |
-| Recall | **0.791** |
-| TP / FP / FN / Red | **2,741 / 248 / 783 / 65** |
-| Images with F1=1.0 | **68 of 134 (51%)** |
-| Median F1 | **1.000** |
+| Global F1 | 0.833 |
+| Precision | 0.876 |
+| Recall | 0.791 |
+| TP / FP / FN / Red | 2,741 / 248 / 783 / 65 |
+| Images with F1=1.0 | 68 of 134 (51%) |
+| Median F1 | 1.000 |
 
 ### ⚠️ MANDATORY PREPROCESSING — Must Run BEFORE Detection
 

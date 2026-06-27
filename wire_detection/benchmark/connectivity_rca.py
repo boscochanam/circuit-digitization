@@ -38,7 +38,6 @@ from wire_detection.benchmark.experiment_harness import (
 )
 from wire_detection.benchmark.connectivity_experiment import (
     COMPONENT_NAMES,
-    connect_nearest_edge,
 )
 
 # ── Paths ──

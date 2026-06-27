@@ -2,9 +2,6 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 import itertools
 import random
-import json
-from pathlib import Path
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from wire_detection.pipeline.factory import PipelineFactory
 from wire_detection.evaluate.match import evaluate
@@ -123,7 +120,6 @@ def _run_single(
     registry: DatasetRegistry,
 ) -> dict:
     import cv2
-    import yaml
 
     merged = dict(base_config)
     for stage_name, stage_params in params.items():
@@ -190,7 +186,6 @@ def _run_per_image(
     registry: DatasetRegistry,
 ) -> list[PerImageResult]:
     import cv2
-    import os
 
     merged = dict(base_config)
     for stage_name, stage_params in params.items():

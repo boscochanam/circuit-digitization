@@ -13,12 +13,10 @@ All with proper train/test split by image.
 from __future__ import annotations
 
 import json
-import math
 import sys
 from pathlib import Path
 
 import cv2
-import numpy as np
 from sklearn.model_selection import train_test_split
 
 sys.path.insert(0, "/home/claw/circuit-digitization")

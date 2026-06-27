@@ -15,14 +15,11 @@ from __future__ import annotations
 import json
 import math
 import sys
-import time
-from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
 import numpy as np
-from sklearn.cluster import DBSCAN
 
 sys.path.insert(0, "/home/claw/circuit-digitization")
 sys.path.insert(0, "/home/claw/workspace")
@@ -35,7 +32,6 @@ from wire_detection.benchmark.experiment_harness import (
     detect_wires_experiment,
     shift_components,
 )
-from wire_detection.benchmark.connectivity_experiment import COMPONENT_NAMES
 
 # ── Paths ──
 GT_LABELS = Path(
@@ -422,7 +418,7 @@ def run_deep_feature_exploration():
     # Use top separable features to build a simple classifier
     if separable_features:
         separable_features.sort(key=lambda x: x[1], reverse=True)
-        print(f"Top separable features:")
+        print("Top separable features:")
         for fname, sep, diff in separable_features[:5]:
             print(f"  {fname}: separability={sep:.2f}, diff={diff:+.2f}")
 
@@ -455,7 +451,7 @@ def run_deep_feature_exploration():
             print(f"    FP removed: {fp_rate:.1%}")
 
         # Test ensemble of top 3 features
-        print(f"\nEnsemble of top 3 features:")
+        print("\nEnsemble of top 3 features:")
         ensemble_tp = 0
         ensemble_fp = 0
 

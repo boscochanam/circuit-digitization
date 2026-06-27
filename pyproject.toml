@@ -27,6 +27,16 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["wire_detection*"]
 
+[tool.mypy]
+python_version = "3.13"
+# Project root is the import base, so wire_detection/api/routes/presets.py resolves
+# only as wire_detection.api.routes.presets (not also as api.routes.presets, which
+# previously aborted the whole run with a duplicate-module error).
+mypy_path = "."
+explicit_package_bases = true
+namespace_packages = true
+ignore_missing_imports = true
+
 [tool.uv]
 package = true
 

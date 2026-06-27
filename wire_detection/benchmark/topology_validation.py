@@ -22,7 +22,6 @@ from __future__ import annotations
 import json
 import math
 import sys
-import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -321,7 +320,7 @@ def analyze_topology(
             issues.append(TopologyIssue(
                 issue_type="dangling",
                 severity="warning",
-                description=f"Node has only 1 connection (dangling wire)",
+                description="Node has only 1 connection (dangling wire)",
                 affected_wires=node.wires,
                 affected_pins=node.pins,
             ))

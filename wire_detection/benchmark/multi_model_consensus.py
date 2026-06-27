@@ -25,15 +25,12 @@ Expected:
 from __future__ import annotations
 
 import json
-import math
 import sys
-import time
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
-import numpy as np
 
 sys.path.insert(0, "/home/claw/circuit-digitization")
 sys.path.insert(0, "/home/claw/workspace")

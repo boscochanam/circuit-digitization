@@ -14,6 +14,8 @@ This builds a graph where BOTH wire endpoints AND component pins are nodes:
                             directional: prefer pins the wire points at)
     4. endpoint ↔ wire body point-to-segment <= tau_t        (T-junctions onto rails/buses,
                             no junction-component label needed)
+    5. pin ↔ wire body      point-to-segment <= tau_t         (components tapped mid-span
+                            onto a passing rail; ends covered by edge 3)
 
   nets = connected components of {pins ∪ endpoints}, projected onto pins.
 

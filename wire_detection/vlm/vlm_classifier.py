@@ -14,7 +14,7 @@ import base64
 import json
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -424,7 +424,6 @@ def reclassify_dataset(
     use_vlm_fallback: bool = True,
 ) -> list[ClassificationResult]:
     """Reclassify images by paper type from VLM responses + programmatic fallback."""
-    from collections import Counter
 
     # Build path-based lookup
     path_map: dict[str, dict] = {}

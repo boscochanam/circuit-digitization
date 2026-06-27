@@ -1,0 +1,6 @@
+{
+  "_meta": "Claude Opus 4.8 (Claude Code subagent) GIVEN component detections (scan + indexed boxes from output/vlm_input_overlays), connectivity-only. Score: vlm_connectivity_eval.py --real (NOT --e2e), zero_based labels. 3-image pilot, mean F1 0.86 vs UNVERIFIED auto-GT. Labels are raw GT component indices.",
+  "C20_D2_P2_jpg": "{\"nets\": [[0,5,4],[0,12],[5,4,12]]}",
+  "C29_D2_P4_jpg": "{\"nets\": [[2,4,7],[2,5,6],[3,4,5,8],[3,6,7,8]]}",
+  "C84_D2_P1_jpg": "{\"nets\": [[26,28,30,32],[26,27],[32,36,29],[28,33,37],[27,29,33,31],[30,36,38],[37,31,39],[38,39]]}"
+}

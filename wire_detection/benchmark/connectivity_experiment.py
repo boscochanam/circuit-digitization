@@ -37,8 +37,6 @@ from wire_detection.benchmark.experiment_harness import (
     build_component_mask,
     crop_to_roi,
     detect_wires_experiment,
-    normalize_image,
-    sauvola_binary,
     shift_components,
 )
 

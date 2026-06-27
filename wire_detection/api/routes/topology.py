@@ -50,7 +50,6 @@ def apply_overrides(
     Internally tracks per-endpoint node assignments so that operations work
     at the ``wire_<idx>_ep<1|2>`` granularity.
     """
-    from wire_detection.core.netlist import NetNode, Netlist
 
     # ── Build per-endpoint → node_id lookup ──
     # Also build reverse: (wire_idx, ep_num) → node_id and wire_idx → [node_ids]

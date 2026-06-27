@@ -1,16 +1,12 @@
-import os
-import time
 import numpy as np
 import cv2
 import pytest
-import json
 from pathlib import Path
 from wire_detection.pipeline.factory import PipelineFactory
 from wire_detection.evaluate.match import evaluate
 from wire_detection.evaluate.metric import segment_dist
 from wire_detection.data.dataset import DatasetRegistry
 from wire_detection.experiment.sweep import run_sweep, SweepConfig
-from wire_detection.experiment.runner import run_config
 from wire_detection.experiment.presets import PRESETS
 
 HAND_DRAWN_DIR = Path("/home/claw/circuit-digitization/roboflow_test")

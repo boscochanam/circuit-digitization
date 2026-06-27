@@ -16,11 +16,9 @@ from __future__ import annotations
 import json
 import math
 import sys
-import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -38,7 +36,6 @@ from wire_detection.benchmark.experiment_harness import (
 )
 from wire_detection.benchmark.connectivity_experiment import (
     COMPONENT_NAMES,
-    connect_nearest_edge,
 )
 
 # ── Paths ──
@@ -108,7 +105,6 @@ PIN_DEFINITIONS = {
     "mechanical": [(0.0, 0.5), (0.0, -0.5)],
     "optocoupler": [(-0.5, 0.0), (0.5, 0.0)],
     "triac": [(-0.5, 0.0), (0.5, 0.0), (0.0, 0.5)],
-    "diac": [(0.0, 0.5), (0.0, -0.5)],
     "capacitor-adjustable": [(0.0, 0.5), (0.0, -0.5)],
     "resistor-adjustable": [(0.0, 0.5), (0.0, -0.5), (0.5, 0.0)],
 }

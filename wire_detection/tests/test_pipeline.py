@@ -3,7 +3,7 @@ import cv2
 from wire_detection.pipeline.stages.threshold import ThresholdStage
 from wire_detection.pipeline.stages.invert import InvertStage
 from wire_detection.pipeline.stages.dilate import DilateStage
-from wire_detection.pipeline.stages.ccl import CCLStage, ccl_components
+from wire_detection.pipeline.stages.ccl import ccl_components
 from wire_detection.pipeline.stages.contour_extract import find_endpoints, extract_lines_from_blobs
 from wire_detection.pipeline.stages.dedup import global_dedup
 from wire_detection.pipeline.stages.length_filter import filter_short_lines

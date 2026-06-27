@@ -1,9 +1,8 @@
 from typing import Any
 import time
 import cv2
-import numpy as np
 from wire_detection.pipeline.factory import PipelineFactory
-from wire_detection.evaluate.match import evaluate, EvalResult
+from wire_detection.evaluate.match import evaluate
 
 
 def run_config(

@@ -24,7 +24,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
-import numpy as np
 
 sys.path.insert(0, "/home/claw/circuit-digitization")
 sys.path.insert(0, "/home/claw/workspace")
@@ -36,10 +35,6 @@ from wire_detection.benchmark.experiment_harness import (
     crop_to_roi,
     detect_wires_experiment,
     shift_components,
-)
-from wire_detection.benchmark.connectivity_experiment import (
-    COMPONENT_NAMES,
-    connect_nearest_edge,
 )
 
 # ── Paths ──

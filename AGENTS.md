@@ -309,9 +309,6 @@ from wire_detection.core.component_assignment import (
 - `join_graph.py`: degree-based pin pruning — for components with >2 pins (e.g. from 4-edge midpoint placement), keeps only the 2 most-connected pins to prevent spurious short-circuits
 
 **Known gotchas:**
-- `core/netlist.py` imports `sklearn` but `scikit-learn` is **missing from
-  `pyproject.toml`** → clean installs crash `/api/netlist` + `/api/join_overlay`.
-  Add it to deps.
 - `ui/package.json` `dev` script (`HOSTNAME=0.0.0.0 next…`) fails on Windows; run
   `pnpm exec next dev -p 4200`.
 - ngspice isn't bundled; Simulation fails gracefully until the binary is on PATH.
