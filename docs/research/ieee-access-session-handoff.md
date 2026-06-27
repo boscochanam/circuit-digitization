@@ -27,20 +27,23 @@ work.
 
 ## RESULTS (numbers to use in the paper)
 
-### Join strategies — real images, connectivity component-pair F1
-| strategy | N=9 (initial) | **N=33 (verified, use this)** |
-|----------|---------------|-------------------------------|
-| **degree_budget** | 0.811 | **0.845  ← best** |
-| graph_scale | 0.851 | 0.811 |
-| graph_rescue | 0.794 | 0.803 |
-| production | 0.631 | 0.676 |
+### Join strategies — real images, component-pair F1 (FINAL: 31-image verified GT, branch `experiments/join-method-benchmark`)
+| strategy | F1 | P | R |
+|----------|-----|-----|-----|
+| **scale_completion** (NEW default) | **0.901** | 0.936 | 0.888 |
+| degree_budget (prior default) | 0.853 | 0.866 | 0.879 |
+| graph_scale | 0.838 | 0.920 | 0.795 |
+| graph_rescue | 0.813 | 0.841 | 0.807 |
+| production (radius) | 0.674 | 0.850 | 0.629 |
+| CC net-tracing (same detected wires) | 0.611 | 0.880 | 0.528 |
+| scale_completion on PERFECT wires | 0.916 | 0.936 | 0.909 |
 
-- degree_budget vs graph_scale head-to-head (N=33): **db wins 13, ties 15, gs wins 5**, mean
-  paired diff +0.034. Robust, not outlier-driven.
-- degree_budget won **despite** the GT being seeded by graph_scale (bias would favor gs) →
-  result is conservative/strong.
-- Caveat: 2 edit-slips still in the GT (C8_D1_P3, C105_D1_P4) — C105 inflates db's biggest
-  win; fix and re-run for the final clean number (won't change the ranking).
+- **scale_completion** = graph_scale high-precision base + degree-budget completion at reach
+  4×scale. Beats degree_budget +0.05; reach sweep is a broad plateau. Validated on independent
+  synthetic GT (0.975, #1) → NOT graph_scale bootstrap bias. Now DEFAULT_STRATEGY; 477 tests pass.
+- Detection not the bottleneck (perfect wires +0.015). Full detail: `docs/research/experiments/SUMMARY.md`.
+- (Superseded) earlier N=9 gs 0.851>db 0.811 was small-sample noise; N=33-with-slips db 0.845>gs
+  0.811; C8_D1_P3/C105_D1_P4 dropped by the sanity filter for the clean N=31 above.
 
 ### VLM (Claude Opus 4.8) connectivity
 | | precision | recall | F1 |
