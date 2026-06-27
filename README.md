@@ -4,7 +4,7 @@ A modular Python framework for detecting interconnect wires in circuit schematic
 
 > **Full documentation**: [https://boscochanam.github.io/circuit-digitization](https://boscochanam.github.io/circuit-digitization) — or build locally with `uv run mkdocs serve`.
 > **Status**: **Wire detection F1: 0.976** (a16: Sauvola + anchor=16, exact-match eval on 134 images). An earlier looser prefix-match eval reported F1 0.833 — see [Wire detection eval](#two-wire-detection-numbers-0976-vs-0833) below.
-> **Joining**: `degree_budget` endpoint-graph join (default) — 0.2710 balanced on 134-image GT set, 99.4% wires used; beats `graph_rescue` with 0 regressions
+> **Joining**: `scale_completion` endpoint-graph join (default since Jun 2026) — **connectivity F1 0.90** on the 31-image human-verified net-level GT (`ground_truth/real_nets_verified.json`), vs 0.85 for the prior `degree_budget` default and 0.61 for connected-component net tracing on identical detected wires. `scale_completion` = high-precision scale-relative base + degree-budget completion. See `docs/research/experiments/SUMMARY.md`.
 > **Dataset**: 134 circuit schematic images (predominantly 704×704), 3,524 ground-truth wire segments
 
 ---
@@ -47,7 +47,7 @@ Both wire endpoints AND component pins are graph nodes, connected by 5 edge type
 4. Endpoint↔wire-body (T-junctions onto rails/buses)
 5. Pin↔wire-body (components tapped onto passing rails)
 
-Scale-relative tolerances handle the ~6× circuit-scale range. Dead-end rescue gives dangling wire-ends a longer directional reach. `degree_budget` = `graph_rescue` + floating-pin recovery (min-cost b-matching with a per-pin edge budget and self-loop guards), promoted as the default because it beats `graph_rescue` on 92/133 images with 0 regressions.
+Scale-relative tolerances handle the ~6× circuit-scale range. The completion step = floating-pin recovery (min-cost b-matching with a per-pin edge budget and self-loop guards). **`scale_completion`** (default since Jun 2026) applies that completion to a high-precision scale-relative base (no end-extension/dead-end rescue) at reach 4×scale; on the 31-image human-verified net-level GT it reaches **F1 0.90** (P 0.94), beating the prior `degree_budget` default (0.85 = completion on the `graph_rescue` base) and connected-component net tracing (0.61). `degree_budget` and `graph_rescue` remain registered as fallbacks. Full results: `docs/research/experiments/SUMMARY.md`.
 
 ### Results (134-image GT set, post double-extend fix, Jun 2026)
 

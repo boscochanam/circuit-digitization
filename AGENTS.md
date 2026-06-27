@@ -229,11 +229,19 @@ The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netl
 2. Backend runs on port 8000, UI on port 4200 (proxied via Next.js rewrites)
 3. All `localhost:8000` calls happen server-side in Next.js server actions, never from the browser
 
-## Netlist / Joining (COMPLETE — `degree_budget` is default)
+## Netlist / Joining (COMPLETE — `scale_completion` is default)
 
-**Status:** Node joining is substantially complete. `degree_budget`
-(graph_rescue + floating-pin recovery) is the promoted default strategy.
-Beats graph_rescue on **92/133 images** with 0 regressions.
+**Status:** Node joining is substantially complete and now validated on
+human-verified net-level GT. **`scale_completion`** (high-precision scale-relative
+endpoint-graph base + degree-budget floating-pin completion at reach 4×scale) is the
+promoted default since Jun 2026: **connectivity F1 0.90** (P 0.94) on the 31-image
+human-verified net-GT, vs 0.85 for the prior `degree_budget` default (completion on the
+graph_rescue base) and 0.61 for connected-component net tracing on identical detected wires.
+Validated on independent synthetic GT too (rules out bootstrap bias); detection is not the
+bottleneck (perfect wires only +0.015 F1). `degree_budget`/`graph_rescue` remain as fallbacks.
+Eval tooling under `wire_detection/benchmark/` (join_eval_real_f1, join_variant_search,
+cc_baseline, cc_baseline_detected, detection_ceiling, build_verified_gt); results in
+`docs/research/experiments/SUMMARY.md`.
 
 > NOTE: a double-extend bug was fixed (the `degree_budget` registry entry carried
 > `extend=12` *and* the completion fn extends 12px internally → 24px in the
