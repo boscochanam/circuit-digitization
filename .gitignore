@@ -33,3 +33,17 @@ output_run_26_hybrid2/
 # Model weights (too large for git)
 models/
 labels_few_annot/
+
+# Claude session temp archives (local only, multi-GB); keep the README pointer
+docs/research/session-artifacts/*/
+
+# LaTeX build artifacts
+paper/ieee-paper/*.aux
+paper/ieee-paper/*.log
+paper/ieee-paper/*.out
+
+# Local-only repro scaffolding (symlinks to dataset paths outside the repo)
+roboflow_test2
+ground_truth/local_eval/
+# Abandoned MIMO VLM experiment (scratch)
+docs/research/experiments/vlm_mimo_v25*.json

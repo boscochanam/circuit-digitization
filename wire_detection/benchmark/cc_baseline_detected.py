@@ -63,6 +63,13 @@ def main():
     DILATES = [3, 7, 11, 15]
     acc = {f"detCCL_d{d}": ([], [], []) for d in DILATES}
     acc["ours_scale_completion"] = ([], [], [])
+    cnt = {m: [] for m in acc}   # per-image (tp, fp, fn)
+
+    def score(method, gtp, pred):
+        p, r, f1 = prf(gtp, pred)
+        acc[method][0].append(p); acc[method][1].append(r); acc[method][2].append(f1)
+        cnt[method].append((len(gtp & pred), len(pred - gtp), len(gtp - pred)))
+
     for img_id, entry in gt.items():
         name = img_id.replace("_jpg", "")
         gray = cv2.imread(str(GT_IMAGES / f"{name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
@@ -77,20 +84,28 @@ def main():
         pins = make_pins(wires, comps)
         for d in DILATES:
             pn = detected_wire_ccl(gray, comps, pins, wires, dilate=d)
-            p, r, f1 = prf(gtp, pairs_from_pinnet(pn, keep))
-            acc[f"detCCL_d{d}"][0].append(p); acc[f"detCCL_d{d}"][1].append(r); acc[f"detCCL_d{d}"][2].append(f1)
+            score(f"detCCL_d{d}", gtp, pairs_from_pinnet(pn, keep))
         _pins, nl = run_strategy("scale_completion", wires, comps, std_pins=pins)
-        p, r, f1 = prf(gtp, comp_pairs(nl, keep))
-        acc["ours_scale_completion"][0].append(p); acc["ours_scale_completion"][1].append(r); acc["ours_scale_completion"][2].append(f1)
+        score("ours_scale_completion", gtp, comp_pairs(nl, keep))
 
     mean = lambda v: sum(v) / len(v) if v else 0.0
+
+    def micro(m):
+        TP = sum(c[0] for c in cnt[m]); FP = sum(c[1] for c in cnt[m]); FN = sum(c[2] for c in cnt[m])
+        P = TP / (TP + FP) if TP + FP else 1.0
+        R = TP / (TP + FN) if TP + FN else 1.0
+        F = 2 * P * R / (P + R) if P + R else 0.0
+        return {"f1": F, "p": P, "r": R, "tp": TP, "fp": FP, "fn": FN}
+
     print(f"\nB1b CCL-on-detected-wires vs our join (same detected wires), verified GT")
-    print(f"{'method':<26}{'meanF1':>8}{'meanP':>8}{'meanR':>8}")
-    print("-" * 50)
+    print(f"{'method':<26}{'microF1':>9}{'microP':>8}{'microR':>8}{'macroF1':>9}")
+    print("-" * 60)
     out = {}
     for m, (P, R, F) in sorted(acc.items(), key=lambda kv: -mean(kv[1][2])):
-        out[m] = {"f1": mean(F), "p": mean(P), "r": mean(R)}
-        print(f"{m:<26}{mean(F):>8.3f}{mean(P):>8.3f}{mean(R):>8.3f}")
+        mi = micro(m)
+        out[m] = {"micro": mi, "macro": {"f1": mean(F), "p": mean(P), "r": mean(R)},
+                  "counts": cnt[m]}
+        print(f"{m:<26}{mi['f1']:>9.3f}{mi['p']:>8.3f}{mi['r']:>8.3f}{mean(F):>9.3f}")
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     json.dump(out, open(args.out, "w"), indent=2)
     print(f"\nwrote {args.out}")
