@@ -3,6 +3,39 @@
 Persistent state for continuing the IEEE Access paper overhaul. **Read this first.**
 Supersedes the 2026-06-27 version. Project memory: `ieee-access-paper-push.md`.
 
+## UPDATE 2026-06-28 (paper finalization): reframing, TikZ figures, full re-verification
+
+This pass finished the paper-shaping and re-verified every number from scratch (re-ran on claw,
+recomputed from result JSONs). Nothing below changes the headline story; it tightens it.
+
+- **Contribution reframing.** Positioned as a *full deterministic pipeline* (occlusion-first wire
+  extractor producing an endpoint representation + endpoint-graph join + degree-budget completion)
+  plus the first human-verified net-level connectivity benchmark; the join is the primary metric
+  (micro-F1, macro alongside). Conclusion + limitations synced to this framing.
+- **Figures are now native TikZ.** The three concept figures live in
+  `paper/ieee-paper/figures/{pipeline_overview,endpoint_graph,completion}_tikz.tex` and are `\input`
+  from both `.tex` sources. Data bar charts stay matplotlib (`generate_concept_figures.py`,
+  `generate_join_comparison.py`); Fig 2 pipeline-examples (C37, C111) via `generate_pipeline_examples.py`.
+- **Descriptive strategy names in the paper** (code keeps the identifiers): `scale_completion` →
+  "scale-relative graph + completion", `degree_budget` → "rescue graph + completion",
+  `graph_scale`/`graph_rescue` → "...graph (base)", `production` → "radius union-find (legacy)".
+- **Table V (per-circuit synthetic) regenerated to `scale_completion` at L4 with 16 seeds.**
+  Wheatstone bridge is the hardest topology (F1 0.82); the 6-component ring is now 0.95. Artifact:
+  `docs/research/experiments/per_circuit_scale_completion_l4_n16.json`.
+- **Defects fixed during re-verification:** adaptive-Gaussian thresholding F1 0.928 → **0.845**
+  (0.928 was unsupported; best adaptive-Gaussian config is `adaptive_gaussian_skeleton`=0.845);
+  VLM exact-match count 20 → **21** of 31; removed unverifiable pin counts; synthetic graph_rescue
+  L4 0.89 → **0.90**; the "production" codename removed in favor of the descriptive name;
+  conclusion/limitations synced.
+- **Re-verified numbers:** wire detection F1 0.976 (a16); join scale_completion micro-F1 0.890
+  (P 0.919 / R 0.864, macro 0.901); synthetic L4 leaderboard scale_completion 0.95 ≥ degree_budget
+  0.94 ≥ graph_rescue 0.90 ≥ graph_scale 0.85; component detection 88.5% mAP@0.5 (crossover recall
+  70.7%). All re-run on claw (`./.venv/bin/python`) via
+  `wire_detection/benchmark/{join_eval_real_f1,cc_baseline_detected,hough_baseline,detection_ceiling}.py`
+  and `wire_detection.synthgt`.
+- **Still author-only:** ORCIDs, author bios, funding line, publication dates, and the exact
+  `ieeeaccess.cls` render on Overleaf.
+
 ## UPDATE 2026-06-28 (latest): VLM N=31, micro/macro fix, CIs, paper synced
 
 The headline real-image comparison is now consistent and statistically honest:
