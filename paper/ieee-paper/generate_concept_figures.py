@@ -257,8 +257,9 @@ def wire_benchmark():
 
 
 if __name__ == "__main__":
-    endpoint_graph()
-    completion()
-    pipeline_overview()
+    # NOTE: the three concept diagrams (endpoint_graph, completion, pipeline_overview)
+    # are now native TikZ, in figures/{endpoint_graph,completion,pipeline_overview}_tikz.tex,
+    # so they match the paper's serif font. The functions above are kept for reference but
+    # are no longer the source of record. This script now only emits the data bar chart.
     wire_benchmark()
-    print(f"\nAll concept figures written to {OUT}/")
+    print(f"\nwire_benchmark.pdf written to {OUT}/ (concept diagrams are TikZ now)")

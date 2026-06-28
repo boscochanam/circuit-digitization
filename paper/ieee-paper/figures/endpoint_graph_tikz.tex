@@ -1,0 +1,75 @@
+% Concept: radius over-merge (a) vs. our endpoint-graph with five typed edges (b).
+% Native TikZ; resized to the column so the document serif font is used.
+\definecolor{cComp}{HTML}{CFE0F3}
+\definecolor{cEnd}{HTML}{1F77B4}
+\definecolor{cBody}{HTML}{1F77B4}
+\definecolor{cPin}{HTML}{2CA02C}
+\definecolor{cEE}{HTML}{FF7F0E}
+\definecolor{cTJ}{HTML}{9467BD}
+\definecolor{cRail}{HTML}{D62728}
+\definecolor{cBad}{HTML}{D62728}
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+  x=1cm, y=1cm, font=\small,
+  comp/.style={draw=black!85, fill=cComp, rounded corners=1.5pt, line width=0.9pt},
+  body/.style={cBody, line width=2.2pt, line cap=round},
+  eppin/.style={cPin, line width=1.4pt, dash pattern=on 4pt off 2.5pt},
+  rail/.style={cRail, line width=1.6pt, dash pattern=on 1pt off 1.4pt},
+  pin/.style={fill=cPin, draw=black, line width=0.5pt},
+  endp/.style={fill=cEnd, draw=white, line width=0.7pt},
+]
+% ---------------- panel (a): radius over-merge ----------------
+\begin{scope}
+  \node[font=\bfseries] at (2.25,2.55) {(a) Radius-based joining};
+  \foreach \x/\lab in {0.2/R1,1.9/C1,3.6/R2}{
+    \filldraw[comp] (\x,1.0) rectangle ++(0.7,0.9);
+    \node[font=\bfseries] at (\x+0.35,1.45) {\lab};}
+  \foreach \px in {0.95,1.85,2.65,3.55}{\filldraw[endp] (\px,1.45) circle (0.075);}
+  \draw[cBad, dashed, line width=1pt] (1.4,1.45) circle (0.55);
+  \draw[cBad, dashed, line width=1pt] (3.1,1.45) circle (0.55);
+  \draw[cBad, -{Stealth[length=2mm]}, line width=1.6pt] (0.97,1.45) -- (1.83,1.45);
+  \draw[cBad, -{Stealth[length=2mm]}, line width=1.6pt] (1.87,1.45) -- (2.63,1.45);
+  \node[cBad, font=\itshape\footnotesize, align=center] at (2.25,0.55)
+       {radius grabs every pin in range\\$\rightarrow$ R1, C1, R2 wrongly merged};
+\end{scope}
+% ---------------- panel (b): endpoint-graph, five typed edges ----------------
+\begin{scope}[xshift=5.3cm]
+  \node[font=\bfseries] at (2.25,2.55) {(b) Endpoint-graph (ours)};
+  % rail (wire body) across the top
+  \draw[body] (0.5,2.05) -- (3.9,2.05);
+  \filldraw[endp] (0.5,2.05) circle (0.07);
+  % components
+  \foreach \x/\lab in {0.25/R1,1.55/C1,3.45/R2}{
+    \filldraw[comp] (\x,0.35) rectangle ++(0.6,0.7);
+    \node[font=\bfseries\footnotesize] at (\x+0.3,0.7) {\lab};}
+  % R1 pin taps the rail body (rail-tap, pin->body)
+  \filldraw[pin] (0.50,1.00) rectangle ++(0.10,0.10);
+  \draw[rail] (0.55,1.10) -- (0.55,2.05);
+  \filldraw[cRail, draw=white, line width=0.5pt] (0.55,2.05) circle (0.06);
+  % vertical wire: top endpoint hits rail mid (T-junction), bottom endpoint -> C1 pin
+  \draw[body] (1.85,1.15) -- (1.85,2.05);
+  \filldraw[endp] (1.85,1.15) circle (0.07);
+  \filldraw[cTJ, draw=white, line width=0.7pt] (1.85,2.05) circle (0.07);
+  \filldraw[pin] (1.80,1.00) rectangle ++(0.10,0.10);
+  \draw[eppin] (1.85,1.15) -- (1.85,1.05);
+  % endpoint-endpoint: short wire meets rail's right end
+  \draw[body] (3.05,1.5) -- (3.9,2.05);
+  \filldraw[endp] (3.05,1.5) circle (0.07);
+  \draw[cEE, line width=1.6pt] (3.9,2.05) circle (0.09);
+  % R2 pin -> rail right end (endpoint-pin)
+  \filldraw[pin] (3.70,1.00) rectangle ++(0.10,0.10);
+  \draw[eppin] (3.9,2.05) -- (3.75,1.10);
+\end{scope}
+% ---------------- shared legend ----------------
+\begin{scope}[yshift=-0.55cm]
+  \def\lx{0.0}\def\ly{0.0}
+  \draw[body] (\lx,\ly) -- ++(0.5,0); \node[anchor=west,font=\footnotesize] at (\lx+0.6,\ly) {Wire body};
+  \draw[eppin] (3.0,\ly) -- ++(0.5,0); \node[anchor=west,font=\footnotesize] at (3.6,\ly) {Endpoint--pin};
+  \draw[cEE,line width=1.4pt] (6.0,\ly) circle (0.09); \node[anchor=west,font=\footnotesize] at (6.25,\ly) {Endpoint--endpoint};
+  \filldraw[cTJ,draw=white,line width=0.6pt] (0.05,\ly-0.5) circle (0.09); \node[anchor=west,font=\footnotesize] at (0.3,\ly-0.5) {T-junction (endpt--body)};
+  \draw[rail] (3.0,\ly-0.5) -- ++(0.5,0); \node[anchor=west,font=\footnotesize] at (3.6,\ly-0.5) {Rail-tap (pin--body)};
+  \filldraw[endp] (6.05,\ly-0.5) circle (0.09); \node[anchor=west,font=\footnotesize] at (6.3,\ly-0.5) {Endpoint};
+  \filldraw[pin] (8.0,\ly-0.55) rectangle ++(0.16,0.16); \node[anchor=west,font=\footnotesize] at (8.3,\ly-0.47) {Pin};
+\end{scope}
+\end{tikzpicture}%
+}

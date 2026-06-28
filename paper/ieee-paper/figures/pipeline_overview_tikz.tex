@@ -1,0 +1,29 @@
+% Fig 1: end-to-end pipeline flow. Native TikZ (font-matched to the paper).
+% Contribution box spans the wire-extraction (Binarization + Line Extract) AND
+% wire-joining stages, consistent with the abstract/intro contribution list.
+\definecolor{stgGray}{HTML}{D9D9D9}
+\definecolor{stgBlue}{HTML}{CFE0F3}
+\definecolor{stgGreen}{HTML}{CDECCD}
+\definecolor{stgOrange}{HTML}{F7D9C4}
+\definecolor{contribRed}{HTML}{D62728}
+\begin{tikzpicture}[
+  font=\footnotesize,
+  stage/.style={draw=black!85, rounded corners=3pt, line width=0.7pt,
+                minimum width=2.45cm, minimum height=1.55cm, align=center, inner sep=2pt},
+  arr/.style={-{Stealth[length=2.2mm]}, line width=0.9pt, black!80},
+  node distance=6.5mm,
+]
+\newcommand{\sub}[1]{{\scriptsize\textcolor{black!55}{#1}}}
+\node[stage, fill=stgGray]                 (s1) {\textbf{Input}\\\textbf{Image}\\[3pt]\sub{Scanned}\\\sub{schematic}};
+\node[stage, fill=stgBlue,  right=of s1]   (s2) {\textbf{Component}\\\textbf{Detection}\\[3pt]\sub{YOLO OBB}\\\sub{88.5\% mAP}};
+\node[stage, fill=stgGreen, right=of s2]   (s3) {\textbf{Component}\\\textbf{Occlusion}\\[3pt]\sub{Local median}\\\sub{fill}};
+\node[stage, fill=stgOrange,right=of s3]   (s4) {\textbf{Binarization}\\\textbf{+ Line Extract}\\[3pt]\sub{Sauvola + CCL}\\\sub{+ PCA}};
+\node[stage, fill=stgBlue,  right=of s4]   (s5) {\textbf{Wire}\\\textbf{Joining}\\[3pt]\sub{Endpoint-graph}\\\sub{+ degree-budget}};
+\node[stage, fill=stgGreen, right=of s5]   (s6) {\textbf{SPICE}\\\textbf{Netlist}\\[3pt]\sub{Pin discovery}\\\sub{+ simulation}};
+\foreach \a/\b in {s1/s2,s2/s3,s3/s4,s4/s5,s5/s6}{\draw[arr] (\a) -- (\b);}
+\begin{scope}[on background layer]
+  \node[draw=contribRed, dashed, line width=1pt, rounded corners=5pt,
+        fit=(s4)(s5), inner sep=2.6mm] (contrib) {};
+\end{scope}
+\node[below=1.2mm of contrib.south, text=contribRed, font=\itshape] {Our contribution};
+\end{tikzpicture}
