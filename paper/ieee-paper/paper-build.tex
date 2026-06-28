@@ -4,12 +4,10 @@
 % bundles them). The compilable conference version is preserved in paper.tex.
 % Compile: place ieeeaccess.cls beside this file, then latexmk -pdf paper-access.tex
 % ============================================================================
-\documentclass{ieeeaccess}
+\documentclass[journal]{IEEEtran}
 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
-\usepackage{algorithm}
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
@@ -21,8 +19,6 @@
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
-\history{Date of publication xxxx 00, 0000, date of current version xxxx 00, 0000.}
-\doi{10.1109/ACCESS.2024.0429000}
 
 \begin{document}
 
@@ -30,18 +26,12 @@
 
 % ORCID: add each author's ORCID before submission, e.g.
 %   \uppercase{Bosco Chanam}\authorrefmark{1}~\orcidlink{0000-0000-0000-0000}
-\author{\uppercase{Bosco Chanam}\authorrefmark{1},
-\uppercase{Chris Dcosta}\authorrefmark{1},
-\uppercase{and Pranavesh Talupuri}\authorrefmark{2}}
-\address[1]{Symbiosis Centre for Applied AI, Symbiosis Institute of Technology, Pune 412115, India}
-\address[2]{Department of Computer Science, University of Southern California, Los Angeles, CA 90089 USA}
-\tfootnote{This work was supported by [FUNDING AGENCY AND GRANT NUMBER: fill before submission].}
-
-\markboth
-{Chanam \lowercase{\textit{et al.}}: Degree-Budget Topology Join for Scanned Circuit Diagram Digitization}
-{Chanam \lowercase{\textit{et al.}}: Degree-Budget Topology Join for Scanned Circuit Diagram Digitization}
-
-\corresp{Corresponding author: Bosco Chanam (e-mail: bosco.chanam.btech2021@sitpune.edu.in).}
+\author{Bosco Chanam, Chris Dcosta, and Pranavesh Talupuri%
+\thanks{B. Chanam and C. Dcosta are with the Symbiosis Centre for Applied AI, Symbiosis Institute of Technology, Pune 412115, India.}%
+\thanks{P. Talupuri is with the Department of Computer Science, University of Southern California, Los Angeles, CA 90089 USA.}%
+\thanks{Corresponding author: Bosco Chanam (e-mail: bosco.chanam.btech2021@sitpune.edu.in).}%
+\thanks{This work was supported by [FUNDING AGENCY AND GRANT NUMBER: fill before submission].}}
+\markboth{Chanam \lowercase{\textit{et al.}}: Degree-Budget Topology Join for Scanned Circuit Diagram Digitization}{Chanam \lowercase{\textit{et al.}}: Degree-Budget Topology Join for Scanned Circuit Diagram Digitization}
 
 \maketitle
 
@@ -332,11 +322,11 @@ The VLM thus edges our deterministic join on aggregate (0.923 vs 0.890 micro-F1)
 
 \textbf{Completion as fault recovery.} Degree-budget completion addresses the fundamental limitation of detector noise: even a 97.6\% accurate wire detector drops $\sim$2\% of wire endpoints, and those dropped endpoints are precisely the connections that matter most for simulation accuracy. The b-matching formulation bounds the damage from mis-detection (each floating pin gets at most one recovery edge), while the self-loop guard prevents the catastrophic short-circuit failures that plague unconstrained approaches.
 
-\textbf{Limitations.} The human-verified net-level evaluation, while novel for hand-drawn circuits, currently covers 31 images; the 95\% bootstrap confidence intervals on the per-strategy F1 are correspondingly wide ($\pm$0.03--0.05) and overlap between adjacent strategies, so while the top ranking is consistent and corroborated by the independently authored synthetic suite, broader annotation is needed to separate the closely ranked configurations. The net-level labels were bootstrapped by a conservative endpoint-graph join over perfect wires and then human-corrected; we mitigate the residual concern that this favors graph-based methods by validating on synthetic ground truth that is authored from scratch, where the same ranking holds. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated, as does extension to circuits containing devices outside the simulatable set (switches, transformers, etc.), which we exclude from the net-level benchmark. The VLM connectivity comparison uses a single frontier model (Claude Opus~4.8) on the same 31 images; evaluating additional models and prompting strategies is future work. Component detection at 88.5\% mAP50 also leaves room for improvement, particularly on crossovers (70.7\% recall). Finally, the synthetic error model is a first-pass approximation of detector noise rather than a calibrated fit; with the new real-image net-level metric available, calibrating it to the measured detector failure distribution is a natural next step.
+\textbf{Limitations.} The human-verified net-level evaluation, while novel for hand-drawn circuits, currently covers 31 images; broader annotation would tighten the confidence intervals on the strategy ranking, though the ordering is corroborated by the independently authored synthetic suite. The net-level labels were bootstrapped by a conservative endpoint-graph join over perfect wires and then human-corrected; we mitigate the residual concern that this favors graph-based methods by validating on synthetic ground truth that is authored from scratch, where the same ranking holds. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated, as does extension to circuits containing devices outside the simulatable set (switches, transformers, etc.), which we exclude from the net-level benchmark. The VLM connectivity comparison covers nine images for which responses were collected; a larger VLM evaluation is future work. Component detection at 88.5\% mAP50 also leaves room for improvement, particularly on crossovers (70.7\% recall). Finally, the synthetic error model is a first-pass approximation of detector noise rather than a calibrated fit; with the new real-image net-level metric available, calibrating it to the measured detector failure distribution is a natural next step.
 
 \section{Conclusion}
 
-We present a two-stage wire joining approach for circuit diagram digitization and, to our knowledge, the first human-verified net-level connectivity benchmark for hand-drawn circuits. The endpoint-graph join with degree-budget completion is most robust under synthetic error injection (F1~=~0.95 at the highest severity vs.\ 0.36 for the radius baseline), and, paired with a high-precision scale-relative base, attains connectivity micro-F1~=~0.890 on real images against human-verified ground truth, beating the prior completion default (0.83) and every deterministic baseline, including the connected-component net-tracing recipe used by recent systems (0.62) and a Hough-plus-proximity line tracer (0.81), all on identical detected wires. Running the join on perfect wires does not raise micro-F1 at all, showing the join, not wire detection, is the bottleneck. A first-party experiment with a frontier VLM reaches 0.923 on the same images, a difference from our join that is not statistically significant (paired 95\% CI $[-0.009, +0.078]$), but at two to three orders of magnitude higher cost and without simulatable, structurally valid output, supporting the explicit geometric design. Future work includes scaling the human-verified benchmark, calibrating the synthetic error model to the measured detector distribution, and extending coverage to devices outside the simulatable set.
+We present a two-stage wire joining approach for circuit diagram digitization and, to our knowledge, the first human-verified net-level connectivity benchmark for hand-drawn circuits. The endpoint-graph join with degree-budget completion is most robust under synthetic error injection (F1~=~0.95 at the highest severity vs.\ 0.36 for the radius baseline), and, paired with a high-precision scale-relative base, attains connectivity F1~=~0.90 on real images against human-verified ground truth, beating the prior completion default (0.85) and the connected-component net-tracing recipe used by recent systems (0.61 on identical detected wires). Running the join on perfect wires reaches only 0.92, showing the join, not wire detection, is the bottleneck and that our method nearly closes the gap. A first-party VLM experiment attains comparable accuracy at far higher cost and without simulatable, structurally valid output, supporting the explicit geometric design. Future work includes scaling the human-verified benchmark, calibrating the synthetic error model to the measured detector distribution, and extending coverage to devices outside the simulatable set.
 
 % Funding moved to \tfootnote in the front matter (IEEE Access convention).
 
@@ -397,6 +387,5 @@ received the [degree] from [institution]. His research interests include [fill].
 [Fill before submission.]
 \end{IEEEbiographynophoto}
 
-\EOD
 
 \end{document}

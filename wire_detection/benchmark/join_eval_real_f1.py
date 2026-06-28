@@ -67,7 +67,7 @@ def prf(gt: set, got: set) -> tuple[float, float, float]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--gt", default="ground_truth/real_nets.json")
+    ap.add_argument("--gt", default="ground_truth/real_nets_verified.json")
     ap.add_argument("--out", default="output/join_eval_real_f1.json")
     ap.add_argument("--strategies", default=",".join(STRATEGIES),
                     help="comma-separated strategy names, or 'all' for the full registry")
@@ -77,6 +77,7 @@ def main() -> int:
     gt_all = json.load(open(args.gt))
     per_strategy = {s: [] for s in strategies}
     per_pr = {s: ([], []) for s in strategies}   # (precisions, recalls)
+    counts = {s: [] for s in strategies}         # per-image (tp, fp, fn)
     per_image = {}
 
     for img_id, entry in gt_all.items():
@@ -100,25 +101,37 @@ def main() -> int:
             _pins, nl = run_strategy(s, wires, components, std_pins=std_pins, junc_pins=junc_pins)
             pred = comp_pairs(nl, keep)
             p, r, f1 = prf(gtp, pred)
+            tp = len(gtp & pred); fp = len(pred - gtp); fn = len(gtp - pred)
             per_strategy[s].append(f1)
             per_pr[s][0].append(p); per_pr[s][1].append(r)
-            per_image[img_id][s] = round(f1, 3)
+            counts[s].append((tp, fp, fn))
+            per_image[img_id][s] = {"f1": round(f1, 3), "p": round(p, 3), "r": round(r, 3),
+                                    "tp": tp, "fp": fp, "fn": fn}
 
     # summary
     mean = lambda v: sum(v) / len(v) if v else 0.0
+
+    def micro(s):
+        TP = sum(c[0] for c in counts[s]); FP = sum(c[1] for c in counts[s]); FN = sum(c[2] for c in counts[s])
+        P = TP / (TP + FP) if TP + FP else 1.0
+        R = TP / (TP + FN) if TP + FN else 1.0
+        F = 2 * P * R / (P + R) if P + R else 0.0
+        return {"f1": F, "p": P, "r": R, "tp": TP, "fp": FP, "fn": FN}
+
     print(f"\nReal-image join connectivity ({len(per_image)} images, vs net-GT)")
-    print(f"{'strategy':<16}{'meanF1':>8}{'meanP':>8}{'meanR':>8}")
-    print("-" * 40)
-    rows = sorted(((s, mean(per_strategy[s]), mean(per_pr[s][0]), mean(per_pr[s][1]))
-                   for s in strategies), key=lambda x: -x[1])
-    for s, mf, mp, mr in rows:
-        print(f"{s:<16}{mf:>8.3f}{mp:>8.3f}{mr:>8.3f}")
+    print(f"{'strategy':<16}{'microF1':>9}{'microP':>8}{'microR':>8}{'macroF1':>9}{'macroP':>8}{'macroR':>8}")
+    print("-" * 66)
+    rows = sorted(((s, micro(s), mean(per_strategy[s]), mean(per_pr[s][0]), mean(per_pr[s][1]))
+                   for s in strategies), key=lambda x: -x[1]["f1"])
+    for s, mi, mf, mp, mr in rows:
+        print(f"{s:<16}{mi['f1']:>9.3f}{mi['p']:>8.3f}{mi['r']:>8.3f}{mf:>9.3f}{mp:>8.3f}{mr:>8.3f}")
 
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    json.dump({"per_image": per_image,
-               "mean_f1": {s: mean(per_strategy[s]) for s in strategies},
-               "mean_p": {s: mean(per_pr[s][0]) for s in strategies},
-               "mean_r": {s: mean(per_pr[s][1]) for s in strategies}},
+    json.dump({"n": len(per_image),
+               "per_image": per_image,
+               "micro": {s: micro(s) for s in strategies},
+               "macro": {s: {"f1": mean(per_strategy[s]), "p": mean(per_pr[s][0]),
+                             "r": mean(per_pr[s][1])} for s in strategies}},
               open(args.out, "w"), indent=2)
     print(f"\nwrote {args.out}")
     return 0

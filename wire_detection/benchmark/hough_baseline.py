@@ -91,21 +91,28 @@ def main():
         comps = parse_components(hdc.read_text(), w, h)
         keep = set(entry["electrical_idxs"])
         items.append((gray, comps, keep, gt_pairs(entry["nets"], keep), make_pins([], comps)))
-    mean = lambda v: sum(v) / len(v) if v else 0.0
     print(f"\nB2 Hough+proximity net tracing vs verified GT ({len(items)} images)")
-    print(f"{'config':<18}{'F1':>8}{'P':>8}{'R':>8}")
-    print("-" * 42)
+    print(f"{'config':<18}{'microF1':>9}{'microP':>8}{'microR':>8}{'macroF1':>9}")
+    print("-" * 52)
     results = {}
     for cname, link, reach in CONFIGS:
-        F = P = R = 0.0
+        macroF = macroP = macroR = 0.0
+        TP = FP = FN = 0
         for gray, comps, keep, gtp, pins in items:
             pn = hough_nets(gray, comps, pins, link_tol=link, reach=reach)
-            p, r, f1 = prf(gtp, pairs_from_pinnet(pn, keep))
-            F += f1; P += p; R += r
-        n = len(items); results[cname] = {"f1": F/n, "p": P/n, "r": R/n}
-        print(f"{cname:<18}{F/n:>8.3f}{P/n:>8.3f}{R/n:>8.3f}")
-    best = max(results, key=lambda c: results[c]["f1"])
-    print(f"\nBEST: {best} -> F1 {results[best]['f1']:.3f}")
+            pred = pairs_from_pinnet(pn, keep)
+            p, r, f1 = prf(gtp, pred)
+            macroF += f1; macroP += p; macroR += r
+            TP += len(gtp & pred); FP += len(pred - gtp); FN += len(gtp - pred)
+        n = len(items)
+        mP = TP / (TP + FP) if TP + FP else 1.0
+        mR = TP / (TP + FN) if TP + FN else 1.0
+        mF = 2 * mP * mR / (mP + mR) if mP + mR else 0.0
+        results[cname] = {"micro": {"f1": mF, "p": mP, "r": mR, "tp": TP, "fp": FP, "fn": FN},
+                          "macro": {"f1": macroF/n, "p": macroP/n, "r": macroR/n}}
+        print(f"{cname:<18}{mF:>9.3f}{mP:>8.3f}{mR:>8.3f}{macroF/n:>9.3f}")
+    best = max(results, key=lambda c: results[c]["micro"]["f1"])
+    print(f"\nBEST (micro): {best} -> microF1 {results[best]['micro']['f1']:.3f}")
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     json.dump({"best": best, "configs": results}, open(args.out, "w"), indent=2)
     print(f"wrote {args.out}")

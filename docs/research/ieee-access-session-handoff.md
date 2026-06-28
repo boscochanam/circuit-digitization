@@ -3,6 +3,38 @@
 Persistent state for continuing the IEEE Access paper overhaul. **Read this first.**
 Supersedes the 2026-06-27 version. Project memory: `ieee-access-paper-push.md`.
 
+## UPDATE 2026-06-28 (latest): VLM N=31, micro/macro fix, CIs, paper synced
+
+The headline real-image comparison is now consistent and statistically honest:
+
+- **Clean blind VLM (Opus 4.8)** on all 31 verified images (one context-free subagent per image,
+  numbered GT component boxes + raw pixels, no wire overlay): **micro-F1 0.923** (P.97/R.88), macro 0.949.
+- **Our `scale_completion` join** on the same 31 (detected wires + GT components): **micro 0.890**
+  (macro 0.901). Perfect-wire ceiling = **0.890 micro** (= detected → detector costs ~0 pair-F1).
+- Deterministic baselines (micro): degree_budget 0.829, graph_scale 0.816, graph_rescue 0.787,
+  production 0.667, Hough best 0.805, CCL best 0.624.
+- **Bootstrap 95% CI (B=10k): paired VLM−ours micro diff = +0.033 [−0.009, +0.078] → includes 0,
+  not significant.** Framing: "statistically indistinguishable from a frontier VLM while being
+  deterministic, ~1000x cheaper, simulatable; VLM is an upper reference, not a competitor."
+
+Root cause fixed: paper had been comparing the join's **macro** F1 (0.901) to an old **N=9** VLM
+number. Now primary metric = **micro** (macro shown alongside), VLM at N=31.
+
+Done this session: (a) eval scripts emit micro+macro+raw counts and default to
+`real_nets_verified.json` (`join_eval_real_f1.py`, `cc_baseline_detected.py`, `hough_baseline.py`,
+`detection_ceiling.py`); (b) re-ran all on claw → `docs/research/experiments/{join,cc_detected,hough}_micro_n31.json`,
+`fair_join_comparison_n31.json` (note corrected: VLM = boxes-only, not "wire overlay");
+(c) `wire_detection/benchmark/bootstrap_ci.py` → `bootstrap_ci_n31.json`; (d) regenerated
+`figures/real_join_comparison.pdf` via `paper/ieee-paper/generate_real_join_fig.py` (micro bars,
+CI whiskers, VLM dashed band); (e) updated table/abstract/intro/VLM-section/limitations/conclusion/
+caption in **BOTH** `paper-access.tex` (Overleaf source) and `paper-build.tex` (local IEEEtran build —
+separate copies, keep in sync); humanized the new prose; completed JUHCCR bib entry; compiled clean
+(9pp, no undefined refs); refreshed `~/Documents/circuit-digitization-IEEE-Access.pdf`. 479 tests pass.
+
+Still author-owed: ORCIDs, bios, funding line, pub dates; exact `ieeeaccess.cls` render on Overleaf
+(local cls incompatible with TeX Live 2023). Note: `docs/research/session-artifacts/` (external repos,
+incl. a venv) is untracked and large — decide whether to gitignore before committing.
+
 ## Goal
 Make `paper/ieee-paper/paper-access.tex` submittable to IEEE Access: correct template, thicker
 related work, **close the real-data join-validation gap with human-verified net-level GT**,

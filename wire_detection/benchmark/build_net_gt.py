@@ -21,11 +21,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from collections import defaultdict
 from pathlib import Path
 
 import cv2
 import numpy as np
+
+_REPO = Path(__file__).resolve().parents[2]
 
 from wire_detection.core.component_classes import (
     COMPONENT_TYPES,
@@ -46,13 +49,17 @@ def electrical_indices(components: list) -> list[int]:
             out.append(i)
     return out
 
-# default GT paths on claw
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-GT_WIRE_LABELS = Path(
+# default GT paths on claw; override locally via WIRE_GT_IMAGES / WIRE_GT_WIRE_LABELS / WIRE_HDC_BASE
+GT_IMAGES = Path(os.environ.get(
+    "WIRE_GT_IMAGES",
+    "/home/claw/workspace/ground_truth/labels_few_annot/images",
+))
+GT_WIRE_LABELS = Path(os.environ.get(
+    "WIRE_GT_WIRE_LABELS",
     "/home/claw/workspace/ground_truth/labels_few_annot/labels/train"
-    "/manually_verified_no_background_data/images"
-)
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
+    "/manually_verified_no_background_data/images",
+))
+HDC_BASE = Path(os.environ.get("WIRE_HDC_BASE", _REPO / "roboflow_test2"))
 HDC_SPLITS = ["train", "valid", "test"]
 
 # force-include showcase circuits (good complexity spread, verified clean detection)
