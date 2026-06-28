@@ -175,8 +175,8 @@ def save_composite(stages, name, output_path):
                 ax.imshow(img, cmap='gray')
         ax.set_title(title, fontsize=10, fontweight='bold')
         ax.axis('off')
-    fig.suptitle(name, fontsize=12, fontweight='bold', y=0.99)
-    plt.tight_layout(pad=0.5)
+    plt.tight_layout(pad=0.8, rect=[0, 0, 1, 0.95])
+    fig.suptitle(name, fontsize=13, fontweight='bold', y=0.995)
     plt.savefig(output_path, dpi=300, bbox_inches='tight', pad_inches=0.1)
     plt.close()
 
