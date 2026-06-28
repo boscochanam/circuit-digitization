@@ -144,25 +144,37 @@ def run_pipeline(img_path):
 
         # Distinct, evenly-spaced colors per net (HSV wheel -> BGR)
         nets = [n for n in netlist.nodes if n.wires]
-        def net_color(i, total):
+        def net_color(i):
             import colorsys
             h = (i * 0.61803398875) % 1.0  # golden-ratio hue spacing
-            r, g, b = colorsys.hsv_to_rgb(h, 0.72, 1.0)
+            r, g, b = colorsys.hsv_to_rgb(h, 0.78, 1.0)
             return (int(b * 255), int(g * 255), int(r * 255))
 
-        # Draw each net: star from its centroid to member pins, then colored dots
+        # Colour each net by drawing its ACTUAL detected wire segments (so the net
+        # follows the drawn conductor instead of forming a star-web). A short stub
+        # bridges a pin to its nearest net wire endpoint only when they are close
+        # (the detector gap); longer recovered connections are shown by colour alone.
+        STUB_MAX = 55  # px
         for i, node in enumerate(nets):
-            color = net_color(i, len(nets))
-            pts = [pin_pos[(p.component_idx, p.pin_idx)] for p in node.pins
-                   if (p.component_idx, p.pin_idx) in pin_pos]
-            if len(pts) >= 2:
-                cxn = int(sum(p[0] for p in pts) / len(pts))
-                cyn = int(sum(p[1] for p in pts) / len(pts))
-                for p in pts:
-                    cv2.line(join_overlay, (cxn, cyn), p, color, 2, cv2.LINE_AA)
-            for p in pts:
-                cv2.circle(join_overlay, p, 5, color, -1, cv2.LINE_AA)
-                cv2.circle(join_overlay, p, 5, (255, 255, 255), 1, cv2.LINE_AA)
+            color = net_color(i)
+            wends = []
+            for wi in node.wires:
+                if 0 <= wi < len(lines_global):
+                    (x1, y1), (x2, y2) = lines_global[wi]
+                    a, b = (int(x1), int(y1)), (int(x2), int(y2))
+                    cv2.line(join_overlay, a, b, color, 3, cv2.LINE_AA)
+                    wends += [a, b]
+            for p in node.pins:
+                key = (p.component_idx, p.pin_idx)
+                if key not in pin_pos:
+                    continue
+                pt = pin_pos[key]
+                if wends:
+                    nearest = min(wends, key=lambda e: (e[0] - pt[0]) ** 2 + (e[1] - pt[1]) ** 2)
+                    if (nearest[0] - pt[0]) ** 2 + (nearest[1] - pt[1]) ** 2 <= STUB_MAX ** 2:
+                        cv2.line(join_overlay, pt, nearest, color, 2, cv2.LINE_AA)
+                cv2.circle(join_overlay, pt, 5, color, -1, cv2.LINE_AA)
+                cv2.circle(join_overlay, pt, 5, (255, 255, 255), 1, cv2.LINE_AA)
 
         # Floating (unattached) pins: hollow red, so dropped pins are visible
         for key, p in pin_pos.items():
