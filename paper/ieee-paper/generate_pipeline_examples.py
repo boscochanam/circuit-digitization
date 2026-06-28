@@ -135,18 +135,39 @@ def run_pipeline(img_path):
                 cv2.putText(join_overlay, tname, (cx - 15, max(12, cy)),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.35, (160, 160, 140), 1, cv2.LINE_AA)
 
-        # Draw pin dots for ALL components (not just SPICE passives)
+        # Pin-position lookup (global coords), restricted to SPICE-relevant components
+        pin_pos = {}
         for pin in pins:
-            px = int(pin.x) + ox
-            py = int(pin.y) + oy
-            comp_cls = local_components[pin.component_idx][0]
-            if comp_cls in SKIP_PIN_IDS:
+            if local_components[pin.component_idx][0] in SKIP_PIN_IDS:
                 continue
+            pin_pos[(pin.component_idx, pin.pin_idx)] = (int(pin.x) + ox, int(pin.y) + oy)
 
-            is_attached = (pin.component_idx, pin.pin_idx) in attached_pins
-            dot_color = (0, 220, 0) if is_attached else (0, 0, 255)
-            cv2.circle(join_overlay, (px, py), 4, dot_color, -1, cv2.LINE_AA)
-            cv2.circle(join_overlay, (px, py), 4, (255, 255, 255), 1, cv2.LINE_AA)
+        # Distinct, evenly-spaced colors per net (HSV wheel -> BGR)
+        nets = [n for n in netlist.nodes if n.wires]
+        def net_color(i, total):
+            import colorsys
+            h = (i * 0.61803398875) % 1.0  # golden-ratio hue spacing
+            r, g, b = colorsys.hsv_to_rgb(h, 0.72, 1.0)
+            return (int(b * 255), int(g * 255), int(r * 255))
+
+        # Draw each net: star from its centroid to member pins, then colored dots
+        for i, node in enumerate(nets):
+            color = net_color(i, len(nets))
+            pts = [pin_pos[(p.component_idx, p.pin_idx)] for p in node.pins
+                   if (p.component_idx, p.pin_idx) in pin_pos]
+            if len(pts) >= 2:
+                cxn = int(sum(p[0] for p in pts) / len(pts))
+                cyn = int(sum(p[1] for p in pts) / len(pts))
+                for p in pts:
+                    cv2.line(join_overlay, (cxn, cyn), p, color, 2, cv2.LINE_AA)
+            for p in pts:
+                cv2.circle(join_overlay, p, 5, color, -1, cv2.LINE_AA)
+                cv2.circle(join_overlay, p, 5, (255, 255, 255), 1, cv2.LINE_AA)
+
+        # Floating (unattached) pins: hollow red, so dropped pins are visible
+        for key, p in pin_pos.items():
+            if key not in attached_pins:
+                cv2.circle(join_overlay, p, 5, (0, 0, 255), 2, cv2.LINE_AA)
 
         stages['join_overlay'] = join_overlay.copy()
         nets = [n for n in netlist.nodes if n.wires]
@@ -164,7 +185,7 @@ def save_composite(stages, name, output_path):
         ('binary', 'Sauvola Binarization'),
         ('closed', 'Morphological Close'),
         ('wire_overlay', f'Detected Wires ({stages["n_wires"]})'),
-        ('join_overlay', f'Join Result ({stages.get("n_nets", "?")} nets, {stages.get("n_comps", "?")} components)'),
+        ('join_overlay', f'Join Result: {stages.get("n_nets", "?")} color-coded nets, {stages.get("n_comps", "?")} components'),
     ]
     for ax, (key, title) in zip(axes.flat, title_map):
         img = stages.get(key)
@@ -194,7 +215,7 @@ if __name__ == '__main__':
         print(f"Processing {out_name} from {img_path}...")
         stages = run_pipeline(img_path)
         out_path = OUTPUT / out_name
-        save_composite(stages, f"{out_name.replace('.png','')} — {stages['n_wires']} wires, {stages.get('n_nets','?')} nets",
+        save_composite(stages, f"{out_name.replace('.png','')}: {stages['n_wires']} wires, {stages.get('n_nets','?')} nets",
                        out_path)
         print(f"  OK: {stages['n_wires']} wires, {stages.get('n_nets','?')} nets → {out_path}")
     print(f"\nDone. Files in {OUTPUT}/")
