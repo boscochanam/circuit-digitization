@@ -62,10 +62,10 @@ hand-drawn circuits, circuit digitization, schematic recognition, document under
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C84-D1-P2-jpg.png}
+\includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C37-D2-P4-jpg.png}
 \hfill
-\includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C83-D2-P4-jpg.png}
-\caption{Pipeline stages on two real hand-drawn circuit images, joined with our \texttt{scale\_completion} strategy. Left:~42 wires detected, 11 nets recovered; right:~36 wires, 20 nets. Each panel shows, in order: original scan, component occlusion, Sauvola binarization, morphological close, detected wires (red overlay), and the join result (green dots = component pins, grouped into nets).}
+\includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C111-D1-P1-jpg.png}
+\caption{Pipeline stages on two real hand-drawn circuit images, joined with our \texttt{scale\_completion} strategy (connectivity F1~=~1.000 on both). Left:~a four-transistor analog cell (35 wires, 12 nets); right:~an RLC loop photographed on a textured surface (12 wires, 4 nets). Each panel shows, in order: original scan, component occlusion, Sauvola binarization, morphological close, detected wires (red overlay), and the join result. In the join result every recovered net is a distinct colour drawn along its conductors; component bounding boxes are the ground-truth labels (as used throughout the net-level evaluation, isolating the join), filled dots are device pins, diamonds mark junctions, and triangles mark terminals and ground.}
 \label{fig:pipeline_examples}
 \end{figure*}
 
