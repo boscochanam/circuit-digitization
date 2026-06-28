@@ -13,7 +13,6 @@ from wire_detection.benchmark.experiment_harness import (
     detect_wires_experiment, sauvola_binary,
 )
 from wire_detection.core.join_strategies import run_strategy, DEFAULT_STRATEGY
-from wire_detection.core.component_classes import COMPONENT_TYPES
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -30,22 +29,22 @@ GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
 OUTPUT = Path("/home/claw/circuit-digitization/paper/ieee-paper/figures/pipeline_examples")
 OUTPUT.mkdir(parents=True, exist_ok=True)
 
-# Classes that are "relay" / structural — don't show as pins
+# Structural / non-device classes (no SPICE pins) — named in the MODEL's own
+# 16-class taxonomy (model.names), NOT the 58-class COMPONENT_TYPES taxonomy.
 SKIP_PIN_TYPES = {
-    "junction", "terminal", "gnd", "crossover", "vss",
-    "text", "unknown", "mechanical", "optical",
-    "probe", "probe-current", "probe-voltage",
+    "terminal", "crossover", "text", "junction", "gnd", "vss", "other",
 }
-SKIP_PIN_IDS = {cid for cid, name in COMPONENT_TYPES.items() if name in SKIP_PIN_TYPES}
 
 
 def load_yolo_components(image_path):
-    """Run trained YOLO model and return components in standard format."""
+    """Run trained YOLO model; return (components, names) where names is the
+    model's own class-id -> name map (16-class), used for labels and filtering."""
     from ultralytics import YOLO
     model_path = "models/component_detection/yolo26m_obb_16class_aug.pt"
     model = YOLO(model_path)
     results = model(str(image_path), task="obb", conf=0.5)
-    
+    names = dict(model.names)
+
     components = []
     for result in results:
         if result.obb is None:
@@ -57,7 +56,7 @@ def load_yolo_components(image_path):
             polygon = result.obb.xyxyxyxy[i].tolist()
             polygon_pts = [(int(p[0]), int(p[1])) for p in polygon]
             components.append((cls_id, polygon_pts, (x1, y1, x2, y2)))
-    return components
+    return components, names
 
 
 def draw_obb(img, vertices, color, thickness=1):
@@ -73,7 +72,8 @@ def run_pipeline(img_path):
     stages['original'] = gray.copy()
 
     # Use trained YOLO model for component detection
-    comp_labels = load_yolo_components(img_path)
+    comp_labels, names = load_yolo_components(img_path)
+    skip_ids = {cid for cid, n in names.items() if n in SKIP_PIN_TYPES}
 
     if comp_labels:
         occluded = build_component_mask(gray, comp_labels, cfg.occlusion_margin)
@@ -108,13 +108,15 @@ def run_pipeline(img_path):
         cv2.line(overlay, (x1, y1), (x2, y2), (0, 0, 255), 2, cv2.LINE_AA)
     for comp in comp_labels:
         cls_id, verts, bbox = comp
-        if cls_id not in SKIP_PIN_IDS:
-            draw_obb(overlay, verts, (0, 200, 0), 1)
+        if cls_id not in skip_ids:
+            draw_obb(overlay, verts, (0, 200, 0), 2)   # oriented bounding box
     stages['wire_overlay'] = overlay.copy()
 
-    # Join result — no colored net lines, just pin dots
+    # Join result — run in a CONSISTENT global frame (wires and components both
+    # global). Passing global wires with crop-local components offsets the
+    # wire-to-pin attachment by (ox, oy) and corrupts the nets.
     if comp_labels and lines_global:
-        pins, netlist = run_strategy(DEFAULT_STRATEGY, lines_global, local_components)
+        pins, netlist = run_strategy(DEFAULT_STRATEGY, lines_global, comp_labels)
 
         attached_pins = set()
         for node in netlist.nodes:
@@ -124,23 +126,28 @@ def run_pipeline(img_path):
         join_overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
         join_overlay = (join_overlay * 0.4 + 40).astype(np.uint8)
 
-        # Draw OBB polygons for all components
+        # Draw oriented bounding boxes: translucent fill + bright outline so the
+        # OBB orientation is clearly visible and reads as the component body.
         for comp in comp_labels:
             cls_id, verts, bbox = comp
-            if cls_id not in SKIP_PIN_IDS:
-                draw_obb(join_overlay, verts, (60, 60, 45), 1)
+            if cls_id not in skip_ids:
+                pts = np.array(verts, dtype=np.int32).reshape((-1, 1, 2))
+                fill = join_overlay.copy()
+                cv2.fillPoly(fill, [pts], (95, 95, 70))
+                cv2.addWeighted(fill, 0.5, join_overlay, 0.5, 0, join_overlay)
+                cv2.polylines(join_overlay, [pts], True, (190, 190, 160), 2, cv2.LINE_AA)
                 cx = sum(v[0] for v in verts) // 4
-                cy = min(v[1] for v in verts) - 4
-                tname = COMPONENT_TYPES.get(cls_id, "?").split("-")[0]
+                cy = min(v[1] for v in verts) - 6
+                tname = names.get(cls_id, "?")
                 cv2.putText(join_overlay, tname, (cx - 15, max(12, cy)),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.35, (160, 160, 140), 1, cv2.LINE_AA)
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.4, (220, 220, 200), 1, cv2.LINE_AA)
 
-        # Pin-position lookup (global coords), restricted to SPICE-relevant components
+        # Pin-position lookup (already global, since the join ran on comp_labels)
         pin_pos = {}
         for pin in pins:
-            if local_components[pin.component_idx][0] in SKIP_PIN_IDS:
+            if comp_labels[pin.component_idx][0] in skip_ids:
                 continue
-            pin_pos[(pin.component_idx, pin.pin_idx)] = (int(pin.x) + ox, int(pin.y) + oy)
+            pin_pos[(pin.component_idx, pin.pin_idx)] = (int(pin.x), int(pin.y))
 
         # Distinct, evenly-spaced colors per net (HSV wheel -> BGR)
         nets = [n for n in netlist.nodes if n.wires]
@@ -184,7 +191,19 @@ def run_pipeline(img_path):
         stages['join_overlay'] = join_overlay.copy()
         nets = [n for n in netlist.nodes if n.wires]
         stages['n_nets'] = len(nets)
-        stages['n_comps'] = sum(1 for c in comp_labels if c[0] not in SKIP_PIN_IDS)
+        stages['n_comps'] = sum(1 for c in comp_labels if c[0] not in skip_ids)
+
+        # Diagnostic: a component is "shorted" if both of its pins land on the
+        # same net (a series component must separate two nets). Should be ~0.
+        node_of = {}
+        for ni, node in enumerate(netlist.nodes):
+            for p in node.pins:
+                node_of.setdefault(p.component_idx, set()).add(ni)
+        shorted = [ci for ci, nodes_ in node_of.items()
+                   if comp_labels[ci][0] not in skip_ids and len(nodes_) == 1
+                   and sum(1 for p in pins if p.component_idx == ci) >= 2]
+        stages['n_shorted'] = len(shorted)
+        print(f"    shorted components (both pins on one net): {len(shorted)}")
 
     return stages
 
