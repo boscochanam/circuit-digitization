@@ -1,0 +1,55 @@
+{
+ "strategy": "scale_completion",
+ "severity": 4,
+ "seeds": 16,
+ "per_circuit": {
+  "parallel_rr": {
+   "comps": 3,
+   "f1": 1.0,
+   "precision": 1.0,
+   "sim_ok_rate": 0.25
+  },
+  "divider_rr": {
+   "comps": 3,
+   "f1": 0.9875,
+   "precision": 1.0,
+   "sim_ok_rate": 0.6875
+  },
+  "rl_series": {
+   "comps": 3,
+   "f1": 0.9875,
+   "precision": 1.0,
+   "sim_ok_rate": 0.8125
+  },
+  "diode_r": {
+   "comps": 3,
+   "f1": 0.9875,
+   "precision": 1.0,
+   "sim_ok_rate": 0.6875
+  },
+  "dense_pair": {
+   "comps": 4,
+   "f1": 0.9271,
+   "precision": 0.8958,
+   "sim_ok_rate": 0.125
+  },
+  "loop4_r": {
+   "comps": 4,
+   "f1": 0.9427,
+   "precision": 0.9094,
+   "sim_ok_rate": 0.5625
+  },
+  "wheatstone": {
+   "comps": 6,
+   "f1": 0.82,
+   "precision": 0.8491,
+   "sim_ok_rate": 0.0625
+  },
+  "ring6_r": {
+   "comps": 6,
+   "f1": 0.9538,
+   "precision": 0.9167,
+   "sim_ok_rate": 0.5
+  }
+ }
+}

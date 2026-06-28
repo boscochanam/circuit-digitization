@@ -158,7 +158,7 @@ Completion edges are ``wireless'': they represent inferred connections without c
 
 \subsection{Circuit Corpus}
 
-We author 15 synthetic circuits spanning 3--6 components and 2--6 nets, including parallel resistors, series dividers, Wheatstone bridges, RC/RL circuits, diode loops, and a 6-component ring (the hardest topology for join robustness). Each circuit has a known ground-truth netlist and SPICE deck with a test voltage source.
+We author 15 synthetic circuits spanning 3--6 components and 2--6 nets, including parallel resistors, series dividers, Wheatstone bridges, RC/RL circuits, diode loops, and a 6-component ring (cyclic and bridge topologies being the main stress cases for join robustness). Each circuit has a known ground-truth netlist and SPICE deck with a test voltage source.
 
 \subsection{Error Injection Model}
 
@@ -241,7 +241,7 @@ The completion-based strategies are the most robust, maintaining F1~$\geq$~0.94 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/join_comparison.pdf}
-\caption{(a)~Join strategy robustness under error injection (15 circuits $\times$ 8 seeds). Graph-based strategies (blue) outperform radius-based approaches (red) at higher error levels. (b)~Degree-budget performance per circuit at L4, with simulation accuracy (orange). Precision remains high ($\geq$~0.85): errors cause fragmentation, not shorts.}
+\caption{(a)~Join strategy robustness under error injection (15 circuits $\times$ 8 seeds): bars give mean connectivity F1 at each severity level (L0--L4, dark to light to red). The completion-based strategies (left) stay near 1.0, while the radius union-find and nearest-pin baselines (right) collapse at L3--L4. (b)~The scale-relative completion join per circuit at L4 (16 seeds): bars are connectivity F1, the orange line is simulation accuracy. Errors cause fragmentation rather than shorts (precision stays high; Table~\ref{tab:per_circuit}); the balanced Wheatstone bridge is the hardest case.}
 \label{fig:join_comparison}
 \end{figure*}
 
@@ -298,30 +298,30 @@ This real-image ranking resolves an open question from prior work on this pipeli
 
 \subsection{Per-Circuit Analysis}
 
-Table~\ref{tab:per_circuit} shows degree-budget performance across individual circuits at L4 (extreme error injection, 16 seeds).
+Table~\ref{tab:per_circuit} shows the scale-relative completion join's performance across individual circuits at L4 (extreme error injection, 16 seeds).
 
 \begin{table}[htbp]
-\caption{Degree-Budget Performance per Circuit at L4}
+\caption{Scale-Relative Completion Join Performance per Circuit at L4 (16 seeds)}
 \label{tab:per_circuit}
 \begin{center}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Circuit} & \textbf{Comps} & \textbf{F1} & \textbf{Prec} & \textbf{Sim.\ acc.} \\
 \midrule
-Parallel R--R & 3 & 0.97 & 1.00 & 25\% \\
-R--R divider & 3 & 0.91 & 0.94 & 50\% \\
-RL series & 3 & 0.91 & 1.00 & 62\% \\
-Diode--R loop & 3 & 0.91 & 1.00 & 50\% \\
-Dual R loops & 4 & 0.96 & 1.00 & 12\% \\
-4-component loop & 4 & 0.87 & 0.97 & 44\% \\
-Wheatstone bridge & 6 & 0.76 & 0.85 & 12\% \\
-6-component ring & 6 & 0.79 & 0.97 & 12\% \\
+Parallel R--R & 3 & 1.00 & 1.00 & 25\% \\
+R--R divider & 3 & 0.99 & 1.00 & 69\% \\
+RL series & 3 & 0.99 & 1.00 & 81\% \\
+Diode--R loop & 3 & 0.99 & 1.00 & 69\% \\
+Dual R loops & 4 & 0.93 & 0.90 & 12\% \\
+4-component loop & 4 & 0.94 & 0.91 & 56\% \\
+Wheatstone bridge & 6 & 0.82 & 0.85 & 6\% \\
+6-component ring & 6 & 0.95 & 0.92 & 50\% \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{table}
 
-Precision remains high ($\geq$~0.85) across all circuits even at L4: errors cause \emph{fragmentation} (dropped connections) rather than \emph{shorts} (false merges). The 6-component ring is the hardest topology: its cyclic structure means a single dropped connection breaks the loop, reducing simulation accuracy to 12\%.
+Precision remains high ($\geq$~0.85) across all circuits even at L4: errors cause \emph{fragmentation} (dropped connections) rather than \emph{shorts} (false merges). The Wheatstone bridge is the hardest topology (F1~=~0.82): its balanced arms make the inferred node structure sensitive to a single mis-placed connection, and simulation accuracy falls to 6\%.
 
 \subsection{VLM Connectivity Experiment}
 \label{sec:vlm_results}
