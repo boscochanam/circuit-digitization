@@ -214,7 +214,14 @@ production-ready: a self-loop guard (one pin per component per net), wire tracki
 (base wires carried onto final nodes), and a 12px wire extend on the base so
 `degree_budget = graph_rescue + completion` (strictly additive). It was moved to
 `wire_detection/core/completion.py`, registered as the `degree_budget` strategy,
-and is now `DEFAULT_STRATEGY` (graph_rescue stays as `?strategy=graph_rescue`).
+and was made `DEFAULT_STRATEGY` (graph_rescue stays as `?strategy=graph_rescue`).
+
+> **Update (Jun 2026):** `scale_completion` (the same degree-budget completion on a
+> high-precision scale-relative base) later superseded `degree_budget` as `DEFAULT_STRATEGY`
+> after the human-verified net-GT study — synthetic L4 leaderboard (15 circuits × 8 seeds):
+> scale_completion 0.95 ≥ degree_budget 0.94 ≥ graph_rescue 0.90 ≥ graph_scale 0.85. The
+> per-circuit deep-dive uses scale_completion at L4 with 16 seeds (Wheatstone bridge hardest,
+> F1 0.82). `degree_budget` / `graph_rescue` remain registered fallbacks.
 
 **Full real bench** (`bench_degree_budget.py`, 134 of 153 images): **0 regressions**
 (114 improved / 20 same), connectivity 63.1% → **88.6%**, self-loops **1.37 =

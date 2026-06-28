@@ -21,6 +21,10 @@ uv run python -m wire_detection.synthgt --json > out.json
 uv run python docs/draw_3panel.py
 ```
 
+Default join strategy is **`scale_completion`** (`DEFAULT_STRATEGY`, promoted Jun 2026). Seed
+guidance: the cross-strategy leaderboard uses **8 seeds**; the per-circuit deep-dive uses
+**16 seeds** (e.g. `-s 16`).
+
 ## Architecture
 
 ### Synthetic Data Pipeline
@@ -35,7 +39,7 @@ synthesize_clean() → components + wires (clean coordinates)
 inject_errors(error_level, seed) → perturbed wires
     │
     ▼
-run_strategy("graph_rescue", err_wires, components) → Netlist
+run_strategy("scale_completion", err_wires, components) → Netlist  # DEFAULT_STRATEGY
     │
     ▼
 Score: component-pair F1 vs ground truth

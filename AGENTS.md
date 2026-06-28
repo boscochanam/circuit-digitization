@@ -99,7 +99,7 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 ### Key Findings
 - **a16** (Sauvola + component extraction + anchor_endpoint_dist=16) is the winner
 - Only change from v4 baseline: anchor_endpoint_dist 12 → 16 (+0.0025 F1)
-- **Sauvola dominates all other thresholding methods** — adaptive Gaussian F1=0.928, OTSU F1=0.828, Triangle F1=0.795
+- **Sauvola dominates all other thresholding methods** — adaptive Gaussian F1=0.845 (best adaptive-Gaussian config, `adaptive_gaussian_skeleton`), OTSU F1=0.828, Triangle F1=0.795
 - Skeleton extraction loses recall (FN=402 vs 77) — breaks thin wires
 - Adaptive thresholding fusion adds nothing — Sauvola already captures optimal per-pixel threshold
 - Parameter sweep shows pipeline is **robust** — k, window, link_dist, dedup_angle variations have minimal effect
@@ -234,11 +234,15 @@ The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netl
 **Status:** Node joining is substantially complete and now validated on
 human-verified net-level GT. **`scale_completion`** (high-precision scale-relative
 endpoint-graph base + degree-budget floating-pin completion at reach 4×scale) is the
-promoted default since Jun 2026: **connectivity F1 0.90** (P 0.94) on the 31-image
-human-verified net-GT, vs 0.85 for the prior `degree_budget` default (completion on the
-graph_rescue base) and 0.61 for connected-component net tracing on identical detected wires.
+promoted default since Jun 2026. Primary metric is **micro-F1** (pair-level, pooled across
+images; macro reported alongside): **connectivity micro-F1 0.890** (P 0.919 / R 0.864,
+macro 0.901) on the 31-image human-verified net-GT, vs micro 0.829 for the prior
+`degree_budget` default (completion on the graph_rescue base), 0.816 graph_scale, 0.787
+graph_rescue, 0.667 production, and 0.624 for connected-component net tracing on identical
+detected wires (Hough+proximity 0.805).
 Validated on independent synthetic GT too (rules out bootstrap bias); detection is not the
-bottleneck (perfect wires only +0.015 F1). `degree_budget`/`graph_rescue` remain as fallbacks.
+bottleneck (on perfect GT wires **micro-F1 is unchanged at 0.890**, macro +0.015 to 0.916).
+`degree_budget`/`graph_rescue` remain as fallbacks.
 Eval tooling under `wire_detection/benchmark/` (join_eval_real_f1, join_variant_search,
 cc_baseline, cc_baseline_detected, detection_ceiling, build_verified_gt); results in
 `docs/research/experiments/SUMMARY.md`.
@@ -252,7 +256,8 @@ cc_baseline, cc_baseline_detected, detection_ceiling, build_verified_gt); result
 > directly, always single-extend.)
 
 **Strategy:** `wire_detection/core/join_strategies.py` — 12+ composable strategies,
-registry-based. `DEFAULT_STRATEGY = "degree_budget"`. Strategies compose:
+registry-based. `DEFAULT_STRATEGY = "scale_completion"` (promoted Jun 2026; was
+`degree_budget`). Strategies compose:
 1. Pin localization — static OBB pins + DBSCAN clustering (SPICE-active types)
 2. Wire conditioning — optional end-extension
 3. Attach — which pins each wire-end connects to
@@ -280,6 +285,38 @@ registry-based. `DEFAULT_STRATEGY = "degree_budget"`. Strategies compose:
 `degree_budget` = graph_rescue + floating-pin recovery. Lowest balanced+composite, 0 regressions.
 
 Full details: `docs/research/join-verification.md`
+
+## IEEE Paper (current state)
+
+- **Venue:** IEEE Access submission. **Title:** "From Hand-Drawn Schematics to SPICE Netlists:
+  A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity
+  Benchmark".
+- **Two synchronized LaTeX sources — keep in sync:** `paper/ieee-paper/paper-build.tex` (local
+  IEEEtran build, compiles with stock TeX Live) and `paper/ieee-paper/paper-access.tex` (Overleaf
+  "IEEE Access" template, needs `ieeeaccess.cls`).
+- **Figures:** the three concept figures are native TikZ
+  (`paper/ieee-paper/figures/{pipeline_overview,endpoint_graph,completion}_tikz.tex`, `\input` from
+  both `.tex`). Data bar charts are matplotlib: `generate_concept_figures.py` (wire_benchmark.pdf)
+  and `generate_join_comparison.py` (join_comparison.pdf). Fig 2 pipeline-examples (C37, C111) via
+  `generate_pipeline_examples.py`.
+- **Strategy naming in the paper is descriptive** (`scale_completion` → "scale-relative graph +
+  completion", `degree_budget` → "rescue graph + completion", `graph_scale`/`graph_rescue` →
+  "...graph (base)", `production` → "radius union-find (legacy)"); the code keeps the identifiers.
+- **Contribution framing:** full deterministic pipeline (occlusion-first wire extractor producing an
+  endpoint representation + endpoint-graph join + degree-budget completion) plus the first
+  human-verified net-level connectivity benchmark; the join is primary metric (micro-F1) with macro
+  reported alongside.
+- **Verified numbers (all re-run this session on claw + recomputed from result JSONs):** wire
+  detection F1 0.976 (a16); join scale_completion micro-F1 0.890 (P 0.919 / R 0.864, macro 0.901);
+  VLM Claude Opus 4.8 micro-F1 0.923 (exact on 21/31 images), paired VLM−ours diff +0.033, 95% CI
+  [−0.009, +0.078] (includes zero); component detection 88.5% mAP@0.5 (crossover recall 70.7%, the
+  weakest class). Synthetic L4 leaderboard scale_completion 0.95.
+- **claw verification:** `ssh claw@192.168.1.22` (intermittent), repo at `~/circuit-digitization`,
+  venv `./.venv/bin/python` (NOT uv); has CGHD data + YOLO model. Scripts:
+  `wire_detection/benchmark/{join_eval_real_f1,cc_baseline_detected,hough_baseline,detection_ceiling}.py`
+  and `wire_detection.synthgt`. Result JSONs in `docs/research/experiments/`.
+- **Remaining open items are author-only:** ORCIDs, author bios, funding line, publication dates, and
+  the exact `ieeeaccess.cls` render on Overleaf.
 
 ## Shared Component-Assignment Logic (MANDATORY)
 

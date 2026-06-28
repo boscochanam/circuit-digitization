@@ -47,3 +47,7 @@ roboflow_test2
 ground_truth/local_eval/
 # Abandoned MIMO VLM experiment (scratch)
 docs/research/experiments/vlm_mimo_v25*.json
+
+# LaTeX build byproducts
+paper/ieee-paper/*.bbl
+paper/ieee-paper/*.blg
