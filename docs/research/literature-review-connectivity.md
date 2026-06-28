@@ -55,3 +55,22 @@ at branch/endpoint pixels → segments at a junction = one node. Covers diagonal
 - Masala-CHAI reports no standalone connectivity accuracy; sizes inconsistent (2,100 vs 7,500); retitled from "Auto-SPICE".
 - CGHD size varies by snapshot (1,152→~3,173); license conflict (CC-BY-4.0 vs CC0); netlist GT partial. State the version downloaded.
 - DiagramNet / P&ID GNNs / Pan et al. (2504.10240, netlist-in) are cross-domain or wrong-modality → related work only.
+
+## Addendum (2026-06-28): Peker et al. — closest contemporary (user-flagged, agent missed it)
+**Peker, Toker, Öcal, Dalyan, Afacan, Gökdel**, "A Fully Automated SPICE-Compatible Netlist
+Extraction From Image Using Deep Learning and Image Preprocessing Techniques," *IEEE Access*
+vol. 14, pp. 19750–19765, 2026, doi:10.1109/ACCESS.2026.3656316. Accepted Jan 2026.
+- **Task:** image→SPICE, printed + hand-drawn, transistor-level MOSFET analog (diff amps, OTAs,
+  comparators). Their OWN dataset: 7 hand-drawn topologies, 354 participants, 4248 train/1062 val,
+  300 test from 3 unseen topologies. NOT CGHD.
+- **Detection:** YOLOv8/10/11 (transistor det, terminal seg, voltage seg, ground det), mAP 96–99%.
+- **Connectivity:** CONTOUR-BASED node detection — erase components (avg-color fill + binarize),
+  contour-detect residual wire segments → nodes; channel-intersection for connectivity. == the
+  B1/CC recipe we benchmark.
+- **Validation:** automated LTspice DC operating-point match, topology-aware node matching
+  (independent convergence with our SPICE sim_ok idea).
+- **Results:** whole-netlist success rate — printed 93.33%, hand-drawn 85.33% (Table 8).
+- **Comparability:** NOT directly comparable to ours (different dataset + metric: whole-netlist
+  LTspice pass vs our component-pair F1 on CGHD). Added to paper related work + baseline framing:
+  their contour node-detection is the prevailing recipe our endpoint-graph join (0.90) beats vs the
+  CC baseline (0.61 on identical wires). Cite key: peker2026.
