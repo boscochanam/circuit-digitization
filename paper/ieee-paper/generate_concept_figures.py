@@ -224,13 +224,13 @@ def pipeline_overview():
 def wire_benchmark():
     # (label, F1, group) — values from the 134-image wire-detection benchmark
     rows = [
-        ("a16 (ours)", 0.976, "ours"),
-        ("v4 baseline", 0.973, "ours"),
-        ("v2", 0.959, "ours"),
-        ("v1", 0.950, "ours"),
-        ("v3", 0.949, "ours"),
+        ("Sauvola, anchor 16px (ours)", 0.976, "ours"),
+        ("Sauvola, anchor 12px", 0.973, "ours"),
+        ("Sauvola (w=61)", 0.959, "ours"),
+        ("Sauvola (k=0.2875)", 0.950, "ours"),
+        ("Sauvola (alt.)", 0.949, "ours"),
         ("adaptive Gaussian", 0.928, "alt"),
-        ("OTSU", 0.789, "bad"),
+        ("Otsu", 0.789, "bad"),
         ("Triangle", 0.758, "bad"),
     ]
     rows = rows[::-1]  # worst at bottom, best at top
