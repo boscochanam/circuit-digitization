@@ -1,5 +1,5 @@
 % Concept: radius over-merge (a) vs. our endpoint-graph with five typed edges (b).
-% Native TikZ; resized to the column so the document serif font is used.
+% Native TikZ laid out to the full text width so labels stay at body-text size.
 \definecolor{cComp}{HTML}{CFE0F3}
 \definecolor{cEnd}{HTML}{1F77B4}
 \definecolor{cBody}{HTML}{1F77B4}
@@ -8,9 +8,8 @@
 \definecolor{cTJ}{HTML}{9467BD}
 \definecolor{cRail}{HTML}{D62728}
 \definecolor{cBad}{HTML}{D62728}
-\resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[
-  x=1cm, y=1cm, font=\small,
+  x=1.45cm, y=1.35cm, font=\normalsize,
   comp/.style={draw=black!85, fill=cComp, rounded corners=1.5pt, line width=0.9pt},
   body/.style={cBody, line width=2.2pt, line cap=round},
   eppin/.style={cPin, line width=1.4pt, dash pattern=on 4pt off 2.5pt},
@@ -20,9 +19,9 @@
 ]
 % ---------------- panel (a): radius over-merge ----------------
 \begin{scope}
-  \node[font=\bfseries] at (2.25,2.55) {(a) Radius-based joining};
+  \node[font=\bfseries, anchor=west] at (0.00,2.65) {(a) Radius-based joining};
   \foreach \x/\lab in {0.2/R1,1.9/C1,3.6/R2}{
-    \filldraw[comp] (\x,1.0) rectangle ++(0.7,0.9);
+    \filldraw[comp] (\x,1.0) rectangle ++(0.7,1.0);
     \node[font=\bfseries] at (\x+0.35,1.45) {\lab};}
   \foreach \px in {0.95,1.85,2.65,3.55}{\filldraw[endp] (\px,1.45) circle (0.075);}
   \draw[cBad, dashed, line width=1pt] (1.4,1.45) circle (0.55);
@@ -33,14 +32,14 @@
        {radius grabs every pin in range\\$\rightarrow$ R1, C1, R2 wrongly merged};
 \end{scope}
 % ---------------- panel (b): endpoint-graph, five typed edges ----------------
-\begin{scope}[xshift=5.3cm]
-  \node[font=\bfseries] at (2.25,2.55) {(b) Endpoint-graph (ours)};
+\begin{scope}[xshift=7.2cm]
+  \node[font=\bfseries, anchor=east] at (4.40,2.65) {(b) Endpoint-graph (ours)};
   % rail (wire body) across the top
   \draw[body] (0.5,2.05) -- (3.9,2.05);
   \filldraw[endp] (0.5,2.05) circle (0.07);
   % components
   \foreach \x/\lab in {0.25/R1,1.55/C1,3.45/R2}{
-    \filldraw[comp] (\x,0.35) rectangle ++(0.6,0.7);
+    \filldraw[comp] (\x,0.35) rectangle ++(0.7,1.0);
     \node[font=\bfseries\footnotesize] at (\x+0.3,0.7) {\lab};}
   % R1 pin taps the rail body (rail-tap, pin->body)
   \filldraw[pin] (0.50,1.00) rectangle ++(0.10,0.10);
@@ -72,4 +71,3 @@
   \filldraw[pin] (8.0,\ly-0.55) rectangle ++(0.16,0.16); \node[anchor=west,font=\footnotesize] at (8.3,\ly-0.47) {Pin};
 \end{scope}
 \end{tikzpicture}%
-}
