@@ -8,11 +8,7 @@
 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
-\usepackage{algorithm}
 \usepackage{graphicx}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
@@ -72,7 +68,7 @@ hand-drawn circuits, circuit digitization, schematic recognition, image-to-netli
 
 \begin{figure*}[t]
 \centering
-\input{figures/pipeline_overview_tikz.tex}
+\includegraphics[width=\textwidth]{figures/pipeline_overview.pdf}
 \caption{End-to-end pipeline for scanning circuit diagram digitization. Our contributions span the wire extraction and joining stages; the join (dashed red) determines which extracted wire segments connect to which component pins and is the dominant failure mode in end-to-end digitization.}
 \label{fig:pipeline}
 \end{figure*}
@@ -133,7 +129,7 @@ The tolerances $\tau_{\text{join}}$, $\tau_{\text{pin}}$, and $\tau_t$ are \emph
 
 \begin{figure*}[t]
 \centering
-\input{figures/endpoint_graph_tikz.tex}
+\includegraphics[width=\columnwidth]{figures/endpoint_graph.pdf}
 \caption{Joining approaches compared. (a)~Radius-based join (legacy): each wire endpoint grabs all pins within a fixed threshold, causing over-merging. (b)~Our endpoint-graph model: typed edges (wire body, endpoint--pin) with directional preference resolve connectivity without over-merging.}
 \label{fig:endpoint_graph}
 \end{figure*}
@@ -150,7 +146,7 @@ Completion edges are ``wireless'': they represent inferred connections without c
 
 \begin{figure*}[t]
 \centering
-\input{figures/completion_tikz.tex}
+\includegraphics[width=\columnwidth]{figures/completion.pdf}
 \caption{Degree-budget completion. Left: After base joining, some pins are ``floating'' (touching only their own component). Right: Completion reconnects floating pins via min-cost $b$-matching (orange dashed), with self-loop guard preventing shorts within two-terminal components.}
 \label{fig:completion}
 \end{figure*}
