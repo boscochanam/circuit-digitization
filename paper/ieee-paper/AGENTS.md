@@ -1,99 +1,91 @@
 # IEEE Paper — Agent Instructions
 
-## Paper Structure (Finalized)
+> Synced 2026-06-29 to the current paper. This file had drifted (old
+> "Degree-Budget Topology Join" title, Mimo VLM, 0.94/0.36 numbers, 134-image
+> join claim). The authoritative numbers live in
+> `docs/research/experiments/SUMMARY.md` and
+> `docs/research/ieee-access-session-handoff.md`; this is a quick orientation.
 
-**Title:** Degree-Budget Topology Join: Robust Wire-to-Component Connection for Scanned Circuit Diagram Digitization
+## Live sources (keep the two in sync)
 
-**Authors:** Bosco, Chris Dcosta, Pranavesh Talupuri (USC)
+- **`paper-access.tex`** — IEEE Access template (Overleaf). Submission source.
+- **`paper-build.tex`** — IEEEtran, for local `pdflatex` builds. Same body as
+  `paper-access.tex`; only the preamble/front-matter differs. **Any body edit
+  must be applied to BOTH.**
+- `paper.tex` — superseded single-file draft (old framing/title). Not built; kept
+  only as history. Do not edit; prefer archiving it.
 
-### Paper Angle & Narrative
+## Title
 
-**Lead with:** Technical innovation (degree-budget join algorithm)
-**Frame within:** Complete end-to-end system (scanned circuit → simulatable SPICE)
-**Hint at:** Downstream application value (queryable circuits)
+From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with
+Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark
 
-**NOT the main story:** LLM comparison — this is motivation only (1 paragraph + 1 figure in introduction)
+**Authors:** Bosco Chanam, Chris Dcosta, Pranavesh Talupuri (USC)
 
-### Section Structure
+## Framing
 
-1. **Introduction** (1-2 pages)
-   - Problem: scanned circuits are unstructured images
-   - Gap: LLMs can describe but not digitize (show GPT-4V/Mimo failure example)
-   - Our solution: CV pipeline → SPICE netlist
-   - Key results: F1=0.976 wire detection, degree-budget handles 67% synthetic error
-   - One paragraph + one figure comparing LLM vs pipeline (motivation, not contribution)
+A complete **deterministic pipeline** (occlusion-first wire extractor → endpoint
+representation → endpoint-graph join → degree-budget completion) **plus the first
+human-verified net-level connectivity benchmark** for hand-drawn circuits. The
+*join* is the primary contribution and the **primary metric is component-pair
+micro-F1** (macro reported alongside). The VLM comparison is a reference point,
+not the story.
 
-2. **Related Work** (1 page)
-   - Circuit diagram understanding (Kelly & Cole, Kulkarni et al.)
-   - Wire detection and joining (classical approaches)
-   - Graph-based connectivity (union-find, GNNs)
+## Section structure
 
-3. **Pipeline Overview** (1-2 pages)
-   - System architecture (6 stages)
-   - Component detection (YOLO26M-OBB, 16 classes, 88.5% mAP50)
-   - Wire extraction (Sauvola binarization, CCL, PCA endpoints)
+1. Introduction — problem, threefold challenge, VLM-as-alternative (tested in §V), contributions
+2. Related Work — digitization/netlist extraction; datasets/benchmarks; VLMs/LLMs; wire detection & graph connectivity
+3. Method — pipeline overview (6 stages); endpoint-graph join (**5 edge types**); degree-budget completion (min-cost b-matching)
+4. Synthetic Evaluation Framework — 15 authored circuits; 5 error categories × 4 severity levels; metrics
+5. Results — wire detection; synthetic join leaderboard; **real-image net-level eval (N=31)**; per-circuit; **VLM experiment**
+6. Discussion / Limitations / Conclusion
 
-4. **Degree-Budget Topology Join** (3-4 pages) ← **CORE CONTRIBUTION**
-   - Endpoint-graph model (4 edge types)
-   - Degree-budget completion (min-cost b-matching)
-   - Self-loop guards and per-pin edge budget
-   - Algorithm complexity and implementation details
+Endpoint-graph **edge types**: (1) wire body, (2) endpoint–endpoint, (3)
+endpoint–pin (component-first, directional), (4) endpoint–wire-body (T-junction),
+(5) pin–wire-body (rail-tap). Implemented in `wire_detection/core/join_graph.py`.
 
-5. **Evaluation** (2-3 pages)
-   - Dataset: 134 images from CGHD-1152
-   - Wire detection: F1=0.976
-   - Join comparison: degree-budget (F1=0.94) vs baseline (F1=0.36)
-   - Synthetic error injection framework (5 severity levels)
-   - SPICE simulation validation (62% accurate currents under extreme noise)
+## Key numbers (re-verified 2026-06-28; sources in `docs/research/experiments/`)
 
-6. **Conclusion + Future Work** (1 page)
-   - Summary of contributions
-   - Downstream applications (simulation, what-if analysis)
-   - Future: handling crossovers, component value OCR
+- **Wire detection F1 = 0.976** (134 CGHD-1152 images; Sauvola + 16px anchor).
+- **Real net-level GT: N=31 human-verified** (`ground_truth/real_nets_verified.json`).
+  Join micro-F1 (detected wires, GT component boxes):
+  - **scale_completion (default) = 0.890** (P 0.919, R 0.864, macro 0.901)
+  - degree_budget 0.829 · graph_scale 0.816 · graph_rescue 0.787 · radius/production 0.667
+  - classical baselines: Hough+proximity 0.805 · connected-components 0.624
+  - **perfect wires = 0.890** (micro unchanged → detection is not the bottleneck)
+- **Synthetic L4 leaderboard:** scale_completion 0.95 ≥ degree_budget 0.94 ≥
+  graph_rescue 0.90 ≥ graph_scale 0.85; radius union-find 0.36.
+- **VLM (Claude Opus 4.8)** on the same 31: micro-F1 **0.923** (P 0.97, R 0.88,
+  macro 0.949), exact on 21/31. Paired **VLM − ours = +0.033, 95% CI
+  [−0.009, +0.078]** → statistically indistinguishable; but ~10^5 tokens/image,
+  free-form, non-simulatable. Treated as an upper reference, not a module to ship.
+- **Component detection:** 88.5% mAP@0.5 (16 classes; crossover recall 70.7%).
 
-### Key Figures Needed
+## Default join strategy
 
-| Figure | Section | Description |
-|--------|---------|-------------|
-| Fig 1 | Intro | LLM vs Pipeline comparison (1 panel, motivation only) |
-| Fig 2 | Intro/Method | Pipeline overview (6 stages) |
-| Fig 3 | Method | Endpoint-graph model visualization |
-| Fig 4 | Method | Degree-budget completion example |
-| Fig 5 | Eval | F1 vs synthetic error severity |
-| Fig 6 | Eval | Join comparison (our method vs baseline) |
+`DEFAULT_STRATEGY = "scale_completion"` (`wire_detection/core/join_strategies.py`):
+high-precision scale-relative endpoint-graph base (no end-extension / dead-end
+rescue) + degree-budget floating-pin completion at reach 4×scale. `degree_budget`
+and `graph_rescue` remain registered as fallbacks/ablations.
 
-### Key Numbers (Abstract)
+**Strategy names are descriptive in the paper** (code keeps the identifiers):
+`scale_completion` → "scale-relative graph + completion"; `degree_budget` →
+"rescue graph + completion"; `graph_scale`/`graph_rescue` → "...graph (base)";
+`production` → "radius union-find (legacy)".
 
-- Wire detection F1: 0.976
-- Degree-budget join F1: 0.94 (max error)
-- Baseline join F1: 0.36 (max error)
-- SPICE simulation accuracy: 62% (extreme noise)
-- Dataset: 134 images, CGHD-1152
+## Figures
 
-### LLM Comparison (Motivation Only)
+- Concept diagrams are **native TikZ**: `figures/{pipeline_overview,endpoint_graph,completion}_tikz.tex` (`\input` from both `.tex`).
+- Data bar charts (matplotlib): `figures/{wire_benchmark,join_comparison,real_join_comparison}.pdf`.
+- Pipeline examples (Fig 2): `figures/pipeline_examples/{C37-D2-P4,C111-D1-P1}-jpg.png` (F1=1.0 on both).
 
-- Model: Mimo 2.5 via OpenCode Go
-- 10 test images, structured JSON prompt
-- Result: LLM misses 26-67% of wires, error scales with complexity
-- LLM produces unstructured JSON, not simulatable SPICE
-- Use as motivation in introduction, not as main contribution
+## Component detection model
 
-### Component Detection Model
+- `models/component_detection/yolo26m_obb_16class_aug.pt`
+- HuggingFace: <https://huggingface.co/boscochanam/circuit-component-detector>
 
-- **Location:** `models/component_detection/yolo26m_obb_16class_aug.pt`
-- **HuggingFace:** [boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector)
-- **Performance:** mAP50=88.5%, 16 classes
-- **Dataset:** CGHD-1152 (Kaggle)
+## Still author-owed (before submission)
 
-### File Locations
-
-- Paper source: `paper.tex`
-- Figures: `figures/`
-- Pipeline code: `~/circuit-digitization/wire_detection/`
-- Benchmark results: `~/circuit-digitization/wire_detection/benchmark/`
-
-### Notes for Future Sessions
-
-- LLM comparison data saved in `figures/llm_raw_v2/` (10 images, structured JSON)
-- Pipeline SPICE files for comparison: `figures/C12_D2_P2_netlist_full.spice`, `figures/C128_D2_P4_netlist.spice`
-- Paper structure decision: 2026-06-15
+ORCIDs, author biographies, funding/acknowledgment line, publication dates, and
+the exact `ieeeaccess.cls` render on Overleaf (local cls incompatible with TeX
+Live 2023).
