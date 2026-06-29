@@ -1,3 +1,0 @@
-# IEEE Access kit lives in ieeeaccess/; make cls, fonts, and bullet.png visible to pdflatex.
-$ENV{'TEXINPUTS'} = './ieeeaccess//:' . ($ENV{'TEXINPUTS'} // '');
-$ENV{'TEXFONTMAPS'} = './ieeeaccess//:' . ($ENV{'TEXFONTMAPS'} // '');
