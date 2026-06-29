@@ -20,6 +20,19 @@
 \usepackage{url}
 \usepackage{hyperref}
 
+\usepackage{bm}
+\makeatletter
+\AtBeginDocument{\DeclareMathVersion{bold}
+\SetSymbolFont{operators}{bold}{T1}{times}{b}{n}
+\SetSymbolFont{NewLetters}{bold}{T1}{times}{b}{it}
+\SetMathAlphabet{\mathrm}{bold}{T1}{times}{b}{n}
+\SetMathAlphabet{\mathit}{bold}{T1}{times}{b}{it}
+\SetMathAlphabet{\mathbf}{bold}{T1}{times}{b}{n}
+\SetMathAlphabet{\mathtt}{bold}{OT1}{pcr}{b}{n}
+\SetSymbolFont{symbols}{bold}{OMS}{cmsy}{b}{n}
+\renewcommand\boldmath{\@nomath\boldmath\mathversion{bold}}}
+\makeatother
+
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
@@ -40,20 +53,22 @@
 \tfootnote{This work received no external funding.}
 
 \markboth
-{Chanam \lowercase{\textit{et al.}}: From Hand-Drawn Schematics to SPICE Netlists}
-{Chanam \lowercase{\textit{et al.}}: From Hand-Drawn Schematics to SPICE Netlists}
+{Chanam \headeretal: From Hand-Drawn Schematics to SPICE Netlists}
+{Chanam \headeretal: From Hand-Drawn Schematics to SPICE Netlists}
 
 \corresp{Corresponding author: Bosco Chanam (e-mail: bosco.chanam.btech2021@sitpune.edu.in).}
-
-\maketitle
 
 \begin{abstract}
 Automated digitization of hand-drawn circuit schematics into simulation-ready SPICE netlists remains challenging because connectivity recovery is brittle under noisy wire detections. We present a deterministic pipeline that converts a scanned schematic into a SPICE netlist through component detection, an occlusion-first wire extractor, and a graph-based join that resolves electrical connectivity. The main contribution is the joining stage: an endpoint-graph model over wire endpoints and component pins with five edge types, combined with degree-budget completion that recovers dropped connections through min-cost $b$-matching while bounding over-merge with per-pin budgets and self-loop guards. We also introduce a synthetic perturbation protocol and, to our knowledge, the first human-verified net-level connectivity benchmark for hand-drawn circuits, covering 31 images from CGHD-1152. The occlusion-first extractor reaches wire-detection F1~=~0.976 on 134 scanned images. On the human-verified net-level benchmark, the best join reaches connectivity micro-F1~=~0.890, outperforming the prior completion default (0.83), a legacy radius union-find join (0.67), a connected-component net-tracing baseline (0.62), and a Hough-plus-proximity line tracer (0.81), all under identical detected wires. Running the join on perfect wire labels does not improve micro-F1, showing that connectivity, not wire detection, remains the bottleneck. A first-party comparison shows a strong vision-language model reaches 0.923 on the same images, statistically indistinguishable from our join but far more expensive and without structural guarantees, supporting explicit geometric connectivity recovery for deployable circuit digitization.
 \end{abstract}
 
-\begin{IEEEkeywords}
+\begin{keywords}
 hand-drawn circuits, circuit digitization, schematic recognition, image-to-netlist, wire extraction, wire joining, graph-based connectivity, netlist extraction, SPICE, connectivity benchmark
-\end{IEEEkeywords}
+\end{keywords}
+
+\titlepgskip=-21pt
+
+\maketitle
 
 \begin{figure*}[t]
 \centering
