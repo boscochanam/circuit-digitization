@@ -31,26 +31,16 @@ latexmk -pdf paper-access.tex
 
 ## TODO — align `paper-access.tex` with the official template
 
-**`paper-access.tex` is not yet template-compliant.** Body content is complete;
-front matter and preamble still need a pass against `ieeeaccess/access-sample.tex`
-before IEEE Access submission. Known gaps (verified against the May 2026 kit):
+**Structural alignment is done** (2026-06-29): front-matter order, `\titlepgskip`,
+`\headeretal`, `keywords` env, `bm` preamble match `ieeeaccess/access-sample.tex`.
+Compile with `latexmk -pdf paper-access.tex` and eyeball page 1.
 
-1. **Front-matter order (critical).** Template order: metadata →
-   `\begin{abstract}` → `\begin{keywords}` (or `IEEEkeywords`) →
-   `\titlepgskip=-21pt` → `\maketitle`. We currently call `\maketitle` *before*
-   abstract/keywords; `ieeeaccess.cls` renders those inside `\maketitle`, so the
-   title page is wrong until reordered.
-2. **Preamble.** Add `\usepackage{bm}` and the template's bold-math
-   `\AtBeginDocument` block; drop unused `algorithm` / `algorithmic` imports unless
-   needed.
-3. **Headers.** Prefer `\headeretal` in `\markboth` (see sample).
-4. **Author block.** Add ORCIDs (`\orcidlink{...}`), finalize bios in
-   `IEEEbiographynophoto`, real `\history` / `\doi` dates.
-5. **Visual proof.** Compile with the bundled kit and confirm title-page layout
-   (abstract + INDEX TERMS on page 1) matches the sample PDF structure.
+**Still author-owed before submission** (no new prose needed from agents unless asked):
 
-Do **not** change paper body text while fixing template alignment unless numbers
-or citations need updating.
+1. ORCIDs on author line (`\orcidlink{...}` per author).
+2. Finalize `IEEEbiographynophoto` text for Bosco Chanam and Chris Dcosta (Pranav's is drafted).
+3. Real `\history` and `\doi` when IEEE assigns them.
+4. Optional: `\IEEEmembership{...}` if any author is an IEEE member.
 
 ## Title
 
