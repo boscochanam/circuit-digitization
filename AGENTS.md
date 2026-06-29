@@ -292,8 +292,11 @@ Full details: `docs/research/join-verification.md`
   A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity
   Benchmark".
 - **Two synchronized LaTeX sources — keep in sync:** `paper/ieee-paper/paper-build.tex` (local
-  IEEEtran build, compiles with stock TeX Live) and `paper/ieee-paper/paper-access.tex` (Overleaf
-  "IEEE Access" template, needs `ieeeaccess.cls`).
+  IEEEtran build, compiles with stock TeX Live) and `paper/ieee-paper/paper-access.tex` (IEEE
+  Access submission; class kit in `paper/ieee-paper/ieeeaccess/`, May 2026 Author Center).
+- **Template alignment still open:** `paper-access.tex` front matter does not yet match the
+  official sample (`ieeeaccess/access-sample.tex`). See `paper/ieee-paper/AGENTS.md` TODO —
+  critical fix is abstract/keywords *before* `\maketitle`, plus preamble/header tweaks.
 - **Figures:** the three concept figures are native TikZ
   (`paper/ieee-paper/figures/{pipeline_overview,endpoint_graph,completion}_tikz.tex`, `\input` from
   both `.tex`). Data bar charts are matplotlib: `generate_concept_figures.py` (wire_benchmark.pdf)
@@ -315,8 +318,8 @@ Full details: `docs/research/join-verification.md`
   venv `./.venv/bin/python` (NOT uv); has CGHD data + YOLO model. Scripts:
   `wire_detection/benchmark/{join_eval_real_f1,cc_baseline_detected,hough_baseline,detection_ceiling}.py`
   and `wire_detection.synthgt`. Result JSONs in `docs/research/experiments/`.
-- **Remaining open items are author-only:** ORCIDs, author bios, funding line, publication dates, and
-  the exact `ieeeaccess.cls` render on Overleaf.
+- **Remaining open items:** align `paper-access.tex` with the bundled IEEE Access template (see
+  `paper/ieee-paper/AGENTS.md`); then author-only ORCIDs, bios, funding line, publication dates.
 
 ## Shared Component-Assignment Logic (MANDATORY)
 

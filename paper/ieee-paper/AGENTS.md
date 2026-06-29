@@ -8,12 +8,49 @@
 
 ## Live sources (keep the two in sync)
 
-- **`paper-access.tex`** — IEEE Access template (Overleaf). Submission source.
+- **`paper-access.tex`** — IEEE Access submission source (`\documentclass{ieeeaccess}`).
 - **`paper-build.tex`** — IEEEtran, for local `pdflatex` builds. Same body as
   `paper-access.tex`; only the preamble/front-matter differs. **Any body edit
   must be applied to BOTH.**
 - `paper.tex` — superseded single-file draft (old framing/title). Not built; kept
   only as history. Do not edit; prefer archiving it.
+
+## IEEE Access template kit (2026-05-13)
+
+Runtime files are in **`ieeeaccess/`** (`ieeeaccess.cls`, bundled `IEEEtran.cls`,
+fonts, `bullet.png`, etc.). Official sample front matter is
+`ieeeaccess/access-sample.tex` (do not submit; reference only).
+
+Local compile from this directory:
+
+```bash
+latexmk -pdf paper-access.tex
+```
+
+(`latexmkrc` prepends `./ieeeaccess//` to `TEXINPUTS` and `TEXFONTMAPS`.)
+
+## TODO — align `paper-access.tex` with the official template
+
+**`paper-access.tex` is not yet template-compliant.** Body content is complete;
+front matter and preamble still need a pass against `ieeeaccess/access-sample.tex`
+before IEEE Access submission. Known gaps (verified against the May 2026 kit):
+
+1. **Front-matter order (critical).** Template order: metadata →
+   `\begin{abstract}` → `\begin{keywords}` (or `IEEEkeywords`) →
+   `\titlepgskip=-21pt` → `\maketitle`. We currently call `\maketitle` *before*
+   abstract/keywords; `ieeeaccess.cls` renders those inside `\maketitle`, so the
+   title page is wrong until reordered.
+2. **Preamble.** Add `\usepackage{bm}` and the template's bold-math
+   `\AtBeginDocument` block; drop unused `algorithm` / `algorithmic` imports unless
+   needed.
+3. **Headers.** Prefer `\headeretal` in `\markboth` (see sample).
+4. **Author block.** Add ORCIDs (`\orcidlink{...}`), finalize bios in
+   `IEEEbiographynophoto`, real `\history` / `\doi` dates.
+5. **Visual proof.** Compile with the bundled kit and confirm title-page layout
+   (abstract + INDEX TERMS on page 1) matches the sample PDF structure.
+
+Do **not** change paper body text while fixing template alignment unless numbers
+or citations need updating.
 
 ## Title
 
@@ -86,6 +123,5 @@ and `graph_rescue` remain registered as fallbacks/ablations.
 
 ## Still author-owed (before submission)
 
-ORCIDs, author biographies, funding/acknowledgment line, publication dates, and
-the exact `ieeeaccess.cls` render on Overleaf (local cls incompatible with TeX
-Live 2023).
+Template alignment (see **TODO** above), ORCIDs, author biographies, funding line,
+and publication dates.
