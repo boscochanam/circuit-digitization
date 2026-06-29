@@ -6,14 +6,13 @@
 \definecolor{cEE}{HTML}{FF7F0E}
 \definecolor{cBad}{HTML}{D62728}
 \definecolor{cGuard}{HTML}{2A7A2A}
-\resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[
-  x=1cm, y=1cm, font=\small,
+  x=1.45cm, y=1.35cm, font=\normalsize,
   comp/.style={draw=black!85, fill=cComp, rounded corners=1.5pt, line width=0.9pt},
   body/.style={cBody, line width=2.2pt, line cap=round},
   pin/.style={fill=cPin, draw=black, line width=0.5pt},
 ]
-\foreach \dx/\after/\ttl in {0/0/{Before completion}, 5.2/1/{After completion}}{
+\foreach \dx/\after/\ttl in {0/0/{Before completion}, 6.2/1/{After completion}}{
   \begin{scope}[xshift=\dx cm]
     \node[font=\bfseries] at (2.05,2.4) {\ttl};
     \foreach \x/\lab in {0.2/R1,1.7/R2,3.2/R3}{
@@ -29,11 +28,10 @@
     \ifnum\after=1
       \filldraw[pin] (3.10,1.25) rectangle ++(0.10,0.10);
       \draw[cEE, -{Stealth[length=2.2mm]}, line width=1.6pt]
-           (2.45,1.30) to[bend right=32] (3.12,1.30);
-      \node[cEE, font=\itshape\footnotesize, align=center] at (2.82,2.0)
+           (2.45,1.30) to[bend right=28] (3.12,1.30);
+      \node[cEE, font=\itshape\footnotesize, align=center] at (2.20,2.02)
            {completion edge\\(min-cost b-matching)};
-      \node[cBody, font=\footnotesize] at (2.92,1.55) {Net A (merged)};
-      \node[cGuard, font=\footnotesize, align=center] at (2.05,0.42)
+      \node[cGuard, font=\footnotesize, align=center] at (2.15,0.38)
            {self-loop guard: a component's own two\\terminals are never matched together};
     \else
       \filldraw[cBad, draw=white, line width=0.8pt] (3.15,1.30) circle (0.08);
@@ -41,4 +39,3 @@
     \fi
   \end{scope}}
 \end{tikzpicture}%
-}
