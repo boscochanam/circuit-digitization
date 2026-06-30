@@ -4,14 +4,26 @@ the paper, which isolates the join). Six stages per circuit: original, component
 Sauvola binarization, morphological close, detected wires, and the join result (nets coloured
 on the actual conductors, junctions annotated, true component-pair F1 vs the verified net-GT).
 
-Run on claw:  ./.venv/bin/python paper/ieee-paper/generate_pipeline_examples.py
+Local:
+  WIRE_GT_IMAGES=ground_truth/local_eval/images WIRE_HDC_BASE=roboflow_test2 \\
+    uv run python paper/ieee-paper/generate_pipeline_examples.py --only C37_D2_P4
+
+On claw:
+  ./.venv/bin/python paper/ieee-paper/generate_pipeline_examples.py
 """
-import os, sys, cv2, json, colorsys
-import numpy as np
+import argparse
+import colorsys
+import json
+import os
+import sys
 from pathlib import Path
 
-sys.path.insert(0, '/home/claw/circuit-digitization')
-os.chdir('/home/claw/circuit-digitization')
+import cv2
+import numpy as np
+
+REPO = Path(__file__).resolve().parents[2]
+os.chdir(REPO)
+sys.path.insert(0, str(REPO))
 
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig, build_component_mask, crop_to_roi, shift_components,
@@ -32,9 +44,13 @@ cfg = ExperimentConfig(
     anchor_endpoint_dist=16.0, anchor_link_dist=8.0, extraction_mode="component",
 )
 
-OUTPUT = Path("/home/claw/circuit-digitization/paper/ieee-paper/figures/pipeline_examples")
-OUTPUT.mkdir(parents=True, exist_ok=True)
-GT_NETS = json.load(open("ground_truth/real_nets_verified.json"))
+OUTPUT = REPO / "paper/ieee-paper/figures/pipeline_examples"
+GT_NETS_PATH = REPO / "ground_truth/real_nets_verified.json"
+
+CANDIDATES = [
+    ("C37_D2_P4", "C37-D2-P4-jpg.png"),
+    ("C111_D1_P1", "C111-D1-P1-jpg.png"),
+]
 
 # Structural / non-device GT classes (58-class CGHD taxonomy) — no SPICE pins.
 SKIP_PIN_TYPES = {
@@ -62,14 +78,16 @@ def draw_obb(img, vertices, color, thickness=1):
     cv2.polylines(img, [pts], True, color, thickness, cv2.LINE_AA)
 
 
-def run_pipeline(img_path, name):
+def run_pipeline(img_path, name, gt_nets):
     from PIL import Image
-    gray = np.array(Image.open(img_path).convert('L'))
+    rgb = np.array(Image.open(img_path).convert("RGB"))
+    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape
-    stages = {'original': gray.copy()}
+    stages = {"original": bgr.copy()}
 
     comp_labels = parse_components(find_hdc_label(name).read_text(), w, h)
-    entry = GT_NETS[name + "_jpg"]
+    entry = gt_nets[name + "_jpg"]
     keep = set(entry["electrical_idxs"])
     gtp = gt_pairs(entry["nets"], keep)
 
@@ -90,7 +108,7 @@ def run_pipeline(img_path, name):
     stages['n_wires'] = len(lines_global)
 
     # Detected-wires overlay (red wires + green device OBBs)
-    overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    overlay = bgr.copy()
     for (x1, y1), (x2, y2) in lines_global:
         cv2.line(overlay, (x1, y1), (x2, y2), (0, 0, 255), 2, cv2.LINE_AA)
     for cls, verts, _bbox in comp_labels:
@@ -105,7 +123,8 @@ def run_pipeline(img_path, name):
     pred = comp_pairs(netlist, keep)
     p, r, f1 = prf(gtp, pred)
 
-    join_overlay = (cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR) * 0.35 + 45).astype(np.uint8)
+    # Join canvas = same scan as Original; only vector overlays differ.
+    join_overlay = bgr.copy()
     nets = [n for n in netlist.nodes if n.wires]
     netidx = {id(n): i for i, n in enumerate(nets)}
     comp_net = {}
@@ -143,9 +162,10 @@ def run_pipeline(img_path, name):
             cv2.drawMarker(join_overlay, (cx, cy), (200, 200, 200), cv2.MARKER_TRIANGLE_UP, 15, 2, cv2.LINE_AA)
         elif tname not in ("text", "crossover"):
             pts = np.array(verts, dtype=np.int32).reshape((-1, 1, 2))
-            fill = join_overlay.copy(); cv2.fillPoly(fill, [pts], (95, 95, 70))
-            cv2.addWeighted(fill, 0.5, join_overlay, 0.5, 0, join_overlay)
-            cv2.polylines(join_overlay, [pts], True, (200, 200, 170), 2, cv2.LINE_AA)
+            fill = join_overlay.copy()
+            cv2.fillPoly(fill, [pts], (240, 245, 250))
+            cv2.addWeighted(fill, 0.55, join_overlay, 0.45, 0, join_overlay)
+            cv2.polylines(join_overlay, [pts], True, (0, 140, 255), 2, cv2.LINE_AA)
             cv2.putText(join_overlay, tname.split("-")[0], (cx - 16, min(v[1] for v in verts) - 6),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.42, (235, 235, 210), 1, cv2.LINE_AA)
 
@@ -166,6 +186,15 @@ def run_pipeline(img_path, name):
     return stages
 
 
+def show_stage(ax, img):
+    if img is None:
+        return
+    if img.ndim == 3:
+        ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    else:
+        ax.imshow(img, cmap="gray", vmin=0, vmax=255)
+
+
 def save_composite(stages, name, output_path):
     fig, axes = plt.subplots(2, 3, figsize=(14, 9.6), dpi=300)
     title_map = [
@@ -178,9 +207,7 @@ def save_composite(stages, name, output_path):
                          f'{stages["n_junctions"]} junctions'),
     ]
     for ax, (key, title) in zip(axes.flat, title_map):
-        img = stages.get(key)
-        if img is not None:
-            ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB) if img.ndim == 3 else img, cmap=None if img.ndim == 3 else 'gray')
+        show_stage(ax, stages.get(key))
         ax.set_title(title, fontsize=10, fontweight='bold'); ax.axis('off')
     plt.tight_layout(pad=0.8, rect=[0, 0, 1, 0.95])
     fig.suptitle(f"{name.replace('_','-')} (GT components): {stages['n_wires']} wires, {stages['n_nets']} nets, "
@@ -189,14 +216,45 @@ def save_composite(stages, name, output_path):
     plt.close()
 
 
-if __name__ == '__main__':
-    candidates = [("C37_D2_P4", "C37-D2-P4-jpg.png"), ("C111_D1_P1", "C111-D1-P1-jpg.png")]
+def main():
+    parser = argparse.ArgumentParser(description="Generate Fig. 2 pipeline composite panels.")
+    parser.add_argument(
+        "--only",
+        metavar="NAME",
+        help="Process one circuit stem (e.g. C37_D2_P4); default: all paper candidates.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=OUTPUT,
+        help=f"Output directory (default: {OUTPUT.relative_to(REPO)})",
+    )
+    args = parser.parse_args()
+
+    gt_nets = json.loads(GT_NETS_PATH.read_text())
+    candidates = CANDIDATES
+    if args.only:
+        matches = [(n, o) for n, o in CANDIDATES if n == args.only]
+        if not matches:
+            known = ", ".join(n for n, _ in CANDIDATES)
+            parser.error(f"unknown circuit {args.only!r}; known: {known}")
+        candidates = matches
+
+    args.output.mkdir(parents=True, exist_ok=True)
     for name, out_name in candidates:
         img_path = GT_IMAGES / f"{name}_jpg.jpg"
         if not img_path.exists():
-            print(f"ERROR: missing {img_path}"); continue
-        stages = run_pipeline(img_path, name)
-        save_composite(stages, name, OUTPUT / out_name)
-        print(f"  OK {name}: {stages['n_wires']} wires, {stages['n_nets']} nets, "
-              f"{stages['n_junctions']} junctions, F1={stages['f1']:.3f} -> {OUTPUT/out_name}")
-    print(f"Done -> {OUTPUT}/")
+            print(f"ERROR: missing {img_path}")
+            continue
+        stages = run_pipeline(img_path, name, gt_nets)
+        out_path = args.output / out_name
+        save_composite(stages, name, out_path)
+        print(
+            f"  OK {name}: {stages['n_wires']} wires, {stages['n_nets']} nets, "
+            f"{stages['n_junctions']} junctions, F1={stages['f1']:.3f} -> {out_path}"
+        )
+    print(f"Done -> {args.output}/")
+
+
+if __name__ == "__main__":
+    main()

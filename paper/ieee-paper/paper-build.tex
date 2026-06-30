@@ -57,7 +57,7 @@ hand-drawn circuits, circuit digitization, schematic recognition, image-to-netli
 \includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C37-D2-P4-jpg.png}
 \hfill
 \includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C111-D1-P1-jpg.png}
-\caption{Pipeline stages on two real hand-drawn circuit images, joined with our scale-relative completion join (connectivity F1~=~1.000 on both). Left:~a four-transistor analog cell (35 wires, 12 nets); right:~an RLC loop photographed on a textured surface (12 wires, 4 nets). Each panel shows, in order: original scan, component occlusion, Sauvola binarization, morphological close, detected wires (red overlay), and the join result. In the join result every recovered net is a distinct colour drawn along its conductors; component bounding boxes are the ground-truth labels (as used throughout the net-level evaluation, isolating the join), filled dots are device pins, diamonds mark junctions, and triangles mark terminals and ground.}
+\caption{Pipeline stages on two real hand-drawn circuit images, joined with our scale-relative completion join (connectivity F1~=~1.000 on both). Left:~a four-transistor analog cell (36 wires, 12 nets); right:~an RLC loop photographed on a textured surface (12 wires, 4 nets). Each panel shows, in order: original scan, component occlusion, Sauvola binarization, morphological close, detected wires (red overlay), and the join result. In the join result every recovered net is a distinct colour drawn along its conductors; component bounding boxes are the ground-truth labels (as used throughout the net-level evaluation, isolating the join), filled dots are device pins, diamonds mark junctions, and triangles mark terminals and ground.}
 \label{fig:pipeline_examples}
 \end{figure*}
 
@@ -86,7 +86,7 @@ Classical wire extraction relies on edge detection, morphological operations, an
 
 \subsection{Pipeline Overview}
 
-The full pipeline proceeds through six stages: (1)~component detection via oriented bounding box (OBB) YOLO model; (2)~component occlusion (filling detected regions with local median color); (3)~Sauvola adaptive binarization; (4)~connected component labeling with morphological post-processing; (5)~wire endpoint extraction via principal component analysis (PCA) on endpoint regions; and (6)~wire joining via the endpoint-graph model with degree-budget completion. The output is a netlist mapping component pins to electrical nodes, suitable for SPICE netlist generation.
+Figure~\ref{fig:pipeline} summarizes the six-stage pipeline. The full pipeline proceeds through six stages: (1)~component detection via oriented bounding box (OBB) YOLO model; (2)~component occlusion (filling detected regions with local median color); (3)~Sauvola adaptive binarization; (4)~connected component labeling with morphological post-processing; (5)~wire endpoint extraction via principal component analysis (PCA) on endpoint regions; and (6)~wire joining via the endpoint-graph model with degree-budget completion. The output is a netlist mapping component pins to electrical nodes, suitable for SPICE netlist generation. Figure~\ref{fig:pipeline_examples} shows two representative circuits at each stage.
 
 \subsection{Endpoint-Graph Join Model}
 
@@ -104,7 +104,7 @@ Given a set of wire segments $\mathcal{W} = \{w_1, \ldots, w_m\}$ with endpoints
 
 The tolerances $\tau_{\text{join}}$, $\tau_{\text{pin}}$, and $\tau_t$ are \emph{scale-relative}: $\tau = k \cdot s$ where $s$ is the characteristic scale (median component diagonal), so a single parameter setting works across circuits of varying size.
 
-\textbf{Component-first pin assignment:} For edge type 3, we use a two-step assignment. First, assign each endpoint to its nearest component by bounding-box distance (0 if inside the bbox, using a generous radius of $\max(\tau_{\text{pin}}, 0.5 \cdot \text{diagonal})$). Second, within the assigned component, select the pin by geometric position: for horizontal components ($w > h$), left pin if endpoint $x <$ center $x$, else right pin; for vertical components ($h > w$), top pin if endpoint $y <$ center $y$, else bottom pin. This handles the common case where endpoints land inside a component's bounding box but far from its pin.
+\textbf{Component-first pin assignment:} For edge type 3, we use a two-step assignment. First, assign each endpoint to its nearest component by bounding-box distance (0 if inside the bbox, using a generous radius of $\max(\tau_{\text{pin}}, 0.5 \cdot \text{diagonal})$). Second, within the assigned component, select the pin by geometric position: for horizontal components ($w > h$), left pin if endpoint $x <$ center $x$, else right pin; for vertical components ($h > w$), top pin if endpoint $y <$ center $y$, else bottom pin. This handles the common case where endpoints land inside a component's bounding box but far from its pin. Figure~\ref{fig:endpoint_graph} contrasts the legacy radius join with our endpoint-graph model.
 
 \begin{figure*}[t]
 \centering
@@ -121,7 +121,7 @@ The endpoint-graph join may leave some component pins ``floating'': touching onl
 
 Degree-budget completion identifies these floating pins and reconnects them via constrained optimization. A pin $p$ is treated as floating if its net contains only pins from $p$'s own component, excluding inert types such as gnd, vss, text, antenna, junction, and terminal. For each floating pin $p$, we generate candidate edges to all pins $q$ in other components within reach $r = \rho \cdot s$, where $\rho$ is the reach factor; we use $\rho = 4$ for the deployed scale-relative join, and Section~\ref{sec:real_eval} shows a broad F1 plateau for $\rho \in [3,5]$. Candidate edge weight is Euclidean distance $\|p - q\|$. We then solve a min-cost $b$-matching problem, $\min \sum_{(p,q) \in E'} w(p,q) \cdot x_{pq}$ subject to $\sum_q x_{pq} \leq 1$ for each floating pin $p$, using the Hungarian algorithm~\cite{kuhn1955} (\texttt{scipy.optimize.linear\_sum\_assignment}). Each target pin offers up to three slots so legitimate multi-terminal nets are not starved, and a per-pin opt-out leaves a pin with no good target unconnected rather than forcing a spurious edge. Finally, we reject any matched edge $(p, q)$ if $p$ and $q$ belong to the same component or if adding the edge would merge two nets that already share a component, which structurally prevents short-circuiting two-terminal parts.
 
-Completion edges are ``wireless'': they represent inferred connections without corresponding wire segments, analogous to manual pin merges in schematic editors.
+Completion edges are ``wireless'': they represent inferred connections without corresponding wire segments, analogous to manual pin merges in schematic editors. Figure~\ref{fig:completion} illustrates the completion step.
 
 \begin{figure*}[t]
 \centering
@@ -142,7 +142,7 @@ We report join F1 as the component-connectivity F1 score, measuring which pairs 
 
 \subsection{Wire Detection Benchmark}
 
-We evaluate on 134 images from CGHD-1152 with ground-truth wire and component labels. Table~\ref{tab:wire_benchmark} shows the top configurations across 36 tested variants.
+We evaluate on 134 images from CGHD-1152 with ground-truth wire and component labels. Figure~\ref{fig:wire_benchmark} and Table~\ref{tab:wire_benchmark} summarize the top configurations across 36 tested variants.
 
 \begin{figure}[t]
 \centering
@@ -173,7 +173,7 @@ The pipeline achieves median F1~=~1.000 across the benchmark set, with 87\% of i
 
 \subsection{Join Strategy Comparison}
 
-Table~\ref{tab:join_leaderboard} compares joining strategies on the synthetic evaluation framework (15 circuits $\times$ 8 seeds, mean F1 over error levels L1--L4).
+Table~\ref{tab:join_leaderboard} and Figure~\ref{fig:join_comparison} compare joining strategies on the synthetic evaluation framework (15 circuits $\times$ 8 seeds, mean F1 over error levels L1--L4).
 
 \begin{table}[htbp]
 \caption{Join Strategy Leaderboard (Synthetic Eval)}
@@ -296,7 +296,7 @@ The endpoint-graph model resolves ambiguity that radius-based methods cannot: by
 
 Degree-budget completion addresses the fundamental limitation of detector noise: even a 97.6\% accurate wire detector drops $\sim$2\% of wire endpoints, and those dropped endpoints are precisely the connections that matter most for simulation accuracy. The $b$-matching formulation bounds the damage from mis-detection (each floating pin gets at most one recovery edge), while the self-loop guard prevents the catastrophic short-circuit failures that plague unconstrained approaches.
 
-The human-verified net-level evaluation, while novel for hand-drawn circuits, currently covers 31 images; the 95\% bootstrap confidence intervals on the per-strategy F1 are correspondingly wide ($\pm$0.03--0.05) and overlap between adjacent strategies, so while the top ranking is consistent and corroborated by the independently authored synthetic suite, broader annotation is needed to separate the closely ranked configurations. The net-level labels were bootstrapped by a conservative endpoint-graph join over perfect wires and then human-corrected; we mitigate the residual concern that this favors graph-based methods by validating on synthetic ground truth that is authored from scratch, where the same ranking holds. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated, as does extension to circuits containing devices outside the simulatable set (switches, transformers, etc.), which we exclude from the net-level benchmark. The VLM connectivity comparison uses a single frontier model (Claude Opus~4.8) on the same 31 images; evaluating additional models and prompting strategies is future work. Component detection at 88.5\% mean average precision (mAP@0.5) also leaves room for improvement, particularly on crossovers (70.7\% recall). Finally, the synthetic error model is a first-pass approximation of detector noise rather than a calibrated fit; with the new real-image net-level metric available, calibrating it to the measured detector failure distribution is a natural next step.
+The human-verified net-level evaluation, while novel for hand-drawn circuits, currently covers 31 images; the 95\% bootstrap confidence intervals on the per-strategy F1 are correspondingly wide ($\pm$0.03--0.05) and overlap between adjacent strategies, so while the top ranking is consistent and corroborated by the independently authored synthetic suite, broader annotation is needed to separate the closely ranked configurations. The net-level labels were bootstrapped by a conservative endpoint-graph join over perfect wires and then human-corrected; we mitigate the residual concern that this favors graph-based methods by validating on synthetic ground truth that is authored from scratch, where the same ranking holds. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated, as does extension to circuits containing devices outside the simulatable set (switches, transformers, etc.), which we exclude from the net-level benchmark. The VLM connectivity comparison uses a single frontier model (Claude Opus~4.8) on the same 31 images; evaluating additional models and prompting strategies is future work. Component detection at 88.5\% mean average precision (mAP@0.5) also leaves room for improvement, particularly on crossovers (70.7\% recall). The component-detection model was trained on CGHD-1152 after excluding drafter\_0, whose drawing style diverged markedly from the other drafters; this exclusion reduces the training set but avoids domain-shift artifacts from an outlier style. Finally, the synthetic error model is a first-pass approximation of detector noise rather than a calibrated fit; with the new real-image net-level metric available, calibrating it to the measured detector failure distribution is a natural next step.
 
 \section{Conclusion}
 
