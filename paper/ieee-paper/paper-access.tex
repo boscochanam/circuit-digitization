@@ -43,8 +43,9 @@
 %   \uppercase{Bosco Chanam}\authorrefmark{1}~\orcidlink{0000-0000-0000-0000}
 \author{\uppercase{Bosco Chanam}\authorrefmark{1},
 \uppercase{Chris Dcosta}\authorrefmark{1},
-\uppercase{and Pranavesh Kumar Talupuri}\authorrefmark{2}}
-\address[1]{Symbiosis Centre for Applied AI, Symbiosis Institute of Technology, Pune 412115, India (e-mail: bosco.chanam.btech2021@sitpune.edu.in; chrisdcosta777@gmail.com)}
+\uppercase{Shwetambari A. Chiwhane}\authorrefmark{1}, and
+\uppercase{Pranavesh Kumar Talupuri}\authorrefmark{2}}
+\address[1]{Symbiosis Institute of Technology, Pune 412115, India (e-mail: boscochanam@gmail.com; chrisdcosta777@gmail.com; shwetambari.chiwhane@sitpune.edu.in)}
 \address[2]{Department of Computer Science, University of Southern California, Los Angeles, CA 90089 USA (e-mail: talupuri@usc.edu)}
 \tfootnote{This work received no external funding.}
 
@@ -52,7 +53,7 @@
 {Chanam \headeretal: From Hand-Drawn Schematics to SPICE Netlists}
 {Chanam \headeretal: From Hand-Drawn Schematics to SPICE Netlists}
 
-\corresp{Corresponding author: Bosco Chanam (e-mail: bosco.chanam.btech2021@sitpune.edu.in).}
+\corresp{Corresponding author: Bosco Chanam (e-mail: boscochanam@gmail.com).}
 
 \begin{abstract}
 Automated digitization of hand-drawn circuit schematics into simulation-ready SPICE netlists remains challenging because connectivity recovery is brittle under noisy wire detections. We present a deterministic pipeline that converts a scanned schematic into a SPICE netlist through component detection, an occlusion-first wire extractor, and a graph-based join that resolves electrical connectivity. The main contribution is the joining stage: an endpoint-graph model over wire endpoints and component pins with five edge types, combined with degree-budget completion that recovers dropped connections through min-cost $b$-matching while bounding over-merge with per-pin budgets and self-loop guards. We also introduce a synthetic perturbation protocol and, to our knowledge, the first human-verified net-level connectivity benchmark for hand-drawn circuits, covering 31 images from CGHD-1152. The occlusion-first extractor reaches wire-detection F1~=~0.976 on 134 scanned images. On the human-verified net-level benchmark, the best join reaches connectivity micro-F1~=~0.890, outperforming the prior completion default (0.83), a legacy radius union-find join (0.67), a connected-component net-tracing baseline (0.62), and a Hough-plus-proximity line tracer (0.81), all under identical detected wires. Running the join on perfect wire labels does not improve micro-F1, showing that connectivity, not wire detection, remains the bottleneck. A first-party comparison shows a strong vision-language model reaches 0.923 on the same images, statistically indistinguishable from our join but far more expensive and without structural guarantees, supporting explicit geometric connectivity recovery for deployable circuit digitization.
@@ -368,11 +369,15 @@ on the CGHD-1152 dataset~\cite{bayer2021cghd}.
 % Replace the placeholder text; add \begin{IEEEbiography}[{\includegraphics...}]{Name}
 % with a photo if available. Using the no-photo form to compile without image files.
 \begin{IEEEbiographynophoto}{Bosco Chanam}
-[Author biography placeholder. Update affiliation, current position, and research interests before submission.]
+Bosco Chanam received the B.Tech.\ degree in Computer Science and Engineering from the Symbiosis Institute of Technology (SIT), Pune, India. He is currently an AI/ML Engineer at the AI Incubation Centre at Bharat Forge (Kalyani Group), Pune, India. His professional and research interests include computer vision, edge AI optimization, and robotics. Mr.~Chanam has co-authored research in natural language processing benchmarking, published in the \textit{International Journal of Fuzzy Logic and Intelligent Systems}.
 \end{IEEEbiographynophoto}
 
 \begin{IEEEbiographynophoto}{Chris Dcosta}
-[Author biography placeholder. Update affiliation, current position, and research interests before submission.]
+Chris Dcosta is with the Symbiosis Institute of Technology, Pune, India. His research interests include circuit digitization, image processing, and deep learning.
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Shwetambari A. Chiwhane}
+Shwetambari A. Chiwhane is with the Symbiosis Institute of Technology, Pune, India. Her research interests include machine learning, natural language processing, and data science.
 \end{IEEEbiographynophoto}
 
 \begin{IEEEbiographynophoto}{Pranavesh Kumar Talupuri}
