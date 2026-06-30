@@ -15,7 +15,10 @@
 \usepackage{multirow}
 \usepackage{url}
 \usepackage{hyperref}
-
+\usepackage{orcidlink}
+\NewSpotColorSpace{PANTONE}
+\AddSpotColor{PANTONE} {PANTONE3015C} {PANTONE\SpotSpace 3015\SpotSpace C} {1 0.3 0 0.2}
+\SetPageColorSpace{PANTONE}
 \usepackage{bm}
 \makeatletter
 \AtBeginDocument{\DeclareMathVersion{bold}
@@ -41,10 +44,10 @@
 
 % ORCID: add each author's ORCID before submission, e.g.
 %   \uppercase{Bosco Chanam}\authorrefmark{1}~\orcidlink{0000-0000-0000-0000}
-\author{\uppercase{Bosco Chanam}\authorrefmark{1},
-\uppercase{Chris Dcosta}\authorrefmark{1},
-\uppercase{Shwetambari A. Chiwhane}\authorrefmark{1}, and
-\uppercase{Pranavesh Kumar Talupuri}\authorrefmark{2}}
+\author{\uppercase{Bosco Chanam}\authorrefmark{1}~\orcidlink{0009-0009-2527-0967},
+\uppercase{Chris Dcosta}\authorrefmark{1}~\orcidlink{0009-0007-7295-0573},
+\uppercase{Shwetambari Chiwhane}\authorrefmark{1}~\orcidlink{0000-0002-3534-9654}, and
+\uppercase{Pranavesh Kumar Talupuri}\authorrefmark{2}~\orcidlink{0009-0005-8974-2012}}
 \address[1]{Symbiosis Institute of Technology, Pune 412115, India (e-mail: boscochanam@gmail.com; chrisdcosta777@gmail.com; shwetambari.chiwhane@sitpune.edu.in)}
 \address[2]{Department of Computer Science, University of Southern California, Los Angeles, CA 90089 USA (e-mail: talupuri@usc.edu)}
 \tfootnote{This work received no external funding.}
@@ -373,11 +376,29 @@ Bosco Chanam received the B.Tech.\ degree in Computer Science and Engineering fr
 \end{IEEEbiographynophoto}
 
 \begin{IEEEbiographynophoto}{Chris Dcosta}
-Chris Dcosta is with the Symbiosis Institute of Technology, Pune, India. His research interests include circuit digitization, image processing, and deep learning.
+Chris Dcosta received the B.Tech.\ degree in Computer Science and Engineering with Honors in Artificial Intelligence and Machine Learning from the Symbiosis Institute of Technology (SIT), Pune, India. His research interests include computer vision, machine learning, natural language processing, and deep learning.
 \end{IEEEbiographynophoto}
 
-\begin{IEEEbiographynophoto}{Shwetambari A. Chiwhane}
-Shwetambari A. Chiwhane is with the Symbiosis Institute of Technology, Pune, India. Her research interests include machine learning, natural language processing, and data science.
+\begin{IEEEbiographynophoto}{Shwetambari Chiwhane}
+Dr. Shwetambari Chiwhane holds a B.E. in Computer Science and Engineering from Sant Gadge
+Baba Amravati University, Amravati, India, and an M.Tech. in Computer Science and Engineering
+from Dr. Babasaheb Technological University, Lonere, India. She earned her PhD in Computer
+Engineering specializing from Bharath Institute of Higher Education and Research, Chennai,
+India. Presently, she serves as an Assistant Professor in the Department of Computer Science and
+Engineering at Symbiosis Institute of Technology, Symbiosis International (Deemed University),
+Pune, India, gathering over two decades of teaching and research expertise. She is life member of
+ISTE.
+
+Her contributions extend beyond academia; she has contributed as a reviewer for various
+international conferences. Dr. Shwetambari’s research expertise is evident with her receiving many
+publications. She has authored over 35 research articles in various international and national
+conferences and journals. Her professional engagements include roles such as NAAC, NBA,
+among others.
+
+Recognized as a PhD guide in Symbiosis International (Deemed University), Presently she is
+guiding 4 research scholar and she has guided more than 100 undergraduate students for their
+research endeavors. Her current research interests revolve around Image Processing, Computer
+Vision, Artificial Intelligence and Machine Learning.
 \end{IEEEbiographynophoto}
 
 \begin{IEEEbiographynophoto}{Pranavesh Kumar Talupuri}
