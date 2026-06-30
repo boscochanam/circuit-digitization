@@ -29,7 +29,7 @@ from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig, build_component_mask, crop_to_roi, shift_components,
     detect_wires_experiment, sauvola_binary,
 )
-from wire_detection.benchmark.build_net_gt import GT_IMAGES, find_hdc_label, parse_components
+from wire_detection.benchmark.build_net_gt import GT_IMAGES, HDC_BASE, find_hdc_label, parse_components
 from wire_detection.benchmark.join_eval_real_f1 import comp_pairs, gt_pairs, prf
 from wire_detection.core.join_strategies import run_strategy, DEFAULT_STRATEGY, make_pins, make_pins_junction_aware
 from wire_detection.core.component_classes import COMPONENT_TYPES
@@ -78,15 +78,81 @@ def draw_obb(img, vertices, color, thickness=1):
     cv2.polylines(img, [pts], True, color, thickness, cv2.LINE_AA)
 
 
-def run_pipeline(img_path, name, gt_nets):
+def _pipeline_scores(gray: np.ndarray, comp_labels, gt_nets, name: str) -> tuple[int, float]:
+    """Return (n_wires, connectivity F1) for a grayscale image + labels."""
+    h, w = gray.shape
+    entry = gt_nets[name + "_jpg"]
+    keep = set(entry["electrical_idxs"])
+    gtp = gt_pairs(entry["nets"], keep)
+
+    occluded = build_component_mask(gray, comp_labels, cfg.occlusion_margin)
+    cropped, ox, oy = crop_to_roi(occluded, comp_labels, cfg.crop_padding)
+    local_components = shift_components(comp_labels, ox, oy)
+    lines_local = detect_wires_experiment(cropped, local_components, cfg)
+    lines_global = [
+        ((int(x1 + ox), int(y1 + oy)), (int(x2 + ox), int(y2 + oy)))
+        for (x1, y1), (x2, y2) in lines_local
+    ]
+    pins, netlist = run_strategy(
+        DEFAULT_STRATEGY,
+        lines_global,
+        comp_labels,
+        std_pins=make_pins(lines_global, comp_labels),
+        junc_pins=make_pins_junction_aware(lines_global, comp_labels),
+    )
+    _, _, f1 = prf(gtp, comp_pairs(netlist, keep))
+    return len(lines_global), f1
+
+
+def resolve_image_and_label(name: str, gt_nets: dict) -> tuple[Path, Path]:
+    """Return (image, label) in the coordinate frame that scores best on net-GT.
+
+    Some local GT symlinks (e.g. C111) point at a 704² export that does not match
+    the Roboflow identity frame; others (e.g. C37) score higher on the GT scan.
+    """
+    label_path = find_hdc_label(name)
+    if label_path is None:
+        raise FileNotFoundError(f"no HDC label for {name}")
+
+    hash_part = label_path.name.split(".rf.")[1].rsplit(".txt", 1)[0]
+    split = label_path.relative_to(HDC_BASE).parts[0]
+    rf_image = HDC_BASE / split / "images" / f"{name}_jpg.rf.{hash_part}.jpg"
+    gt_image = GT_IMAGES / f"{name}_jpg.jpg"
+
+    candidates: list[tuple[Path, Path]] = []
+    if gt_image.exists():
+        candidates.append((gt_image, label_path))
+    if rf_image.exists() and rf_image != gt_image:
+        candidates.append((rf_image, label_path))
+    if not candidates:
+        raise FileNotFoundError(f"no image for {name}")
+
+    best_path, best_label = candidates[0]
+    best_f1 = -1.0
+    for img_path, lbl_path in candidates:
+        gray = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
+        if gray is None:
+            continue
+        comp_labels = parse_components(lbl_path.read_text(), gray.shape[1], gray.shape[0])
+        _, f1 = _pipeline_scores(gray, comp_labels, gt_nets, name)
+        if f1 > best_f1:
+            best_f1 = f1
+            best_path, best_label = img_path, lbl_path
+
+    return best_path, best_label
+
+
+def run_pipeline(img_path, name, gt_nets, label_path: Path | None = None):
     from PIL import Image
+    if label_path is None:
+        img_path, label_path = resolve_image_and_label(name, gt_nets)
     rgb = np.array(Image.open(img_path).convert("RGB"))
     bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape
     stages = {"original": bgr.copy()}
 
-    comp_labels = parse_components(find_hdc_label(name).read_text(), w, h)
+    comp_labels = parse_components(label_path.read_text(), w, h)
     entry = gt_nets[name + "_jpg"]
     keep = set(entry["electrical_idxs"])
     gtp = gt_pairs(entry["nets"], keep)
@@ -242,11 +308,15 @@ def main():
 
     args.output.mkdir(parents=True, exist_ok=True)
     for name, out_name in candidates:
-        img_path = GT_IMAGES / f"{name}_jpg.jpg"
+        try:
+            img_path, label_path = resolve_image_and_label(name, gt_nets)
+        except FileNotFoundError as exc:
+            print(f"ERROR: {exc}")
+            continue
         if not img_path.exists():
             print(f"ERROR: missing {img_path}")
             continue
-        stages = run_pipeline(img_path, name, gt_nets)
+        stages = run_pipeline(img_path, name, gt_nets, label_path=label_path)
         out_path = args.output / out_name
         save_composite(stages, name, out_path)
         print(
