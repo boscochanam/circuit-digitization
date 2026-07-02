@@ -16,6 +16,7 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{url}
+\usepackage{etoolbox}
 \usepackage{hyperref}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
@@ -345,23 +346,31 @@ on the CGHD-1152 dataset~\cite{bayer2021cghd}.
 \end{thebibliography}
 
 % ---- Author biographies (IEEE Access requires one for EVERY author) ----
-% Replace the placeholder text; add \begin{IEEEbiography}[{\includegraphics...}]{Name}
-% with a photo if available. Using the no-photo form to compile without image files.
-\begin{IEEEbiographynophoto}{Bosco Chanam}
+% IEEEtran opens each bio with "\vskip \@IEEEBIOskipN plus 1fil", so leftover
+% column space stretches into large gaps between bios. Cap that stretch and
+% let spare space fall to the column bottom instead.
+\makeatletter
+\expandafter\patchcmd\csname\string\IEEEbiography\endcsname%
+  {\vskip \@IEEEBIOskipN plus 1fil minus 0\baselineskip}%
+  {\vskip \@IEEEBIOskipN plus 0.5\baselineskip minus 0\baselineskip}%
+  {}{\typeout{WARNING: IEEEbiography spacing patch did not apply}}
+\makeatother
+\raggedbottom
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{figures/authors/chanam.jpg}}]{Bosco Chanam}
 Bosco Chanam received the B.Tech.\ degree in Computer Science and Engineering from the Symbiosis Institute of Technology (SIT), Pune, India. He is currently an AI/ML Engineer at the AI Incubation Centre at Bharat Forge (Kalyani Group), Pune, India. His professional and research interests include computer vision, edge AI optimization, and robotics. Mr.~Chanam has co-authored research in natural language processing benchmarking, published in the \textit{International Journal of Fuzzy Logic and Intelligent Systems}.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Chris Dcosta}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{figures/authors/dcosta.jpg}}]{Chris Dcosta}
 Chris Dcosta is with the Symbiosis Institute of Technology, Pune, India. His research interests include circuit digitization, image processing, and deep learning.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Shwetambari A. Chiwhane}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{figures/authors/chiwhane.jpg}}]{Shwetambari A. Chiwhane}
 Shwetambari A. Chiwhane is with the Symbiosis Institute of Technology, Pune, India. Her research interests include machine learning, natural language processing, and data science.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Pranavesh Kumar Talupuri}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{figures/authors/talupuri.jpg}}]{Pranavesh Kumar Talupuri}
 Pranavesh Talupuri is with the Department of Computer Science, University of Southern California, Los Angeles, CA, USA. His research interests include machine learning, deep learning, and computer vision.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
 
 \end{document}
