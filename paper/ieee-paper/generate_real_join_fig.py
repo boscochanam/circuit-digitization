@@ -18,12 +18,13 @@ def m(key):
     c = ci[key]["micro"]
     return c["point"], c["lo"], c["hi"]
 
+# Labels match Fig. join_comparison naming for the same strategies.
 joins = [
-    ("scale_completion\n(ours)", *m("join/scale_completion"), "ours"),
-    ("degree_budget", *m("join/degree_budget"), "join"),
-    ("graph_scale", *m("join/graph_scale"), "join"),
-    ("graph_rescue", *m("join/graph_rescue"), "join"),
-    ("production\n(radius)", *m("join/production"), "join"),
+    ("Scale-rel. + compl. (ours)", *m("join/scale_completion"), "ours"),
+    ("Rescue + compl.", *m("join/degree_budget"), "join"),
+    ("Scale-rel. base", *m("join/graph_scale"), "join"),
+    ("Rescue base", *m("join/graph_rescue"), "join"),
+    ("Radius u-find", *m("join/production"), "join"),
 ]
 # classical baselines (best config) — micro from the baseline jsons
 cc = json.load(open(EXP / "cc_detected_micro_n31.json"))
@@ -31,15 +32,16 @@ hough = json.load(open(EXP / "hough_micro_n31.json"))
 cc_best = max((v for k, v in cc.items() if k.startswith("detCCL")), key=lambda v: v["micro"]["f1"])
 hough_best = hough["configs"][hough["best"]]
 baselines = [
-    ("Hough+prox\n(best)", hough_best["micro"]["f1"], None, None, "baseline"),
-    ("Conn.-comp.\n(best)", cc_best["micro"]["f1"], None, None, "baseline"),
+    ("Hough+prox (best)", hough_best["micro"]["f1"], None, None, "baseline"),
+    ("Conn.-comp. (best)", cc_best["micro"]["f1"], None, None, "baseline"),
 ]
 
 bars = joins + baselines
 vlm_pt, vlm_lo, vlm_hi = m("VLM")
 
 colors = {"ours": "#1f77b4", "join": "#7fb3d5", "baseline": "#bdbdbd"}
-fig, ax = plt.subplots(figsize=(6.4, 3.4), dpi=300)
+# 3.45in = IEEE Access \columnwidth, so fonts below render at true point size.
+fig, ax = plt.subplots(figsize=(3.45, 2.3), dpi=300)
 xs = range(len(bars))
 vals = [b[1] for b in bars]
 ax.bar(xs, vals, color=[colors[b[4]] for b in bars], edgecolor="black", linewidth=0.5, zorder=2)
@@ -53,11 +55,13 @@ ax.axhspan(vlm_lo, vlm_hi, color="#d62728", alpha=0.10, zorder=0)
 ax.axhline(vlm_pt, color="#d62728", ls="--", lw=1.3, zorder=1,
            label=f"VLM (Claude Opus 4.8): {vlm_pt:.3f}")
 for i, b in enumerate(bars):
-    ax.text(i, b[1] + 0.012, f"{b[1]:.3f}", ha="center", va="bottom", fontsize=7.5)
+    ax.text(i, b[1] + 0.012, f"{b[1]:.3f}", ha="center", va="bottom", fontsize=8)
 
 ax.set_xticks(list(xs))
-ax.set_xticklabels([b[0] for b in bars], fontsize=7.5)
-ax.set_ylabel("Connectivity micro-F1")
+ax.set_xticklabels([b[0] for b in bars], fontsize=8, rotation=30, ha="right",
+                   rotation_mode="anchor")
+ax.set_ylabel("Connectivity micro-F1", fontsize=8)
+ax.tick_params(axis="y", labelsize=8)
 ax.set_ylim(0.55, 1.0)
 ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
 ax.grid(axis="y", ls=":", alpha=0.4, zorder=0)
