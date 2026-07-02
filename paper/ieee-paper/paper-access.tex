@@ -16,6 +16,7 @@
 \usepackage{url}
 \usepackage{hyperref}
 \usepackage{orcidlink}
+\usepackage{etoolbox}
 \NewSpotColorSpace{PANTONE}
 \AddSpotColor{PANTONE} {PANTONE3015C} {PANTONE\SpotSpace 3015\SpotSpace C} {1 0.3 0 0.2}
 \SetPageColorSpace{PANTONE}
@@ -370,17 +371,27 @@ on the CGHD-1152 dataset~\cite{bayer2021cghd}.
 \end{thebibliography}
 
 % ---- Author biographies (IEEE Access requires one for EVERY author) ----
-% Replace the placeholder text; add \begin{IEEEbiography}[{\includegraphics...}]{Name}
-% with a photo if available. Using the no-photo form to compile without image files.
-\begin{IEEEbiographynophoto}{Bosco Chanam}
+% The class opens each bio with "\vskip \@IEEEBIOskipN plus 1fil", so leftover
+% column space stretches into large gaps between bios. Cap that stretch and
+% let spare space fall to the column bottom instead.
+\makeatletter
+% The env takes an optional arg, so its body lives in the internal
+% macro \csname\string\IEEEbiography\endcsname, not \IEEEbiography.
+\expandafter\patchcmd\csname\string\IEEEbiography\endcsname%
+  {\vskip \@IEEEBIOskipN plus 1fil minus 0\baselineskip}%
+  {\vskip \@IEEEBIOskipN plus 0.5\baselineskip minus 0\baselineskip}%
+  {}{\typeout{WARNING: IEEEbiography spacing patch did not apply}}
+\makeatother
+\raggedbottom
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{figures/authors/chanam.jpg}}]{Bosco Chanam}
 Bosco Chanam received the B.Tech.\ degree in Computer Science and Engineering from the Symbiosis Institute of Technology (SIT), Pune, India. He is currently an AI/ML Engineer at the AI Incubation Centre at Bharat Forge (Kalyani Group), Pune, India. His professional and research interests include computer vision, edge AI optimization, and robotics. Mr.~Chanam has co-authored research in natural language processing benchmarking, published in the \textit{International Journal of Fuzzy Logic and Intelligent Systems}.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Chris Dcosta}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{figures/authors/dcosta.jpg}}]{Chris Dcosta}
 Chris Dcosta received the B.Tech.\ degree in Computer Science and Engineering with Honors in Artificial Intelligence and Machine Learning from the Symbiosis Institute of Technology (SIT), Pune, India. His research interests include computer vision, machine learning, natural language processing, and deep learning.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Shwetambari Chiwhane}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{figures/authors/chiwhane.jpg}}]{Shwetambari Chiwhane}
 Dr. Shwetambari Chiwhane holds a B.E. in Computer Science and Engineering from Sant Gadge
 Baba Amravati University, Amravati, India, and an M.Tech. in Computer Science and Engineering
 from Dr. Babasaheb Technological University, Lonere, India. She earned her PhD in Computer
@@ -400,11 +411,11 @@ Recognized as a PhD guide in Symbiosis International (Deemed University), Presen
 guiding 4 research scholar and she has guided more than 100 undergraduate students for their
 research endeavors. Her current research interests revolve around Image Processing, Computer
 Vision, Artificial Intelligence and Machine Learning.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Pranavesh Kumar Talupuri}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{figures/authors/talupuri.jpg}}]{Pranavesh Kumar Talupuri}
 Pranavesh Talupuri is with the Department of Computer Science, University of Southern California, Los Angeles, CA, USA. His research interests include machine learning, deep learning, and computer vision.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
 \EOD
 
