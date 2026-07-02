@@ -40,31 +40,32 @@ bars = joins + baselines
 vlm_pt, vlm_lo, vlm_hi = m("VLM")
 
 colors = {"ours": "#1f77b4", "join": "#7fb3d5", "baseline": "#bdbdbd"}
-# 3.45in = IEEE Access \columnwidth, so fonts below render at true point size.
-fig, ax = plt.subplots(figsize=(3.45, 2.3), dpi=300)
-xs = range(len(bars))
+# Horizontal bars: 7 long strategy names stay horizontal and legible at
+# \columnwidth (3.45in), values sit at bar ends clear of the CI whiskers.
+fig, ax = plt.subplots(figsize=(3.45, 2.4), dpi=300)
+ys = range(len(bars))
 vals = [b[1] for b in bars]
-ax.bar(xs, vals, color=[colors[b[4]] for b in bars], edgecolor="black", linewidth=0.5, zorder=2)
-# CI error bars where available
+ax.barh(ys, vals, color=[colors[b[4]] for b in bars], edgecolor="black",
+        linewidth=0.5, zorder=2, height=0.72)
+ax.invert_yaxis()  # ours on top
+# CI error bars where available; value labels beyond the upper whisker
 for i, b in enumerate(bars):
     if b[2] is not None:
-        ax.errorbar(i, b[1], yerr=[[b[1] - b[2]], [b[3] - b[1]]], fmt="none",
-                    ecolor="black", elinewidth=1.0, capsize=3, zorder=3)
-# VLM reference band + line
-ax.axhspan(vlm_lo, vlm_hi, color="#d62728", alpha=0.10, zorder=0)
-ax.axhline(vlm_pt, color="#d62728", ls="--", lw=1.3, zorder=1,
-           label=f"VLM (Claude Opus 4.8): {vlm_pt:.3f}")
-for i, b in enumerate(bars):
-    ax.text(i, b[1] + 0.012, f"{b[1]:.3f}", ha="center", va="bottom", fontsize=8)
-
-ax.set_xticks(list(xs))
-ax.set_xticklabels([b[0] for b in bars], fontsize=8, rotation=30, ha="right",
-                   rotation_mode="anchor")
-ax.set_ylabel("Connectivity micro-F1", fontsize=8)
-ax.tick_params(axis="y", labelsize=8)
-ax.set_ylim(0.55, 1.0)
-ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
-ax.grid(axis="y", ls=":", alpha=0.4, zorder=0)
+        ax.errorbar(b[1], i, xerr=[[b[1] - b[2]], [b[3] - b[1]]], fmt="none",
+                    ecolor="black", elinewidth=1.0, capsize=2.5, zorder=3)
+    ax.text((b[3] if b[3] is not None else b[1]) + 0.008, i, f"{b[1]:.3f}",
+            ha="left", va="center", fontsize=8)
+# VLM reference band + line, labeled directly (no legend box over the bars)
+ax.axvspan(vlm_lo, vlm_hi, color="#d62728", alpha=0.10, zorder=0)
+ax.axvline(vlm_pt, color="#d62728", ls="--", lw=1.2, zorder=1)
+ax.text(vlm_pt + 0.012, len(bars) - 1.25, f"VLM\n{vlm_pt:.3f}",
+        ha="left", va="center", fontsize=8, color="#d62728")
+ax.set_yticks(list(ys))
+ax.set_yticklabels([b[0] for b in bars], fontsize=8)
+ax.set_xlabel("Connectivity micro-F1", fontsize=8)
+ax.tick_params(axis="x", labelsize=8)
+ax.set_xlim(0.55, 1.0)
+ax.grid(axis="x", ls=":", alpha=0.4, zorder=0)
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
 plt.tight_layout()
