@@ -6,7 +6,7 @@ Large session files are **not in git**. They live on disk at:
 docs/research/session-artifacts/3863951f-0f13-4730-8c2c-4af7f3011b71/
 ```
 
-Read `README.md` in that folder first. Resume: `claude --resume 3863951f-0f13-4730-8c2c-4af7f3011b71`
+Read `README.md` in that folder first.
 
 Key paths (replace `$ART` with the folder above):
 
