@@ -33,6 +33,7 @@ nav:
     - CLI Reference: cli.md
   - Research:
     - Overview: research/README.md
+    - Reproducing the Paper: reproducing-the-paper.md
     - Expanded Benchmark: research/expanded-benchmark.md
     - Join Verification: research/join-verification.md
     - Netlist Exploration: research/netlist-exploration.md

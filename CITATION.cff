@@ -1,0 +1,80 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software or benchmark, please cite both the software
+  (this repository) and the paper (the preferred citation below).
+title: >-
+  Circuit Digitization: a deterministic hand-drawn-schematic-to-SPICE
+  pipeline with an endpoint-graph wire join and a human-verified
+  connectivity benchmark
+type: software
+authors:
+  - given-names: Bosco
+    family-names: Chanam
+    orcid: 'https://orcid.org/0009-0009-2527-0967'
+    affiliation: Symbiosis Institute of Technology, Pune, India
+  - given-names: Chris
+    family-names: Dcosta
+    orcid: 'https://orcid.org/0009-0007-7295-0573'
+    affiliation: Symbiosis Institute of Technology, Pune, India
+  - given-names: Pranavesh Kumar
+    family-names: Talupuri
+    orcid: 'https://orcid.org/0009-0005-8974-2012'
+    affiliation: University of Southern California, Los Angeles, CA, USA
+  - given-names: Shwetambari
+    family-names: Chiwhane
+    orcid: 'https://orcid.org/0000-0002-3534-9654'
+    affiliation: Symbiosis Institute of Technology, Pune, India
+  - given-names: Ashay Kumar
+    family-names: Singh
+    orcid: 'https://orcid.org/0009-0004-9105-7383'
+    affiliation: Symbiosis Institute of Technology, Pune, India
+  - given-names: Arghadeep
+    family-names: Das
+    orcid: 'https://orcid.org/0009-0000-9207-7694'
+    affiliation: Symbiosis Institute of Technology, Pune, India
+repository-code: 'https://github.com/boscochanam/circuit-digitization'
+url: 'https://github.com/boscochanam/circuit-digitization'
+license: MIT
+keywords:
+  - circuit digitization
+  - connectivity benchmark
+  - graph-based connectivity
+  - hand-drawn circuits
+  - image-to-netlist
+  - netlist extraction
+  - schematic recognition
+  - SPICE
+  - wire extraction
+  - wire joining
+preferred-citation:
+  type: article
+  title: >-
+    From Hand-Drawn Schematics to SPICE Netlists: A Deterministic
+    Pipeline with Endpoint-Graph Wire Joining and a Human-Verified
+    Connectivity Benchmark
+  authors:
+    - given-names: Bosco
+      family-names: Chanam
+      orcid: 'https://orcid.org/0009-0009-2527-0967'
+    - given-names: Chris
+      family-names: Dcosta
+      orcid: 'https://orcid.org/0009-0007-7295-0573'
+    - given-names: Pranavesh Kumar
+      family-names: Talupuri
+      orcid: 'https://orcid.org/0009-0005-8974-2012'
+    - given-names: Shwetambari
+      family-names: Chiwhane
+      orcid: 'https://orcid.org/0000-0002-3534-9654'
+    - given-names: Ashay Kumar
+      family-names: Singh
+      orcid: 'https://orcid.org/0009-0004-9105-7383'
+    - given-names: Arghadeep
+      family-names: Das
+      orcid: 'https://orcid.org/0009-0000-9207-7694'
+  journal: IEEE Access
+  year: 2026
+  # CFF 1.2.0 has no dedicated "under review" status field; the manuscript
+  # state is recorded here until publication details (volume/pages/DOI) exist.
+  notes: >-
+    Manuscript submitted to IEEE Access; under review (2026). Update
+    volume, pages, and DOI on acceptance.
