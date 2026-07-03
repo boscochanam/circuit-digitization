@@ -33,6 +33,8 @@ output_run_26_hybrid2/
 # Model weights (too large for git)
 models/
 labels_few_annot/
+# Broken symlink to a dataset path outside the repo (see roboflow_test2 below)
+/labels_few_annot
 
 # Claude session temp archives (local only, multi-GB); keep the README pointer
 docs/research/session-artifacts/*/
@@ -51,3 +53,11 @@ docs/research/experiments/vlm_mimo_v25*.json
 # LaTeX build byproducts
 paper/ieee-paper/*.bbl
 paper/ieee-paper/*.blg
+
+# Overleaf submission bundles and local-only paper artifacts (do not commit)
+/paper-access-overleaf-full.zip
+/paper-access-overleaf.zip
+paper/paper-access-overleaf-upload.zip
+paper/ieee-paper/paper-access-LOCAL-verified.pdf
+# Original (pre-processing) author headshots
+paper/ieee-paper/figures/authors/.orig/
