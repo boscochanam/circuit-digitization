@@ -1,7 +1,7 @@
 [project]
 name = "wire-detection"
 version = "0.1.0"
-description = ""
+description = "Deterministic pipeline for digitizing hand-drawn circuit schematics into SPICE netlists, with a human-verified connectivity benchmark"
 requires-python = ">=3.13"
 dependencies = [
     "albumentations>=2.0.8",

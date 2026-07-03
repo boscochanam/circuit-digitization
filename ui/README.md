@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Circuit Digitization Tuner UI
+
+Interactive web UI for the circuit-digitization pipeline. It sits on top of the
+Python backend and lets you step through images, inspect the detected topology,
+edit wire connections by hand, and see how those edits propagate to the netlist
+and simulation.
+
+Built with Next.js 16 and React 19, managed with pnpm.
+
+## Features
+
+- **Topology view** — an SVG overlay on the source image showing detected wires,
+  pins, components, and electrical nodes, coloured by net.
+- **Connection editor** — a docked panel for hand-editing wire connections.
+  Manual edits are stored as per-image overrides (`reassign` / `join` / `remove`)
+  that the backend bakes into the netlist as node merges.
+- **Join-check / dead-end signals** — wire endpoints and component pins that
+  dangle are flagged (red endpoint dots, amber pin rings), with a Quick Fix
+  action to auto-connect to the nearest valid pin.
+- **Netlist and simulation overlays** — the resulting SPICE netlist, voltages,
+  and currents update to reflect your edits.
+- **Dataset deep-linking** — `?ds=` and `?idx=` select the dataset and image.
+
+## Prerequisites
+
+The UI is a front end for the pipeline backend, so start that first, from the
+repository root:
+
+```bash
+# Download the model weights (one-time)
+uv run python scripts/download_model.py
+
+# Start the tuner backend
+uv run wire-tune
+```
 
 ## Getting Started
 
-First, run the development server:
+From this `ui/` directory:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open [http://localhost:4200](http://localhost:4200).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Same-origin `/api` requests are rewritten to the backend in `next.config.ts`, so
+no additional proxy configuration is needed.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## More
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See the [root README](../README.md) for the full pipeline, datasets, and
+benchmark documentation.
