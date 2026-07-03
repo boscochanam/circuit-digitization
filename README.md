@@ -1,262 +1,170 @@
-# Wire Detection Framework
+# Circuit Digitization: Hand-Drawn Schematics to SPICE Netlists
 
-A modular Python framework for detecting interconnect wires in circuit schematics — classical CV pipeline, **node joining**, SPICE netlist generation, synthetic data generator, evaluation toolkit, FastAPI backend, and Next.js tuner UI.
+A deterministic pipeline that converts scanned, hand-drawn circuit schematics into
+simulation-ready SPICE netlists. The pipeline runs component detection, an occlusion-first
+wire extractor, an endpoint-graph join that resolves which terminals are electrically the same
+net, and netlist emission — no learned connectivity model in the loop. Alongside the pipeline,
+this repository publishes the first human-verified, net-level connectivity benchmark for
+hand-drawn circuits (31 images from CGHD-1152), so connectivity accuracy can be measured
+directly rather than inferred from downstream tasks.
 
-> **Full documentation**: [https://boscochanam.github.io/circuit-digitization](https://boscochanam.github.io/circuit-digitization) — or build locally with `uv run mkdocs serve`.
-> **Status**: **Wire detection F1: 0.976** (a16: Sauvola + anchor=16, exact-match eval on 134 images). An earlier looser prefix-match eval reported F1 0.833 — see [Wire detection eval](#two-wire-detection-numbers-0976-vs-0833) below.
-> **Joining**: `scale_completion` endpoint-graph join (default since Jun 2026) — **connectivity micro-F1 0.890 (macro 0.90)** on the 31-image human-verified net-level GT (`ground_truth/real_nets_verified.json`), vs 0.829 for the prior `degree_budget` default and 0.624 for connected-component net tracing on identical detected wires. `scale_completion` = high-precision scale-relative base + degree-budget completion. See `docs/research/experiments/SUMMARY.md`.
-> **Dataset**: 134 circuit schematic images (predominantly 704×704), 3,524 ground-truth wire segments
+![Pipeline and results overview](paper/ieee-paper/figures/graphical_abstract.jpg)
 
----
+## Paper
+
+This repository contains the code and benchmark for:
+
+> **From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph
+> Wire Joining and a Human-Verified Connectivity Benchmark.**
+> Under review at IEEE Access (2026).
+
+### How to cite
+
+```bibtex
+@article{chanam2026handdrawn,
+  title   = {From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline
+             with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark},
+  author  = {Chanam, Bosco and Dcosta, Chris and Talupuri, Pranavesh Kumar and
+             Chiwhane, Shwetambari and Singh, Ashay Kumar and Das, Arghadeep},
+  year    = {2026},
+  note    = {Under review at IEEE Access}
+}
+```
+
+## Headline results
+
+All connectivity numbers are micro-F1 on the 31-image human-verified net-level benchmark
+(`ground_truth/real_nets_verified.json`), over identical detected wires unless noted. Full
+provenance for every figure is in [`docs/research/experiments/SUMMARY.md`](docs/research/experiments/SUMMARY.md).
+
+| Measurement | Score |
+|---|---|
+| Wire-detection F1 (134 CGHD scans) | 0.976 |
+| Connectivity micro-F1 — ours (scale-relative base + completion) | 0.890 |
+| Connectivity micro-F1 — prior completion default | 0.829 |
+| Connectivity micro-F1 — Hough + proximity | 0.805 |
+| Connectivity micro-F1 — radius union-find | 0.667 |
+| Connectivity micro-F1 — connected-components net tracing | 0.624 |
+| Connectivity micro-F1 — frontier VLM reference | 0.923 |
+| Synthetic suite at maximum severity — ours vs. radius baseline | 0.95 vs. 0.36 |
+
+The VLM reference (0.923) is statistically indistinguishable from our join: the paired
+difference has a bootstrap 95% CI of [−0.009, +0.078], which includes zero, while costing two
+to three orders of magnitude more per image and producing non-simulatable output. Running the
+join on perfect wire labels leaves micro-F1 unchanged at 0.890, so connectivity — not wire
+detection — is the remaining bottleneck.
 
 ## Quickstart
 
+Requires Python >= 3.13 and [uv](https://docs.astral.sh/uv/).
+
 ```bash
-uv venv && uv sync          # Backend setup
-cd ui && pnpm install       # Frontend setup
-uv run wire-tune            # Terminal 1 — API on :8000
-cd ui && pnpm dev           # Terminal 2 — UI on :4200
+uv venv && uv sync
 ```
 
-Open **http://localhost:4200**. Optional: `docker compose up --build` (see `.env.example`).
+Download the component-detection model weights (verifies SHA256 and installs into
+`models/component_detection/`):
 
-## CLI
+```bash
+uv run scripts/download_model.py
+```
+
+This fetches `yolo26m_obb_16class_aug.pt` from
+[huggingface.co/boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector).
+
+Run a zero-external-data synthetic demo (generates images and line labels, no dataset needed):
+
+```bash
+uv run wire-sdg --num-images 5 --output-dir data/synthetic_demo --seed 0
+```
+
+Real-image evaluation additionally needs the CGHD-1152 dataset from Kaggle:
+[kaggle.com/datasets/johannesbayer/cghd1152](https://www.kaggle.com/datasets/johannesbayer/cghd1152).
+
+## Reproducing the paper
+
+See [`docs/reproducing-the-paper.md`](docs/reproducing-the-paper.md) for the full walkthrough.
+The key artifacts are:
+
+- `ground_truth/real_nets_verified.json` — the 31-image human-verified net-level ground truth.
+- `wire_detection/benchmark/` — evaluation scripts, including the join-strategy benchmarks,
+  connected-component and Hough baselines, the detection ceiling, and bootstrap confidence
+  intervals.
+- `docs/research/experiments/*.json` — the committed result artifacts backing every headline
+  number, indexed by [`docs/research/experiments/SUMMARY.md`](docs/research/experiments/SUMMARY.md).
+
+## Command-line tools
+
+Installed as console scripts by `uv sync`:
 
 | Command | Description |
-|---------|-------------|
-| `wire-tune` | Start the tuner API server |
-| `wire-pipeline` | Run pipeline on a single image |
-| `wire-sdg` | Generate synthetic dataset |
+|---|---|
+| `wire-pipeline` | Run the full pipeline on a single image |
+| `wire-sdg` | Generate a synthetic wire dataset |
 | `wire-eval` | Evaluate detections against ground truth |
-| `wire-sweep` | Run a parameter sweep |
-| `wire-vlm` | VLM quality assessment (classify, sweep, audit) |
-| `wire-benchmark-exp` | Run experiment harness (wave1/wave2) |
+| `wire-sweep` | Run a parameter sweep over the pipeline |
+| `wire-tune` | Start the interactive tuner API server (FastAPI) |
+| `wire-vlm` | VLM-based quality assessment (classify, sweep, audit) |
+| `wire-benchmark-exp` | Run the wire-detection experiment harness |
+| `wire-benchmark-quality` | Bridge CGHD quality-audit signals to benchmark performance |
+| `wire-benchmark-learned` | Train the lightweight learned wire-mask branch |
 
----
+Pass `--help` to any command for its arguments.
 
-## Node Joining & Netlist
+## Interactive tuner
 
-Wire detection gives a parts list + wires. **Node joining** answers "which component terminals are electrically the same point?" — grouping pins into nets for SPICE simulation.
-
-### Strategy: `scale_completion` (endpoint-graph join + completion, default since Jun 2026)
-
-Both wire endpoints AND component pins are graph nodes, connected by 5 edge types:
-1. Wire body (ep1–ep2)
-2. Endpoint↔endpoint (fragments, junctions, corners)
-3. Endpoint↔pin (component binding, directional)
-4. Endpoint↔wire-body (T-junctions onto rails/buses)
-5. Pin↔wire-body (components tapped onto passing rails)
-
-Scale-relative tolerances handle the ~6× circuit-scale range. The completion step = floating-pin recovery (min-cost b-matching with a per-pin edge budget and self-loop guards). **`scale_completion`** (default since Jun 2026) applies that completion to a high-precision scale-relative base (no end-extension/dead-end rescue) at reach 4×scale; on the 31-image human-verified net-level GT it reaches **micro-F1 0.890** (macro 0.90, P 0.92), beating the prior `degree_budget` default (0.829 = completion on the `graph_rescue` base) and connected-component net tracing (0.624). `degree_budget` and `graph_rescue` remain registered as fallbacks. Full results: `docs/research/experiments/SUMMARY.md`.
-
-### Results (134-image GT set, post double-extend fix, Jun 2026)
-
-Lower `balanced` is better.
-
-| Strategy | balanced | wires-used% | self-loop | floating |
-|----------|----------|-------------|-----------|----------|
-| **degree_budget** (default) | **0.2710** | **99.4** | 213 | 1084 |
-| graph_scale | 0.3610 | 99.5 | 62 | 1726 |
-| graph_dir_30 | 0.3613 | 99.5 | 71 | 1711 |
-| graph_rescue | 0.3679 | 99.4 | 213 | 1607 |
-
-`degree_budget` has the lowest (best) balanced score and uses 99.4% of wires. Regenerate with `uv run python scripts/bench_degree_budget.py`.
-
-### Verification
-
-- `wire_detection/benchmark/netlist_validate.py` — structural join-health scorecard
-- `wire_detection/benchmark/netlist_viz.py` — image-grounded overlays + per-net stepper
-- **Join Check** UI tab — cycle strategies, view metrics + overlays live
-
-Full details: `docs/research/join-verification.md`
-
----
-
-## Final Results (Jun 2026)
-
-### Two wire-detection numbers (0.976 vs 0.833)
-
-The repo reports two wire-detection F1 figures on the **same 134 images**. They differ only in how predicted lines are matched to ground truth:
-
-| Eval | F1 | GT matching | Where |
-|------|----|-------------|-------|
-| **a16 (exact-match)** | **0.976** | exact-match labels on original images (strict, current) | AGENTS.md, paper |
-| best_candidate_v4 (prefix-match) | 0.833 | filename prefix matching (looser GT alignment) | tables below |
-
-The **0.976 exact-match number is the headline** (paper Table I). The 0.833 prefix-match number and the tables below predate the corrected eval and are kept for historical comparison. The only config change between v4 baseline and a16 is `anchor_endpoint_dist` 12 → 16.
-
-### Best Pipeline: Anchor Filter + PCA Endpoints + Overlap Dedup
-
-```
-occlude components → crop to ROI (10px pad) → Sauvola k=0.285 (w=67) → 
-close(ellipse 3×3) → CCL(min_area=28) → PCA endpoints → overlap dedup(12°,8px) → 
-anchor filter(endpoint_dist=16, link_dist=8) → Output Lines
-```
-
-**Benchmarked on 134 images (3,524 ground-truth wire annotations) across 36 config variants (wave1-4). Figures below are the legacy prefix-match eval — see the table above for the corrected exact-match F1 = 0.976.**
-
-| Metric | Value (prefix-match eval) |
-|--------|-------|
-| Global F1 | 0.833 |
-| Precision | 0.876 |
-| Recall | 0.791 |
-| TP / FP / FN / Red | 2,741 / 248 / 783 / 65 |
-| Images with F1=1.0 | 68 of 134 (51%) |
-| Median F1 | 1.000 |
-
-### ⚠️ MANDATORY PREPROCESSING — Must Run BEFORE Detection
-
-**Skipping any of these steps will break reproducibility. The pipeline produces garbage without them.**
-
-#### 1. Component Detection
-
-Use the trained YOLO model for all component detection. The model is the **single source of truth**.
-
-```python
-from wire_detection.data.component_loader import load_components
-
-# Uses config from defaults.yaml (component_detection.source)
-components = load_components(image_path)
-
-# Or override source explicitly
-components = load_components(image_path, source="ground_truth")
-```
-
-**Model:** `models/component_detection/yolo26m_obb_16class_aug.pt` (88.5% mAP50)
-**HuggingFace:** [boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector)
-**Dataset:** [CGHD-1152 (Kaggle)](https://www.kaggle.com/datasets/johannesbayer/cghd1152)
-
-#### 2. Component Occlusion
-Fill every component polygon with the **local median pixel color**. This prevents component edges/text from producing false wire detections. Margin: 15% of bbox size, min 5px.
-
-```python
-for cls_id, polygon, (x1, y1, x2, y2) in components:
-    margin_x = max(int((x2 - x1) * 0.15), 5)
-    margin_y = max(int((y2 - y1) * 0.15), 5)
-    local_region = gray[y1-margin_y:y2+margin_y, x1-margin_x:x2+margin_x]
-    fill_color = int(np.median(local_region))
-    cv2.fillPoly(occluded_image, [polygon], fill_color)
-```
-
-#### 3. ROI Crop + Padding
-Crop to the tight bounding box of ALL components plus **10px padding**. This eliminates scanner border artifacts and paper edges.
-
-```python
-rx1 = max(0, min(all_bbox_x1) - 10)
-ry1 = max(0, min(all_bbox_y1) - 10)
-rx2 = min(w, max(all_bbox_x2) + 10)
-ry2 = min(h, max(all_bbox_y2) + 10)
-cropped = occluded_image[ry1:ry2, rx1:rx2]
-```
-
-**After detection, convert local coordinates back to global** by adding (rx1, ry1) to all endpoints.
-
-### Best Config
-
-```json
-{
-  "sauvola_k": 0.285, "sauvola_window": 67, "close_kernel": 3,
-  "ccl_min_area": 28, "endpoint_mode": "pca", "dedup_mode": "overlap",
-  "dedup_angle": 12, "dedup_dist": 8,
-  "anchor_filter_enabled": true, "anchor_endpoint_dist": 16, "anchor_link_dist": 8
-}
-```
-**Do NOT use merge or length filter — both are proven harmful (destroy 64 TPs).**
-
-### Reference Implementation
-
-See `wire_detection/benchmark/expanded_benchmark.py` for the full 134-image benchmark.
-Run: `uv run python wire_detection/benchmark/expanded_benchmark.py` → ranks all 36 configs (wave1-4).
-
-The reference pipeline (`reference_pipeline.py`) is archived — it used pixel-diff HDC matching and only found 23 images. The expanded benchmark uses filename prefix matching, finding all 134.
-
-### Top Configs (134 images)
-
-| Rank | Config | Global F1 | TP | FP | FN | Red | P | R |
-|------|--------|-----------|----|----|----|----|----|----|
-| **1** | **best_candidate_v4** | **0.833** | 2,741 | 248 | 783 | 65 | 0.898 | 0.778 |
-| 2 | best_candidate_v2 | 0.826 | 2,761 | 286 | 763 | 116 | 0.873 | 0.784 |
-| 3 | best_candidate_v3 | 0.819 | 2,770 | 318 | 754 | 149 | 0.856 | 0.786 |
-| 4 | skeleton_graph_v1 | 0.819 | 2,898 | 332 | 626 | 327 | 0.815 | 0.822 |
-| 5 | best_candidate_v1 | 0.817 | 2,786 | 353 | 738 | 157 | 0.845 | 0.791 |
-| 6 | best_candidate_v6 | 0.811 | 2,675 | 223 | 849 | 178 | 0.870 | 0.759 |
-| 7 | k0285_anchor_filter | 0.810 | 2,796 | 408 | 728 | 175 | 0.828 | 0.793 |
-| 8 | best_candidate_v5 | 0.804 | 2,609 | 200 | 915 | 159 | 0.879 | 0.740 |
-| 9 | best_candidate_v8 | 0.803 | 2,576 | 164 | 948 | 149 | 0.892 | 0.731 |
-| 10 | pca_overlap | 0.800 | 2,856 | 560 | 668 | 200 | 0.790 | 0.810 |
-
-### Key Improvements (Experiment Progression) — measured on 23-image subset
-
-| # | Change | F1 | Δ |
-|---|--------|----|---|
-| 1 | Original pipeline (baseline) | 0.370 | — |
-| 2 | Sauvola k=0.5 + occlusion | 0.508 | +0.138 |
-| 3 | + Collinear merge | 0.526 | +0.018 |
-| 4 | Sweep: k=0.3, close=3, CCL=20, dedup=18 | 0.587 | +0.061 |
-| 5 | + Adaptive k fallback | 0.593 | +0.006 |
-| 6 | + Crop to ROI (10px pad) | 0.627 | +0.034 |
-| 7 | + Occlusion on all 23 images | 0.647 | +0.020 |
-| **8** | **Remove merge (dedup only)** | **0.707** | **+0.060** |
-| **9** | **Anchor filter + PCA + overlap dedup** | **0.749** | **+0.042** |
-| **10** | **Expanded to 134 images (prefix matching)** | **0.833** | **+0.084** |
-
-### Synthetic Validation
-
-- **50 synthetic images, 452 GT lines**: Sauvola+CCL+Merge achieves **F1=0.941**
-- Proves method works near-perfectly on clean schematics
-- Real-world gap (0.941→0.647) is scanner artifacts, paper grain, and severed wire boundaries
-
----
-
-## Publication
-
-Target venues:
-
-| Venue | Deadline | Odds |
-|-------|----------|------|
-| **IEEE Access** | Rolling (submit ~Jul 2026) | 70-80% |
-| **NeurIPS 2026 Workshop** | Aug 29, 2026 | 40-55% |
-
-Strategy: submit IEEE Access first (Jul 2026), then NeurIPS Workshop (Aug 29) — IEEE Access under review ≠ published — no prior-pub conflict. Two publications from one pipeline.
-
-Paper source: `paper/ieee-paper/` (IEEE Access submission, in this repo). Title: "From
-Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph Wire
-Joining and a Human-Verified Connectivity Benchmark". Two synchronized sources kept in sync:
-`paper-build.tex` (local IEEEtran) and `paper-access.tex` (Overleaf IEEE Access template).
-
-See `~/workspace/README.md` for full experiment history and publishing timeline.
-
----
-
-## Project Structure
-
-```
-wire_detection/     Python backend (pipeline, API, SDG, evaluation, experiments)
-  api/              FastAPI routes (process, netlist, join_overlay, sim_overlay, presets)
-  benchmark/        Evaluation scripts (expanded_benchmark, netlist_validate, join_eval_all)
-  core/             Core modules (netlist, join_strategies, join_graph, spice, simulator, mapping)
-  vlm/              VLM quality classifier
-ui/                 Next.js frontend (tuner UI, Join Check, Topology, Simulation tabs)
-docs/               MkDocs documentation
-  research/         Experiment logs, synthesis docs, analysis
-  archive/          Superseded docs
-archive/paper-methodsx/  Archived MethodsX draft (superseded by IEEE Access)
-```
-
-## Development
+A FastAPI backend plus a Next.js UI for stepping through images, inspecting detected topology,
+hand-editing wire connections, and watching edits propagate into the netlist and simulation.
 
 ```bash
-uv run pytest wire_detection/tests/ -q   # Tests
-uv run mypy wire_detection/              # Types
-uv run ruff check wire_detection/        # Lint
+uv run wire-tune                  # backend API
+cd ui && pnpm install && pnpm dev # UI on http://localhost:4200
+```
+
+See [`ui/README.md`](ui/README.md) for details.
+
+## Project structure
+
+```
+wire_detection/     Python backend
+  pipeline/         Single-image pipeline
+  core/             Netlist, join strategies, join graph, SPICE, simulator, mapping
+  benchmark/        Evaluation and baseline scripts
+  sdg/  synthgt/    Synthetic data / ground-truth generators
+  evaluate/  experiment/   Detection eval and parameter sweeps
+  vlm/              VLM quality classifier
+  api/              FastAPI routes
+ui/                 Next.js tuner UI
+ground_truth/       Human-verified net-level GT
+models/             Component-detection weights (downloaded, gitignored)
+docs/               MkDocs documentation and research logs
+paper/ieee-paper/   IEEE Access manuscript source
+```
+
+## Documentation
+
+Browse the docs locally:
+
+```bash
+uv run mkdocs serve
+```
+
+Source lives under [`docs/`](docs/). Historical research-log material from earlier revisions of
+this README is archived in [`docs/research/readme-archive.md`](docs/research/readme-archive.md).
+
+## Tests
+
+```bash
+uv run pytest wire_detection/tests/ -q
 ```
 
 ## License
 
-See [LICENSE.txt](LICENSE.txt).
+MIT — see [`LICENSE.txt`](LICENSE.txt).
 
 ## Contact
 
-- **Chris Dcosta**: chrisdcosta777@gmail.com / chris.dcosta.btech2021@sitpune.edu.in
-- **Repository**: github.com/boscochanam/circuit-digitization
-- **Bosco**: GitHub @boscochanam
+- Chris Dcosta — chrisdcosta777@gmail.com / chris.dcosta.btech2021@sitpune.edu.in
+- Repository — github.com/boscochanam/circuit-digitization
+- Bosco Chanam — GitHub [@boscochanam](https://github.com/boscochanam)
+</content>
