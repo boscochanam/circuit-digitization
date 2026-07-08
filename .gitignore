@@ -59,5 +59,8 @@ paper/ieee-paper/*.blg
 /paper-access-overleaf.zip
 paper/paper-access-overleaf-upload.zip
 paper/ieee-paper/paper-access-LOCAL-verified.pdf
+# Build output; 20 revisions of it were purged from history (70 MB).
+# Regenerate with: pdflatex paper-build.tex
+paper/ieee-paper/paper-build.pdf
 # Original (pre-processing) author headshots
 paper/ieee-paper/figures/authors/.orig/
