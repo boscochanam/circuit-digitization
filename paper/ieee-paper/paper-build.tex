@@ -99,27 +99,31 @@ We reduce CGHD's 61 component classes to 16. Eight targets absorb variants the n
 
 Training excludes drafter\_0, whose drawing style diverges markedly from the remaining drafters, leaving a random 85/15 split of 2652 training and 468 validation images. We fine-tune at 1024\,px for 200 epochs with AdamW ($\text{lr}_0 = 10^{-3}$, cosine decay), batch~17, seed~42, under mosaic, mixup, RandAugment, and moderate affine and HSV jitter. On the held-out validation split the released checkpoint attains mAP@0.5~=~89.0\%, mAP@0.5:0.95~=~78.5\%, precision~=~95.8\%, and recall~=~88.6\%. Per-class recall ranges from 100\% (\texttt{operational\_amplifier}) down to 70.7\% (\texttt{crossover}), the hardest class by a wide margin: two wires that cross without a hop marker are locally indistinguishable from an ordinary junction-free crossing. Training logs and the full 61-to-16 class map are released with the code.
 
-\begin{table}[htbp]
-\caption{Class Merges: 61 CGHD Classes Reduced to 16. The Eight Merged Targets Are Shown; Seven Classes Pass Through Unchanged and 30 Rare Classes Fold Into \texttt{other}.}
+\begin{table*}[htbp]
+\caption{Class Merges: The 61 CGHD Component Classes Reduced to 16. The Eight Merged Targets Are Listed With Their Source Classes in Full; a Further Seven Classes Pass Through Unchanged (\texttt{terminal}, \texttt{crossover}, \texttt{switch}, \texttt{text}, \texttt{junction}, \texttt{gnd}, \texttt{vss}) and the Remaining 30 Fold Into \texttt{other}.}
 \label{tab:class_merge}
 \begin{center}
 \footnotesize
-\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.52\columnwidth}@{}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcl@{}}
 \toprule
-\textbf{Merged class} & \textbf{CGHD source classes} \\
+\textbf{Merged class} & \textbf{$n$} & \textbf{CGHD source classes} \\
 \midrule
-\texttt{resistor} & resistor, .adjustable, .photo \\
-\texttt{capacitor} & capacitor.unpolarized, .polarized, .adjustable \\
-\texttt{diode} & diode, .zener, .light\_emitting, .thyrector \\
-\texttt{transistor} & transistor.bjt, .fet, .photo \\
-\texttt{inductor} & inductor, .ferrite, .coupled \\
-\texttt{voltage\_source} & voltage.battery, .dc, .ac \\
-\texttt{integrated\_circuit} & integrated\_circuit, .ne555, .voltage\_regulator \\
-\texttt{operational\_amplifier} & operational\_amplifier, .schmitt\_trigger \\
+\texttt{resistor} & 3 & \texttt{resistor}, \texttt{resistor.adjustable}, \texttt{resistor.photo} \\
+\texttt{capacitor} & 3 & \texttt{capacitor.unpolarized}, \texttt{capacitor.polarized}, \texttt{capacitor.adjustable} \\
+\texttt{diode} & 4 & \texttt{diode}, \texttt{diode.zener}, \texttt{diode.light\_emitting}, \texttt{diode.thyrector} \\
+\texttt{transistor} & 3 & \texttt{transistor.bjt}, \texttt{transistor.fet}, \texttt{transistor.photo} \\
+\texttt{inductor} & 3 & \texttt{inductor}, \texttt{inductor.ferrite}, \texttt{inductor.coupled} \\
+\texttt{voltage\_source} & 3 & \texttt{voltage.battery}, \texttt{voltage.dc}, \texttt{voltage.ac} \\
+\texttt{integrated\_circuit} & 3 & \texttt{integrated\_circuit}, \texttt{integrated\_circuit.ne555}, \texttt{integrated\_circuit.voltage\_regulator} \\
+\texttt{operational\_amplifier} & 2 & \texttt{operational\_amplifier}, \texttt{operational\_amplifier.schmitt\_trigger} \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\footnotesize Total: 24 source classes merged into 8 targets. \texttt{capacitor}, \texttt{transistor}, and \texttt{voltage\_source} have no bare} \\
+\multicolumn{3}{@{}l@{}}{\footnotesize counterpart in CGHD: they exist only as subtypes, and \texttt{voltage\_source} renames the \texttt{voltage.*} family.} \\
 \bottomrule
 \end{tabular}
 \end{center}
-\end{table}
+\end{table*}
 
 \subsection{Endpoint-Graph Join Model}
 
