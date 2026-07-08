@@ -58,14 +58,39 @@ curl -L -o ~/Downloads/cghd1152.zip \
 unzip ~/Downloads/cghd1152.zip -d ./cghd1152/
 ```
 
-Three inputs are resolved from the environment, and **none of them survive a clone** —
-`local_eval/`, `roboflow_test2/`, and `labels_few_annot/` are all gitignored:
+Three inputs are resolved from the environment:
 
-| Variable | Default | Holds |
-|---|---|---|
-| `WIRE_GT_IMAGES` | a path on the authors' machine | CGHD scans |
-| `WIRE_GT_WIRE_LABELS` | likewise | ground-truth wire polylines |
-| `WIRE_HDC_BASE` | `roboflow_test2/` | ground-truth component labels |
+| Variable | Default | Holds | Survives a clone? |
+|---|---|---|---|
+| `WIRE_GT_IMAGES` | **none — must be set** | CGHD scans | ✗ not redistributed (CC BY source images) |
+| `WIRE_GT_WIRE_LABELS` | `ground_truth/wire_labels/` | ground-truth wire polylines | ✓ **committed** (134 files) |
+| `WIRE_HDC_BASE` | `roboflow_test2/` | ground-truth component labels | ✗ gitignored symlink |
+
+`WIRE_GT_IMAGES` deliberately has **no default**. `ground_truth/local_eval/images` is the
+*31-image net-GT set*, a different dataset; defaulting there would silently score 31 of 134 and
+print a plausible-looking F1. `expanded_benchmark.py` now refuses to run without it, and warns
+loudly if fewer than all 134 labelled images resolve.
+
+### The Roboflow identity-copy trap
+
+`WIRE_HDC_BASE` must point at an export that contains, for every image stem, the **identity**
+`.rf.<hash>` copy — the one pixel-identical to the original CGHD scan. Roboflow exports also
+contain *augmented* (rotated/flipped) copies whose labels live in a different coordinate space.
+`find_exact_match()` picks the identity copy by pixel comparison; if it is absent it falls back to
+`find_hdc_label_by_prefix()`, which returns an arbitrary — often augmented — label. Occlusion
+polygons then land in the wrong place and every F1 silently collapses.
+
+Observed, on an export missing the identity copies (1993 train files instead of 3986): **0 of 134
+images matched exactly**, and the thresholding numbers came out `otsu_component` 0.5854,
+`adaptive_gaussian_skeleton` 0.6825, `triangle_skeleton` 0.6197 — versus the published 0.7894 /
+0.8452 / 0.7583. Nothing errored. To check your export before trusting a run:
+
+```python
+from wire_detection.benchmark import expanded_benchmark as eb
+data = eb.preload_all_images()
+exact = sum(1 for n, g, _, _ in data if eb.find_exact_match(n, g))
+print(f"{exact}/{len(data)} exact matches")   # must be 134/134
+```
 
 Mind the filename convention. The scripts build image paths as `f"{name}_jpg.jpg"`
 (`build_net_gt.py:54`, `detection_ceiling.py:64`), where `name` is a JSON key with its trailing

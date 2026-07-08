@@ -51,15 +51,16 @@ No warranty is given by the original creators. CC BY 4.0 is offered
 
 Applies to: `real_nets_verified.json`, `real_nets_working.json`,
             `real_nets_vlm9.json`, `net_gt_ui_meta.json`,
-            `chris_ground_truth/*.zip`
+            `chris_ground_truth/*.zip`, `wire_labels/*.txt`
 
 These are original work by the authors of this repository (see
 `../LICENSE.txt`) and are released under the MIT License.
 
-They encode electrical net membership, component bounding boxes, and
-component identity. They reference CGHD-1152 images by filename only and
-contain no image data. Using them requires obtaining the CGHD-1152 images
-separately — see `README.md` in this directory.
+They encode electrical net membership, component bounding boxes,
+component identity, and ground-truth wire polylines. They reference
+CGHD-1152 images by filename only and contain no image data. Using them
+requires obtaining the CGHD-1152 images separately — see `README.md` in
+this directory.
 
 Although these annotations describe CGHD-1152 images, they are not
 adaptations of them in the copyright sense: the human-verified net-level

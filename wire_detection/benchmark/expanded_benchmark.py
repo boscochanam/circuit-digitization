@@ -5,7 +5,7 @@ Uses filename prefix matching instead of pixel-diff.
 """
 from __future__ import annotations
 import json
-import sys
+import os
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -13,8 +13,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-sys.path.insert(0, '/home/claw/circuit-digitization')
-sys.path.insert(0, '/home/claw/workspace')
 from wire_detection.benchmark import reference_pipeline as ref
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig, ImageResult, RunSummary,
@@ -22,12 +20,22 @@ from wire_detection.benchmark.experiment_harness import (
     crop_to_roi, shift_components, detect_wires_experiment, wave1_configs, wave2_configs, wave3_configs, wave4_configs,
 )
 
-# ── Override data paths ──
-GT_LABELS = Path("/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images")
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
-ROB_IMAGES_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
-HDC_SPLITS = ["train", "valid", "test"]
+_REPO = Path(__file__).resolve().parents[2]
+
+# Data paths. Same env-var contract as build_net_gt.py; see ground_truth/README.md.
+#
+# The 134 ground-truth wire-polyline label files are committed (ground_truth/wire_labels/),
+# so GT_LABELS needs no override. The CGHD source images are NOT redistributed here --
+# point WIRE_GT_IMAGES at a directory of `<name>_jpg.jpg` files. Component labels come from
+# the Roboflow export (roboflow_test2/), which is a local-only symlink.
+GT_LABELS = Path(os.environ.get("WIRE_GT_WIRE_LABELS", _REPO / "ground_truth" / "wire_labels"))
+# No default: ground_truth/local_eval/images holds the 31-image net-GT set, a DIFFERENT
+# dataset. Defaulting there would silently score 31 of 134 and print a plausible F1.
+_gt_images = os.environ.get("WIRE_GT_IMAGES")
+GT_IMAGES = Path(_gt_images) if _gt_images else None
+HDC_BASE = Path(os.environ.get("WIRE_HDC_BASE", _REPO / "roboflow_test2"))
+ROB_IMAGES_BASE = HDC_BASE
+HDC_SPLITS = os.environ.get("WIRE_HDC_SPLITS", "train,valid,test").split(",")
 
 
 def find_hdc_label_by_prefix(image_name: str) -> Path | None:
@@ -111,6 +119,20 @@ def preload_all_images():
     if _all_image_data is not None:
         return _all_image_data
 
+    if not GT_LABELS.is_dir():
+        raise SystemExit(f"GT_LABELS not found: {GT_LABELS}\nSet WIRE_GT_WIRE_LABELS.")
+    if GT_IMAGES is None or not GT_IMAGES.is_dir():
+        raise SystemExit(
+            f"WIRE_GT_IMAGES is {'unset' if GT_IMAGES is None else f'not a directory: {GT_IMAGES}'}.\n"
+            "The CGHD source images are not redistributed with this repo. Fetch CGHD-1152\n"
+            "(https://doi.org/10.5281/zenodo.6385814) and point WIRE_GT_IMAGES at a directory of\n"
+            "<name>_jpg.jpg files covering the 134 names in ground_truth/wire_labels/.\n"
+            "Do NOT point it at ground_truth/local_eval/images -- that is the 31-image net-GT set.\n"
+            "See ground_truth/README.md."
+        )
+    if not HDC_BASE.is_dir():
+        raise SystemExit(f"HDC_BASE not found: {HDC_BASE}\nSet WIRE_HDC_BASE.")
+
     data = []
     all_images = sorted(GT_LABELS.glob("*_jpg.txt"))
     for gt_file in all_images:
@@ -138,6 +160,21 @@ def preload_all_images():
         if not components:
             continue
         data.append((image_name, gray, gt_lines, components))
+
+    # Never report metrics over a silently-truncated image set: an empty or partial run
+    # still prints a plausible F1, and the published numbers assume all 134 images.
+    if not data:
+        raise SystemExit(
+            f"Loaded 0 of {len(all_images)} images. Labels resolved ({GT_LABELS}) but no image\n"
+            f"or component label matched. Check WIRE_GT_IMAGES ({GT_IMAGES}) and\n"
+            f"WIRE_HDC_BASE ({HDC_BASE})."
+        )
+    if len(data) != len(all_images):
+        print(
+            f"WARNING: scored {len(data)} of {len(all_images)} labelled images — "
+            f"{len(all_images) - len(data)} skipped (missing image or component label). "
+            "The published results use all 134; these numbers are NOT comparable."
+        )
 
     _all_image_data = data
     return data
