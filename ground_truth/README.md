@@ -63,8 +63,12 @@ Three inputs are resolved from the environment:
 | Variable | Default | Holds | Survives a clone? |
 |---|---|---|---|
 | `WIRE_GT_IMAGES` | **none — must be set** | CGHD scans | ✗ not redistributed (CC BY source images) |
-| `WIRE_GT_WIRE_LABELS` | `ground_truth/wire_labels/` | ground-truth wire polylines | ✓ **committed** (134 files) |
-| `WIRE_HDC_BASE` | `roboflow_test2/` | ground-truth component labels | ✗ gitignored symlink |
+| `WIRE_GT_WIRE_LABELS` | `ground_truth/wire_labels/` | ground-truth wire polylines | ✓ **committed** (134 files, MIT) |
+| `WIRE_COMPONENT_LABELS` | `ground_truth/component_labels/` | component labels, for occlusion | ✓ **committed** (134 files, CC BY 4.0) |
+| `WIRE_HDC_BASE` | `roboflow_test2/` | Roboflow export — **only a fallback** | ✗ gitignored symlink |
+
+Because the component labels are committed, the Roboflow export is no longer needed: the
+wire-detection benchmark runs on a fresh clone plus the CGHD images alone.
 
 `WIRE_GT_IMAGES` deliberately has **no default**. `ground_truth/local_eval/images` is the
 *31-image net-GT set*, a different dataset; defaulting there would silently score 31 of 134 and
@@ -83,14 +87,17 @@ polygons then land in the wrong place and every F1 silently collapses.
 Observed, on an export missing the identity copies (1993 train files instead of 3986): **0 of 134
 images matched exactly**, and the thresholding numbers came out `otsu_component` 0.5854,
 `adaptive_gaussian_skeleton` 0.6825, `triangle_skeleton` 0.6197 — versus the published 0.7894 /
-0.8452 / 0.7583. Nothing errored. To check your export before trusting a run:
+0.8452 / 0.7583. Nothing errored.
 
-```python
-from wire_detection.benchmark import expanded_benchmark as eb
-data = eb.preload_all_images()
-exact = sum(1 for n, g, _, _ in data if eb.find_exact_match(n, g))
-print(f"{exact}/{len(data)} exact matches")   # must be 134/134
-```
+The filename gives no clue: every copy is `<stem>_jpg.rf.<32-hex>.jpg`, identity and augmented
+alike. Across the 134 benchmark images, all 216 augmented copies carry labels differing from the
+identity's, and for 31 of 111 stems the identity copy is *not* the alphabetically first — which is
+exactly what `find_hdc_label_by_prefix()` would have picked.
+
+**This is now defused two ways.** `component_labels/` ships the correct identity labels, so the
+export is unnecessary; and if it is ever needed and no pixel-identical copy is found,
+`expanded_benchmark.py` raises rather than falling back to an arbitrary one. It will not print a
+plausible number from wrong labels again.
 
 Mind the filename convention. The scripts build image paths as `f"{name}_jpg.jpg"`
 (`build_net_gt.py:54`, `detection_ceiling.py:64`), where `name` is a JSON key with its trailing

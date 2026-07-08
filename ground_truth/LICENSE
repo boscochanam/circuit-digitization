@@ -1,8 +1,12 @@
 LICENSE AND ATTRIBUTION FOR ground_truth/
 =========================================
 
-This directory contains material under two different licenses. Read both
-sections before redistributing any part of it.
+This directory contains material under two different licenses. Read all
+three sections before redistributing any part of it.
+
+  Section 1  CC BY 4.0   net_gt_ui_overlays/*.png       (CGHD images)
+  Section 2  MIT         *.json, wire_labels/*.txt       (our annotations)
+  Section 3  CC BY 4.0   component_labels/*.txt          (CGHD annotations)
 
 
 1. IMAGES — CC BY 4.0 (derived from CGHD-1152)
@@ -56,19 +60,59 @@ Applies to: `real_nets_verified.json`, `real_nets_working.json`,
 These are original work by the authors of this repository (see
 `../LICENSE.txt`) and are released under the MIT License.
 
-They encode electrical net membership, component bounding boxes,
-component identity, and ground-truth wire polylines. They reference
-CGHD-1152 images by filename only and contain no image data. Using them
-requires obtaining the CGHD-1152 images separately — see `README.md` in
-this directory.
+They encode electrical net membership, component identity, and
+ground-truth wire polylines. They reference CGHD-1152 images by filename
+only and contain no image data. Using them requires obtaining the
+CGHD-1152 images separately — see `README.md` in this directory.
 
 Although these annotations describe CGHD-1152 images, they are not
 adaptations of them in the copyright sense: the human-verified net-level
-connectivity ground truth was traced and confirmed independently, and no
-equivalent annotation exists in the source dataset.
+connectivity ground truth was traced and confirmed independently, the
+wire polylines in `wire_labels/` were drawn by us, and no equivalent
+annotation exists in the source dataset.
+
+ONE CARVE-OUT. The `bboxes` field of `net_gt_ui_meta.json` holds
+component bounding boxes taken from CGHD-1152's own annotations (verified:
+they agree with `component_labels/` to within ~3 px at 1408x1408). Those
+coordinates are covered by Section 3, not by this section. What is ours in
+that file is the selection of electrically-relevant components and their
+integer indexing, which `real_nets_verified.json` refers to.
 
 
-3. IF YOU USE THIS BENCHMARK
+3. COMPONENT ANNOTATIONS — CC BY 4.0 (derived from CGHD-1152)
+--------------------------------------------------------------
+
+Applies to: `component_labels/*.txt` (134 files, 5233 boxes)
+            the `bboxes` field of `net_gt_ui_meta.json`
+
+These are ADAPTATIONS of CGHD-1152's own component annotations — not
+independent work. Same creators, source, and license as Section 1:
+
+  Creators:  Felix Thoma, Johannes Bayer, Yakun Li
+  Source:    https://doi.org/10.5281/zenodo.6385814
+  License:   CC BY 4.0  https://creativecommons.org/licenses/by/4.0/
+
+STATEMENT OF MODIFICATIONS (required by CC BY 4.0 §3(a)(1)(B)):
+
+  a. exported through Roboflow to YOLO oriented-bounding-box format: one
+     line per component, `<class> x1 y1 x2 y2 x3 y3 x4 y4`, corner
+     coordinates normalised to [0,1] against the image's width and height;
+  b. classes re-indexed to the 58-entry list in the export's `data.yaml`
+     (mirrored by `COMPONENT_TYPES` in `wire_detection/benchmark/`);
+  c. coordinates re-quantised to float — reproducible only to ~1 px;
+  d. restricted to the 134 images of the wire-detection benchmark.
+
+Roboflow emits several `.rf.<hash>` copies per image, most of them
+geometrically augmented. Only the copy pixel-identical to the original
+CGHD photograph is reproduced here; `component_labels/identity_manifest.json`
+records which one, per image. No CGHD image data is included.
+
+Redistributing these files requires crediting the creators above, linking
+the license, and indicating that changes were made. This notice satisfies
+those conditions; carry it with the files.
+
+
+4. IF YOU USE THIS BENCHMARK
 ----------------------------
 
 Cite both the source dataset and this work:

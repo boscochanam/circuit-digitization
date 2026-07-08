@@ -29,6 +29,11 @@ _REPO = Path(__file__).resolve().parents[2]
 # point WIRE_GT_IMAGES at a directory of `<name>_jpg.jpg` files. Component labels come from
 # the Roboflow export (roboflow_test2/), which is a local-only symlink.
 GT_LABELS = Path(os.environ.get("WIRE_GT_WIRE_LABELS", _REPO / "ground_truth" / "wire_labels"))
+# Committed CGHD component labels (identity copies, CC BY 4.0). When present these are
+# used directly and no Roboflow export is needed for occlusion.
+COMPONENT_LABELS = Path(
+    os.environ.get("WIRE_COMPONENT_LABELS", _REPO / "ground_truth" / "component_labels")
+)
 # No default: ground_truth/local_eval/images holds the 31-image net-GT set, a DIFFERENT
 # dataset. Defaulting there would silently score 31 of 134 and print a plausible F1.
 _gt_images = os.environ.get("WIRE_GT_IMAGES")
@@ -130,8 +135,12 @@ def preload_all_images():
             "Do NOT point it at ground_truth/local_eval/images -- that is the 31-image net-GT set.\n"
             "See ground_truth/README.md."
         )
-    if not HDC_BASE.is_dir():
-        raise SystemExit(f"HDC_BASE not found: {HDC_BASE}\nSet WIRE_HDC_BASE.")
+    # The Roboflow export is only needed when the committed component labels are absent.
+    if not COMPONENT_LABELS.is_dir() and not HDC_BASE.is_dir():
+        raise SystemExit(
+            f"Neither committed component labels ({COMPONENT_LABELS}) nor a Roboflow\n"
+            f"export ({HDC_BASE}) is present. Set WIRE_COMPONENT_LABELS or WIRE_HDC_BASE."
+        )
 
     data = []
     all_images = sorted(GT_LABELS.glob("*_jpg.txt"))
@@ -147,16 +156,28 @@ def preload_all_images():
         h, w = gray.shape
         gt_lines = ref.load_ground_truth(gt_file, w, h)
 
-        # CRITICAL (Jun 2026): Use exact-match Roboflow label for occlusion.
-        # find_hdc_label_by_prefix() returns the FIRST match which may be from
-        # an augmented version — its labels are in the wrong coordinate space
-        # for the original image, causing incorrect occlusion polygons.
-        exact = find_exact_match(image_name, gray)
-        if exact:
+        # CRITICAL: the occlusion labels must be in the ORIGINAL image's coordinate
+        # space. Roboflow ships several `.rf.<hash>` copies per image and the name
+        # gives no clue which is augmented; measured, 216/216 augmented copies carry
+        # labels that differ from the identity copy's, and the identity copy is not
+        # the sorted-first for 31 of 111 stems. Prefer the committed identity labels;
+        # otherwise recover the identity copy by pixel comparison. Never fall back to
+        # find_hdc_label_by_prefix() -- it returns an arbitrary copy and silently
+        # produces a plausible, wrong F1 (otsu 0.5854 instead of 0.7894).
+        committed = COMPONENT_LABELS / f"{image_name}_jpg.txt"
+        if committed.exists():
+            components = ref.parse_components(committed, w, h)
+        else:
+            exact = find_exact_match(image_name, gray)
+            if not exact:
+                raise SystemExit(
+                    f"No pixel-identical Roboflow copy for {image_name}, and no committed\n"
+                    f"label at {committed}. Augmented labels live in a different coordinate\n"
+                    "space and would silently corrupt every metric. Refusing to guess.\n"
+                    "See ground_truth/README.md, 'The Roboflow identity-copy trap'."
+                )
             _, label_path = exact
             components = ref.parse_components(label_path, w, h)
-        else:
-            components = load_components(image_name, w, h)
         if not components:
             continue
         data.append((image_name, gray, gt_lines, components))
