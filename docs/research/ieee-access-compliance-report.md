@@ -43,8 +43,10 @@ All artifacts in `docs/research/experiments/` unless noted. **Every row verified
 
 | Paper claim | Artifact | Verdict |
 |---|---|---|
-| Wire detection F1 0.976 / P 0.973 / R 0.978 (a16, 134 imgs) | `docs/benchmark-provenance.md` § "Top configs (Jun 2026, corrected eval)" (0.9755/0.9729/0.9781); benchmark `wire_detection/benchmark/expanded_benchmark.py` | ✅ |
-| Otsu 0.789, adaptive-Gaussian 0.845 ablations | `docs/benchmark-provenance.md` § "Key findings and thresholding ablations" | ⚠️ adaptive-Gaussian 0.845 matches; **Otsu does not** — the provenance record says OTSU F1 = 0.828 (and Triangle 0.795), the paper's Table I row says 0.789. One of the two is stale; re-run `expanded_benchmark.py` and reconcile before submission. |
+| Wire detection F1 0.976 / P 0.973 / R 0.978 (a16, 134 imgs) | `wire_a16_summary_jun2026.json` → `global_f1` 0.97552, `precision` 0.97290, `recall` 0.97815; n=134 | ✅ |
+| Median F1 1.000; 87% of images F1 ≥ 0.90 | `wire_a16_summary_jun2026.json` → `images[]`: median 1.0000, 87.3% ≥ 0.90, 4 images < 0.50 | ✅ |
+| Table I rows 2–5 (v4, v2, v1, Otsu+CCL) | `wire_threshold_full_ranking_jun2026.json` → 0.9730/0.9741/0.9719, 0.9589/0.9442/0.9742, 0.9498/0.9213/0.9801, `otsu_component` 0.7894/0.7962/0.7826 | ✅ all four rows match to 3 dp |
+| Otsu 0.789, adaptive-Gaussian 0.845 ablations | `wire_threshold_full_ranking_jun2026.json` → `otsu_component` 0.7894, `adaptive_gaussian_skeleton` 0.8452 | ✅ — *resolved 2026-07-08 by recovering the ranking artifact. The earlier ⚠️ was against `benchmark-provenance.md`'s prose, which carried a stale "OTSU F1 = 0.828"; the paper was correct all along. Prose corrected. Figure 3 was **not** — it rendered adaptive Gaussian = 0.928, contradicting the paragraph beneath it; fixed in `generate_concept_figures.py` and the PDF regenerated.* |
 | Join micro-F1 0.890 (P .919 / R .864; macro .901) | `cc_detected_micro_n31.json` ours: 0.8903/0.9187/0.8636, macro 0.9011; also `fair_join_comparison_n31.json`, `join_micro_n31.json` | ✅ |
 | 95% CI [0.855, 0.924]; VLM−ours +0.033 [−0.009, +0.078] | `bootstrap_ci_n31.json` (0.8547/0.9240; diff CI matches) | ✅ |
 | Baselines micro: rescue+compl 0.829, scale base 0.816, rescue base 0.787, radius 0.667, Hough 0.805 | `bootstrap_ci_n31.json`, `hough_micro_n31.json` (link44_reach48 = 0.8046) | ✅ |

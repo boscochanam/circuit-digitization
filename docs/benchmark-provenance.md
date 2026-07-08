@@ -45,6 +45,14 @@ Dataset: 134 CGHD-1152 images that have both ground-truth wire labels and compon
 
 ### Top configs (Jun 2026, corrected eval — exact-match labels on original images)
 
+Primary artifacts, recovered from the machine that produced them and committed 2026-07-08:
+
+- `docs/research/experiments/wire_threshold_full_ranking_jun2026.json` — all 36 configs, global
+  F1/P/R and TP/FP/FN. Produced by `wire_detection/benchmark/expanded_benchmark.py` (2026-06-15).
+- `docs/research/experiments/wire_a16_summary_jun2026.json` — the a16 run (2026-06-16), which
+  postdates the 36-config sweep and so does not appear in it. Carries the frozen config and the
+  full per-image breakdown (n=134).
+
 | Rank | Config | F1 | Precision | Recall | FP | FN |
 |---|---|---|---|---|---|---|
 | 1 | **a16** (anchor_endpoint_dist=16) | **0.9755** | 0.9729 | 0.9781 | 47 | 77 |
@@ -57,8 +65,24 @@ Dataset: 134 CGHD-1152 images that have both ground-truth wire labels and compon
 
 - **a16** (Sauvola + component extraction + `anchor_endpoint_dist=16`) is the winner.
 - Only change from the v4 baseline: `anchor_endpoint_dist` 12 → 16 (+0.0025 F1).
-- **Sauvola dominates all other thresholding methods** — adaptive Gaussian F1=0.845 (best
-  adaptive-Gaussian config, `adaptive_gaussian_skeleton`), OTSU F1=0.828, Triangle F1=0.795.
+- **Sauvola dominates all other thresholding methods.** Best config per thresholding family, read
+  off `wire_threshold_full_ranking_jun2026.json`:
+
+  | Family | Best config | F1 | Precision | Recall |
+  |---|---|---|---|---|
+  | adaptive Gaussian | `adaptive_gaussian_skeleton` | 0.8452 | 0.8723 | 0.8198 |
+  | Otsu | `otsu_component` | 0.7894 | 0.7962 | 0.7826 |
+  | Triangle | `triangle_skeleton` | 0.7583 | 0.8185 | 0.7063 |
+
+  Note these compare *thresholding families at their own best extraction mode*, not a clean
+  binarization ablation: `otsu_component` uses component extraction, the other two use skeleton.
+
+  > **Corrected 2026-07-08.** This bullet previously read "OTSU F1=0.828, Triangle F1=0.795".
+  > Both were wrong, and both were cell misreads from the *superseded* prefix-match table in
+  > `docs/research/expanded-benchmark.md`: 0.828 is the **precision** column of
+  > `k0285_anchor_filter` (`:46`), and 0.795 is the **F1 of `baseline_control`** (`:54`), a Sauvola
+  > config. The paper's Table I never carried the error — it reports `otsu_component` = 0.789,
+  > which matches the primary artifact exactly.
 - Skeleton extraction loses recall (FN=402 vs 77) — it breaks thin wires.
 - Adaptive thresholding fusion adds nothing — Sauvola already captures the optimal per-pixel
   threshold.

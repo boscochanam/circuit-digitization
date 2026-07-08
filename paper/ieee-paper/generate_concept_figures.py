@@ -222,14 +222,19 @@ def pipeline_overview():
 
 # ---------------------------------------------------------------- wire benchmark
 def wire_benchmark():
-    # (label, F1, group) — values from the 134-image wire-detection benchmark
+    # (label, F1, group) — values from the 134-image wire-detection benchmark.
+    # Source of record: docs/research/experiments/wire_threshold_full_ranking_jun2026.json
+    # (36 configs) for every row except a16, whose later run is in
+    # wire_a16_summary_jun2026.json. Config names, in order below: a16,
+    # best_candidate_v4, _v2, _v1, _v3, adaptive_gaussian_skeleton,
+    # otsu_component, triangle_skeleton.
     rows = [
         ("Sauvola, anchor 16px (ours)", 0.976, "ours"),
         ("Sauvola, anchor 12px", 0.973, "ours"),
         ("Sauvola (w=61)", 0.959, "ours"),
         ("Sauvola (k=0.2875)", 0.950, "ours"),
         ("Sauvola (alt.)", 0.949, "ours"),
-        ("adaptive Gaussian", 0.928, "alt"),
+        ("adaptive Gaussian", 0.845, "alt"),
         ("Otsu", 0.789, "bad"),
         ("Triangle", 0.758, "bad"),
     ]
