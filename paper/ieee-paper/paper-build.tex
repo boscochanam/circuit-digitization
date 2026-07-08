@@ -15,6 +15,7 @@
 \usepackage{xcolor}
 \usepackage{booktabs}
 \usepackage{array}
+\usepackage{bm}
 \usepackage{multirow}
 \usepackage{url}
 \usepackage{etoolbox}
@@ -93,11 +94,11 @@ Figure~\ref{fig:pipeline} summarizes the six-stage pipeline. The full pipeline p
 \subsection{Component Detection}
 \label{sec:component_detection}
 
-Stage~1 is a YOLO26m oriented bounding box (OBB) detector fine-tuned on CGHD-1152~\cite{bayer2021cghd,cghd1152data}. Orientation is load-bearing rather than incidental: hand-drawn parts sit at arbitrary angles, and an axis-aligned box around a diagonal resistor also encloses the wire segments entering it, which the occlusion stage would then erase along with the component.
+Stage~1 is a YOLO26m oriented bounding box (OBB) detector fine-tuned on CGHD-1152~\cite{bayer2021cghd,cghd1152data}. Hand-drawn parts sit at arbitrary angles, and an axis-aligned box around a diagonal resistor also encloses the wire segments entering it, which the occlusion stage would then erase along with the component. The detector therefore predicts orientation.
 
-We reduce CGHD's 61 component classes to 16. Eight targets absorb variants the netlist does not distinguish---a Zener, light-emitting, or thyrector diode is a \texttt{diode} for the purpose of topology extraction (Table~\ref{tab:class_merge}). Seven classes pass through unchanged: \texttt{terminal}, \texttt{crossover}, \texttt{switch}, \texttt{text}, \texttt{junction}, \texttt{gnd}, and \texttt{vss}. A catch-all \texttt{other} absorbs the remaining 30 rare classes---transformer, thyristor, triac, relay, optocoupler, and similar---which the detector localizes but does not discriminate; these devices fall outside the simulatable set and are excluded from the net-level benchmark in any case. The reduction is deliberate: the join model consumes component \emph{geometry} and pin locations, not device identity, so class granularity finer than the netlist emits spends model capacity on a distinction the pipeline never reads.
+We reduce CGHD's 61 component classes to 16. Eight targets absorb variants the netlist does not distinguish. A Zener, light-emitting, or thyrector diode is a \texttt{diode} for the purpose of topology extraction (Table~\ref{tab:class_merge}). Seven classes pass through unchanged: \texttt{terminal}, \texttt{crossover}, \texttt{switch}, \texttt{text}, \texttt{junction}, \texttt{gnd}, and \texttt{vss}. A catch-all \texttt{other} absorbs the remaining 30 rare classes (transformer, thyristor, triac, relay, optocoupler, and similar), which the detector localizes but does not discriminate; these devices fall outside the simulatable set and are excluded from the net-level benchmark in any case. The join model consumes component \emph{geometry} and pin locations, not device identity, so class granularity finer than the netlist emits gives the detector further classes to separate while no downstream stage reads the result.
 
-Training excludes drafter\_0, whose drawing style diverges markedly from the remaining drafters, leaving a random 85/15 split of 2652 training and 468 validation images. We fine-tune at 1024\,px for 200 epochs with AdamW ($\text{lr}_0 = 10^{-3}$, cosine decay), batch~17, seed~42, under mosaic, mixup, RandAugment, and moderate affine and HSV jitter. On the held-out validation split the released checkpoint attains mAP@0.5~=~89.0\%, mAP@0.5:0.95~=~78.5\%, precision~=~95.8\%, and recall~=~88.6\%. Per-class recall ranges from 100\% (\texttt{operational\_amplifier}) down to 70.7\% (\texttt{crossover}), the hardest class by a wide margin: two wires that cross without a hop marker are locally indistinguishable from an ordinary junction-free crossing. Training logs and the full 61-to-16 class map are released with the code.
+Training excludes drafter\_0, whose drawing style diverges markedly from the remaining drafters, leaving a random 85/15 split of 2652 training and 468 validation images. We fine-tune at 1024\,px for 200 epochs with AdamW ($\text{lr}_0 = 10^{-3}$, cosine decay), batch~17, seed~42, under mosaic, mixup, RandAugment, and moderate affine and HSV jitter. On the held-out validation split the released checkpoint attains mAP@0.5~=~89.0\%, mAP@0.5:0.95~=~78.5\%, precision~=~95.8\%, and recall~=~88.6\%. Per-class recall ranges from 100\% (\texttt{operational\_amplifier}) down to 70.7\% (\texttt{crossover}), which trails the next lowest class (\texttt{vss}, 83.1\%) by 12.4 points: two wires that cross without a hop marker are locally indistinguishable from an ordinary junction-free crossing. Training logs and the full 61-to-16 class map are released with the code.
 
 \begin{table*}[htbp]
 \caption{Class Merges: The 61 CGHD Component Classes Reduced to 16. The Eight Merged Targets Are Listed With Their Source Classes in Full; a Further Seven Classes Pass Through Unchanged (\texttt{terminal}, \texttt{crossover}, \texttt{switch}, \texttt{text}, \texttt{junction}, \texttt{gnd}, \texttt{vss}) and the Remaining 30 Fold Into \texttt{other}.}
@@ -107,7 +108,7 @@ Training excludes drafter\_0, whose drawing style diverges markedly from the rem
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lcl@{}}
 \toprule
-\textbf{Merged class} & \textbf{$n$} & \textbf{CGHD source classes} \\
+\textbf{Merged class} & $\bm{n}$ & \textbf{CGHD source classes} \\
 \midrule
 \texttt{resistor} & 3 & \texttt{resistor}, \texttt{resistor.adjustable}, \texttt{resistor.photo} \\
 \texttt{capacitor} & 3 & \texttt{capacitor.unpolarized}, \texttt{capacitor.polarized}, \texttt{capacitor.adjustable} \\
