@@ -34,9 +34,11 @@ authors:
     affiliation: Symbiosis Institute of Technology, Pune, India
 repository-code: 'https://github.com/boscochanam/circuit-digitization'
 url: 'https://github.com/boscochanam/circuit-digitization'
-# Source code and annotations are MIT. The overlay images under
-# ground_truth/net_gt_ui_overlays/ are adaptations of CGHD-1152 and remain
-# CC BY 4.0. See LICENSE.txt and ground_truth/LICENSE.
+# Source code and our own annotations (net connectivity, wire polylines) are
+# MIT. Material derived from CGHD-1152 remains CC BY 4.0: the overlay images
+# under ground_truth/net_gt_ui_overlays/, the component annotations under
+# ground_truth/component_labels/, and the bboxes in net_gt_ui_meta.json.
+# See LICENSE.txt and ground_truth/LICENSE.
 license:
   - MIT
   - CC-BY-4.0

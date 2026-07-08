@@ -3,17 +3,25 @@ SCOPE OF THIS LICENSE
 The MIT License below covers the source code and documentation in this
 repository.
 
-It does NOT cover the image files under `ground_truth/net_gt_ui_overlays/`.
-Those are derived from the CGHD-1152 dataset (Thoma, Bayer, and Li, DFKI),
-which is licensed CC BY 4.0, and they remain under CC BY 4.0. See
-`ground_truth/LICENSE` for the required attribution and a statement of the
-modifications made.
+It does NOT cover material derived from the CGHD-1152 dataset (Thoma, Bayer,
+and Li, DFKI), which is licensed CC BY 4.0 and remains so:
 
-The net annotations under `ground_truth/` (`real_nets_verified.json`,
-`real_nets_working.json`, `real_nets_vlm9.json`, `net_gt_ui_meta.json`) are
-original work by the authors of this repository and are released under the
-MIT License below. They reference CGHD-1152 images by filename and contain
-no image data.
+  - `ground_truth/net_gt_ui_overlays/` — 34 adapted photographs;
+  - `ground_truth/component_labels/` — 134 files of CGHD's own component
+    annotations, re-exported;
+  - the `bboxes` field of `ground_truth/net_gt_ui_meta.json`, whose
+    coordinates come from those same annotations.
+
+See `ground_truth/LICENSE` for the required attribution and a statement of
+the modifications made.
+
+The remaining annotations under `ground_truth/` are original work by the
+authors of this repository and are released under the MIT License below:
+the net-connectivity ground truth (`real_nets_verified.json`,
+`real_nets_working.json`, `real_nets_vlm9.json`), the wire polylines in
+`ground_truth/wire_labels/`, and — within `net_gt_ui_meta.json` — the
+selection of electrically-relevant components and their indexing. All of
+these reference CGHD-1152 images by filename and contain no image data.
 
 ---
 
