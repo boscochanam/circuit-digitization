@@ -31,6 +31,19 @@ This repository contains the code and benchmark for:
 }
 ```
 
+## Authors
+
+| Author | ORCID | Affiliation |
+|---|---|---|
+| Bosco Chanam | [0009-0009-2527-0967](https://orcid.org/0009-0009-2527-0967) | Symbiosis Institute of Technology, Pune, India |
+| Chris Dcosta | [0009-0007-7295-0573](https://orcid.org/0009-0007-7295-0573) | Symbiosis Institute of Technology, Pune, India |
+| Pranavesh Kumar Talupuri | [0009-0005-8974-2012](https://orcid.org/0009-0005-8974-2012) | University of Southern California, Los Angeles, CA, USA |
+| Shwetambari Chiwhane | [0000-0002-3534-9654](https://orcid.org/0000-0002-3534-9654) | Symbiosis Institute of Technology, Pune, India |
+| Ashay Kumar Singh | [0009-0004-9105-7383](https://orcid.org/0009-0004-9105-7383) | Symbiosis Institute of Technology, Pune, India |
+| Arghadeep Das | [0009-0000-9207-7694](https://orcid.org/0009-0000-9207-7694) | Symbiosis Institute of Technology, Pune, India |
+
+Machine-readable author metadata is in [`CITATION.cff`](CITATION.cff).
+
 ## Headline results
 
 All connectivity numbers are micro-F1 on the 31-image human-verified net-level benchmark
@@ -173,7 +186,9 @@ Two licenses apply:
 
 ## Contact
 
-- Chris Dcosta — chrisdcosta777@gmail.com / chris.dcosta.btech2021@sitpune.edu.in
-- Repository — github.com/boscochanam/circuit-digitization
+Questions about the code or the benchmark are best raised as an issue on the
+[repository](https://github.com/boscochanam/circuit-digitization).
+
 - Bosco Chanam — GitHub [@boscochanam](https://github.com/boscochanam)
+- Chris Dcosta — chrisdcosta777@gmail.com, chris.dcosta.btech2021@sitpune.edu.in
 </content>

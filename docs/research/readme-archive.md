@@ -15,7 +15,7 @@ differ only in how predicted lines are matched to ground truth:
 
 | Eval | F1 | GT matching | Where |
 |------|----|-------------|-------|
-| **a16 (exact-match)** | **0.976** | exact-match labels on original images (strict, current) | AGENTS.md, paper |
+| **a16 (exact-match)** | **0.976** | exact-match labels on original images (strict, current) | `docs/benchmark-provenance.md`, paper |
 | best_candidate_v4 (prefix-match) | 0.833 | filename prefix matching (looser GT alignment) | tables below |
 
 The **0.976 exact-match number is the headline** (paper Table I). The 0.833 prefix-match number

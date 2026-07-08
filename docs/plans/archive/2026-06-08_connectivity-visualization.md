@@ -328,7 +328,7 @@ interface TopologyGraphProps {
 2. Component nodes: positioned at image-coordinate centroids (scaled to 0-800 space)
 3. Edge between two component nodes if they share a netlist node
 4. Use `type: "straight"` for edges
-5. Custom node component (reuse `CircuitNode.tsx` pattern from AGENTS.md)
+5. Custom node component (reuse the `CircuitNode.tsx` pattern described in `docs/pipeline-internals.md` § "Topology tab")
 6. Use `useState<Node[]>` + `applyNodeChanges` (NOT `useNodesState`)
 7. `fitView` on load
 

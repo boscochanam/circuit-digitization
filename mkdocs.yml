@@ -20,6 +20,7 @@ nav:
     - Overview: pipeline/overview.md
     - Stages: pipeline/stages.md
     - Backends: pipeline/backends.md
+    - Internals: pipeline-internals.md
   - API Reference:
     - Endpoints: api/endpoints.md
     - Configuration: api/configuration.md
@@ -34,6 +35,7 @@ nav:
   - Research:
     - Overview: research/README.md
     - Reproducing the Paper: reproducing-the-paper.md
+    - Benchmark Provenance: benchmark-provenance.md
     - Expanded Benchmark: research/expanded-benchmark.md
     - Join Verification: research/join-verification.md
     - Netlist Exploration: research/netlist-exploration.md

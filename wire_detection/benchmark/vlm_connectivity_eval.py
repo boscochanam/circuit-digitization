@@ -7,12 +7,14 @@ the geometric join (synthgt.evaluate._prf / intended_pairs).
 Two-phase, deliberately decoupled so the scoring is deterministic and the model responses
 are an auditable artifact:
 
-  Phase 1 (get responses):  a fresh, context-free Claude Code subagent is spawned per
-    image with PROMPT below; it reads the image and returns JSON {"nets": [[label,...]]}.
+  Phase 1 (get responses):  the VLM is queried once per image in a fresh, context-free
+    session using PROMPT below; it reads the image and returns JSON {"nets": [[label,...]]}.
     Each net lists the component LABELS that meet at one electrical node. Responses are
-    saved to a responses JSON (one entry per circuit/image). This phase is driven by the
-    Claude Code harness (see scripts/run_vlm_subagents.md) or, for external reproduction,
-    by --api which calls the Anthropic API directly.
+    saved to a responses JSON (one entry per circuit/image). The committed responses in
+    wire_detection/benchmark/data/vlm_responses_*.json -- the ones behind the paper's
+    numbers -- were collected by spawning one context-free agent session per image, and
+    record the model string used (see VLM_MODEL_ID). For external reproduction, --api
+    issues one independent Anthropic API request per image against the same PROMPT.
 
   Phase 2 (score):  this module reads the responses JSON, recomputes ground-truth pairs
     (synthetic: intended_pairs(spec); real: all-pairs within real_nets.json nets), and

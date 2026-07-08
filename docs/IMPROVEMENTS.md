@@ -12,7 +12,8 @@
 > coverage **87% = graph_rescue**. Synthetic: clean F1 = 1.0, mean-err F1 0.969 vs
 > graph_rescue 0.944. Code in `wire_detection/core/completion.py`, registered as
 > `degree_budget`, now `DEFAULT_STRATEGY` (graph_rescue stays as
-> `?strategy=graph_rescue`). See **AGENTS.md** for the production-pipeline join
+> `?strategy=graph_rescue`). See **`docs/benchmark-provenance.md`** § "Join strategy
+> comparison" for the production-pipeline join
 > table — its absolute % differ (component source = trained model vs the HDC-label
 > bench here), but both show **0 regressions** and degree_budget dominant. Residual:
 > connectivity gain still lacks net-level GT (#20), but self-loops, floating, and

@@ -43,8 +43,8 @@ All artifacts in `docs/research/experiments/` unless noted. **Every row verified
 
 | Paper claim | Artifact | Verdict |
 |---|---|---|
-| Wire detection F1 0.976 / P 0.973 / R 0.978 (a16, 134 imgs) | `AGENTS.md:93` (0.9755/0.9729/0.9781); benchmark `wire_detection/benchmark/expanded_benchmark.py` | ✅ |
-| Otsu 0.789, adaptive-Gaussian 0.845 ablations | `AGENTS.md:102` | ✅ |
+| Wire detection F1 0.976 / P 0.973 / R 0.978 (a16, 134 imgs) | `docs/benchmark-provenance.md` § "Top configs (Jun 2026, corrected eval)" (0.9755/0.9729/0.9781); benchmark `wire_detection/benchmark/expanded_benchmark.py` | ✅ |
+| Otsu 0.789, adaptive-Gaussian 0.845 ablations | `docs/benchmark-provenance.md` § "Key findings and thresholding ablations" | ⚠️ adaptive-Gaussian 0.845 matches; **Otsu does not** — the provenance record says OTSU F1 = 0.828 (and Triangle 0.795), the paper's Table I row says 0.789. One of the two is stale; re-run `expanded_benchmark.py` and reconcile before submission. |
 | Join micro-F1 0.890 (P .919 / R .864; macro .901) | `cc_detected_micro_n31.json` ours: 0.8903/0.9187/0.8636, macro 0.9011; also `fair_join_comparison_n31.json`, `join_micro_n31.json` | ✅ |
 | 95% CI [0.855, 0.924]; VLM−ours +0.033 [−0.009, +0.078] | `bootstrap_ci_n31.json` (0.8547/0.9240; diff CI matches) | ✅ |
 | Baselines micro: rescue+compl 0.829, scale base 0.816, rescue base 0.787, radius 0.667, Hough 0.805 | `bootstrap_ci_n31.json`, `hough_micro_n31.json` (link44_reach48 = 0.8046) | ✅ |
@@ -54,7 +54,7 @@ All artifacts in `docs/research/experiments/` unless noted. **Every row verified
 | Synthetic L4 leaderboard 0.95 / 0.94 / 0.90 / 0.85 / 0.36 (radius), 2.6× claim | `synthetic_leaderboard.json` (0.9480/0.9416/0.8985/0.8497/0.3635) | ✅ |
 | Per-circuit L4 table (16 seeds; Wheatstone 0.82, ring 0.95, divider 0.99) | `per_circuit_scale_completion_l4_n16.json` | ✅ |
 | Reach plateau ρ∈[3,5] | `join_reach_sweep_n31.json` (r3.0 0.898 … r5.0 0.903) | ✅ |
-| Component detection 88.5% mAP@0.5, crossover recall 70.7%, 16 classes, drafter_0 excluded | `AGENTS.md:134-150`, `docs/datasets.md` | ✅ (see caveat below) |
+| Component detection 88.5% mAP@0.5, crossover recall 70.7%, 16 classes, drafter_0 excluded | `docs/benchmark-provenance.md` § "Component detection model", `docs/datasets.md` | ✅ (see caveat below) |
 | 31-image human-verified GT | `ground_truth/real_nets_verified.json` — exactly 31 keys | ✅ |
 | "Claude Opus 4.8" VLM identity | `wire_detection/benchmark/data/vlm_responses_*.json` record the same model string | ✅ |
 | Related-work numbers (SINA 96.47%, DiagramNet F1s, Kelly&Cole 86.4%, Peker 85.33/93.33%) | Cited literature, cross-checked against `SUMMARY.md` notes | ✅ |
@@ -65,7 +65,8 @@ All artifacts in `docs/research/experiments/` unless noted. **Every row verified
   where CGHD data is staged; paper correctly cites CGHD-1152 as the external source.
 - **Detector weights gitignored** (46 MB `.pt`); published at
   huggingface.co/boscochanam/circuit-component-detector with SHA256 in `docs/datasets.md:12`.
-  No training `results.csv` committed — the 88.5% mAP rests on `AGENTS.md` prose + the HF model.
+  No training `results.csv` committed — the 88.5% mAP rests on the `docs/benchmark-provenance.md`
+  record + the HF model.
 - The 31-image join benchmark, synthetic suite, VLM responses, and all baseline JSONs **are**
   fully reproducible from the repo.
 

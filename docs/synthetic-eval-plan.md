@@ -227,7 +227,8 @@ and was made `DEFAULT_STRATEGY` (graph_rescue stays as `?strategy=graph_rescue`)
 (114 improved / 20 same), connectivity 63.1% → **88.6%**, self-loops **1.37 =
 graph_rescue** (down from pre-fix 4.4), wire coverage **87% = graph_rescue**,
 floating 8.1 → 2.6. **Synthetic:** clean F1 = 1.0, mean-err F1 **0.969** vs
-graph_rescue 0.944. (AGENTS.md has the production-pipeline join table — absolute %
+graph_rescue 0.944. (`docs/benchmark-provenance.md` § "Join strategy comparison" has the
+production-pipeline join table — absolute %
 differ because components come from the trained model there vs HDC labels here;
 both show 0 regressions.) **Residual caveat:** the connectivity gain still has no
 net-level ground truth ([#20]) to fully rule out over-merge — but self-loops,

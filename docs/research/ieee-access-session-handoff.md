@@ -243,7 +243,7 @@ and the 2 sanity slips), `real_nets_working.json`
   Bash sandbox **blocks network/ssh — use `dangerouslyDisableSandbox: true`** for ssh/scp.
   `pkill`/`kill` are sandbox-restricted (use `dangerouslyDisableSandbox`); note `pgrep -f
   gt_verify_ui` matches your own command line — check the actual port instead.
-- **claw (`ssh claw@192.168.1.22`, `/home/claw/circuit-digitization`):** CGHD data
+- **claw (the CGHD staging host, repo checked out at `~/circuit-digitization`):** CGHD data
   (`/home/claw/workspace/ground_truth/labels_few_annot/`), `roboflow_test2/`, YOLO model.
   **NO uv — use `./.venv/bin/python`.** git remote `chris` = github.com/ChrisDc777/...
 - Scratchpad is **ephemeral** — everything important was copied into the repo (above).

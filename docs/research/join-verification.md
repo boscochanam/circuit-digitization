@@ -299,8 +299,10 @@ endpoint-graph join (`graph_rescue`) is the default strategy and is substantiall
 
 ## Where experiments / tests are recorded (this repo)
 - `docs/join-verification.md` — **this file** (join experiments log, above).
-- `docs/autonomous-experimentation-log.md` — running log of automated experiments.
-- `docs/iteration-tracker.md` — iteration-by-iteration progress.
+- `docs/benchmark-provenance.md` — provenance for every number the paper reports, plus the
+  double-extend caveat that applies to the join tables above.
+- `docs/iteration-tracker.md` — iteration-by-iteration progress, including the exhausted
+  false-positive-removal leads.
 - `docs/*-synthesis.md` — `complete-netlist-exploration-synthesis`,
   `connectivity-filter-synthesis`, `netlist-exploration-synthesis`,
   `mapping-experiment-synthesis` (final write-ups per investigation).

@@ -81,7 +81,7 @@ def evaluate(
 # ANCHOR FILTER UTILITIES  (Phase 1.9 helpers)
 # ═══════════════════════════════════════════════════════════════════
 
-# a16 best config parameters (from AGENTS.md)
+# a16 best config parameters (see docs/pipeline-internals.md, "Pipeline parameters")
 ANCHOR_ENDPOINT_DIST = 16  # pixels — max distance from endpoint to component bbox to be "anchored"
 LINK_DIST = 8              # pixels — max distance between two endpoints to link them
 MARGIN = 8                 # pixels — margin around component bbox for anchor check

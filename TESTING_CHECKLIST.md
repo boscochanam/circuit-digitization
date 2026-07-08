@@ -239,7 +239,7 @@
 ### 8.1 Code Documentation
 - [x] All functions have docstrings ✓ (netlist: 12/12, spice: 2/2, join_strategies: 21/21)
 - [x] Complex algorithms are documented ✓ (SPICE generation, join strategies, endpoint extraction)
-- [x] Configuration options are documented ✓ (AGENTS.md has full config reference)
+- [x] Configuration options are documented ✓ (`docs/pipeline-internals.md` has full config reference)
 
 ### 8.2 Paper Documentation
 - [x] Abstract is complete ✓
@@ -251,11 +251,11 @@
 - [x] Discussion section is complete ✓
 - [x] Conclusion is complete ✓
 
-### 8.3 AGENTS.md
-- [x] Paper structure is documented ✓
-- [x] Key numbers are documented ✓
-- [x] File locations are documented ✓
-- [x] LLM comparison notes are documented ✓
+### 8.3 Project documentation
+- [x] Paper structure is documented ✓ (`paper/ieee-paper/README.md`)
+- [x] Key numbers are documented ✓ (`docs/benchmark-provenance.md`)
+- [x] File locations are documented ✓ (`docs/pipeline-internals.md`)
+- [x] VLM comparison notes are documented ✓ (`docs/research/vlm-experiments.md`)
 
 ---
 

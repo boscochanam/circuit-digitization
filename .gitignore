@@ -62,5 +62,16 @@ paper/ieee-paper/paper-access-LOCAL-verified.pdf
 # Build output; 20 revisions of it were purged from history (70 MB).
 # Regenerate with: pdflatex paper-build.tex
 paper/ieee-paper/paper-build.pdf
+
+# Editor/assistant tooling config. Local-only, never committed. The durable
+# content that used to live in AGENTS.md is now docs/pipeline-internals.md
+# (engineering contract) and docs/benchmark-provenance.md (empirical records).
+AGENTS.md
+CLAUDE.md
+**/AGENTS.md
+**/CLAUDE.md
+.hermes-agent
+.omo/
+.claude/
 # Original (pre-processing) author headshots
 paper/ieee-paper/figures/authors/.orig/

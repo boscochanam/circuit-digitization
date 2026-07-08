@@ -124,7 +124,8 @@ Features:
 **Rules for adding new visualizations:**
 1. Use `net.wire_connects_components()` or `net.connected_wires()` — never reimplement connection checks
 2. Snap connected wire endpoints to actual pin positions, not raw error-injected positions
-3. See `.hermes-agent` for the full rule set
+3. See [`pipeline-internals.md`](pipeline-internals.md#shared-component-assignment-logic) for the
+   full rule set
 
 ### Other Visualizations
 

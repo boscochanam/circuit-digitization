@@ -4,6 +4,17 @@
 **Dataset:** 134 circuit schematic images, 3,524 ground-truth wire annotations  
 **Configs evaluated:** 36 (wave1 + wave2 + wave3 + wave4 variants)
 
+!!! warning "Superseded by the corrected evaluation"
+    This page reports the **prefix-match** evaluation, whose best config is `best_candidate_v4` at
+    **F1 = 0.8334**. It has been superseded by the corrected evaluation (exact-match labels on the
+    original images, Jun 2026), whose best config is **a16 at F1 = 0.9755** — that is the number the
+    paper reports.
+
+    The corrected results, and an explanation of why the two differ, are in
+    [`docs/benchmark-provenance.md`](../benchmark-provenance.md). This page is retained for
+    historical comparison: its 36-config ranking, failure analysis and per-image breakdown remain
+    the most detailed record of the ablation, but its absolute F1 values are not the paper's.
+
 ## Background
 
 The original benchmark pipeline (`reference_pipeline.py`) used pixel-difference matching to pair ground-truth images with HDC component labels. This only found **23 of 134** available images because the Roboflow-augmented images had `.rf.XXXX` suffixes that prevented exact pixel matching.
@@ -161,7 +172,7 @@ Pushing for higher precision (v7/v8) costs recall — you can get 141 FPs (v7) b
 ## How to Reproduce
 
 ```bash
-cd /home/claw/circuit-digitization
+# from the repository root
 uv run python wire_detection/benchmark/expanded_benchmark.py
 ```
 
