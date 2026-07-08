@@ -78,7 +78,10 @@ Run a zero-external-data synthetic demo (generates images and line labels, no da
 uv run wire-sdg --num-images 5 --output-dir data/synthetic_demo --seed 0
 ```
 
-Real-image evaluation additionally needs the CGHD-1152 dataset from Kaggle:
+Real-image evaluation additionally needs the CGHD-1152 dataset — *A Public Ground-Truth Dataset
+for Handwritten Circuit Diagram Images*, by Felix Thoma, Johannes Bayer, and Yakun Li (DFKI),
+licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) and archived at
+[doi:10.5281/zenodo.6385814](https://doi.org/10.5281/zenodo.6385814). Mirror on Kaggle:
 [kaggle.com/datasets/johannesbayer/cghd1152](https://www.kaggle.com/datasets/johannesbayer/cghd1152).
 
 ## Reproducing the paper
@@ -160,7 +163,13 @@ uv run pytest wire_detection/tests/ -q
 
 ## License
 
-MIT — see [`LICENSE.txt`](LICENSE.txt).
+Two licenses apply:
+
+- **Source code, documentation, and net annotations** — MIT, see [`LICENSE.txt`](LICENSE.txt).
+- **Overlay images** under `ground_truth/net_gt_ui_overlays/` — CC BY 4.0. They are adaptations
+  of [CGHD-1152](https://doi.org/10.5281/zenodo.6385814) (Thoma, Bayer, and Li, DFKI) and remain
+  under the source dataset's license. See [`ground_truth/LICENSE`](ground_truth/LICENSE) for the
+  required attribution and a statement of the modifications made.
 
 ## Contact
 

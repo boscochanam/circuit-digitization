@@ -229,7 +229,8 @@ non-electrical pins are ignored — so the UI's electrical-only edits are suffic
   `probe_identity.py` (roboflow-alignment diagnostics).
 **Repo `wire_detection/benchmark/build_net_gt.py`** — `find_hdc_label` identity-selection FIX
 (uncommitted). Also the earlier GT_STRATEGY="graph_scale" bootstrap.
-**Repo `ground_truth/`:** `real_nets_verified.json` (33 verified), `real_nets_working.json`
+**Repo `ground_truth/`:** `real_nets_verified.json` (31 verified — 34 working minus the 1 to-do
+and the 2 sanity slips), `real_nets_working.json`
 (34, what the UI edits — has the 1 to-do + the 2 slips), `net_gt_ui_meta.json` (bboxes),
 `net_gt_ui_overlays/*.png` (34 wires-only overlays), `PRESCREEN_FINDINGS.md` (early pre-screen).
 **On claw `/home/claw/circuit-digitization/`:** all the above scripts synced;

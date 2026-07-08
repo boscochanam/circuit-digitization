@@ -1,3 +1,22 @@
+SCOPE OF THIS LICENSE
+
+The MIT License below covers the source code and documentation in this
+repository.
+
+It does NOT cover the image files under `ground_truth/net_gt_ui_overlays/`.
+Those are derived from the CGHD-1152 dataset (Thoma, Bayer, and Li, DFKI),
+which is licensed CC BY 4.0, and they remain under CC BY 4.0. See
+`ground_truth/LICENSE` for the required attribution and a statement of the
+modifications made.
+
+The net annotations under `ground_truth/` (`real_nets_verified.json`,
+`real_nets_working.json`, `real_nets_vlm9.json`, `net_gt_ui_meta.json`) are
+original work by the authors of this repository and are released under the
+MIT License below. They reference CGHD-1152 images by filename and contain
+no image data.
+
+---
+
 MIT License
 
 Copyright (c) 2025 MEDAL Research Group

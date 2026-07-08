@@ -1,0 +1,80 @@
+LICENSE AND ATTRIBUTION FOR ground_truth/
+=========================================
+
+This directory contains material under two different licenses. Read both
+sections before redistributing any part of it.
+
+
+1. IMAGES — CC BY 4.0 (derived from CGHD-1152)
+----------------------------------------------
+
+Applies to: `net_gt_ui_overlays/*.png` (34 files)
+
+These files are ADAPTATIONS of images from the CGHD-1152 dataset.
+
+  Original work: CGHD1152 — A Public Ground-Truth Dataset for Handwritten
+                 Circuit Diagram Images
+  Creators:      Felix Thoma, Johannes Bayer, Yakun Li
+  Affiliation:   Smart Data & Knowledge Services, DFKI GmbH,
+                 Kaiserslautern, Germany
+  Source:        https://doi.org/10.5281/zenodo.6385814
+  License:       Creative Commons Attribution 4.0 International (CC BY 4.0)
+                 https://creativecommons.org/licenses/by/4.0/
+
+STATEMENT OF MODIFICATIONS (required by CC BY 4.0 §3(a)(1)(B)):
+
+The original CGHD-1152 photographs were modified as follows, by
+`wire_detection/benchmark/gen_batch.py`:
+
+  a. converted from colour to 8-bit grayscale, then back to a 3-channel
+     BGR representation;
+  b. resampled to 1408x1408 pixels by bicubic interpolation (roughly a
+     4x upscale);
+  c. overlaid with dark polylines marking the dataset's ground-truth wire
+     segments.
+
+The underlying photograph — including paper texture, lighting gradient, and
+the drafter's original pen strokes — is retained in these files. They are
+adaptations, not independent works.
+
+These 34 PNG files remain licensed CC BY 4.0. Redistributing them requires
+crediting the creators above, linking the license, and indicating that
+changes were made. This notice satisfies those conditions; if you
+redistribute the files, carry this notice with them.
+
+No warranty is given by the original creators. CC BY 4.0 is offered
+"as-is" and disclaims warranties to the extent permitted.
+
+
+2. ANNOTATIONS — MIT
+--------------------
+
+Applies to: `real_nets_verified.json`, `real_nets_working.json`,
+            `real_nets_vlm9.json`, `net_gt_ui_meta.json`,
+            `chris_ground_truth/*.zip`
+
+These are original work by the authors of this repository (see
+`../LICENSE.txt`) and are released under the MIT License.
+
+They encode electrical net membership, component bounding boxes, and
+component identity. They reference CGHD-1152 images by filename only and
+contain no image data. Using them requires obtaining the CGHD-1152 images
+separately — see `README.md` in this directory.
+
+Although these annotations describe CGHD-1152 images, they are not
+adaptations of them in the copyright sense: the human-verified net-level
+connectivity ground truth was traced and confirmed independently, and no
+equivalent annotation exists in the source dataset.
+
+
+3. IF YOU USE THIS BENCHMARK
+----------------------------
+
+Cite both the source dataset and this work:
+
+  F. Thoma, J. Bayer, Y. Li, and A. Dengel, "A public ground-truth dataset
+  for handwritten circuit diagram images," in Proc. Int. Conf. Document
+  Analysis and Recognition (ICDAR), 2021, pp. 20-27.
+  Dataset: https://doi.org/10.5281/zenodo.6385814
+
+  See `../CITATION.cff` for the citation of this repository and its paper.

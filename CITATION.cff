@@ -34,7 +34,12 @@ authors:
     affiliation: Symbiosis Institute of Technology, Pune, India
 repository-code: 'https://github.com/boscochanam/circuit-digitization'
 url: 'https://github.com/boscochanam/circuit-digitization'
-license: MIT
+# Source code and annotations are MIT. The overlay images under
+# ground_truth/net_gt_ui_overlays/ are adaptations of CGHD-1152 and remain
+# CC BY 4.0. See LICENSE.txt and ground_truth/LICENSE.
+license:
+  - MIT
+  - CC-BY-4.0
 keywords:
   - circuit digitization
   - connectivity benchmark
@@ -78,3 +83,24 @@ preferred-citation:
   notes: >-
     Manuscript submitted to IEEE Access; under review (2026). Update
     volume, pages, and DOI on acceptance.
+
+# Works this repository builds on. CGHD-1152 is the source of every real
+# image used in the benchmark; the overlay images we redistribute are
+# adaptations of it and remain under its CC BY 4.0 licence.
+references:
+  - type: data
+    title: 'CGHD1152: A Public Ground-Truth Dataset for Handwritten Circuit Diagram Images'
+    authors:
+      - given-names: Felix
+        family-names: Thoma
+      - given-names: Johannes
+        family-names: Bayer
+      - given-names: Yakun
+        family-names: Li
+    doi: 10.5281/zenodo.6385814
+    url: 'https://doi.org/10.5281/zenodo.6385814'
+    license: CC-BY-4.0
+    notes: >-
+      Source dataset. The overlay images in ground_truth/net_gt_ui_overlays/
+      are adaptations of images from this dataset (grayscale conversion,
+      bicubic upscaling, and ground-truth wire polylines drawn on top).
