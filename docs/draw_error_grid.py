@@ -5,6 +5,7 @@ from collections import Counter
 from itertools import combinations
 from PIL import Image, ImageDraw, ImageFont
 from wire_detection.synthgt.circuits import CATALOG
+from wire_detection.paths import DOCS_DIR
 from wire_detection.synthgt.synthesize import (
     inject_errors, intended_pairs, synthesize_clean,
 )
@@ -195,7 +196,7 @@ def main():
             draw_cell(draw, cell_spec, wires, components, pin_pos,
                       col_x, row_y, CELL_W, CELL_H, level, f1, prec, rec)
 
-    out = "/home/claw/circuit-digitization/docs/synthgt_error_grid.png"
+    out = str(DOCS_DIR / "synthgt_error_grid.png")
     img.save(out, "PNG")
     print(f"Saved to {out} ({W}x{H})")
 

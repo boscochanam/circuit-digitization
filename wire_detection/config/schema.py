@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Any, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from wire_detection.paths import expand_path
 
 
 class StageConfig(BaseModel):
@@ -33,6 +35,16 @@ class DatasetConfig(BaseModel):
     component_labels: bool = False
     crop_to_components: bool = False
     description: str = ""
+
+    @field_validator("path", mode="before")
+    @classmethod
+    def _expand(cls, value: Any) -> Any:
+        """Resolve ``${VAR}``/``~`` so dataset YAML stays machine-independent.
+
+        An unset variable expands to the literal ``${VAR}``, which surfaces as a
+        missing directory rather than silently globbing the repository root.
+        """
+        return expand_path(value) if isinstance(value, (str, Path)) else value
 
 
 class SDGConfig(BaseModel):

@@ -5,6 +5,9 @@ Use programmatic scores as fallback for VLM failures."""
 import json, re
 from collections import Counter
 
+from wire_detection.paths import cghd_workspace
+
+
 def load_json(path):
     with open(path) as f:
         text = f.read()
@@ -12,8 +15,8 @@ def load_json(path):
     text = re.sub(r',\s*\}', '}', text)
     return json.loads(text)
 
-vlm_main = load_json('/home/claw/workspace/cghd_vlm_results.json')
-vlm_retry = load_json('/home/claw/workspace/cghd_vlm_retry.json')
+vlm_main = load_json(cghd_workspace() / 'cghd_vlm_results.json')
+vlm_retry = load_json(cghd_workspace() / 'cghd_vlm_retry.json')
 
 path_map = {}
 for entry in vlm_main:
@@ -24,7 +27,7 @@ for entry in vlm_retry:
     if new and len(new) > 10 and old in ('The', 'So', ''):
         path_map[entry['path']] = entry
 
-sweep = load_json('/home/claw/workspace/cghd_quality_sweep.json')
+sweep = load_json(cghd_workspace() / 'cghd_quality_sweep.json')
 sweep_map = {e['path']: e for e in sweep}
 
 # Full paper-type classification patterns
@@ -166,7 +169,7 @@ for path, entry in path_map.items():
     })
 
 # Save
-with open('/home/claw/workspace/cghd_reclassified.json', 'w') as f:
+with open(cghd_workspace() / 'cghd_reclassified.json', 'w') as f:
     json.dump(results, f, indent=2)
 
 # Summaries

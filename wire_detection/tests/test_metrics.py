@@ -17,6 +17,8 @@ from typing import Tuple
 
 import pytest
 
+from wire_detection.paths import MissingDatasetError, gt_images_dir, gt_labels_dir, hdc_root
+
 # ═══════════════════════════════════════════════════════════════════
 # LOCAL COPIES OF REFERENCE IMPLEMENTATIONS  (self-contained tests)
 # ═══════════════════════════════════════════════════════════════════
@@ -791,7 +793,6 @@ class TestEvaluateEdgeCases:
 # PHASE 4.3 — SYNTHETIC ERROR INJECTION
 # ═══════════════════════════════════════════════════════════════════
 
-from pathlib import Path
 import numpy as np
 
 
@@ -998,17 +999,20 @@ class TestWireDropping:
 # PHASE 5.1 — DATASET INTEGRITY
 # ═══════════════════════════════════════════════════════════════════
 
-GT_IMAGES_DIR = Path(
-    "/home/claw/workspace/ground_truth/labels_few_annot/images"
-)
-GT_LABELS_DIR = Path(
-    "/home/claw/workspace/ground_truth/labels_few_annot/labels"
-    "/train/manually_verified_no_background_data/images"
-)
-HDC_LABELS_BASE = Path(__file__).resolve().parents[2] / "roboflow_test2"
+try:
+    GT_IMAGES_DIR = gt_images_dir()
+    GT_LABELS_DIR = gt_labels_dir()
+    _has_gt_data = True
+except MissingDatasetError:
+    GT_IMAGES_DIR = GT_LABELS_DIR = None
+    _has_gt_data = False
 
-_has_gt_data = GT_IMAGES_DIR.is_dir()
-_has_hdc_data = HDC_LABELS_BASE.is_dir()
+try:
+    HDC_LABELS_BASE = hdc_root()
+    _has_hdc_data = True
+except MissingDatasetError:
+    HDC_LABELS_BASE = None
+    _has_hdc_data = False
 
 
 @pytest.mark.skipif(not _has_gt_data, reason="GT dataset not present")

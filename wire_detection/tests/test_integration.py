@@ -1,22 +1,35 @@
 import numpy as np
 import cv2
 import pytest
-from pathlib import Path
 from wire_detection.pipeline.factory import PipelineFactory
 from wire_detection.evaluate.match import evaluate
 from wire_detection.evaluate.metric import segment_dist
 from wire_detection.data.dataset import DatasetRegistry
 from wire_detection.experiment.sweep import run_sweep, SweepConfig
 from wire_detection.experiment.presets import PRESETS
+from wire_detection.paths import MissingDatasetError, REPO_ROOT, hdc_root
 
-HAND_DRAWN_DIR = Path("/home/claw/circuit-digitization/roboflow_test")
-HDC_DIR = Path("/home/claw/circuit-digitization/roboflow_test2")
+# Hand-drawn dataset has no dedicated env var / dataset root helper; it is a local-only,
+# gitignored convenience directory that most checkouts won't have, so the tests below skip.
+HAND_DRAWN_DIR = REPO_ROOT / "roboflow_test"
 HAND_DRAWN_IMAGES = sorted(HAND_DRAWN_DIR.glob("train/images/*.jpg"))
 HAND_DRAWN_LABELS = sorted(HAND_DRAWN_DIR.glob("train/labels/*.txt"))
 HAS_HAND_DRAWN = len(HAND_DRAWN_IMAGES) > 0
-HAS_HDC = HDC_DIR.is_dir() and any(HDC_DIR.glob("train/images/*.jpg"))
+try:
+    HDC_DIR = hdc_root()
+    HAS_HDC = HDC_DIR.is_dir() and any(HDC_DIR.glob("train/images/*.jpg"))
+except MissingDatasetError:
+    HDC_DIR = None
+    HAS_HDC = False
+try:
+    # The /api/list and /api/thumb routes default to the gt_labels dataset, which needs the
+    # CGHD scans. That is a different dependency from the HDC export.
+    HAS_GT_LABELS = bool(DatasetRegistry().list_images("gt_labels"))
+except Exception:
+    HAS_GT_LABELS = False
 skip_no_hand_drawn = pytest.mark.skipif(not HAS_HAND_DRAWN, reason="hand_drawn images not available locally")
 skip_no_hdc = pytest.mark.skipif(not HAS_HDC, reason="HDC dataset not available locally")
+skip_no_gt_labels = pytest.mark.skipif(not HAS_GT_LABELS, reason="gt_labels images not available locally")
 
 BASELINE_CONFIG = {
     "stages": ["threshold", "invert", "dilate", "ccl", "contour_extract", "dedup", "length_filter"],
@@ -250,7 +263,7 @@ class TestAPI:
             pytest.skip("hand_drawn dataset not available")
         assert len(data) >= 1
 
-    @skip_no_hdc
+    @skip_no_gt_labels
     def test_list_endpoint_default(self, api_client):
         resp = api_client.get("/api/list")
         assert resp.status_code == 200

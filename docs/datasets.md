@@ -104,40 +104,33 @@ uv run wire-sdg \
 
 ### 3. Configure Paths
 
-Edit `wire_detection/config/datasets.yaml` to point to your dataset locations:
+Point the framework at your dataset locations with environment variables, not by
+editing `wire_detection/config/datasets.yaml` directly. Copy `.env.example` to
+`.env` and fill in the paths, or export them in your shell:
 
-```yaml
-datasets:
-  hdc:
-    path: ./roboflow_test2
-    image_glob: "**/images/*.jpg"
-    label_format: yolo_obb
-    label_glob: "**/labels/*.txt"
-    component_labels: true
-    description: "HDC-Recognition PCB schematics, 4,833 images, 58 classes"
-
-  cghd:
-    path: ./cghd1152
-    image_glob: "*/images/*.jpg"
-    label_format: pascal_voc
-    label_glob: "*/annotations/*.xml"
-    component_labels: true
-    description: "CGHD1152 hand-drawn circuits, 4,503 images, 61 classes, 33 drafters"
-
-  synthetic:
-    path: ./data/synthetic
-    image_glob: "images/*.jpg"
-    label_format: lines
-    label_glob: "labels/*.txt"
-    description: "Synthetic bezier-curve wires on varied backgrounds"
-
-  database:
-    path: ./Database
-    image_glob: "*/*.jpg"
-    label_format: null
-    label_glob: null
-    description: "Raw schematic images for visual inspection"
+```bash
+export WIRE_GT_IMAGES=/path/to/cghd/images
+export GT_LABELS_PATH=/path/to/ground_truth/labels_few_annot   # tuner UI only
 ```
+
+`WIRE_GT_IMAGES` is the only variable real-image evaluation requires. The wire polylines and
+component labels are committed under `ground_truth/`, so the Roboflow export
+(`WIRE_HDC_BASE`) is a fallback that most workflows never need.
+
+`datasets.yaml` references these as `${WIRE_HDC_BASE:-roboflow_test2}`, `${GT_LABELS_PATH}` and
+`${SYNTHETIC_PATH:-data/synthetic}`, expanded on load. `${VAR:-default}` falls
+back to `default` when the variable is unset, and `~` is expanded too. Relative
+paths (including defaults) resolve against the repository root, not the current
+working directory, so `data/synthetic` behaves the same regardless of where a
+script is run from.
+
+`SYNTHETIC_PATH` is optional and defaults to `data/synthetic` in the repo,
+which is where step 2 above writes to. Synthetic-only workflows need no
+configuration at all.
+
+If a dataset accessor is used without its variable set, it raises a
+`MissingDatasetError` naming the variable and what to point it at, instead of
+failing later on an empty glob.
 
 ## Data Quality Considerations
 

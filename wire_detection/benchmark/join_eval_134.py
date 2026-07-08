@@ -44,18 +44,12 @@ from wire_detection.core.join_strategies import (
     run_strategy,
     score_netlist,
 )
+from wire_detection.paths import gt_images_dir, gt_labels_dir, hdc_root, output_dir
 
-# ── Data paths (134-image GT set) ──
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-GT_WIRE_LABELS = Path(
-    "/home/claw/workspace/ground_truth/labels_few_annot/labels/train"
-    "/manually_verified_no_background_data/images"
-)
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
 HDC_SPLITS = ["train", "valid", "test"]
 
 # Output
-OUT_DIR = Path(SCRIPT_DIR.parent.parent / "output" / "join_eval_134")
+OUT_DIR = output_dir() / "join_eval_134"
 
 # ── Best candidate v4 config ──
 CFG = ExperimentConfig(
@@ -79,7 +73,7 @@ CFG = ExperimentConfig(
 def find_hdc_label(image_name: str) -> Path | None:
     """Find HDC component label by filename prefix."""
     for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
+        label_dir = hdc_root() / split / "labels"
         for ext in ["_jpg", "_png", "_jpeg"]:
             matches = sorted(label_dir.glob(f"{image_name}{ext}.rf.*.txt"))
             if matches:
@@ -145,9 +139,9 @@ def append_result(jsonl_path: Path, record: dict) -> None:
 def discover_images() -> list[tuple[Path, Path | None]]:
     """Find all images with GT wire labels and their HDC component labels."""
     pairs = []
-    for gt_file in sorted(GT_WIRE_LABELS.glob("*_jpg.txt")):
+    for gt_file in sorted(gt_labels_dir().glob("*_jpg.txt")):
         image_name = gt_file.stem.replace("_jpg", "")
-        image_path = GT_IMAGES / f"{image_name}_jpg.jpg"
+        image_path = gt_images_dir() / f"{image_name}_jpg.jpg"
         if not image_path.exists():
             continue
         hdc = find_hdc_label(image_name)

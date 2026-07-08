@@ -2,7 +2,7 @@
 """Generate PDF report: graph_rescue vs degree_budget_completion on 134 real images.
 FIXED: uses Roboflow augmented images to match labels (alignment fix)."""
 from __future__ import annotations
-import sys, time
+import time
 from pathlib import Path
 
 import cv2
@@ -16,20 +16,16 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 from wire_detection.api.routes.netlist import _run_preset_pipeline
 from wire_detection.core.join_strategies import make_pins, run_strategy, score_netlist
 from wire_detection.core.component_classes import COMPONENT_TYPES
 from wire_detection.synthgt.candidate_joins import degree_budget_completion
+from wire_detection.paths import DOCS_DIR, gt_images_dir, gt_labels_dir, hdc_root
 
-GT_LABELS = Path("/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images")
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
 HDC_SPLITS = ["train", "valid", "test"]
 from wire_detection.benchmark import reference_pipeline as ref
 
-TMP_DIR = Path("/home/claw/circuit-digitization/docs/_report_imgs")
+TMP_DIR = DOCS_DIR / "_report_imgs"
 TMP_DIR.mkdir(parents=True, exist_ok=True)
 
 _FILTER_OUT = {44, 51}
@@ -65,9 +61,9 @@ def clean_components(raw):
     return keep
 
 
-def find_hdc_label(image_name: str) -> Path | None:
+def find_hdc_label(hdc_base: Path, image_name: str) -> Path | None:
     for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
+        label_dir = hdc_base / split / "labels"
         for pat in [f"{image_name}_jpg.rf.*.txt"]:
             matches = sorted(label_dir.glob(pat))
             if matches:
@@ -75,10 +71,10 @@ def find_hdc_label(image_name: str) -> Path | None:
     return None
 
 
-def find_rob_image(image_name: str) -> Path | None:
+def find_rob_image(hdc_base: Path, image_name: str) -> Path | None:
     """Find the Roboflow augmented image (matches the label orientation)."""
     for split in HDC_SPLITS:
-        img_dir = HDC_BASE / split / "images"
+        img_dir = hdc_base / split / "images"
         matches = sorted(img_dir.glob(f"{image_name}_jpg.rf.*.jpg"))
         if matches:
             return matches[0]
@@ -158,7 +154,11 @@ def make_3panel(image_name, gray, wires, components, pins, gr_nl, dbc_nl):
 
 
 def run_benchmark():
-    all_images = sorted(GT_LABELS.glob("*_jpg.txt"))
+    gt_labels = gt_labels_dir()
+    gt_images = gt_images_dir()
+    hdc_base = hdc_root()
+
+    all_images = sorted(gt_labels.glob("*_jpg.txt"))
     results = []
     t0 = time.time()
     aug_stats = {"identical": 0, "augmented": 0, "no_rob_image": 0}
@@ -167,10 +167,10 @@ def run_benchmark():
         image_name = gt_file.stem.replace("_jpg", "")
 
         # Load Roboflow augmented image (matches label orientation)
-        rob_img_path = find_rob_image(image_name)
+        rob_img_path = find_rob_image(hdc_base, image_name)
         if rob_img_path is None:
             # Fallback to original GT image
-            rob_img_path = GT_IMAGES / f"{image_name}_jpg.jpg"
+            rob_img_path = gt_images / f"{image_name}_jpg.jpg"
             aug_stats["no_rob_image"] += 1
 
         gray = cv2.imread(str(rob_img_path), cv2.IMREAD_GRAYSCALE)
@@ -178,14 +178,14 @@ def run_benchmark():
             continue
 
         # Check if augmented or identical
-        orig = cv2.imread(str(GT_IMAGES / f"{image_name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
+        orig = cv2.imread(str(gt_images / f"{image_name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
         if orig is not None and np.array_equal(orig, gray):
             aug_stats["identical"] += 1
         else:
             aug_stats["augmented"] += 1
 
         h, w = gray.shape
-        hdc_path = find_hdc_label(image_name)
+        hdc_path = find_hdc_label(hdc_base, image_name)
         raw_components = ref.parse_components(hdc_path, w, h) if hdc_path else []
         components = clean_components(raw_components)
 
@@ -219,7 +219,7 @@ def run_benchmark():
 
 
 def build_pdf(results):
-    out_path = Path("/home/claw/circuit-digitization/docs/join_benchmark_report.pdf")
+    out_path = DOCS_DIR / "join_benchmark_report.pdf"
     doc = SimpleDocTemplate(str(out_path), pagesize=A4,
                             topMargin=15*mm, bottomMargin=15*mm,
                             leftMargin=12*mm, rightMargin=12*mm)

@@ -9,13 +9,9 @@ and compare F1 scores.
 from __future__ import annotations
 import json
 import re
-import sys
 import time
 from dataclasses import asdict
 from pathlib import Path
-
-sys.path.insert(0, '/home/claw/circuit-digitization')
-sys.path.insert(0, '/home/claw/workspace')
 
 from wire_detection.benchmark.expanded_benchmark import (
     preload_all_images, run_config

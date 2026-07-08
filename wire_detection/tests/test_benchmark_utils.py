@@ -5,6 +5,7 @@ helpers from experiment_harness.py and reference_pipeline.py.
 """
 from __future__ import annotations
 
+import os
 import math
 
 import numpy as np
@@ -275,16 +276,16 @@ def test_find_hdc_label_prefix_matching(tmp_path):
     (label_dir / "C100_D1_P1_jpg.rf.abc123.txt").write_text("33 0.1 0.1 0.5 0.1 0.5 0.2 0.1 0.2\n")
 
     import wire_detection.benchmark.mapping_phase3 as mod
-    old_base = mod.HDC_BASE
     old_splits = mod.HDC_SPLITS
     try:
-        mod.HDC_BASE = tmp_path
+        # The HDC root resolves from WIRE_HDC_BASE at call time, so point it at the fixture.
+        os.environ["WIRE_HDC_BASE"] = str(tmp_path)
         mod.HDC_SPLITS = ["train"]
         result = find_hdc_label("C100_D1_P1_jpg")
         assert result is not None
         assert "C100_D1_P1_jpg" in result.name
     finally:
-        mod.HDC_BASE = old_base
+        os.environ.pop("WIRE_HDC_BASE", None)
         mod.HDC_SPLITS = old_splits
 
 
@@ -293,15 +294,14 @@ def test_find_hdc_label_no_match_returns_none(tmp_path):
     from wire_detection.benchmark.mapping_phase3 import find_hdc_label
 
     import wire_detection.benchmark.mapping_phase3 as mod
-    old_base = mod.HDC_BASE
     old_splits = mod.HDC_SPLITS
     try:
-        mod.HDC_BASE = tmp_path
+        os.environ["WIRE_HDC_BASE"] = str(tmp_path)
         mod.HDC_SPLITS = ["train"]
         result = find_hdc_label("nonexistent_image")
         assert result is None
     finally:
-        mod.HDC_BASE = old_base
+        os.environ.pop("WIRE_HDC_BASE", None)
         mod.HDC_SPLITS = old_splits
 
 

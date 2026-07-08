@@ -1,7 +1,12 @@
 # Dataset Configuration
+#
+# Paths may use ${ENV_VAR}, ${ENV_VAR:-fallback} and ~; they are expanded on load.
+# Relative paths resolve against the repository root, not the working directory.
+# Copy .env.example to .env (or export the variables) before real-image evaluation.
+# Synthetic-only workflows need nothing configured.
 datasets:
   hdc:
-    path: /home/claw/circuit-digitization/roboflow_test2
+    path: ${WIRE_HDC_BASE:-roboflow_test2}
     image_glob: "train/images/*.jpg"
     label_format: yolo_obb
     label_glob: "train/labels/*.txt"
@@ -9,7 +14,7 @@ datasets:
     description: "HDC-Recognition PCB schematics, 1993 images, 57 component classes"
 
   gt_labels:
-    path: /home/claw/workspace/ground_truth/labels_few_annot
+    path: ${GT_LABELS_PATH}
     image_glob: "images/*.jpg"
     label_format: yolo_obb
     label_glob: "labels/train/manually_verified_no_background_data/images/*.txt"
@@ -17,7 +22,7 @@ datasets:
     description: "Manually verified wire labels (134 images, 3,524 wires, Chris 2 batches)"
 
   synthetic:
-    path: /home/claw/workspace/circuit-digitization-repo/data/synthetic
+    path: ${SYNTHETIC_PATH:-data/synthetic}
     image_glob: "images/*.jpg"
     label_format: lines
     label_glob: "labels/*.txt"

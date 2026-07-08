@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """Benchmark ALL join strategies on 134 real images with aligned labels."""
 from __future__ import annotations
-import sys, time
+import time
 from pathlib import Path
 from collections import defaultdict
 
 import cv2
 import numpy as np
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from wire_detection.api.routes.netlist import _run_preset_pipeline
 from wire_detection.core.join_strategies import (
@@ -16,26 +14,24 @@ from wire_detection.core.join_strategies import (
 )
 from wire_detection.core.component_classes import COMPONENT_TYPES
 from wire_detection.data.dataset import find_roboflow_image
+from wire_detection.paths import gt_images_dir, gt_labels_dir, hdc_root
 
-GT_LABELS = Path("/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images")
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
 HDC_SPLITS = ["train", "valid", "test"]
 from wire_detection.benchmark import reference_pipeline as ref
 
 
-def find_hdc_label(image_name: str) -> Path | None:
+def find_hdc_label(hdc_base: Path, image_name: str) -> Path | None:
     for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
+        label_dir = hdc_base / split / "labels"
         matches = sorted(label_dir.glob(f"{image_name}_jpg.rf.*.txt"))
         if matches:
             return matches[0]
     return None
 
 
-def find_rob_image(image_name: str) -> Path | None:
+def find_rob_image(hdc_base: Path, image_name: str) -> Path | None:
     for split in HDC_SPLITS:
-        img_dir = HDC_BASE / split / "images"
+        img_dir = hdc_base / split / "images"
         matches = sorted(img_dir.glob(f"{image_name}_jpg.rf.*.jpg"))
         if matches:
             return matches[0]
@@ -43,25 +39,29 @@ def find_rob_image(image_name: str) -> Path | None:
 
 
 def main():
+    gt_labels = gt_labels_dir()
+    gt_images = gt_images_dir()
+    hdc_base = hdc_root()
+
     strategies = sorted(_BY_NAME.keys())
     print(f"Testing {len(strategies)} strategies on real images...\n")
 
-    all_images = sorted(GT_LABELS.glob("*_jpg.txt"))
+    all_images = sorted(gt_labels.glob("*_jpg.txt"))
 
     # Preload all images and components
     image_data = []
     for gt_file in all_images:
         image_name = gt_file.stem.replace("_jpg", "")
-        rob_path = find_rob_image(image_name)
-        load_path = rob_path if rob_path else GT_IMAGES / f"{image_name}_jpg.jpg"
+        rob_path = find_rob_image(hdc_base, image_name)
+        load_path = rob_path if rob_path else gt_images / f"{image_name}_jpg.jpg"
         gray = cv2.imread(str(load_path), cv2.IMREAD_GRAYSCALE)
         if gray is None:
-            gray = cv2.imread(str(GT_IMAGES / f"{image_name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
+            gray = cv2.imread(str(gt_images / f"{image_name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
         if gray is None:
             continue
         h, w = gray.shape
 
-        hdc_path = find_hdc_label(image_name)
+        hdc_path = find_hdc_label(hdc_base, image_name)
         components = ref.parse_components(hdc_path, w, h) if hdc_path else []
         if not components:
             continue

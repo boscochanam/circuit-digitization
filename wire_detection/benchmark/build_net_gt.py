@@ -21,14 +21,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from collections import defaultdict
 from pathlib import Path
 
 import cv2
 import numpy as np
-
-_REPO = Path(__file__).resolve().parents[2]
 
 from wire_detection.core.component_classes import (
     COMPONENT_TYPES,
@@ -36,6 +33,7 @@ from wire_detection.core.component_classes import (
     SIMULATABLE_PREFIXES,
 )
 from wire_detection.core.join_strategies import make_pins, make_pins_junction_aware, run_strategy
+from wire_detection.paths import gt_images_dir, gt_labels_dir, hdc_root
 
 
 def electrical_indices(components: list) -> list[int]:
@@ -49,17 +47,13 @@ def electrical_indices(components: list) -> list[int]:
             out.append(i)
     return out
 
-# default GT paths on claw; override locally via WIRE_GT_IMAGES / WIRE_GT_WIRE_LABELS / WIRE_HDC_BASE
-GT_IMAGES = Path(os.environ.get(
-    "WIRE_GT_IMAGES",
-    "/home/claw/workspace/ground_truth/labels_few_annot/images",
-))
-GT_WIRE_LABELS = Path(os.environ.get(
-    "WIRE_GT_WIRE_LABELS",
-    "/home/claw/workspace/ground_truth/labels_few_annot/labels/train"
-    "/manually_verified_no_background_data/images",
-))
-HDC_BASE = Path(os.environ.get("WIRE_HDC_BASE", _REPO / "roboflow_test2"))
+# GT paths resolve lazily (at call time, not import time), so importing this module never
+# requires the CGHD scans. WIRE_GT_IMAGES / WIRE_GT_WIRE_LABELS / WIRE_HDC_BASE are read
+# inside wire_detection.paths.
+_gt_images = gt_images_dir
+_gt_wire_labels = gt_labels_dir
+_hdc_base = hdc_root
+
 HDC_SPLITS = ["train", "valid", "test"]
 
 # force-include showcase circuits (good complexity spread, verified clean detection)
@@ -89,21 +83,22 @@ def find_hdc_label(image_name: str) -> Path | None:
     the one whose exported image matches the GT image. Falls back to the first match if no
     image comparison is possible (single copy / missing images)."""
     cands = []  # (split, label_path, ext)
+    hdc_base = _hdc_base()
     for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
+        label_dir = hdc_base / split / "labels"
         for ext in ("_jpg", "_png", "_jpeg"):
             cands += [(split, f, ext) for f in sorted(label_dir.glob(f"{image_name}{ext}.rf.*.txt"))]
     if not cands:
         return None
     if len(cands) == 1:
         return cands[0][1]
-    gt = cv2.imread(str(GT_IMAGES / f"{image_name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
+    gt = cv2.imread(str(_gt_images() / f"{image_name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
     if gt is None:
         return cands[0][1]
     best, bestd = cands[0][1], 1e18
     for split, f, ext in cands:
         h = f.name.split(".rf.")[1].rsplit(".txt", 1)[0]
-        rip = HDC_BASE / split / "images" / f"{image_name}{ext}.rf.{h}.jpg"
+        rip = hdc_base / split / "images" / f"{image_name}{ext}.rf.{h}.jpg"
         ri = cv2.imread(str(rip), cv2.IMREAD_GRAYSCALE)
         if ri is None or ri.shape != gt.shape:
             continue
@@ -164,9 +159,9 @@ def netlist_to_nets(netlist) -> list[list[list]]:
 def discover() -> list[str]:
     """All image stems (no _jpg suffix) that have BOTH GT wires and HDC components."""
     out = []
-    for gt_file in sorted(GT_WIRE_LABELS.glob("*_jpg.txt")):
+    for gt_file in sorted(_gt_wire_labels().glob("*_jpg.txt")):
         name = gt_file.stem.replace("_jpg", "")
-        if not (GT_IMAGES / f"{name}_jpg.jpg").exists():
+        if not (_gt_images() / f"{name}_jpg.jpg").exists():
             continue
         if find_hdc_label(name) is None:
             continue
@@ -179,7 +174,7 @@ def select(names: list[str], n: int) -> list[str]:
     counts = {}
     for name in names:
         hdc = find_hdc_label(name)
-        img = cv2.imread(str(GT_IMAGES / f"{name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread(str(_gt_images() / f"{name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
         if img is None or hdc is None:
             continue
         h, w = img.shape
@@ -243,10 +238,10 @@ def main() -> int:
 
     result: dict[str, dict] = {}
     for name in names:
-        img_path = GT_IMAGES / f"{name}_jpg.jpg"
+        img_path = _gt_images() / f"{name}_jpg.jpg"
         gray = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
         hdc = find_hdc_label(name)
-        gt_wire_file = GT_WIRE_LABELS / f"{name}_jpg.txt"
+        gt_wire_file = _gt_wire_labels() / f"{name}_jpg.txt"
         if gray is None or hdc is None or not gt_wire_file.exists():
             print(f"  skip {name} (missing data)")
             continue

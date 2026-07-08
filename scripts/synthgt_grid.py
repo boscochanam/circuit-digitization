@@ -7,6 +7,7 @@ from wire_detection.synthgt.synthesize import (
 )
 from wire_detection.core.join_strategies import run_strategy
 from wire_detection.core.component_classes import COMPONENT_TYPES
+from wire_detection.paths import DOCS_DIR
 
 CELL_W, CELL_H = 220, 180
 PAD = 8
@@ -119,7 +120,7 @@ def main():
 
             img.paste(cell_img, (col_x, row_y))
 
-    img.save("/home/claw/circuit-digitization/docs/synthgt_grid_v2.png")
+    img.save(str(DOCS_DIR / "synthgt_grid_v2.png"))
     print("Saved docs/synthgt_grid_v2.png")
 
 

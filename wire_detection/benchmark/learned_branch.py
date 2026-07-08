@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from wire_detection.benchmark import experiment_harness as eh
 from wire_detection.benchmark import reference_pipeline as ref
+from wire_detection.paths import gt_images_dir, gt_labels_dir
 from wire_detection.sdg.generator import SDG, SDGConfig
 
 
@@ -116,9 +117,9 @@ class GroundTruthWireDataset(Dataset):
                 ]
             )
         post_cfg = build_post_cfg(cfg.post_cfg_name)
-        for gt_file in sorted(ref.GT_LABELS.glob("*_jpg.txt")):
+        for gt_file in sorted(gt_labels_dir().glob("*_jpg.txt")):
             image_name = gt_file.stem.replace("_jpg", "")
-            image_path = ref.GT_IMAGES / f"{image_name}_jpg.jpg"
+            image_path = gt_images_dir() / f"{image_name}_jpg.jpg"
             gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
             if gray is None:
                 continue
@@ -211,9 +212,9 @@ def evaluate_model(model: nn.Module, cfg: LearnedConfig, device: torch.device, o
     post_cfg = build_post_cfg(cfg.post_cfg_name)
     rows = []
     tp_t = fp_t = fn_t = red_t = 0
-    for gt_file in sorted(ref.GT_LABELS.glob("*_jpg.txt")):
+    for gt_file in sorted(gt_labels_dir().glob("*_jpg.txt")):
         image_name = gt_file.stem.replace("_jpg", "")
-        image_path = ref.GT_IMAGES / f"{image_name}_jpg.jpg"
+        image_path = gt_images_dir() / f"{image_name}_jpg.jpg"
         gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
         if gray is None:
             continue

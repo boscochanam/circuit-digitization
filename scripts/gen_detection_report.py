@@ -6,27 +6,21 @@ Each Roboflow image has multiple .rf.<hash> versions — some augmented, some
 pixel-identical to the original. The exact-match version's labels are in the
 same coordinate space as the original, so occlusion polygons are correct.
 """
-import sys, os, cv2, numpy as np
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import cv2, numpy as np
 
 from wire_detection.benchmark.expanded_benchmark import preload_all_images, run_config
 from wire_detection.benchmark.experiment_harness import (
     wave2_configs, build_component_mask, crop_to_roi, detect_wires_experiment,
-    shift_components, ExperimentConfig,
+    shift_components,
 )
 from wire_detection.benchmark import reference_pipeline as ref
 from wire_detection.data.dataset import find_exact_match_roboflow
+from wire_detection.paths import DOCS_DIR, gt_images_dir, gt_labels_dir, hdc_root
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-
-GT_LABELS = Path('/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images')
-GT_IMAGES = Path('/home/claw/workspace/ground_truth/labels_few_annot/images')
-HDC_BASE = Path('/home/claw/circuit-digitization/roboflow_test2')
 
 
 def load_gt_wires(gt_file, img_w, img_h):
@@ -48,15 +42,15 @@ def load_gt_wires(gt_file, img_w, img_h):
     return wires
 
 
-def load_components_exact(image_name, orig_gray, w, h):
+def load_components_exact(image_name, orig_gray, w, h, gt_images, hdc_base):
     """Load component labels from the pixel-identical Roboflow version.
 
     CRITICAL: Uses find_exact_match_roboflow() to find the Roboflow version
     that is pixel-identical to the original image. Its labels are in the same
     coordinate space, so occlusion polygons will be correct.
     """
-    orig_path = GT_IMAGES / f'{image_name}_jpg.jpg'
-    result = find_exact_match_roboflow(orig_path, hdc_base=HDC_BASE)
+    orig_path = gt_images / f'{image_name}_jpg.jpg'
+    result = find_exact_match_roboflow(orig_path, hdc_base=hdc_base)
     if result:
         _, label_path = result
         return ref.parse_components(label_path, w, h)
@@ -71,6 +65,10 @@ def draw_wires(img, wires, color=(0, 255, 0), thickness=1):
 
 
 def generate_pdf(image_names, pdf_path, category_name):
+    gt_labels = gt_labels_dir()
+    gt_images = gt_images_dir()
+    hdc_base = hdc_root()
+
     preload_all_images()
     cfgs = [c for c in wave2_configs() if c.name == 'best_candidate_v4']
     summary = run_config(cfgs[0])
@@ -96,19 +94,19 @@ def generate_pdf(image_names, pdf_path, category_name):
                 continue
 
             # Load ORIGINAL image for GT wires (correct coordinate space)
-            orig_path = GT_IMAGES / f'{image_name}_jpg.jpg'
+            orig_path = gt_images / f'{image_name}_jpg.jpg'
             orig_gray = cv2.imread(str(orig_path), cv2.IMREAD_GRAYSCALE)
             if orig_gray is None:
                 continue
             h_orig, w_orig = orig_gray.shape
 
             # Load GT wires using ORIGINAL image dimensions
-            gt_file = GT_LABELS / f'{image_name}_jpg.txt'
+            gt_file = gt_labels / f'{image_name}_jpg.txt'
             gt_wires = load_gt_wires(gt_file, w_orig, h_orig) if gt_file.exists() else []
 
             # CRITICAL: Load components from pixel-identical Roboflow version
             # (labels in same coordinate space as original image)
-            components = load_components_exact(image_name, orig_gray, w_orig, h_orig)
+            components = load_components_exact(image_name, orig_gray, w_orig, h_orig, gt_images, hdc_base)
 
             # Run detection pipeline on ORIGINAL image
             cfg = cfgs[0]
@@ -183,7 +181,7 @@ if __name__ == '__main__':
                 'C105_D1_P1', 'C103_D2_P1', 'C100_D1_P1', 'C104_D1_P4',
                 'C245_D2_P1', 'C100_D1_P3', 'C104_D2_P3', 'C7_D2_P4', 'C127_D2_P1']
 
-    out_dir = Path('/home/claw/circuit-digitization/docs')
+    out_dir = DOCS_DIR
     print(f'Generating poor images PDF ({len(poor)} images)...')
     generate_pdf(poor, out_dir / 'detection_poor_F1_lt_0.5.pdf', 'Poor (F1 < 0.5)')
 

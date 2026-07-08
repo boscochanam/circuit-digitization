@@ -1,12 +1,17 @@
 # Circuit Digitization: Hand-Drawn Schematics to SPICE Netlists
 
-A deterministic pipeline that converts scanned, hand-drawn circuit schematics into
-simulation-ready SPICE netlists. The pipeline runs component detection, an occlusion-first
-wire extractor, an endpoint-graph join that resolves which terminals are electrically the same
-net, and netlist emission — no learned connectivity model in the loop. Alongside the pipeline,
-this repository publishes the first human-verified, net-level connectivity benchmark for
-hand-drawn circuits (31 images from CGHD-1152), so connectivity accuracy can be measured
-directly rather than inferred from downstream tasks.
+A deterministic pipeline that converts scanned, hand-drawn circuit schematics into SPICE
+netlists. The pipeline runs component detection, an occlusion-first wire extractor, an
+endpoint-graph join that resolves which terminals are electrically the same net, and netlist
+emission, with no learned connectivity model in the loop. Alongside the pipeline, this
+repository publishes the first human-verified, net-level connectivity benchmark for hand-drawn
+circuits (31 images from CGHD-1152), so connectivity accuracy can be measured directly rather
+than inferred from downstream tasks.
+
+The pipeline recovers circuit *topology*, not component values. Emitted netlists are
+structurally valid by construction, and simulation accuracy is reported on the synthetic suite,
+where values are known. Reading values off a scan needs an OCR stage that this pipeline does
+not have.
 
 ![Pipeline and results overview](paper/ieee-paper/figures/graphical_abstract.jpg)
 
@@ -52,6 +57,7 @@ provenance for every figure is in [`docs/research/experiments/SUMMARY.md`](docs/
 
 | Measurement | Score |
 |---|---|
+| Component detection mAP@0.5 (16 classes, 468 held-out scans) | 89.0% |
 | Wire-detection F1 (134 CGHD scans) | 0.976 |
 | Connectivity micro-F1 — ours (scale-relative base + completion) | 0.890 |
 | Connectivity micro-F1 — prior completion default | 0.829 |
@@ -62,10 +68,14 @@ provenance for every figure is in [`docs/research/experiments/SUMMARY.md`](docs/
 | Synthetic suite at maximum severity — ours vs. radius baseline | 0.95 vs. 0.36 |
 
 The VLM reference (0.923) is statistically indistinguishable from our join: the paired
-difference has a bootstrap 95% CI of [−0.009, +0.078], which includes zero, while costing two
-to three orders of magnitude more per image and producing non-simulatable output. Running the
-join on perfect wire labels leaves micro-F1 unchanged at 0.890, so connectivity — not wire
-detection — is the remaining bottleneck.
+difference has a bootstrap 95% CI of [−0.009, +0.078], which includes zero. It costs two to
+three orders of magnitude more per image, returns free-form text rather than a structured
+netlist, and offers no structural guarantee against electrically invalid output. Running the
+join on perfect wire labels leaves micro-F1 unchanged at 0.890, so connectivity, not wire
+detection, is the remaining bottleneck.
+
+Detector training logs, per-class recall, and the full 61-to-16 class map are committed under
+[`docs/research/experiments/detector/`](docs/research/experiments/detector/README.md).
 
 ## Quickstart
 
@@ -91,11 +101,24 @@ Run a zero-external-data synthetic demo (generates images and line labels, no da
 uv run wire-sdg --num-images 5 --output-dir data/synthetic_demo --seed 0
 ```
 
-Real-image evaluation additionally needs the CGHD-1152 dataset — *A Public Ground-Truth Dataset
+Real-image evaluation additionally needs the CGHD-1152 dataset, *A Public Ground-Truth Dataset
 for Handwritten Circuit Diagram Images*, by Felix Thoma, Johannes Bayer, and Yakun Li (DFKI),
 licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) and archived at
 [doi:10.5281/zenodo.6385814](https://doi.org/10.5281/zenodo.6385814). Mirror on Kaggle:
 [kaggle.com/datasets/johannesbayer/cghd1152](https://www.kaggle.com/datasets/johannesbayer/cghd1152).
+
+The scans are not redistributed here, so point the code at your copy. Nothing in the repository
+hardcodes an absolute path:
+
+```bash
+cp .env.example .env      # then edit, or export the variable directly
+export WIRE_GT_IMAGES=/path/to/cghd/images
+```
+
+That is the only variable real-image evaluation requires: the ground-truth wire polylines and
+component labels are committed under `ground_truth/`, so the Roboflow export is not needed. An
+unset variable produces an error naming it, rather than an empty result, and synthetic-only
+workflows need no configuration at all. See [`docs/datasets.md`](docs/datasets.md) for the rest.
 
 ## Reproducing the paper
 

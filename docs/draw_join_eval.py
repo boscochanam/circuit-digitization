@@ -6,6 +6,7 @@ from collections import Counter
 from itertools import combinations
 from PIL import Image, ImageDraw, ImageFont
 from wire_detection.synthgt.circuits import CATALOG, CATALOG_BY_NAME
+from wire_detection.paths import DOCS_DIR
 from wire_detection.synthgt.synthesize import (
     inject_errors, intended_pairs, synthesize_clean,
 )
@@ -277,7 +278,7 @@ def main():
             draw.text((cx + CELL_W // 2, row_y + CELL_H - 8), score_text,
                       fill=color, font=font_score, anchor="mb")
 
-    out = "/home/claw/circuit-digitization/docs/synthgt_join_eval.png"
+    out = str(DOCS_DIR / "synthgt_join_eval.png")
     img.save(out, "PNG")
     print(f"Saved to {out} ({W}x{H})")
 

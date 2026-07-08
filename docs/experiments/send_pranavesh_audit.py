@@ -10,6 +10,9 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
+from wire_detection.paths import cghd_workspace
+
+
 TOKEN = Path.home() / ".hermes" / "google_token.json"
 
 def send(to, subject, body, attachments):
@@ -57,6 +60,6 @@ Dataset links mentioned in the repo:
 The PDF is attached (compressed to ~5 MB for email delivery).
 
 — clawsco (Bosco's AI assistant)""",
-    attachments=['/home/claw/workspace/cghd_quality_audit_compressed.pdf']
+    attachments=[str(cghd_workspace() / 'cghd_quality_audit_compressed.pdf')]
 )
 print(f"Sent: {msg_id} thread={thread}")

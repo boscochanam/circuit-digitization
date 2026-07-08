@@ -20,6 +20,11 @@ Three tiers of reproducibility, in increasing order of external data required:
    detected-wire and end-to-end numbers from images. Requires the ~4 GB CGHD
    dataset and the 47.8 MB YOLO model.
 
+Tier 1 needs no environment variables. Every real-image script in Tier 3 resolves its paths
+through `wire_detection.paths` and needs exactly one: `WIRE_GT_IMAGES`, pointing at the CGHD
+scans. The ground-truth wire polylines and component labels are committed under `ground_truth/`.
+See `.env.example`, [Configuration](api/configuration.md), and `ground_truth/README.md`.
+
 ---
 
 ## 1. What reproduces from this repo alone
@@ -130,26 +135,41 @@ curl -L -o ~/Downloads/cghd1152.zip \
 # unzip to ./cghd1152/ (see datasets.md for the expected layout)
 ```
 
+Both the wire-detection benchmark below and the join-eval scripts in the next
+section read the raw CGHD JPEGs through `WIRE_GT_IMAGES` (no default). The
+verified wire labels and component labels they score against are committed under
+`ground_truth/`, so nothing else needs staging.
+
 ### 134-image wire-detection benchmark (Table I / Fig. 5)
 
 ```bash
 # Regenerates the wire-detection F1 sweep across 134 images.
+export WIRE_GT_IMAGES=/path/to/cghd1152-scans   # required, no default
 uv run python -m wire_detection.benchmark.expanded_benchmark
 ```
 
-**Not dry-runnable here (claw-only).** `expanded_benchmark.py` hard-codes
-absolute data paths under `/home/claw/...` (see the `GT_LABELS` / `GT_IMAGES` /
-`HDC_BASE` constants near the top) and has no argparse; it must be run on the
-data host or with those constants edited to your paths. It backs the F1 = 0.976
-headline (Sauvola + 16 px anchor).
+The ground-truth wire labels (`ground_truth/wire_labels/`) and component
+labels (`ground_truth/component_labels/`) are committed, so the only
+required variable is `WIRE_GT_IMAGES`, pointing at a directory of
+`<name>_jpg.jpg` files covering the 134 names in `ground_truth/wire_labels/`
+(do not point it at `ground_truth/local_eval/images`, the different 31-image
+net-GT set). `WIRE_HDC_BASE` (defaults to `roboflow_test2/` at the repo root)
+is a fallback only, used exclusively if the committed component labels are
+missing. See `ground_truth/README.md` for the full variable table.
+
+**Not dry-runnable here** (the CGHD scans are not on this machine). It backs
+the F1 = 0.976 headline (Sauvola + 16 px anchor).
 
 ### Real-image join eval + baselines (Table III), on detected wires
 
 These detect wires from CGHD images (needs the model and CGHD staged), run each
-join strategy, and score component-pair F1 against the verified GT. Run on the
-data host (`./.venv/bin/python`):
+join strategy, and score component-pair F1 against the verified GT. They resolve
+ground truth through `wire_detection.paths`, which reads the committed labels
+directly. Run on the data host (`./.venv/bin/python`):
 
 ```bash
+export WIRE_GT_IMAGES=/path/to/cghd/images
+
 # Table III — join strategies (pass scale_completion explicitly: the default
 # strategy list is degree_budget,graph_rescue,graph_scale,production and does
 # NOT include the promoted scale_completion; use --strategies all for every one)

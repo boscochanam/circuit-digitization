@@ -3,6 +3,9 @@
 import json, re
 from collections import Counter
 
+from wire_detection.paths import cghd_workspace
+
+
 def load_json(path):
     with open(path) as f:
         text = f.read()
@@ -10,7 +13,7 @@ def load_json(path):
     text = re.sub(r',\s*\}', '}', text)
     return json.loads(text)
 
-results = load_json('/home/claw/workspace/cghd_reclassified.json')
+results = load_json(cghd_workspace() / 'cghd_reclassified.json')
 
 # Build per-drafter analysis
 drafters = {}
@@ -75,7 +78,7 @@ audit = {
     'recommended_nodata': [d for d, v in drafter_verdicts.items() if v['verdict'] == 'NODATA']
 }
 
-with open('/home/claw/workspace/cghd_final_audit.json', 'w') as f:
+with open(cghd_workspace() / 'cghd_final_audit.json', 'w') as f:
     json.dump(audit, f, indent=2, default=str)
 
 # Print summary

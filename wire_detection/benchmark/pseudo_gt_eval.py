@@ -15,14 +15,8 @@ from __future__ import annotations
 
 import json
 import math
-import sys
 import time
 from collections import defaultdict
-from pathlib import Path
-
-
-sys.path.insert(0, "/home/claw/circuit-digitization")
-sys.path.insert(0, "/home/claw/workspace")
 
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig,
@@ -35,11 +29,10 @@ from wire_detection.benchmark.connectivity_experiment import (
     connect_nearest_edge,
     _line_intersects_rect,
 )
+from wire_detection.paths import output_dir
 
 # ── Paths ──
-GT_LABELS = Path("/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images")
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-OUTPUT_DIR = Path("/home/claw/circuit-digitization/output/connectivity_experiment")
+OUTPUT_DIR = output_dir() / "connectivity_experiment"
 
 
 def connect_extend_along_wire(endpoint, wire_dir, components, max_dist=120):

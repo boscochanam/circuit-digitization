@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pathlib import Path
 
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig,
@@ -10,11 +9,16 @@ from wire_detection.benchmark.experiment_harness import (
     candidate_component_ports,
     run_experiment,
 )
+from wire_detection.paths import MissingDatasetError, gt_images_dir, hdc_root
 
-_has_hdc_data = Path("/home/claw/circuit-digitization/roboflow_test2").is_dir()
+try:
+    # run_experiment reads the CGHD scans as well as the HDC component labels.
+    _has_hdc_data = hdc_root().is_dir() and gt_images_dir().is_dir()
+except MissingDatasetError:
+    _has_hdc_data = False
 
 
-@pytest.mark.skipif(not _has_hdc_data, reason="HDC dataset not present")
+@pytest.mark.skipif(not _has_hdc_data, reason="HDC export or CGHD scans not present")
 def test_baseline_harness_matches_reference():
     summary = run_experiment(ExperimentConfig(name="baseline_control_test"))
 

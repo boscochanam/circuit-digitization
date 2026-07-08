@@ -71,7 +71,7 @@ def _find_label_for_image(img_path: Path) -> Path | None:
     Roboflow exports lay images/labels out as ``{base}/{split}/images/{name}.jpg``
     and ``{base}/{split}/labels/{name}.rf.*.txt``, so derive the labels dir from
     the image's OWN path (…/images -> …/labels) instead of a hardcoded root.
-    Falls back to the HDC_PATH env layout for older deployments.
+    Falls back to an explicit HDC root (``WIRE_HDC_BASE``, or the older ``HDC_PATH``).
     """
     stem = img_path.stem
     parent = img_path.parent
@@ -85,7 +85,7 @@ def _find_label_for_image(img_path: Path) -> Path | None:
             matches = sorted(label_dir.glob(pattern))
             if matches:
                 return matches[0]
-    hdc_base = os.environ.get("HDC_PATH")  # legacy explicit root
+    hdc_base = os.environ.get("WIRE_HDC_BASE") or os.environ.get("HDC_PATH")
     if hdc_base:
         return _find_hdc_label(stem, Path(hdc_base))
     return None

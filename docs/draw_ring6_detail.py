@@ -12,6 +12,7 @@ import math
 from PIL import Image, ImageDraw, ImageFont
 from wire_detection.synthgt.circuits import CATALOG_BY_NAME
 from wire_detection.synthgt.synthesize import synthesize_clean, inject_errors
+from wire_detection.paths import DOCS_DIR
 
 try:
     FNT = lambda s: ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", s)
@@ -122,6 +123,6 @@ ly = H - 30
 draw.text((PAD, ly), "Lines show distance from each endpoint to its nearest pin. "
           "Only endpoints within 30px connect.", fill="#9ca3af", font=font_pin, anchor="lt")
 
-out = "/home/claw/circuit-digitization/docs/synthgt_ring6_detail.png"
+out = str(DOCS_DIR / "synthgt_ring6_detail.png")
 img.save(out, "PNG")
 print(f"Saved {out} ({W}x{H})")

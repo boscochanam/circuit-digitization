@@ -59,6 +59,14 @@ hdc:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DATASETS_YAML` | `config/datasets.yaml` | Path to dataset config YAML |
+| `WIRE_GT_IMAGES` | none (required for real-image evaluation) | CGHD source scans; not redistributed with this repository |
+| `GT_LABELS_PATH` | none | Root of the wire-label corpus (`labels_few_annot`), mounted by docker-compose for the tuner UI. Also a fallback for `WIRE_GT_IMAGES`, which is then read from `$GT_LABELS_PATH/images` |
+| `WIRE_GT_WIRE_LABELS` | `ground_truth/wire_labels` | Ground-truth wire polylines; committed, so set only to relocate |
+| `WIRE_COMPONENT_LABELS` | `ground_truth/component_labels` | Component labels used for occlusion; committed, so set only to relocate |
+| `WIRE_HDC_BASE` | `<repo>/roboflow_test2` | Roboflow HDC-Recognition export. A fallback source of component labels only; most workflows never need it |
+| `SYNTHETIC_PATH` | `<repo>/data/synthetic` | Generated synthetic wire corpus; set only to relocate it |
+| `WIRE_OUTPUT_DIR` | `<repo>/output` | Writable directory for generated artifacts |
+| `WIRE_CGHD_WORKSPACE` | `<repo>/data/workspace` | Scratch dir for one-off CGHD quality-audit artifacts |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend URL for the frontend |
 
 ## Docker Compose

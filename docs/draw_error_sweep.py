@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from PIL import Image, ImageDraw, ImageFont
 from wire_detection.synthgt.circuits import CATALOG_BY_NAME
+from wire_detection.paths import DOCS_DIR
 from wire_detection.synthgt.synthesize import (
     synthesize_clean, inject_errors, ERROR_LEVELS,
 )
@@ -156,6 +157,6 @@ for row, (cname, label) in enumerate(circuits):
     draw.text((MARGIN - 5, MARGIN + 40 + row * (PH + PAD_Y) + PH // 2),
               label, fill="#e94560", font=font_label, anchor="rm")
 
-out = "/home/claw/circuit-digitization/docs/synthgt_error_sweep.png"
+out = str(DOCS_DIR / "synthgt_error_sweep.png")
 img.save(out, "PNG")
 print(f"Saved to {out} ({W}x{H})")

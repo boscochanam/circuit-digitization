@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """High-quality pipeline visualization with OBB polygons and clear connections."""
-import os, sys, cv2, math
+import os, cv2, math
 import numpy as np
 from collections import defaultdict
 import matplotlib
@@ -8,15 +8,13 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-sys.path.insert(0, '/home/claw/circuit-digitization')
-os.chdir('/home/claw/circuit-digitization')
-
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig, build_component_mask, crop_to_roi, shift_components,
     detect_wires_experiment, sauvola_binary,
 )
 from wire_detection.core.join_strategies import run_strategy, make_pins, DEFAULT_STRATEGY
 from wire_detection.core.component_classes import COMPONENT_TYPES
+from wire_detection.paths import REPO_ROOT, expand_path, gt_images_dir, hdc_root
 
 RELAY_IDS = {cid for cid, name in COMPONENT_TYPES.items()
              if name in ("junction", "terminal", "gnd", "crossover")}
@@ -33,28 +31,25 @@ cfg = ExperimentConfig(
     anchor_endpoint_dist=16.0, anchor_link_dist=8.0, extraction_mode="component",
 )
 
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
 HDC_SPLITS = ["train", "valid", "test"]
-OUTPUT = "/home/claw/workspace/ieee-paper/figures/pipeline_candidates"
-os.makedirs(OUTPUT, exist_ok=True)
+CGHD_WORKSPACE = expand_path(os.environ.get("CGHD_WORKSPACE", REPO_ROOT / "data" / "workspace"))
 
 
-def find_hdc_label_by_prefix(image_name):
+def find_hdc_label_by_prefix(hdc_base, image_name):
     for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
+        label_dir = hdc_base / split / "labels"
         matches = sorted(label_dir.glob(f"{image_name}_jpg.rf.*.txt"))
         if matches:
             return matches[0]
     return None
 
-def find_exact_match_hdc(image_name, orig_gray):
+def find_exact_match_hdc(hdc_base, image_name, orig_gray):
     stem = f"{image_name}_jpg"
     best_match = None
     best_diff = float('inf')
     for split in HDC_SPLITS:
-        img_dir = HDC_BASE / split / "images"
-        label_dir = HDC_BASE / split / "labels"
+        img_dir = hdc_base / split / "images"
+        label_dir = hdc_base / split / "labels"
         if not img_dir.exists():
             continue
         for f in sorted(img_dir.glob(f"{stem}.rf.*.jpg")):
@@ -98,7 +93,7 @@ def draw_obb(img, vertices, color, thickness=1):
     cv2.polylines(img, [pts], True, color, thickness, cv2.LINE_AA)
 
 
-def run_pipeline(img_path):
+def run_pipeline(img_path, hdc_base):
     from PIL import Image
     name = Path(img_path).stem
     pil_img = Image.open(img_path).convert('L')
@@ -112,8 +107,8 @@ def run_pipeline(img_path):
     elif name.endswith('_jpeg'):
         lookup_name = name[:-5]
 
-    hdc_label = find_hdc_label_by_prefix(lookup_name)
-    exact_label, exact_img_path = find_exact_match_hdc(lookup_name, gray)
+    hdc_label = find_hdc_label_by_prefix(hdc_base, lookup_name)
+    exact_label, exact_img_path = find_exact_match_hdc(hdc_base, lookup_name, gray)
 
     comp_labels = []
     if exact_label:
@@ -285,6 +280,11 @@ def save_composite(stages, name, output_path):
 
 
 if __name__ == '__main__':
+    gt_images = gt_images_dir()
+    hdc_base = hdc_root()
+    output = CGHD_WORKSPACE / "ieee-paper" / "figures" / "pipeline_candidates"
+    output.mkdir(parents=True, exist_ok=True)
+
     candidates = [
         ("C29_D2_P4_jpg.jpg", "C29-D2-P4"),
         ("C34_D1_P1_jpg.jpg", "C34-D1-P1"),
@@ -294,12 +294,12 @@ if __name__ == '__main__':
         ("C63_D2_P3_jpg.jpg", "C63-D2-P3"),
     ]
     for fname, safe_name in candidates:
-        img_path = GT_IMAGES / fname
+        img_path = gt_images / fname
         if not img_path.exists():
             continue
         print(f"Processing {safe_name}...")
-        stages = run_pipeline(img_path)
+        stages = run_pipeline(img_path, hdc_base)
         save_composite(stages, f"{safe_name} — {stages['n_wires']} wires, {stages.get('n_nets','?')} nets",
-                       f"{OUTPUT}/{safe_name}.png")
+                       str(output / f"{safe_name}.png"))
         print(f"  OK: {stages['n_wires']} wires, {stages.get('n_nets','?')} nets")
-    print(f"\nDone. Files in {OUTPUT}/")
+    print(f"\nDone. Files in {output}/")

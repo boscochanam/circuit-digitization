@@ -6,6 +6,7 @@ import math
 from PIL import Image, ImageDraw, ImageFont
 from wire_detection.synthgt.circuits import CATALOG
 from wire_detection.synthgt.synthesize import synthesize_clean
+from wire_detection.paths import DOCS_DIR
 
 COLS, ROWS = 3, 4
 CELL_W, CELL_H = 440, 370
@@ -163,6 +164,6 @@ draw.text((W // 2, 56),
           "■ component bbox (rotated)   ● pin (yellow)   ● wire endpoint (orange)   ● net junction (blue)",
           fill="#6b7280", font=font_label, anchor="mt")
 
-out = "/home/claw/circuit-digitization/docs/synthgt_catalog_v4.png"
+out = str(DOCS_DIR / "synthgt_catalog_v4.png")
 img.save(out, "PNG")
 print(f"Saved to {out} ({W}x{H})")

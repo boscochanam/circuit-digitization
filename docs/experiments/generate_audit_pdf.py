@@ -9,9 +9,12 @@ from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
-ZIP_PATH = '/home/claw/Downloads/cghd1152.zip'
-OUTPUT = '/home/claw/workspace/cghd_quality_audit.pdf'
-RESULTS_PATH = '/home/claw/workspace/cghd_reclassified.json'
+from wire_detection.paths import cghd_workspace
+
+
+ZIP_PATH = str(cghd_workspace() / 'cghd1152.zip')
+OUTPUT = str(cghd_workspace() / 'cghd_quality_audit.pdf')
+RESULTS_PATH = str(cghd_workspace() / 'cghd_reclassified.json')
 
 def load_json(path):
     with open(path) as f:

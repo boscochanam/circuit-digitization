@@ -4,6 +4,8 @@ from typing import Any
 import numpy as np
 import yaml
 
+from wire_detection.paths import expand_path
+
 
 @dataclass
 class DatasetConfig:
@@ -125,7 +127,7 @@ class DatasetRegistry:
             for key, cfg in raw.get("datasets", {}).items():
                 self._datasets[key] = DatasetConfig(
                     key=key,
-                    path=Path(cfg["path"]),
+                    path=expand_path(cfg["path"]),
                     image_glob=cfg.get("image_glob", "**/*.jpg"),
                     label_format=cfg.get("label_format"),
                     label_glob=cfg.get("label_glob"),

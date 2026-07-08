@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Check mapping experiment v2 status — for cron monitoring."""
 import json
-from pathlib import Path
 from datetime import datetime
 
-LOG_FILE = Path("/home/claw/circuit-digitization/output/mapping_experiment_v2/status.log")
-RESULTS_FILE = Path("/home/claw/circuit-digitization/output/mapping_experiment_v2/mapping_v2_summary.json")
+from wire_detection.paths import output_dir
+
+LOG_FILE = output_dir() / "mapping_experiment_v2" / "status.log"
+RESULTS_FILE = output_dir() / "mapping_experiment_v2" / "mapping_v2_summary.json"
 
 # Check if experiment is still running
 import subprocess

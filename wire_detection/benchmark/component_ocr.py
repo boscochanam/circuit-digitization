@@ -29,11 +29,11 @@ import numpy as np
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR.parent.parent))
 
+from wire_detection.paths import gt_images_dir, hdc_root, output_dir
+
 # ── Data paths ──
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
 HDC_SPLITS = ["train", "valid", "test"]
-OUT_DIR = Path(SCRIPT_DIR.parent.parent / "output" / "component_ocr")
+OUT_DIR = output_dir() / "component_ocr"
 
 # ── Component class names (from YOLO-OBB training) ──
 COMPONENT_TYPES = {
@@ -70,7 +70,7 @@ Do NOT include any explanation — only the JSON."""
 def find_hdc_label(image_name: str) -> Path | None:
     """Find HDC component label by filename prefix."""
     for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
+        label_dir = hdc_root() / split / "labels"
         # Try multiple patterns: {stem}.rf.*, {stem}_jpg.rf.*, {stem}_png.rf.*
         for pattern in [f"{image_name}.rf.*.txt", f"{image_name}_jpg.rf.*.txt", f"{image_name}_png.rf.*.txt"]:
             matches = sorted(label_dir.glob(pattern))
@@ -230,7 +230,7 @@ def main() -> int:
     jsonl_path = OUT_DIR / "results.jsonl"
 
     # Discover images
-    all_images = sorted(GT_IMAGES.glob("*.jpg"))
+    all_images = sorted(gt_images_dir().glob("*.jpg"))
     print(f"Found {len(all_images)} images in GT set")
 
     # Load checkpoint

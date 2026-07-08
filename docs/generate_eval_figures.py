@@ -8,21 +8,19 @@ Three figures:
 from __future__ import annotations
 
 import json
-import os
-from pathlib import Path
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
-from matplotlib.gridspec import GridSpec
+
+from wire_detection.paths import DOCS_DIR, REPO_ROOT, output_dir
 
 # Paths
-ROOT = Path("/home/claw/circuit-digitization")
-OUTPUT_DIR = ROOT / "output"
-DOCS_DIR = ROOT / "docs"
-FIG_DIR = ROOT / "docs"  # Save figures to docs/ for paper
+ROOT = REPO_ROOT
+OUTPUT_DIR = output_dir()
+FIG_DIR = DOCS_DIR  # Save figures to docs/ for paper
 
 # Dark theme consistent with existing visualizations
 plt.style.use('dark_background')
@@ -71,7 +69,7 @@ def generate_f1_vs_severity():
     """
     print("Generating Figure 1: F1 vs Error Severity...")
     
-    from wire_detection.synthgt.circuits import CATALOG, CircuitSpec
+    from wire_detection.synthgt.circuits import CATALOG
     from wire_detection.synthgt.synthesize import (
         inject_errors, intended_pairs, synthesize_clean, ERROR_LEVELS,
     )

@@ -11,6 +11,7 @@ import numpy as np
 from skimage.morphology import skeletonize
 
 from wire_detection.benchmark import reference_pipeline as ref
+from wire_detection.paths import gt_images_dir, gt_labels_dir
 from wire_detection.sdg.generator import SDG, SDGConfig
 
 
@@ -1460,10 +1461,10 @@ def run_experiment(
         overlay_dir = output_dir / cfg.name / "overlays"
         overlay_dir.mkdir(parents=True, exist_ok=True)
 
-    all_images = sorted(ref.GT_LABELS.glob("*_jpg.txt"))
+    all_images = sorted(gt_labels_dir().glob("*_jpg.txt"))
     for gt_file in all_images:
         image_name = gt_file.stem.replace("_jpg", "")
-        image_path = ref.GT_IMAGES / f"{image_name}_jpg.jpg"
+        image_path = gt_images_dir() / f"{image_name}_jpg.jpg"
         gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
         if gray is None:
             continue

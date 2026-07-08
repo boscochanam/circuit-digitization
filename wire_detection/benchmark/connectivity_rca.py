@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import math
-import sys
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -25,8 +24,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-sys.path.insert(0, "/home/claw/circuit-digitization")
-sys.path.insert(0, "/home/claw/workspace")
 
 from wire_detection.benchmark import reference_pipeline as ref
 from wire_detection.benchmark.experiment_harness import (
@@ -40,15 +37,10 @@ from wire_detection.benchmark.connectivity_experiment import (
     COMPONENT_NAMES,
 )
 
+from wire_detection.paths import gt_images_dir, gt_labels_dir, hdc_root, output_dir
 # ── Paths ──
-GT_LABELS = Path(
-    "/home/claw/workspace/ground_truth/labels_few_annot/labels/"
-    "train/manually_verified_no_background_data/images"
-)
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
 HDC_SPLITS = ["train", "valid", "test"]
-OUTPUT_DIR = Path("/home/claw/circuit-digitization/output/connectivity_rca")
+OUTPUT_DIR = output_dir() / "connectivity_rca"
 
 # Junction-like and terminal-like class IDs
 JUNCTION_CLASSES = {19}   # junction
@@ -58,7 +50,7 @@ POINT_LIKE = JUNCTION_CLASSES | TERMINAL_CLASSES
 
 def find_hdc_label(image_name: str) -> Path | None:
     for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
+        label_dir = hdc_root() / split / "labels"
         if not label_dir.exists():
             continue
         for suffix in ["_jpg", "_png", "_jpeg", ""]:
@@ -254,9 +246,9 @@ def run_rca(
 
     all_rca: list[WireRCA] = []
 
-    for gt_file in sorted(GT_LABELS.glob("*_jpg.txt")):
+    for gt_file in sorted(gt_labels_dir().glob("*_jpg.txt")):
         image_name = gt_file.stem.replace("_jpg", "")
-        image_path = GT_IMAGES / f"{image_name}_jpg.jpg"
+        image_path = gt_images_dir() / f"{image_name}_jpg.jpg"
         gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
         if gray is None:
             continue

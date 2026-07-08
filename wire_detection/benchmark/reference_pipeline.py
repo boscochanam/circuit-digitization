@@ -25,10 +25,10 @@ DETECTION (baseline params):
 9. Dedup (angle=10°, distance=18px)
    NO merge, NO length filter — both were proven harmful
 
-DEPENDENCIES:
-- Ground truth images: /home/claw/workspace/ground_truth/labels_few_annot/images/
-- Ground truth labels: /home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images/
-- HDC labels: /home/claw/circuit-digitization/roboflow_test2/{train,valid,test}/labels/
+DEPENDENCIES (resolved by wire_detection.paths; see ground_truth/README.md):
+- Ground truth images: WIRE_GT_IMAGES        (required, not redistributed)
+- Ground truth labels: WIRE_GT_WIRE_LABELS   (defaults to committed ground_truth/wire_labels/)
+- HDC labels:          WIRE_HDC_BASE         (fallback only, {train,valid,test}/labels/)
 """
 
 import math
@@ -37,26 +37,8 @@ from pathlib import Path
 import numpy as np
 import cv2
 
-# ── Paths ────────────────────────────────────────────────────
-REPO_ROOT = Path(__file__).resolve().parents[2]
-GT_IMAGES = Path(
-    os.environ.get(
-        "WIRE_GT_IMAGES",
-        REPO_ROOT / "labels_few_annot" / "images",
-    )
-)
-GT_LABELS = Path(
-    os.environ.get(
-        "WIRE_GT_LABELS",
-        REPO_ROOT
-        / "labels_few_annot"
-        / "labels"
-        / "train"
-        / "manually_verified_no_background_data"
-        / "images",
-    )
-)
-HDC_BASE = Path(os.environ.get("WIRE_HDC_BASE", REPO_ROOT / "roboflow_test2"))
+from wire_detection.paths import gt_images_dir, gt_labels_dir, hdc_root
+
 HDC_SPLITS = [split.strip() for split in os.environ.get("WIRE_HDC_SPLITS", "train,valid,test").split(",") if split.strip()]
 
 # ── Pipeline Parameters (DO NOT CHANGE — these produce F1=0.707) ──
@@ -87,9 +69,10 @@ def find_hdc_label(image_name: str, gray_image: np.ndarray) -> Path | None:
     Returns the Path to the label file, or None if no match found.
     """
     best_label, best_diff = None, float("inf")
+    hdc_base = hdc_root()
     for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
-        image_dir = HDC_BASE / split / "images"
+        label_dir = hdc_base / split / "labels"
+        image_dir = hdc_base / split / "images"
         for label_path in label_dir.glob(f"{image_name}_jpg*"):
             # Find corresponding image
             for ext in ['.jpg', '.jpeg', '.png']:
@@ -395,13 +378,13 @@ def main():
     print()
 
     # Load all 23 images
-    all_images = sorted(GT_LABELS.glob("*_jpg.txt"))
+    all_images = sorted(gt_labels_dir().glob("*_jpg.txt"))
     print(f"Found {len(all_images)} ground-truth label files")
 
     results = []
     for gt_file in all_images:
         image_name = gt_file.stem.replace("_jpg", "")
-        image_path = GT_IMAGES / f"{image_name}_jpg.jpg"
+        image_path = gt_images_dir() / f"{image_name}_jpg.jpg"
 
         if not image_path.exists():
             print(f"  SKIP {image_name}: image not found")

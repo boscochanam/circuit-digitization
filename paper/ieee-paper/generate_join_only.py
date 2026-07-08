@@ -4,23 +4,22 @@ junctions/terminals annotated so junction merging is visible, and the TRUE per-f
 F1 (scored vs the verified net-GT). Run on claw:
   ./.venv/bin/python paper/ieee-paper/generate_join_only.py
 """
-import os, sys, cv2, json, colorsys
+import cv2, json, colorsys
 import numpy as np
-sys.path.insert(0, '/home/claw/circuit-digitization'); os.chdir('/home/claw/circuit-digitization')
-from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from wire_detection.benchmark.build_net_gt import GT_IMAGES, find_hdc_label, parse_components, electrical_indices
+from wire_detection.benchmark.build_net_gt import GT_IMAGES, find_hdc_label, parse_components
 from wire_detection.benchmark.join_eval_134 import detect_wires
 from wire_detection.benchmark.join_eval_real_f1 import comp_pairs, gt_pairs, prf
 from wire_detection.core.join_strategies import run_strategy, make_pins, make_pins_junction_aware
 from wire_detection.core.component_classes import COMPONENT_TYPES
+from wire_detection.paths import GROUND_TRUTH_DIR, REPO_ROOT
 
-OUTPUT = Path("/home/claw/circuit-digitization/paper/ieee-paper/figures/join_only")
+OUTPUT = REPO_ROOT / "paper" / "ieee-paper" / "figures" / "join_only"
 OUTPUT.mkdir(parents=True, exist_ok=True)
-GT_NETS = json.load(open("ground_truth/real_nets_verified.json"))
+GT_NETS = json.load(open(GROUND_TRUTH_DIR / "real_nets_verified.json"))
 
 CANDIDATES = ["C37_D2_P4", "C112_D1_P1", "C83_D2_P4", "C19_D1_P2", "C111_D1_P1"]
 STRUCT = {"junction", "terminal", "gnd", "vss", "crossover", "text"}
