@@ -7,6 +7,7 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
+\usepackage{array}
 \usepackage{multirow}
 \usepackage{url}
 \usepackage{hyperref}
@@ -112,6 +113,37 @@ Classical wire extraction relies on edge detection, morphological operations, an
 \subsection{Pipeline Overview}
 
 Figure~\ref{fig:pipeline} summarizes the six-stage pipeline. The full pipeline proceeds through six stages: (1)~component detection via oriented bounding box (OBB) YOLO model; (2)~component occlusion (filling detected regions with local median color); (3)~Sauvola adaptive binarization; (4)~connected component labeling with morphological post-processing; (5)~wire endpoint extraction via principal component analysis (PCA) on endpoint regions; and (6)~wire joining via the endpoint-graph model with degree-budget completion. The output is a netlist mapping component pins to electrical nodes, suitable for SPICE netlist generation. Figure~\ref{fig:pipeline_examples} shows two representative circuits at each stage.
+
+\subsection{Component Detection}
+\label{sec:component_detection}
+
+Stage~1 is a YOLO26m oriented bounding box (OBB) detector fine-tuned on CGHD-1152~\cite{bayer2021cghd,cghd1152data}. Orientation is load-bearing rather than incidental: hand-drawn parts sit at arbitrary angles, and an axis-aligned box around a diagonal resistor also encloses the wire segments entering it, which the occlusion stage would then erase along with the component.
+
+We reduce CGHD's 61 component classes to 16. Eight targets absorb variants the netlist does not distinguish---a Zener, light-emitting, or thyrector diode is a \texttt{diode} for the purpose of topology extraction (Table~\ref{tab:class_merge}). Seven classes pass through unchanged: \texttt{terminal}, \texttt{crossover}, \texttt{switch}, \texttt{text}, \texttt{junction}, \texttt{gnd}, and \texttt{vss}. A catch-all \texttt{other} absorbs the remaining 30 rare classes---transformer, thyristor, triac, relay, optocoupler, and similar---which the detector localizes but does not discriminate; these devices fall outside the simulatable set and are excluded from the net-level benchmark in any case. The reduction is deliberate: the join model consumes component \emph{geometry} and pin locations, not device identity, so class granularity finer than the netlist emits spends model capacity on a distinction the pipeline never reads.
+
+Training excludes drafter\_0, whose drawing style diverges markedly from the remaining drafters, leaving a random 85/15 split of 2652 training and 468 validation images. We fine-tune at 1024\,px for 200 epochs with AdamW ($\text{lr}_0 = 10^{-3}$, cosine decay), batch~17, seed~42, under mosaic, mixup, RandAugment, and moderate affine and HSV jitter. On the held-out validation split the released checkpoint attains mAP@0.5~=~89.0\%, mAP@0.5:0.95~=~78.5\%, precision~=~95.8\%, and recall~=~88.6\%. Per-class recall ranges from 100\% (\texttt{operational\_amplifier}) down to 70.7\% (\texttt{crossover}), the hardest class by a wide margin: two wires that cross without a hop marker are locally indistinguishable from an ordinary junction-free crossing. Training logs and the full 61-to-16 class map are released with the code.
+
+\begin{table}[htbp]
+\caption{Class Merges: 61 CGHD Classes Reduced to 16. The Eight Merged Targets Are Shown; Seven Classes Pass Through Unchanged and 30 Rare Classes Fold Into \texttt{other}.}
+\label{tab:class_merge}
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.52\columnwidth}@{}}
+\toprule
+\textbf{Merged class} & \textbf{CGHD source classes} \\
+\midrule
+\texttt{resistor} & resistor, .adjustable, .photo \\
+\texttt{capacitor} & capacitor.unpolarized, .polarized, .adjustable \\
+\texttt{diode} & diode, .zener, .light\_emitting, .thyrector \\
+\texttt{transistor} & transistor.bjt, .fet, .photo \\
+\texttt{inductor} & inductor, .ferrite, .coupled \\
+\texttt{voltage\_source} & voltage.battery, .dc, .ac \\
+\texttt{integrated\_circuit} & integrated\_circuit, .ne555, .voltage\_regulator \\
+\texttt{operational\_amplifier} & operational\_amplifier, .schmitt\_trigger \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
 
 \subsection{Endpoint-Graph Join Model}
 
@@ -321,7 +353,7 @@ The endpoint-graph model resolves ambiguity that radius-based methods cannot: by
 
 Degree-budget completion addresses the fundamental limitation of detector noise: even a 97.6\% accurate wire detector drops $\sim$2\% of wire endpoints, and those dropped endpoints are precisely the connections that matter most for simulation accuracy. The $b$-matching formulation bounds the damage from mis-detection (each floating pin gets at most one recovery edge), while the self-loop guard prevents the catastrophic short-circuit failures that plague unconstrained approaches.
 
-The human-verified net-level evaluation, while novel for hand-drawn circuits, currently covers 31 images; the 95\% bootstrap confidence intervals on the per-strategy F1 are correspondingly wide ($\pm$0.03--0.05) and overlap between adjacent strategies, so while the top ranking is consistent and corroborated by the independently authored synthetic suite, broader annotation is needed to separate the closely ranked configurations. The net-level labels were bootstrapped by a conservative endpoint-graph join over perfect wires and then human-corrected; we mitigate the residual concern that this favors graph-based methods by validating on synthetic ground truth that is authored from scratch, where the same ranking holds. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated, as does extension to circuits containing devices outside the simulatable set (switches, transformers, etc.), which we exclude from the net-level benchmark. The VLM connectivity comparison uses a single frontier model (Claude Opus~4.8) on the same 31 images; evaluating additional models and prompting strategies is future work. Component detection at 88.5\% mean average precision (mAP@0.5) also leaves room for improvement, particularly on crossovers (70.7\% recall). The component-detection model was trained on CGHD-1152 after excluding drafter\_0, whose drawing style diverged markedly from the other drafters; this exclusion reduces the training set but avoids domain-shift artifacts from an outlier style. The pipeline recovers circuit \emph{topology}, not component values: simulation accuracy is reported only on the synthetic suite, where values are known by construction, and no netlist derived from a real scan is simulated here. Producing a numerically simulatable netlist from a scan additionally requires reading component values off the image, which we do not attempt; coupling the join to a value-recognition (OCR) stage, as in~\cite{kelly2024digitizing,sina2026}, and validating end-to-end against a reference simulation, as in~\cite{peker2026}, is the natural completion of the pipeline. Finally, the synthetic error model is a first-pass approximation of detector noise rather than a calibrated fit; with the new real-image net-level metric available, calibrating it to the measured detector failure distribution is a natural next step.
+The human-verified net-level evaluation, while novel for hand-drawn circuits, currently covers 31 images; the 95\% bootstrap confidence intervals on the per-strategy F1 are correspondingly wide ($\pm$0.03--0.05) and overlap between adjacent strategies, so while the top ranking is consistent and corroborated by the independently authored synthetic suite, broader annotation is needed to separate the closely ranked configurations. The net-level labels were bootstrapped by a conservative endpoint-graph join over perfect wires and then human-corrected; we mitigate the residual concern that this favors graph-based methods by validating on synthetic ground truth that is authored from scratch, where the same ranking holds. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated, as does extension to circuits containing devices outside the simulatable set (switches, transformers, etc.), which we exclude from the net-level benchmark. The VLM connectivity comparison uses a single frontier model (Claude Opus~4.8) on the same 31 images; evaluating additional models and prompting strategies is future work. Component detection, at mAP@0.5~=~89.0\% and 70.7\% recall on crossovers (Section~\ref{sec:component_detection}), also leaves room for improvement; moreover the \texttt{other} class folds 30 rare device types together, so the detector localizes those devices but cannot name them, and a netlist containing one is incomplete. Excluding drafter\_0 from training avoids domain-shift artifacts from an outlier drawing style, but leaves that style unmodelled. The pipeline recovers circuit \emph{topology}, not component values: simulation accuracy is reported only on the synthetic suite, where values are known by construction, and no netlist derived from a real scan is simulated here. Producing a numerically simulatable netlist from a scan additionally requires reading component values off the image, which we do not attempt; coupling the join to a value-recognition (OCR) stage, as in~\cite{kelly2024digitizing,sina2026}, and validating end-to-end against a reference simulation, as in~\cite{peker2026}, is the natural completion of the pipeline. Finally, the synthetic error model is a first-pass approximation of detector noise rather than a calibrated fit; with the new real-image net-level metric available, calibrating it to the measured detector failure distribution is a natural next step.
 
 \section{Conclusion}
 

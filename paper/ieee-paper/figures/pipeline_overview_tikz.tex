@@ -15,7 +15,7 @@
 ]
 \newcommand{\sub}[1]{{\scriptsize\textcolor{black!55}{#1}}}
 \node[stage, fill=stgGray]                 (s1) {\textbf{Input}\\\textbf{Image}\\[3pt]\sub{Scanned}\\\sub{schematic}};
-\node[stage, fill=stgBlue,  right=of s1]   (s2) {\textbf{Component}\\\textbf{Detection}\\[3pt]\sub{YOLO OBB}\\\sub{88.5\% mAP}};
+\node[stage, fill=stgBlue,  right=of s1]   (s2) {\textbf{Component}\\\textbf{Detection}\\[3pt]\sub{YOLO26m OBB}\\\sub{89.0\% mAP}};
 \node[stage, fill=stgGreen, right=of s2]   (s3) {\textbf{Component}\\\textbf{Occlusion}\\[3pt]\sub{Local median}\\\sub{fill}};
 \node[stage, fill=stgOrange,right=of s3]   (s4) {\textbf{Binarization}\\\textbf{+ Line Extract}\\[3pt]\sub{Sauvola + CCL}\\\sub{+ PCA}};
 \node[stage, fill=stgBlue,  right=of s4]   (s5) {\textbf{Wire}\\\textbf{Joining}\\[3pt]\sub{Endpoint-graph}\\\sub{+ degree-budget}};

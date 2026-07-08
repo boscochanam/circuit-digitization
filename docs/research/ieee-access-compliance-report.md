@@ -56,7 +56,7 @@ All artifacts in `docs/research/experiments/` unless noted. **Every row verified
 | Synthetic L4 leaderboard 0.95 / 0.94 / 0.90 / 0.85 / 0.36 (radius), 2.6× claim | `synthetic_leaderboard.json` (0.9480/0.9416/0.8985/0.8497/0.3635) | ✅ |
 | Per-circuit L4 table (16 seeds; Wheatstone 0.82, ring 0.95, divider 0.99) | `per_circuit_scale_completion_l4_n16.json` | ✅ |
 | Reach plateau ρ∈[3,5] | `join_reach_sweep_n31.json` (r3.0 0.898 … r5.0 0.903) | ✅ |
-| Component detection 88.5% mAP@0.5, crossover recall 70.7%, 16 classes, drafter_0 excluded | `docs/benchmark-provenance.md` § "Component detection model", `docs/datasets.md` | ✅ (see caveat below) |
+| Component detection 89.0% mAP@0.5, crossover recall 70.7%, 16 classes, drafter_0 excluded | `docs/research/experiments/detector/` (three runs' `results.csv` + `run_metadata.json`, `class_map.json`, `README.md`); `docs/benchmark-provenance.md` § "Component detection model"; `docs/datasets.md` | ✅ — *the paper reports the **released** `best.pt` (max-fitness, epoch 121: mAP50 88.977, mAP50-95 78.510, P 95.778, R 88.621), verified against the epoch-121 row of `augmentations_16class_yolo26m/results.csv` and the metrics embedded in the checkpoint. The former 88.5% was the final-epoch (200) row, i.e. `last.pt`, which is not distributed. Per-class recall (crossover 70.7%) belongs to the same epoch-121 checkpoint. See `paper-access.tex` § "Component Detection" (`sec:component_detection`).* |
 | 31-image human-verified GT | `ground_truth/real_nets_verified.json` — exactly 31 keys | ✅ |
 | "Claude Opus 4.8" VLM identity | `wire_detection/benchmark/data/vlm_responses_*.json` record the same model string | ✅ |
 | Related-work numbers (SINA 96.47%, DiagramNet F1s, Kelly&Cole 86.4%, Peker 85.33/93.33%) | Cited literature, cross-checked against `SUMMARY.md` notes | ✅ |
@@ -67,8 +67,19 @@ All artifacts in `docs/research/experiments/` unless noted. **Every row verified
   where CGHD data is staged; paper correctly cites CGHD-1152 as the external source.
 - **Detector weights gitignored** (46 MB `.pt`); published at
   huggingface.co/boscochanam/circuit-component-detector with SHA256 in `docs/datasets.md:12`.
-  No training `results.csv` committed — the 88.5% mAP rests on the `docs/benchmark-provenance.md`
-  record + the HF model.
+  Training logs **are** committed, at `docs/research/experiments/detector/` — `results.csv` and
+  `run_metadata.json` for all three runs, plus the 61→16 `class_map.json`. The 89.0% mAP is the
+  epoch-121 row of `augmentations_16class_yolo26m/results.csv` and matches the metrics embedded in
+  the released checkpoint. *(Resolved 2026-07-08; this was previously an open caveat.)* Two residual
+  limits: the *baseline* run's `results.csv` is missing 53 epoch rows and is not fully
+  reconstructible (no paper number depends on it), and the validation split and dataset YAML are on
+  neither reachable machine, so **per-class** metrics cannot currently be regenerated — the
+  per-class table's attribution to epoch 121 is established by arithmetic over the committed CSVs
+  (see that directory's `README.md`).
+- **Confounded training-note comparisons excluded from the paper**: "61→16 merge lifted mAP ~50%→85%"
+  changes model size, schedule and batch alongside the class count; "M outperforms L" compares
+  L-without-augmentation against M-with-augmentation. Both are annotated as confounded in
+  `docs/benchmark-provenance.md` and neither is cited in the manuscript.
 - The 31-image join benchmark, synthetic suite, VLM responses, and all baseline JSONs **are**
   fully reproducible from the repo.
 

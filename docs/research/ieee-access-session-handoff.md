@@ -30,7 +30,9 @@ recomputed from result JSONs). Nothing below changes the headline story; it tigh
 - **Re-verified numbers:** wire detection F1 0.976 (a16); join scale_completion micro-F1 0.890
   (P 0.919 / R 0.864, macro 0.901); synthetic L4 leaderboard scale_completion 0.95 ≥ degree_budget
   0.94 ≥ graph_rescue 0.90 ≥ graph_scale 0.85; component detection 88.5% mAP@0.5 (crossover recall
-  70.7%). All re-run on claw (`./.venv/bin/python`) via
+  70.7%) — *superseded 2026-07-08: 88.5% is `last.pt` (final epoch), which is not distributed; the
+  released `best.pt` scores 89.0% mAP@0.5. Crossover 70.7% stands. See
+  [`docs/research/experiments/detector/`](experiments/detector/README.md).* All re-run on claw (`./.venv/bin/python`) via
   `wire_detection/benchmark/{join_eval_real_f1,cc_baseline_detected,hough_baseline,detection_ceiling}.py`
   and `wire_detection.synthgt`.
 - **Still author-only:** ORCIDs, author bios, funding line, publication dates, and the exact

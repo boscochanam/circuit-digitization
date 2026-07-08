@@ -39,7 +39,7 @@ The component detection module uses a trained YOLO26M-OBB model as the single so
 
 **Model:** `models/component_detection/yolo26m_obb_16class_aug.pt`
 **HuggingFace:** [boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector)
-**Performance:** 88.5% mAP50, 88.6% recall on CGHD-1152 dataset
+**Performance:** 89.0% mAP50, 88.6% recall on CGHD-1152 dataset (released `best.pt`, epoch 121)
 
 **Usage:**
 ```python

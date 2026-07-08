@@ -6,10 +6,12 @@ The framework uses several datasets for wire detection, component detection, and
 
 | Model | Source | Classes | mAP50 | Purpose |
 |-------|--------|---------|-------|---------|
-| `yolo26m_obb_16class_aug.pt` | [HuggingFace](https://huggingface.co/boscochanam/circuit-component-detector) | 16 | 88.5% | Component detection (single source of truth) |
+| `yolo26m_obb_16class_aug.pt` | [HuggingFace](https://huggingface.co/boscochanam/circuit-component-detector) | 16 | 89.0% | Component detection (single source of truth) |
 
 **Location:** `models/component_detection/yolo26m_obb_16class_aug.pt` (46MB, gitignored)
 **SHA256:** `d700b33f90191968af9f7f2798fff5e90a3f1ea473b811adc241bc570987264d`
+**Training logs:** [`docs/research/experiments/detector/`](research/experiments/detector/README.md). The
+mAP50 above is the released `best.pt` (max-fitness checkpoint, epoch 121), not the final epoch.
 
 ## Available Datasets
 

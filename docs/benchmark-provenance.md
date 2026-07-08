@@ -184,19 +184,37 @@ Full details: [`docs/research/join-verification.md`](research/join-verification.
 
 YOLO26M-OBB, trained on the CGHD dataset (the same dataset used for the wire-detection pipeline).
 
-- **16 classes**, merged down from the 61 original classes — the class merging was critical.
+- **16 classes**, merged down from the 61 original classes (see the confounding caveat on key
+  learning 1 below before treating the merge as a measured win). The
+  exact mapping is committed at
+  [`docs/research/experiments/detector/class_map.json`](research/experiments/detector/class_map.json):
+  **8 merge targets** (electrically-equivalent variants of `resistor`, `capacitor`, `diode`,
+  `transistor`, `inductor`, `voltage_source`, `integrated_circuit`, `operational_amplifier`),
+  **7 pass-through** classes (`terminal`, `crossover`, `switch`, `text`, `junction`, `gnd`, `vss`),
+  and **`other`**, which absorbs **30 of the 61 originals** and is therefore not a discriminative
+  label.
 - **2,652 train / 468 val** images, 85/15 random split.
 - **`drafter_0` excluded** — its drawing style differs from every other drafter.
 
 ### Performance (best: run 2)
 
+These are the metrics of the **released `best.pt`** — the maximum-fitness checkpoint, at
+**epoch 121** — which is the file `scripts/download_model.py` fetches. They are *not* the final-epoch
+numbers.
+
 | Metric | Value |
 |--------|-------|
-| mAP50 | **88.5%** |
-| mAP50-95 | 78.3% |
-| Precision | 95.6% |
+| mAP50 | **89.0%** |
+| mAP50-95 | 78.5% |
+| Precision | 95.8% |
 | Recall | 88.6% |
-| Epochs | 200 |
+| Best-fitness epoch | 121 (of 200) |
+
+Ultralytics saves `best.pt` at maximum fitness (`0.1*mAP50 + 0.9*mAP50-95`), not at the last epoch.
+The **final** epoch (200) is `last.pt`, which is **not distributed**; it scored mAP50 88.47,
+mAP50-95 78.31, precision 95.62, recall 88.63. Earlier revisions of this document reported those
+final-epoch figures (88.5 / 78.3 / 95.6 / 88.6), i.e. the metrics of a checkpoint nobody can
+download.
 
 ### Per-class recall
 
@@ -215,16 +233,31 @@ YOLO26M-OBB, trained on the CGHD dataset (the same dataset used for the wire-det
 
 ### Key learnings
 
-1. **Class merging:** 61 → 16 classes improved mAP from ~50% to 85%.
-2. **Augmentations:** +3.5% mAP over the no-augmentation baseline.
+1. **Class merging:** 61 → 16 classes improved mAP from ~50% to 85%. **Confounded — the paper does
+   not cite this.** The ~50% figure comes from a YOLO26L / 150-epoch / batch-5 run; the 85% figure
+   from a YOLO26M / 200-epoch / batch-17 run. Model size, schedule length and batch size all changed
+   alongside the class count. The merge plausibly helps; this comparison cannot say by how much.
+2. **Augmentations:** +3.5% mAP over the no-augmentation baseline. A cleaner comparison (same
+   schedule, same batch), but the baseline's `results.csv` is missing 53 epoch rows, so it is
+   reported as a log-derived observation, not a measured ablation.
 3. **M model beats L model:** the smaller model generalizes better at this dataset size once
-   augmentations are on.
+   augmentations are on. **Confounded — the paper does not cite this either.** It compares YOLO26L
+   *without* augmentation against YOLO26M *with* augmentation; no L + augmentation run exists.
 4. **Crossover remains hardest:** two crossing wires look identical to a regular wire.
+5. **Class weighting did not help:** run 3 (`augmentations_weights_16class_yolo26m`) never beat
+   run 2 on any metric.
 
-### Provenance caveat
+### Provenance
 
-No training `results.csv` is committed. The 88.5% mAP figure rests on this record plus the
-published HuggingFace weights (SHA256 above), not on an in-repo training log.
+Training logs for all three runs — `results.csv` and `run_metadata.json` each — are committed at
+[`docs/research/experiments/detector/`](research/experiments/detector/README.md), alongside `class_map.json`
+and a [`README.md`](research/experiments/detector/README.md) that derives every number here from
+those CSVs (the README is the source of record). The 89.0% mAP figure is the epoch-121 row of
+`augmentations_16class_yolo26m/results.csv`, and it reproduces the metrics embedded in the published
+HuggingFace weights (SHA256 above) exactly.
+
+Caveat: the *baseline* run's `results.csv` is missing 53 epoch rows and is not fully
+reconstructible. No number in the paper depends on it.
 
 ## Historical evaluations
 
