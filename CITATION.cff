@@ -7,8 +7,16 @@ title: >-
   pipeline with an endpoint-graph wire join and a human-verified
   connectivity benchmark
 type: software
-version: 1.0.0
+version: 1.0.1
 date-released: '2026-07-09'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21274158
+    description: >-
+      Concept DOI — resolves to the latest archived version of the software.
+  - type: doi
+    value: 10.5281/zenodo.21274159
+    description: Version DOI — the v1.0.1 archived release.
 authors:
   - given-names: Bosco
     family-names: Chanam
