@@ -7,6 +7,8 @@ title: >-
   pipeline with an endpoint-graph wire join and a human-verified
   connectivity benchmark
 type: software
+version: 1.0.0
+date-released: '2026-07-09'
 authors:
   - given-names: Bosco
     family-names: Chanam

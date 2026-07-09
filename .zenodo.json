@@ -1,0 +1,30 @@
+{
+  "title": "Circuit Digitization: a deterministic hand-drawn-schematic-to-SPICE pipeline with an endpoint-graph wire join and a human-verified connectivity benchmark",
+  "upload_type": "software",
+  "description": "Deterministic pipeline that converts scanned hand-drawn circuit schematics into SPICE netlists via component detection, an occlusion-first wire extractor, and a graph-based endpoint join with degree-budget completion. Ships the first human-verified net-level connectivity benchmark for hand-drawn circuits (31 images from CGHD-1152), the synthetic-circuit generator, the join-strategy and baseline benchmarks, and the VLM connectivity harness. Source code and our own annotations (net connectivity, wire polylines) are released under MIT; material derived from CGHD-1152 (overlay images under ground_truth/net_gt_ui_overlays/ and component annotations under ground_truth/component_labels/) remains under CC BY 4.0. See LICENSE.txt and ground_truth/LICENSE.",
+  "license": "MIT",
+  "access_right": "open",
+  "creators": [
+    {"name": "Chanam, Bosco", "orcid": "0009-0009-2527-0967", "affiliation": "Symbiosis Institute of Technology, Pune, India"},
+    {"name": "Dcosta, Chris", "orcid": "0009-0007-7295-0573", "affiliation": "Symbiosis Institute of Technology, Pune, India"},
+    {"name": "Talupuri, Pranavesh Kumar", "orcid": "0009-0005-8974-2012", "affiliation": "University of Southern California, Los Angeles, CA, USA"},
+    {"name": "Chiwhane, Shwetambari", "orcid": "0000-0002-3534-9654", "affiliation": "Symbiosis Institute of Technology, Pune, India"},
+    {"name": "Singh, Ashay Kumar", "orcid": "0009-0004-9105-7383", "affiliation": "Symbiosis Institute of Technology, Pune, India"},
+    {"name": "Das, Arghadeep", "orcid": "0009-0000-9207-7694", "affiliation": "Symbiosis Institute of Technology, Pune, India"}
+  ],
+  "related_identifiers": [
+    {"identifier": "10.5281/zenodo.6385814", "relation": "isDerivedFrom", "resource_type": "dataset", "scheme": "doi"}
+  ],
+  "keywords": [
+    "circuit digitization",
+    "connectivity benchmark",
+    "graph-based connectivity",
+    "hand-drawn circuits",
+    "image-to-netlist",
+    "netlist extraction",
+    "schematic recognition",
+    "SPICE",
+    "wire extraction",
+    "wire joining"
+  ]
+}
