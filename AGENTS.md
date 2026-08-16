@@ -99,7 +99,7 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 ### Key Findings
 - **a16** (Sauvola + component extraction + anchor_endpoint_dist=16) is the winner
 - Only change from v4 baseline: anchor_endpoint_dist 12 → 16 (+0.0025 F1)
-- **Sauvola dominates all other thresholding methods** — adaptive Gaussian F1=0.845 (best adaptive-Gaussian config, `adaptive_gaussian_skeleton`), OTSU F1=0.828, Triangle F1=0.795
+- **Sauvola dominates all other thresholding methods** — adaptive Gaussian F1=0.845 (best adaptive-Gaussian config, `adaptive_gaussian_skeleton`), OTSU F1=0.789 (best Otsu config `otsu_component`; re-verified 2026-08-16 against the corrected eval — the older 0.828 figure was from a pre-correction generation and is stale), Triangle F1=0.795
 - Skeleton extraction loses recall (FN=402 vs 77) — breaks thin wires
 - Adaptive thresholding fusion adds nothing — Sauvola already captures optimal per-pixel threshold
 - Parameter sweep shows pipeline is **robust** — k, window, link_dist, dedup_angle variations have minimal effect
