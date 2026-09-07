@@ -286,6 +286,19 @@ registry-based. `DEFAULT_STRATEGY = "scale_completion"` (promoted Jun 2026; was
 
 Full details: `docs/research/join-verification.md`
 
+## IEEE resubmission — active work (Sept 2026, read before touching the manuscript)
+
+- **Work line:** `revision/access-2026-33821-merge-20260907` — all T1–T8 edits land here.
+- **Plan:** `IMPLEMENTATION_PLAN.md` on branch `validation/audit-2026-09-07-astra`
+  (D1–D4 verdicts, per-comment specs, OPEN items). Team brief: `TEAM_REPORT_20260907.pdf`.
+- **Fork source:** `tkprnv/review/ieee-access-revision-2026-09` (`10c1b92`). Shares NO git
+  history with this line — hand-port prose/artifacts file by file; never merge or rebase.
+- **Issues #81–88** track T1–T8 + closeout with acceptance checks.
+- **Paper agent notes** (`paper/ieee-paper/AGENTS.md`) carry the resubmission framing and
+  banned claims — obey them over the older sections below where they conflict.
+- **Banned until human sign-off:** author/funding/bio edits, pushes off the merge line,
+  email, PDF judgments beyond mechanical checks.
+
 ## IEEE Paper (current state)
 
 - **Venue:** IEEE Access submission. **Title:** "From Hand-Drawn Schematics to SPICE Netlists:
