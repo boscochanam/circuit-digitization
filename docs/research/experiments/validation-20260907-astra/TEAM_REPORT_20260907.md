@@ -4,6 +4,13 @@
 
 **Scope:** Independent audit (Astra, 7 Sept 2026) of the revision work + 12-comment reviewer closeout. Audit base: detached commit `36b9a8e`. Full evidence in branch `validation/audit-20260907-astra`. No production code was changed by the audit.
 
+## Latest update — plan complete, first fix landed
+
+- **Implementation plan written** (`IMPLEMENTATION_PLAN.md` in the audit branch): D1–D4 verdicts, all 12 comments specified, package checklist, 7 OPEN items (all human-side). One Astra planning run, ~20% of quota.
+- **First fix applied and pushed** (merge branch `revision/access-2026-33821-merge-20260907`, commit `823aef6`): method description now matches the OBB + nearest-pin implementation in both sources. Verified independently, `diff --check` clean.
+- **Key finding for T1:** the fork line and the revision line share no git history (duplicated commits split the ancestry), and the fork's patch does not apply cleanly. T1 is hand surgery on `paper-access.tex` plus the 4 artifact files — never a merge or rebase.
+- **Pushback resolved:** crossover rerun withdrawn (artifact was present); method fix applied (above); human PDF review stays T7's job.
+
 ## Where things stand — two revision lines
 
 | Line | Base | Contains | Still missing |
