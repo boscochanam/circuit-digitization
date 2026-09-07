@@ -1,0 +1,43 @@
+AST parsed 173 Python files
+30c020b ancestor False
+54cbc9f ancestor False
+c44fd56 ancestor True
+f8c2331 ancestor True
+a07c962 ancestor False
+d96874a ancestor False
+22d6882 ancestor True
+1585966 ancestor False
+0a286d4 ancestor True
+aab509e ancestor True
+BODY DIFF
+--- 
++++ 
+@@ -45,7 +45,7 @@
+ 
+ \begin{figure*}[t]
+ \centering
+-\input{figures/endpoint_graph_tikz.tex}
++\includegraphics[width=\columnwidth]{figures/endpoint_graph.pdf}
+ \caption{Joining approaches compared. (a)~Radius-based join (legacy): each wire endpoint grabs all pins within a fixed threshold, causing over-merging. (b)~Our endpoint-graph model: typed edges (wire body, endpoint--pin) with directional preference resolve connectivity without over-merging.}
+ \label{fig:endpoint_graph}
+ \end{figure*}
+@@ -62,7 +62,7 @@
+ 
+ \begin{figure*}[t]
+ \centering
+-\input{figures/completion_tikz.tex}
++\includegraphics[width=\columnwidth]{figures/completion.pdf}
+ \caption{Degree-budget completion. Left: After base joining, some pins are ``floating'' (touching only their own component). Right: Completion reconnects floating pins via min-cost $b$-matching (orange dashed), with self-loop guard preventing shorts within two-terminal components.}
+ \label{fig:completion}
+ \end{figure*}
+@@ -289,6 +289,5 @@
+ 
+ We present a complete deterministic pipeline for hand-drawn circuit digitization, built on an occlusion-first wire extractor that yields an endpoint representation and a two-stage endpoint-graph join, together with, to our knowledge, the first human-verified net-level connectivity benchmark for hand-drawn circuits. The endpoint-graph join with degree-budget completion is most robust under synthetic error injection (F1~=~0.95 at the highest severity vs.\ 0.36 for the radius baseline), and, paired with a high-precision scale-relative base, attains connectivity micro-F1~=~0.890 on our 31-image, CGHD-1152-sourced benchmark against human-verified ground truth, beating the prior completion default (0.83) and every deterministic baseline, including the connected-component net-tracing recipe used by recent systems (0.62) and a Hough-plus-proximity line tracer (0.81), all on identical detected wires. Running the join on perfect wires does not raise micro-F1 at all, showing the join, not wire detection, is the bottleneck. A first-party experiment with a frontier VLM reaches 0.923 on the same images, a difference from our join that is not statistically significant (paired 95\% CI $[-0.009, +0.078]$), but at two to three orders of magnitude higher cost and without structurally valid, machine-checkable output, supporting the explicit geometric design. Future work includes scaling the human-verified benchmark, calibrating the synthetic error model to the measured detector distribution, and extending coverage to devices outside the simulatable set.
+ 
+-% Funding is declared in the \thanks block of the front matter (this build uses
+-% IEEEtran \thanks; paper-access.tex uses the IEEE Access \tfootnote convention).
+-
++% Funding moved to \tfootnote in the front matter (IEEE Access convention).
++
+
+unescaped C138 True True

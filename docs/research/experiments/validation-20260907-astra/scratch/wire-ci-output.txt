@@ -1,0 +1,10 @@
+Modules /home/claw/circuit-digitization-validation-20260907/repo/wire_detection/benchmark/experiment_harness.py /home/claw/circuit-digitization-validation-20260907/repo/wire_detection/benchmark/expanded_benchmark.py /home/claw/circuit-digitization-validation-20260907/repo/wire_detection/benchmark/reference_pipeline.py /home/claw/circuit-digitization-validation-20260907/repo/wire_detection/benchmark/bootstrap_ci.py
+Samples 134 exact aligned 134
+a16 n 134 f1 0.972629796839729 p 0.9671717171717171 r 0.978149829738933 tp/fp/fn/red 3447 49 77 68
+v4 n 134 f1 0.9701175470896474 p 0.9683347469607012 r 0.9719069239500567 tp/fp/fn/red 3425 46 99 66
+otsu_component n 134 f1 0.7893531768746423 p 0.796189376443418 r 0.782633371169126 tp/fp/fn/red 2758 487 766 219
+otsu_skeleton n 134 f1 0.7366037735849056 p 0.7868429538858432 r 0.6923950056753689 tp/fp/fn/red 2440 519 1084 142
+otsu_clahe_skeleton n 134 f1 0.6949268426090525 p 0.6706254948535234 r 0.72105561861521 tp/fp/fn/red 2541 961 983 287
+otsu_skeleton_reconnect n 134 f1 0.7295167286245353 p 0.7663230240549829 r 0.6960839954597049 tp/fp/fn/red 2453 587 1071 161
+CI six entries exact match True
+Paired difference 0.03276808388629482 CI -0.007999746039654296 0.0770366734038083 saved {'point': 0.03276808388629482, 'lo': -0.009184500410865945, 'hi': 0.07809612609512304}

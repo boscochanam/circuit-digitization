@@ -1,0 +1,17 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+___________________ test_baseline_harness_matches_reference ____________________
+
+    @pytest.mark.skipif(not _has_hdc_data, reason="HDC dataset not present")
+    def test_baseline_harness_matches_reference():
+        summary = run_experiment(ExperimentConfig(name="baseline_control_test"))
+    
+>       assert round(summary.global_f1, 4) == 0.9432
+E       AssertionError: assert 0.0 == 0.9432
+E        +  where 0.0 = round(0.0, 4)
+E        +    where 0.0 = RunSummary(config=ExperimentConfig(name='baseline_control_test', threshold_method='sauvola', extra_threshold_methods=(...04988662132, synthetic_recall=0.9081364829396326, synthetic_tp=346, synthetic_fp=23, synthetic_fn=35, synthetic_red=72).global_f1
+
+wire_detection/tests/test_benchmark_experiment.py:21: AssertionError
+=========================== short test summary info ============================
+FAILED wire_detection/tests/test_benchmark_experiment.py::test_baseline_harness_matches_reference
+1 failed, 2 passed in 4.55s

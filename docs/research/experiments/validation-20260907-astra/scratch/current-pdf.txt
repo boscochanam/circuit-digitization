@@ -1,0 +1,644 @@
+CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS                                                                                  1
+
+
+
+
+From Hand-Drawn Schematics to SPICE Netlists: A
+ Deterministic Pipeline with Endpoint-Graph Wire
+    Joining and a Human-Verified Connectivity
+                    Benchmark
+ Bosco Chanam, Chris Dcosta, Pranavesh Kumar Talupuri, Shwetambari A. Chiwhane, Ashay Kumar Singh, and
+                                            Arghadeep Das
+
+
+
+    Abstract—Automated digitization of hand-drawn circuit                   problem, determining which wire segments connect to which
+schematics into simulation-ready SPICE netlists remains chal-               component pins and to each other, remains the primary failure
+lenging because connectivity recovery is brittle under noisy wire           mode in end-to-end digitization pipelines.
+detections. We present a deterministic pipeline that converts
+a scanned schematic into a SPICE netlist through component
+detection, an occlusion-first wire extractor, and a graph-based                The challenge is threefold. First, wire endpoints extracted
+join that resolves electrical connectivity. The main contribution           from binarized images are inherently noisy: the same circuit
+is the joining stage: an endpoint-graph model over wire endpoints           drawn by different drafters produces endpoint positions that
+and component pins with five edge types, combined with degree-              vary by 10–80 pixels. Second, components occupy bounding
+budget completion that recovers dropped connections through
+min-cost b-matching while bounding over-merge with per-pin                  boxes that overlap with wire endpoints, creating ambiguity
+budgets and self-loop guards. We also introduce a synthetic                 about whether an endpoint connects to a component’s pin or
+perturbation protocol and, to our knowledge, the first human-               merely passes nearby. Third, T-junctions, collinear fragments,
+verified net-level connectivity benchmark for hand-drawn cir-               and crossing wires create complex connectivity patterns that
+cuits, covering 31 images from CGHD-1152. The occlusion-first               simple radius-based approaches cannot resolve without over-
+extractor reaches wire-detection F1 = 0.976 on 134 scanned
+images. On the human-verified net-level benchmark, the best                 merging.
+join reaches connectivity micro-F1 = 0.890, outperforming the
+prior completion default (0.83), a legacy radius union-find join               A natural alternative is to prompt a large vision-language
+(0.67), a connected-component net-tracing baseline (0.62), and              model (VLM) to read the schematic and emit its netlist di-
+a Hough-plus-proximity line tracer (0.81), all under identical              rectly. We test this in Section IV-F: a strong VLM attains con-
+detected wires. Running the join on perfect wire labels does not
+improve micro-F1, showing that connectivity, not wire detection,            nectivity accuracy statistically indistinguishable from our ge-
+remains the bottleneck. A first-party comparison shows a strong             ometric pipeline, but it does so at orders-of-magnitude higher
+vision-language model reaches 0.923 on the same images, statis-             cost, returns free-form text rather than a structured netlist,
+tically indistinguishable from our join but far more expensive              offers no structural guarantee against electrically invalid output
+and without structural guarantees, supporting explicit geometric            (e.g. shorted two-terminal parts), and drops connections on the
+connectivity recovery for deployable circuit digitization.
+                                                                            most complex circuits. These properties motivate an explicit,
+  Index Terms—circuit digitization, connectivity benchmark,                 inspectable geometric pipeline whose output is a netlist by
+graph-based connectivity, hand-drawn circuits, image-to-netlist,
+                                                                            construction and whose accuracy matches the VLM’s while
+netlist extraction, schematic recognition, SPICE, wire extraction,
+wire joining                                                                being deterministic and simulatable.
+
+                                                                               We address these challenges with a complete determin-
+                         I. I NTRODUCTION
+                                                                            istic pipeline whose novel elements are: (1) an occlusion-
+   Analog circuit schematics encode functional information                  first wire extractor that masks detected components before
+(component types, values, and topological connections) in a                 binarization and estimates per-segment endpoints, producing
+visual format designed for human interpretation. Converting                 a line-segment-with-endpoints representation (rather than trac-
+scanned schematics into machine-readable SPICE (Simulation                  ing nets directly into connected components, as prior systems
+Program with Integrated Circuit Emphasis) netlists enables                  do) that is what makes graph-based joining possible; (2) an
+automated simulation, design verification, and large-scale cir-             endpoint-graph join model that constructs a graph over both
+cuit analysis. While recent advances in object detection have               wire endpoints and component pins, with five edge types
+made component recognition increasingly reliable, the joining               capturing distinct connectivity patterns; and (3) a degree-
+  B. Chanam, C. Dcosta, S. Chiwhane, A. K. Singh, and A. Das are with the   budget completion algorithm that identifies and reconnects
+Symbiosis Institute of Technology, Pune 412115, India.                      dropped connections using constrained optimization. We eval-
+  P. Talupuri is with the Department of Computer Science, University of     uate on the CGHD-1152 dataset [1] with both a synthetic
+Southern California, Los Angeles, CA 90089 USA.
+  Corresponding author: Bosco Chanam (e-mail: boscochanam@gmail.com).       error injection framework that enables systematic robustness
+  This work received no external funding.                                   analysis and a human-verified net-level benchmark.
+CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS                                                                                                   2
+
+
+
+
+       Input                    Component                  Component                  Binarization                   Wire                       SPICE
+       Image                     Detection                  Occlusion                + Line Extract                 Joining                     Netlist
+       Scanned                  YOLO OBB                   Local median               Sauvola + CCL              Endpoint-graph               Pin discovery
+      schematic                 88.5% mAP                       fill                      + PCA                  + degree-budget              + simulation
+
+
+                                                                                                Our contribution
+
+
+Fig. 1. End-to-end pipeline for scanning circuit diagram digitization. Our contributions span the wire extraction and joining stages; the join (dashed red)
+determines which extracted wire segments connect to which component pins and is the dominant failure mode in end-to-end digitization.
+
+
+
+
+Fig. 2. Pipeline stages on two real hand-drawn circuit images, joined with our scale-relative completion join (connectivity F1 = 1.000 on both). Left: a
+four-transistor analog cell (36 wires, 12 nets); right: an RLC loop photographed on a textured surface (12 wires, 4 nets). Each panel shows, in order: original
+scan, component occlusion, Sauvola binarization, morphological close, detected wires (red overlay), and the join result. In the join result every recovered net
+is a distinct colour drawn along its conductors; component bounding boxes are the ground-truth labels (as used throughout the net-level evaluation, isolating
+the join), filled dots are device pins, diamonds mark junctions, and triangles mark terminals and ground.
+
+
+
+                     II. R ELATED W ORK                                          netlist success. Their node detection is an instance of the
+   The end-to-end conversion of schematic images into                            connected-component/contour recipe we evaluate as a base-
+machine-readable netlists has progressed rapidly. Kelly and                      line (Section IV-D); because their dataset (transistor-level
+Cole [2] presented a pattern-recognition workflow for digitiz-                   analog, authored in-house) and metric (LTspice node-voltage
+ing circuit schematics with an 86.4% success rate, combining                     pass/fail) differ from ours (discrete components on CGHD-
+optical character recognition (OCR) for component values with                    1152, component-pair F1), the headline numbers are not
+network-graph construction. SINA [3], the closest contem-                        directly comparable, but the comparison shows contour/CCL
+porary system, pairs a YOLOv11 detector with connected-                          node detection remains the prevailing approach, which our
+component labeling (CCL) and OCR, and invokes a vision-                          endpoint-graph join substantially outperforms on a controlled,
+language model (VLM) for reference-designator assignment,                        identical-input benchmark. Instance-segmentation approaches
+reporting 96.47% netlist-generation accuracy, a 2.72× im-                        extract circuit graphs directly from pixels: Bayer et al. [6]
+provement over the prior state of the art. SINA confines                         segment components and wires for graph extraction over
+the VLM to symbolic labeling and derives nets from CCL                           the CGHD lineage. For hand-drawn inputs, object-detection
+proximity rather than trusting the VLM with connectivity,                        pipelines [7] and the recent JUHCCR-v1 database [8] tar-
+an insight we share (Section II). Masala-CHAI [4] (Auto-                         get component recognition on freehand sketches. Most of
+SPICE) uses large language models to produce SPICE netlists                      these pipelines build on general-purpose object detectors such
+from analog schematics at scale. Most directly comparable                        as the YOLO family [9], [10] and OCR engines such as
+to our setting, the concurrent work of Peker et al. [5]                          Tesseract [11], with the ultimate goal of producing simulator-
+(IEEE Access, 2026) builds a fully automated image-to-SPICE                      ready descriptions in formats such as SPICE [12]. These
+pipeline for printed and hand-drawn transistor-level circuits,                   works establish detection and recognition as largely solved;
+pairing YOLOv8/11 detection with a contour-based node-                           the bottleneck shifts to reconstructing electrical connectivity,
+detection module (components are erased and nets are read                        the focus of our contribution.
+from the contours of the residual wire pixels) and, as we do,                       Progress depends on annotated corpora. The CGHD hand-
+validates netlists by automated LTspice simulation against a                     drawing dataset [1] provides component- and wire-level anno-
+reference. On their in-house seven-topology MOSFET dataset                       tations for handwritten schematics. In the analog/mixed-signal
+they report 93.33% (printed) and 85.33% (hand-drawn) whole-                      (AMS) domain, AMSnet 2.0 [13] contributes a large database
+CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS                                                                             3
+
+
+
+built with AI-assisted segmentation for net detection, while        netlist generator.
+AMSBench [14] is a benchmark for evaluating multimodal
+LLM capabilities across AMS circuit tasks. Beyond circuits,                                   III. M ETHOD
+DiagramNet [15] introduces an end-to-end framework and              A. Pipeline Overview
+dataset for non-standard system-level diagrams, including an
+                                                                       Figure 1 summarizes the six-stage pipeline. The full pipeline
+explicit connection-recognition task scored by F1. We use
+                                                                    proceeds through six stages: (1) component detection via
+these benchmarks both as evidence of where current systems
+                                                                    oriented bounding box (OBB) YOLO model; (2) component
+succeed (component recognition) and where they fail (con-
+                                                                    occlusion (filling detected regions with local median color);
+nectivity), and contribute a synthetic robustness protocol that
+                                                                    (3) Sauvola adaptive binarization; (4) connected component
+isolates the join step under controlled detector noise.
+                                                                    labeling with morphological post-processing; (5) wire end-
+   General-purpose VLMs and LLMs have been applied
+                                                                    point extraction via principal component analysis (PCA) on
+broadly to electronic design [16], and to circuit understand-
+                                                                    endpoint regions; and (6) wire joining via the endpoint-graph
+ing in particular. Kulkarni et al. [17] proposed Near Sight
+                                                                    model with degree-budget completion. The output is a netlist
+Correction using VLMs, reporting 87.4% accuracy on circuit
+                                                                    mapping component pins to electrical nodes, suitable for
+visual question answering (VQA) and 0.87 F1 on connection-
+                                                                    SPICE netlist generation. Figure 2 shows two representative
+matrix prediction. However, multiple independent benchmarks
+                                                                    circuits at each stage.
+show that general VLMs handle component recognition far
+better than connectivity. On the DiagramNet connection
+task [15], leading general models score very low F1 (GPT-           B. Endpoint-Graph Join Model
+5 at 0.029, Claude-Sonnet-4 at 0.265, and Gemini-2.5-Pro               Given a set of wire segments W = {w1 , . . . , wm } with
+at 0.008), whereas a task-tuned 3B model reaches 0.735.             endpoints ep(wi ) = (ai , bi ) and component pins P =
+AMSBench [14] reports a similar gap for MLLMs on AMS                {p1 , . . . , pn }, we construct an undirected graph G = (V, E)
+connectivity. This corroborates the design choice, shared with      where V = eps(W) ∪ P.
+SINA [3], to keep wire-to-component connectivity out of the            Edge type 1 (wire body): For each wire wi , add edge
+VLM and instead solve it with an explicit geometric model.          (ai , bi ) with weight 0. This ensures both endpoints of a wire
+We make this separation concrete and quantify it with our own       are always in the same net.
+Claude-VLM connectivity experiment.                                    Edge type 2 (endpoint–endpoint): For endpoint pairs
+   Classical wire extraction relies on edge detection, morpho-      (ei , ej ) with ∥ei −ej ∥ ≤ τjoin , add edge with weight ∥ei −ej ∥.
+logical operations, and the Hough transform [18], typically         This captures wire fragments, corners, and junctions.
+preceded by adaptive binarization such as Sauvola threshold-           Edge type 3 (endpoint–pin): For each endpoint e and pin
+ing [19] and connected-component labeling [20]. The dom-            p with ∥e − p∥ ≤ τpin , add edge with weight ∥e − p∥ · (1 − α ·
+inant join in existing pipelines uses radius-based proximity:       cos θ), where θ is the angle between the wire direction and the
+each wire endpoint grabs all component pins within a fixed          endpoint-to-pin vector, and α controls directional preference.
+threshold (typically 30px), connected via transitive union-         This is the critical edge type: it connects wires to components.
+find [21]. This over-merges when multiple components fall              Edge type 4 (endpoint–wire-body): For each endpoint
+within the threshold, shorting two-terminal parts (R, C, L, D)      e and wire segment wj = (c, d), if the point-to-segment
+onto the same net. SINA [3] likewise derives nets from CCL          distance dist(e, wj ) ≤ τt , add edge with weight dist(e, wj ).
+proximity, which is similarly vulnerable to over-merge under        This captures T-junctions where a wire terminates on another
+detector noise. We instead model joining as a typed endpoint        wire’s body.
+graph that incorporates component geometry and directional             Edge type 5 (pin–wire-body): For each component pin
+preference, and resolve residual ambiguity with a degree-           p and wire segment wj , if the point-to-segment distance
+budget completion: a bounded b-matching formulation [22],           dist(p, wj ) ≤ τt and the projection lands mid-span (not at
+[23] that caps per-pin degree and thereby limits over-merge         wj ’s endpoints, which are handled by edge type 3), add edge
+when endpoints are dropped or displaced. This differs from          with weight dist(p, wj ). This binds components that tap onto
+graph neural networks for netlist reverse engineering [24],         a passing rail along the wire’s body rather than at its end.
+which learn representations over already-extracted gate-level       It recovers connectivity that endpoint-only binding misses,
+graphs; our graph is a purely geometric model whose edges           without the all-to-all over-merge of radius grabbing.
+encode spatial relationships between wire endpoints and com-           The tolerances τjoin , τpin , and τt are scale-relative: τ = k · s
+ponent pins. A complementary recent direction replaces rule-        where s is the characteristic scale (median component diag-
+based connectivity with a learned model: Netlistify [25]            onal), so a single parameter setting works across circuits of
+predicts terminal connectivity with a Transformer and reports a     varying size.
+12.4% F1 gain over AMSnet on printed AMS schematics. Such              Component-first pin assignment: For edge type 3, we use
+models are powerful but require task-specific connectivity          a two-step assignment. First, assign each endpoint to its nearest
+training data and, trained on printed schematics, do not transfer   component by bounding-box distance (0 if inside the bbox,
+to hand-drawn images without retraining; our geometric model        using a generous radius of max(τpin , 0.5 · diagonal)). Second,
+needs no connectivity training and is the focus here. Open          within the assigned component, select the pin by geometric
+hand-drawn efforts such as CircuitNet [26] likewise rely on         position: for horizontal components (w > h), left pin if
+traditional image processing plus a classifier and a heuristic      endpoint x < center x, else right pin; for vertical components
+CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS                                                                                        4
+
+
+
+(h > w), top pin if endpoint y < center y, else bottom pin.          one endpoint is moved by up to amax pixels (from 30 px at
+This handles the common case where endpoints land inside             L1 to 80 px at L4).
+a component’s bounding box but far from its pin. Figure 3              We report join F1 as the component-connectivity F1 score,
+contrasts the legacy radius join with our endpoint-graph model.      measuring which pairs of components share a net in the
+  Nets are computed as connected components of G, projected          predicted versus ground-truth netlist. We report simulation
+onto pins. The result is a netlist mapping each pin to a net         accuracy as the percentage of random seeds for which every
+identifier.                                                          source current in the predicted SPICE netlist matches the clean
+                                                                     oracle within 5%.
+C. Degree-Budget Completion
+                                                                     B. Wire Detection Benchmark
+   The endpoint-graph join may leave some component pins
+“floating”: touching only their own component’s net, with no            We evaluate on 134 images from CGHD-1152 with ground-
+wire connecting them to another component. This indicates            truth wire and component labels. Figure 5 and Table I sum-
+a dropped or over-displaced wire endpoint that the detector          marize the top configurations across 36 tested variants.
+failed to place near the correct pin.
+   Degree-budget completion identifies these floating pins and                                      TABLE I
+                                                                                  W IRE D ETECTION P ERFORMANCE (134 IMAGES )
+reconnects them via constrained optimization. A pin p is
+treated as floating if its net contains only pins from p’s
+own component, excluding inert types such as gnd, vss, text,              Configuration                               F1      Prec      Rec
+antenna, junction, and terminal. For each floating pin p, we              Sauvola + anchor 16 px (ours)              0.976    0.973     0.978
+generate candidate edges to all pins q in other components                Sauvola + anchor 12 px                     0.973    0.974     0.972
+                                                                          Sauvola (w=61) + anchor 12 px              0.959    0.944     0.974
+within reach r = ρ·s, where ρ is the reach factor; we use ρ = 4           Sauvola (k=0.2875) + anchor 14 px          0.950    0.921     0.980
+for the deployed scale-relative join, and Section IV-D shows a            Otsu threshold + CCL                       0.789    0.796     0.783
+broad F1 plateau for ρ ∈ [3, 5]. Candidate edge weight is Eu-
+               P∥p−q∥. We then solve a min-costPb-matching
+clidean distance
+                                                                        The pipeline achieves median F1 = 1.000 across the bench-
+problem, min (p,q)∈E ′ w(p, q) · xpq subject to q xpq ≤ 1
+for each floating pin p, using the Hungarian algorithm [22]          mark set, with 87% of images scoring F1 ≥ 0.90. Sauvola
+(scipy.optimize.linear_sum_assignment). Each                         adaptive binarization dominates all alternatives: Otsu yields
+target pin offers up to three slots so legitimate multi-terminal     F1 = 0.789, adaptive Gaussian F1 = 0.845. Component occlu-
+nets are not starved, and a per-pin opt-out leaves a pin with no     sion matters: without it, component internals (text, symbols,
+good target unconnected rather than forcing a spurious edge.         internal wiring) generate hundreds of false wire detections.
+Finally, we reject any matched edge (p, q) if p and q belong
+to the same component or if adding the edge would merge              C. Join Strategy Comparison
+two nets that already share a component, which structurally            Table II and Figure 6 compare joining strategies on the
+prevents short-circuiting two-terminal parts.                        synthetic evaluation framework (15 circuits × 8 seeds, mean
+   Completion edges are “wireless”: they represent inferred          F1 over error levels L1–L4).
+connections without corresponding wire segments, analogous
+to manual pin merges in schematic editors. Figure 4 illustrates                                   TABLE II
+the completion step.                                                          J OIN S TRATEGY L EADERBOARD (S YNTHETIC E VAL )
+
+
+                         IV. R ESULTS                                  Strategy                               L0       L1     L2      L3      L4
+A. Synthetic Evaluation Framework                                      Scale-rel. graph + completion (ours)   1.00     1.00   1.00    0.96 0.95
+                                                                       Rescue graph + completion              1.00     1.00   1.00    0.95 0.94
+   We author 15 synthetic circuits spanning 3–6 components             Rescue graph (base)                    1.00     1.00   1.00    0.94 0.90
+and 2–6 nets, including parallel resistors, series dividers,           Scale-rel. graph (base)                1.00     1.00   1.00    0.94 0.85
+                                                                       Radius union-find (legacy)             1.00     0.97   0.90    0.56 0.36
+Wheatstone bridges, RC/RL circuits, diode loops, and a 6-              Nearest-pin + bbox anchor              1.00     0.97   0.89    0.38 0.32
+component ring (cyclic and bridge topologies being the main
+stress cases for join robustness). Each circuit has a known
+ground-truth netlist and SPICE deck with a test voltage source.         The completion-based strategies are the most robust, main-
+   We inject five categories of error at four severity levels (L1–   taining F1 ≥ 0.94 at the highest error severity (L4), compared
+L4) on top of the clean (L0) baseline. These are Gaussian            to F1 = 0.36 for the legacy radius union-find baseline, a 2.6×
+endpoint jitter with standard deviation σ (from 3 px at L1           improvement. The radius join’s transitive grabbing causes
+to 14 px at L4), cut-short corruption in which each wire is          catastrophic over-merging under noise: at L4, it shorts multiple
+shortened inward by a fixed length to model endpoints that           components onto shared nets. We emphasize, however, that
+stop short of the pin (from 4 px at L1 to 22 px at L4), full         the endpoint-graph base joins are themselves far more robust
+wire drops with probability pdrop (up to 0.20 at L4), wrong-         than the radius join, reaching F1 = 0.90 at L4 (Table II).
+pin snaps with probability pwp (from 0.02 at L2 to 0.10 at           The degree-budget completion adds a further +0.05 over
+L4), and anchor displacement, where with probability pdisp           the strongest of these by recovering dropped connections the
+CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS                                                                                                 5
+
+
+
+
+                     (a) Radius-based joining                                                             (b) Endpoint-graph (ours)
+
+
+
+                         R1                      C1                  R2
+
+                                 radius grabs every pin in range                           R1               C1                     R2
+                                 → R1, C1, R2 wrongly merged
+
+
+
+                             Wire body                              Endpoint–pin                        Endpoint–endpoint
+
+                         T-junction (endpt–body)                    Rail-tap (pin–body)                 Endpoint              Pin
+
+Fig. 3. Joining approaches compared. (a) Radius-based join (legacy): each wire endpoint grabs all pins within a fixed threshold, causing over-merging. (b) Our
+endpoint-graph model: typed edges (wire body, endpoint–pin) with directional preference resolve connectivity without over-merging.
+
+
+                                         Before completion                                       After completion
+                                                                                                     completion edge
+                                                              floating pin                         (min-cost b-matching)
+                                         Net A                                                  Net A
+                               R1                  R2                 R3              R1                   R2               R3
+
+                                                                                          self-loop guard: a component’s own two
+                                                                                            terminals are never matched together
+
+Fig. 4. Degree-budget completion. Left: After base joining, some pins are “floating” (touching only their own component). Right: Completion reconnects
+floating pins via min-cost b-matching (orange dashed), with self-loop guard preventing shorts within two-terminal components.
+
+
+
+                                                                                   no dead-end rescue).
+Sauvola, anchor 16px (ours)                                             0.976
+      Sauvola, anchor 12px                                             0.973
+                                                                                   D. Real-Image Net-Level Evaluation
+            Sauvola (w=61)                                            0.959
+                                                                                      The synthetic results above measure robustness under a
+        Sauvola (k=0.2875)                                           0.950         parametric error model. To validate on real detector output,
+              Sauvola (alt.)                                         0.949         we constructed, to our knowledge, the first human-verified
+         adaptive Gaussian                                         0.928           net-level ground truth for hand-drawn circuits: 31 images
+                                                                                   from CGHD-1152 in which every electrical net was traced
+                       Otsu                         0.789
+                                                                                   and confirmed by a human annotator through a purpose-
+                   Triangle                      0.758                             built verification tool. Because one of our comparison points
+                                                                                   is a vision-language model (Section IV-F), the human, not
+                              0.6       0.7      0.8     0.9     1.0
+                                    Wire detection F1 (134 images)                 any model, is the verifier of record, so the answer key is
+                                                                                   independent of every method under test. Net-level proposals
+Fig. 5. Wire detection F1 across thresholding methods and pipeline variants        were bootstrapped by a conservative endpoint-graph join over
+(134 images). Our configuration (Sauvola binarization with a 16 px anchor fil-     the dataset’s perfect wire labels and then corrected by hand;
+ter) achieves F1 = 0.976. Otsu and triangle thresholding degrade significantly.    during verification the human consistently caught cases where
+                                                                                   the bootstrap join had wrongly split a single rail, and we
+                                                                                   additionally re-validate all conclusions on the independently
+base graph join leaves floating, while its per-pin edge budget                     authored synthetic ground truth to rule out residual bootstrap
+keeps precision high. Pairing that completion with the high-                       bias. Connectivity is scored as component-pair F1 restricted
+precision scale-relative base (the scale-relative completion join                  to SPICE-active components, identical to the synthetic metric.
+used throughout) gives the best synthetic robustness (0.95 at                         Table III reports every registered join strategy on the verified
+L4) and, more importantly, the best real-image connectivity                        set, run on the pipeline’s own detected wires. We report micro-
+(Section IV-D). The large gap is against the legacy radius                         averaged (pair-pooled) component-pair F1 as the primary
+join; against the strongest prior graph join the improvement                       metric, so that a dense 14-component board contributes in
+is smaller but consistent across every severity level. For                         proportion to its connections rather than counting the same as
+readability we omit two intermediate variants whose synthetic                      a 3-component one; the macro (mean per-image) F1 is listed
+scores fall within rounding of rows shown (nearest-pin without                     alongside for reference. The best configuration, the scale-
+anchoring, and the scale-relative base with end-extension but                      relative completion join (degree-budget completion applied to
+ CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS                                                                                                                                                                                 6
+
+
+
+                               (a) Strategy robustness under error injection                                                                     (b) Scale-relative completion join per circuit at L4
+          1.0                                                                                                                1.0
+                                                                                                                                       1.00        0.99     0.99      0.99                                              100
+                                                                                                                                                                                0.93      0.94                0.95
+
+                                                                                                                                                                                                     0.82
+          0.8                                                                                                                0.8                                                                                        80
+
+
+
+
+                                                                                                                                                                                                                             Simulation accuracy (%)
+          0.6                                                                                                                                                                                                           60
+
+
+
+
+                                                                                                              Join F1 (L4)
+                                                                                                                             0.6
+Join F1
+
+
+
+
+          0.4                                                                                                                0.4                                                                                        40
+
+
+          0.2                                                                                                                0.2                                                                                        20
+                                                       Error level
+                                             L0      L1      L2      L3      L4
+          0.0                                                                                                                0.0                                                                                        0
+                  Scale-rel.       Rescue         Rescue       Scale-rel.         Radius         Nearest                              Parallel      R-R       RL     Diode-R   Dual R    4-comp.    Wheat-   6-comp.
+                  + compl.        + compl.         base          base             u-find         + anchor                               R-R       divider   series     loop    loops       loop     stone      ring
+                   (ours)
+
+ Fig. 6. (a) Join strategy robustness under error injection (15 circuits × 8 seeds): bars give mean connectivity F1 at each severity level (L0–L4, dark to
+ light to red). The completion-based strategies (left) stay near 1.0, while the radius union-find and nearest-pin baselines (right) collapse at L3–L4. (b) The
+ scale-relative completion join per circuit at L4 (16 seeds): bars are connectivity F1, the orange line is simulation accuracy. Errors cause fragmentation rather
+ than shorts (precision stays high; Table IV); the balanced Wheatstone bridge is the hardest case.
+
+
+
+ a high-precision scale-relative endpoint-graph base), achieves
+ micro-F1 = 0.890 (P = 0.92, R = 0.86; 95% bootstrap CI                                                                            Scale-rel. + compl. (ours)                                                     0.890
+ [0.855, 0.924]), improving on the prior default that applies                                                                               Rescue + compl.                                                     0.829
+ the same completion to the rescue base (0.829) and the
+ radius union-find join (0.667) (Figure 7). The gain over that                                                                                 Scale-rel. base                                                 0.816
+ rescue-based completion comes from the cleaner base: the                                                                                        Rescue base                                                 0.787
+ rescue base’s 12 px end-extension and dead-end rescue over-
+ reach on noisy detected wires and cost precision, whereas the                                                                                  Radius u-find                                      0.667
+ scale-relative base keeps precision high while the bounded                                                                              Hough+prox (best)                                              0.805
+ completion still recovers recall. A reach sweep shows a broad                                                                                                                                                         VLM
+ F1 plateau across reach 3–5 × s, so the setting is robust                                                                               Conn.-comp. (best)                             0.624                          0.923
+ rather than tuned to a spike. Confidence intervals are wide at
+ N = 31 and the per-strategy intervals overlap, but the ranking                                                                                                                 0.6          0.8        1.0
+ is consistent and is corroborated on the independently authored                                                                                                                  Connectivity micro-F1
+ synthetic suite (Table II).
+                                                                                                                               Fig. 7. Micro-averaged connectivity F1 on the 31-image human-verified
+                                                                                                                               net-level benchmark (component-pair metric). Our scale-relative completion
+                                TABLE III                                                                                      join leads all deterministic strategies and the classical Hough and connected-
+    J OIN S TRATEGY AND BASELINE C OMPARISON ON H UMAN -V ERIFIED                                                              component baselines (run on identical detected wires). The dashed line marks
+    N ET-L EVEL G ROUND T RUTH (31 REAL IMAGES , DETECTED WIRES ).                                                             a strong VLM (Claude Opus 4.8) evaluated on the same 31 images, from
+ P RIMARY METRIC IS MICRO - AVERAGED ( PAIR - POOLED ) COMPONENT- PAIR                                                         which our join is statistically indistinguishable (paired micro-F1 difference
+       F1; MACRO ( MEAN PER - IMAGE ) F1 IS SHOWN FOR REFERENCE .                                                              +0.033, 95% bootstrap CI [−0.009, +0.078]) while being deterministic,
+                                                                                                                               simulatable, and orders of magnitude cheaper. Error bars are 95% bootstrap
+                                                                                                                               CIs.
+          Method                                                  F1        Prec           Rec      F1macro
+          Deterministic joins (ours and ablations)
+          Scale-rel. graph + completion (ours)     0.890                    0.919      0.864         0.901                     the degree-budget completion had not consistently beaten its
+          Rescue graph + completion (prior)        0.829                    0.789      0.874         0.853
+          Scale-rel. graph (base)                  0.816                    0.929      0.727         0.838
+                                                                                                                               base join; against human-verified ground truth it clearly does
+          Rescue graph (base)                      0.787                    0.811      0.764         0.813                     (micro-F1 0.829 vs 0.787 for the rescue base alone), and the
+          Radius union-find (legacy)               0.667                    0.698      0.638         0.674                     scale-relative variant is better still. The same ordering holds on
+          Classical deterministic baselines (identical detected wires)                                                         the authored synthetic suite (Table II), where the scale-relative
+          Hough + proximity (best)                 0.805 0.750 0.868                                 0.847                     completion join also ranks first, so the result is not an artifact
+          Connected-components (best)              0.624 0.965 0.461                                 0.611
+                                                                                                                               of how the net-level labels were bootstrapped.
+          Reference (non-deterministic / oracle wires)
+          VLM (Claude Opus 4.8)                   0.923 0.970 0.880                                  0.949
+                                                                                                                                  The dominant connectivity recipe in prior image-to-netlist
+          Scale-rel. + completion, perfect wires 0.890 0.913 0.868                                   0.916                     systems erases component boxes and reads nets off the con-
+                                                                                                                               nected components, or contours, of the residual wire pixels. It
+                                                                                                                               is used by SINA [3], the concurrent contour-based node detec-
+    This real-image ranking resolves an open question from                                                                     tor of Peker et al. [5], AMSnet [13], and the Bayer instance-
+ prior work on this pipeline: against bootstrapped pilot labels                                                                segmentation pipeline [6], and was designed for clean printed
+CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS                                                                           7
+
+
+
+schematics. On hand-drawn photographs it has no precise                                          TABLE IV
+operating point: pencil-stroke fragmentation splits each net        S CALE -R ELATIVE C OMPLETION J OIN P ERFORMANCE PER C IRCUIT AT L4
+                                                                                                (16 SEEDS )
+into many components (F1 < 0.25 at sensible morphological
+gap-bridging), and only pathological closing that effectively
+merges by proximity lifts recall, at a steep precision cost. For           Circuit             Comps      F1   Prec    Sim. acc.
+a controlled comparison that isolates the join algorithm from              Parallel R–R             3   1.00    1.00       25%
+binarization quality, we run connected-component labeling on               R–R divider              3   0.99    1.00       69%
+                                                                           RL series                3   0.99    1.00       81%
+our own detected wire segments, identical input to our join,               Diode–R loop             3   0.99    1.00       69%
+and its best configuration reaches only micro-F1 = 0.624                   Dual R loops             4   0.93    0.90       12%
+(recall collapses to 0.46: the blobs short or drop most nets),             4-component loop         4   0.94    0.91       56%
+                                                                           Wheatstone bridge        6   0.82    0.85        6%
+versus 0.890 for the endpoint-graph join (Table III). A stronger           6-component ring         6   0.95    0.92       50%
+classical alternative, Hough-transform line detection [18] fol-
+lowed by proximity linking, fares better, since line fitting
+denoises the fragmented strokes, and reaches micro-F1 = 0.805
+at its best-tuned linking tolerance, but still trails our join by      Precision remains high (≥ 0.85) across all circuits even at
+0.085 at markedly lower precision. Each baseline is reported        L4: errors cause fragmentation (dropped connections) rather
+at its best configuration over a tolerance sweep, so these are      than shorts (false merges). The Wheatstone bridge is the hard-
+upper bounds on the classical recipes. Explicit typed-endpoint      est topology (F1 = 0.82): its balanced arms make the inferred
+reasoning with bounded completion thus outperforms both             node structure sensitive to a single mis-placed connection, and
+blob/contour connectivity and line-primitive proximity tracing.     simulation accuracy falls to 6%.
+   We additionally attempted to run five public image-to-
+netlist systems end-to-end on our hand-drawn benchmark, and         F. VLM Connectivity Experiment
+none could be fairly applied. The classical printed-schematic          To quantify the separation argued in Section II, that con-
+interpreter of Kelly and Cole [2] installs and runs, but on hand-   nectivity is better solved by an explicit geometric model than
+drawn scans it over-segments wires into spurious components         left to a VLM, we ran a first-party experiment with a strong
+and recovers almost no connectivity, a domain-transfer failure.     general VLM (Claude Opus 4.8). To make the comparison
+Netlistify [25] reproduces on its own printed AMS test data,        fair, the VLM is given exactly what the join receives: the
+which we ran end-to-end with the released model, but its            scanned image with the same ground-truth component boxes
+active model lacks the diode, inductor, and IC classes our          labelled by index, and is asked to return, as JSON, the sets of
+circuits contain and its connectivity model is trained on           component terminals that share an electrical node; we score
+printed thin-line appearance, so it cannot represent hand-drawn     the resulting component-pairs with the same metric. Each
+discrete circuits. Masala-CHAI [4] delegates connectivity to a      image is read by an independent, context-free model call (one
+proprietary LLM behind a paid API, equivalent in spirit to          per image), so no answer leaks between circuits, and the
+our VLM experiment in Section IV-F, rather than a deter-            human, not the model, remains the verifier of record. On a
+ministic algorithm. SINA’s [3] anonymized code archive was          clean synthetic control (15 authored circuits) the VLM scores
+unextractable and CircuitNet [26] ships only Colab notebooks        F1 = 0.99, confirming it understands the task and symbol set.
+without released weights. This survey is itself informative: no     On all 31 real scans, evaluated against the human-verified net-
+prior system provides a deterministic, hand-drawn-ready con-        level ground truth, it reaches micro-F1 = 0.923 (P = 0.97,
+nectivity module, so the controlled CCL and Hough baselines         R = 0.88; macro-F1 = 0.949).
+above, both run on our identical detected wires, are the fair          The VLM thus edges our deterministic join on aggregate
+points of comparison, and our join exceeds both.                    (0.923 vs 0.890 micro-F1), but the gap is not statistically
+   Running the best join on the dataset’s perfect wire labels       significant: a paired bootstrap over the 31 images puts the dif-
+rather than detected wires leaves micro-F1 unchanged at 0.890,      ference at +0.033 with a 95% CI of [−0.009, +0.078], which
+while raising macro-F1 only from 0.901 to 0.916 (Table III), so     includes zero. Two further findings qualify the comparison.
+the wire detector accounts for essentially zero pair-weighted       First, the VLM’s accuracy degrades with circuit complexity:
+F1. The residual error is intrinsic join ambiguity on hand-         it is exact (F1 = 1.00) on 21 of the 31 circuits, including all
+drawn geometry, not wire detection, consistent with the 0.976       the small 3–5-component cases, but on the largest boards it
+wire-detection F1 reported above (Table I). The join degrades       systematically omits connections, with recall falling to 0.63–
+only gently with circuit size, with per-image F1 falling from       0.68 on the three densest boards, exactly where a netlist error is
+0.94 on circuits with ≤6 components to 0.86 above that and          most costly; its precision otherwise stays high (0.97 micro), so
+only weak correlation r = −0.19, and remains high-precision         its failure mode is dropped nets rather than shorts. The macro-
+throughout, in contrast to the VLM, whose precision collapses       F1 (0.949) is correspondingly inflated by the many easy small
+on the densest circuits (Section IV-F).                             circuits, which is why we report the pair-weighted micro-F1
+                                                                    as primary. Second, the cost and form of the output differ from
+E. Per-Circuit Analysis                                             the geometric pipeline: each image consumes on the order of
+  Table IV shows the scale-relative completion join’s perfor-       105 tokens, the result is free-form text rather than a structured
+mance across eight representative circuits from the 15-circuit      netlist, and nothing in the model guarantees electrical validity
+synthetic corpus at L4 (extreme error injection, 16 seeds).         (e.g. that a two-terminal component is not shorted). Our
+CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS                                                                                   8
+
+
+
+geometric join is statistically indistinguishable from the VLM                                VI. C ONCLUSION
+on these circuits while being deterministic, two to three orders        We present a complete deterministic pipeline for hand-
+of magnitude cheaper, structurally guaranteed against shorts         drawn circuit digitization, built on an occlusion-first wire
+by the self-loop guard, and simulatable by construction. We          extractor that yields an endpoint representation and a two-
+therefore treat the VLM as an upper reference for what a             stage endpoint-graph join, together with, to our knowledge,
+frontier model can do here, not as a connectivity module             the first human-verified net-level connectivity benchmark for
+to ship: an explicit model reaches the same accuracy and             hand-drawn circuits. The endpoint-graph join with degree-
+also gives the determinism, low cost, and structural validity        budget completion is most robust under synthetic error in-
+a deployed digitizer needs.                                          jection (F1 = 0.95 at the highest severity vs. 0.36 for the
+                                                                     radius baseline), and, paired with a high-precision scale-
+                         V. D ISCUSSION
+                                                                     relative base, attains connectivity micro-F1 = 0.890 on real
+   The endpoint-graph model resolves ambiguity that radius-          images against human-verified ground truth, beating the prior
+based methods cannot: by representing both wire endpoints            completion default (0.83) and every deterministic baseline,
+and component pins as nodes with typed edges, it distinguishes       including the connected-component net-tracing recipe used by
+between a wire that passes near a component (endpoint–wire-          recent systems (0.62) and a Hough-plus-proximity line tracer
+body edge) and one that connects to it (endpoint–pin edge            (0.81), all on identical detected wires. Running the join on
+with directional preference). The component-first assignment         perfect wires does not raise micro-F1 at all, showing the join,
+further disambiguates by using the geometric constraint that         not wire detection, is the bottleneck. A first-party experiment
+wires must reach a component’s pin, not just its bounding box.       with a frontier VLM reaches 0.923 on the same images, a
+   Degree-budget completion addresses the fundamental limi-          difference from our join that is not statistically significant
+tation of detector noise: even a 97.6% accurate wire detector        (paired 95% CI [−0.009, +0.078]), but at two to three orders
+drops ∼2% of wire endpoints, and those dropped endpoints             of magnitude higher cost and without simulatable, structurally
+are precisely the connections that matter most for simulation        valid output, supporting the explicit geometric design. Future
+accuracy. The b-matching formulation bounds the damage               work includes scaling the human-verified benchmark, cali-
+from mis-detection (each floating pin gets at most one recovery      brating the synthetic error model to the measured detector
+edge), while the self-loop guard prevents the catastrophic           distribution, and extending coverage to devices outside the
+short-circuit failures that plague unconstrained approaches.         simulatable set.
+   The human-verified net-level evaluation, while novel for
+hand-drawn circuits, currently covers 31 images; the 95%                                     ACKNOWLEDGMENT
+bootstrap confidence intervals on the per-strategy F1 are
+                                                                        The authors used Claude Opus 4.8 (Anthropic) to assist
+correspondingly wide (±0.03–0.05) and overlap between ad-
+                                                                     with grammar and language editing of the manuscript and as
+jacent strategies, so while the top ranking is consistent and
+                                                                     a programming assistant during development of the pipeline
+corroborated by the independently authored synthetic suite,
+                                                                     and evaluation code. This assistance is distinct from the VLM
+broader annotation is needed to separate the closely ranked
+                                                                     connectivity experiment in Section IV-F, where the same
+configurations. The net-level labels were bootstrapped by a
+                                                                     model is an evaluation subject. All methods, experiments, and
+conservative endpoint-graph join over perfect wires and then
+                                                                     conclusions are the authors’ own, and the authors reviewed and
+human-corrected; we mitigate the residual concern that this
+                                                                     take full responsibility for the entire content of this article.
+favors graph-based methods by validating on synthetic ground
+truth that is authored from scratch, where the same ranking                           DATA AND C ODE AVAILABILITY
+holds. The evaluation draws from a single hand-drawn corpus
+(CGHD-1152); generalization across other drawing styles,                The pipeline, evaluation scripts, synthetic-circuit generator,
+capture conditions, and printed schematics remains to be vali-       the 31-image human-verified net-level ground truth
+dated, as does extension to circuits containing devices outside      (ground_truth/real_nets_verified.json),
+the simulatable set (switches, transformers, etc.), which we         the net-level verification tool used to produce it, the join-
+exclude from the net-level benchmark. The VLM connectivity           strategy and connected-component baseline benchmarks,
+comparison uses a single frontier model (Claude Opus 4.8) on         and the Claude-VLM connectivity harness are available
+the same 31 images; evaluating additional models and prompt-         at        https://github.com/boscochanam/circuit-digitization.
+ing strategies is future work. Component detection at 88.5%          The component-detection model is available at https:
+mean average precision (mAP@0.5) also leaves room for                //huggingface.co/boscochanam/circuit-component-detector,
+improvement, particularly on crossovers (70.7% recall). The          trained on the CGHD-1152 dataset [1].
+component-detection model was trained on CGHD-1152 after
+                                                                                                  R EFERENCES
+excluding drafter 0, whose drawing style diverged markedly
+from the other drafters; this exclusion reduces the training          [1] J. Bayer, “CGHD-1152: Circuit graph hand-drawing dataset,”
+                                                                          Kaggle, 2021. [Online]. Available: https://www.kaggle.com/datasets/
+set but avoids domain-shift artifacts from an outlier style.              johannesbayer/cghd1152
+Finally, the synthetic error model is a first-pass approximation      [2] C. R. Kelly and J. M. Cole, “Digitizing images of electrical-circuit
+of detector noise rather than a calibrated fit; with the new real-        schematics,” APL Mach. Learn., vol. 2, no. 1, p. 016109, 2024.
+                                                                      [3] S. Aldowaish, Y. Karumanchi, K.-C. Chiang, S. Noorzad, and M. Fayazi,
+image net-level metric available, calibrating it to the measured          “SINA: A circuit schematic image-to-netlist generator using artificial
+detector failure distribution is a natural next step.                     intelligence,” arXiv:2601.22114, 2026.
+CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS                                                                           9
+
+
+
+ [4] J. Bhandari, V. Bhat, Y. He, H. Rahmani, S. Garg, and R. Karri,              Bosco Chanam received the B.Tech. degree in Com-
+     “Masala-CHAI: A large-scale SPICE netlist dataset for analog circuits        puter Science and Engineering from the Symbiosis
+     by harnessing AI,” arXiv:2411.14299, 2024.                                   Institute of Technology (SIT), Pune, India. He is
+ [5] Ö. B. Peker, E. Toker, D. Öcal, T. Dalyan, E. Afacan, and Y. D. Gökdel,   currently an AI/ML Engineer at the AI Incubation
+     “A fully automated SPICE-compatible netlist extraction from image            Centre at Bharat Forge (Kalyani Group), Pune, In-
+     using deep learning and image preprocessing techniques,” IEEE Access,        dia. His professional and research interests include
+     vol. 14, pp. 19750–19765, 2026, doi: 10.1109/ACCESS.2026.3656316.            computer vision, edge AI optimization, and robotics.
+ [6] J. Bayer et al., “Instance segmentation based graph extraction for           Mr. Chanam has co-authored research in natural
+     handwritten circuit diagram images,” arXiv:2301.03155, 2023.                 language processing benchmarking, published in the
+ [7] R. R. Reddy and M. R. Panicker, “Hand-drawn electrical circuit recog-        International Journal of Fuzzy Logic and Intelligent
+     nition using object detection and node recognition,” SN Comput. Sci.,        Systems.
+     vol. 3, no. 3, p. 244, 2022. arXiv:2106.11559.
+ [8] A. Roy, S. Pani, S. Malakar, and R. Sarkar, “JUHCCR-v1: A database
+     for hand-drawn electrical and electronics circuit component recognition,”
+     Sci. Rep., vol. 15, art. no. 22404, 2025, doi: 10.1038/s41598-025-22404-
+     5.                                                                           Chris Dcosta is with the Symbiosis Institute of
+ [9] J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, “You only look           Technology, Pune, India. His research interests in-
+     once: Unified, real-time object detection,” in Proc. IEEE Conf. Computer     clude circuit digitization, image processing, and
+     Vision and Pattern Recognition (CVPR), 2016, pp. 779–788.                    deep learning.
+[10] G. Jocher, A. Chaurasia, and J. Qiu, “Ultralytics YOLO,” 2023. [Online].
+     Available: https://github.com/ultralytics/ultralytics
+[11] R. Smith, “An overview of the Tesseract OCR engine,” in Proc. 9th Int.
+     Conf. Document Analysis and Recognition (ICDAR), 2007, pp. 629–633.
+[12] L. W. Nagel and D. O. Pederson, “SPICE: Simulation program with
+     integrated circuit emphasis,” Electron. Res. Lab., Univ. California,
+     Berkeley, Memo. ERL-M382, 1973.
+[13] Y. Shi, Z. Tao, Y. Gao, L. Huang, H. Wang, Z. Yu, T.-J. Lin, and
+     L. He, “AMSnet 2.0: A large AMS database with AI segmentation for
+     net detection,” arXiv:2505.09155, 2025.
+[14] Y. Shi, Z. Zhang, H. Wang, Z. Tao, Z. Li, B. Chen, Y. Wang,                  Pranavesh Kumar Talupuri is with the Depart-
+     Z. Huang, X. Liu, Q. Chen, Z. Yu, T.-J. Lin, and L. He, “AMSbench: A         ment of Computer Science, University of Southern
+     comprehensive benchmark for evaluating MLLM capabilities in AMS              California, Los Angeles, CA, USA. His research
+     circuits,” arXiv:2505.24138, 2025.                                           interests include machine learning, deep learning,
+[15] J. Lou, R. Xu, J. Li, J. Pi, R. Tao, W. Fan, X. Tan, G. Luo, and Y. Lin,     and computer vision.
+     “DiagramNet: An end-to-end recognition framework and dataset for non-
+     standard system-level diagrams,” arXiv:2605.01338, 2026.
+[16] R. Zhong, X. Du, S. Kai, Z. Tang, S. Xu, H.-L. Zhen, J. Hao, Q. Xu,
+     M. Yuan, and J. Yan, “LLM4EDA: Emerging progress in large language
+     models for electronic design automation,” arXiv:2401.12224, 2024.
+[17] S. Kulkarni et al., “Enhancing circuit diagram understanding via near
+     sight correction using VLMs,” in Proc. ICCV Workshops, 2025.
+[18] R. O. Duda and P. E. Hart, “Use of the Hough transformation to detect
+     lines and curves in pictures,” Commun. ACM, vol. 15, no. 1, pp. 11–15,
+     1972.                                                                        Shwetambari A. Chiwhane is with the Symbiosis
+[19] J. Sauvola and M. Pietikäinen, “Adaptive document image binarization,”      Institute of Technology, Pune, India. Her research
+     Pattern Recognit., vol. 33, no. 2, pp. 225–236, 2000.                        interests include machine learning, natural language
+[20] L. He, X. Ren, Q. Gao, X. Zhao, B. Yao, and Y. Chao, “The connected-         processing, and data science.
+     component labeling problem: A review of state-of-the-art algorithms,”
+     Pattern Recognit., vol. 70, pp. 25–43, 2017.
+[21] R. E. Tarjan, “Efficiency of a good but not linear set union algorithm,”
+     J. ACM, vol. 22, no. 2, pp. 215–225, 1975.
+[22] H. W. Kuhn, “The Hungarian method for the assignment problem,”
+     Naval Res. Logist. Quart., vol. 2, no. 1–2, pp. 83–97, 1955.
+[23] A. Schrijver, Combinatorial Optimization: Polyhedra and Efficiency.
+     Berlin, Germany: Springer, 2003.
+[24] L. Alrahis, A. Sengupta, J. Knechtel, S. S. Gharibeh, O. S. Unsal,
+     M. E. Acar, and H. Najjar, “GNN-RE: Graph neural networks for
+     reverse engineering of gate-level netlists,” in Proc. IEEE/ACM Int. Conf.
+     Computer-Aided Design (ICCAD), 2021, pp. 1–9.                                Ashay Kumar Singh received the B.Tech. degree in
+[25] C.-Y. Huang, H.-I. Chen, H.-W. Ho, P.-H. Kang, M. P.-H. Lin, W.-H. Liu,      Computer Science and Engineering from the Sym-
+     and H. Ren, “Netlistify: Transforming circuit schematics into netlists       biosis Institute of Technology (SIT), Pune, India. His
+     with deep learning,” in Proc. ACM/IEEE Symp. Machine Learning for            research interests lie in machine learning, computer
+     CAD (MLCAD), 2025.                                                           vision, Retrieval-Augmented Generation (RAG), op-
+[26] “CircuitNet: A hand-drawn schematic sketch recognizer and converter,”        tical character recognition (OCR), and multimodal
+     GitHub repository (user aaanthonyyy), 2024. [Online]. Available: https:      AI.
+     //github.com/aaanthonyyy/CircuitNet
+CHANAM et al.: FROM HAND-DRAWN SCHEMATICS TO SPICE NETLISTS               10
+
+
+
+                    Arghadeep Das received the B.Tech. degree in
+                    Computer Science and Engineering from the Sym-
+                    biosis Institute of Technology (SIT), Pune, India.
+                    His research interests include reinforcement learn-
+                    ing, world models, computer vision, 3D rendering,
+                    agentic AI, embodied AI, robotics, and machine
+                    learning.
+

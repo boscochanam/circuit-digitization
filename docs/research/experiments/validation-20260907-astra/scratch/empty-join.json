@@ -1,0 +1,21 @@
+{
+  "n": 0,
+  "per_image": {},
+  "micro": {
+    "scale_completion": {
+      "f1": 1.0,
+      "p": 1.0,
+      "r": 1.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    }
+  },
+  "macro": {
+    "scale_completion": {
+      "f1": 0.0,
+      "p": 0.0,
+      "r": 0.0
+    }
+  }
+}

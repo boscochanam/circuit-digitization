@@ -1,0 +1,1744 @@
+F841 Local variable `name_to_idx` is assigned to but never used
+   --> wire_detection/api/routes/current_overlay.py:181:5
+    |
+179 |     comp_names = _build_component_names(components, spice_text, netlist)
+180 |     # Reverse: spice_name → index
+181 |     name_to_idx = {v: k for k, v in comp_names.items()}
+    |     ^^^^^^^^^^^
+182 |
+183 |     # Build comp_name → net_ids mapping from netlist
+    |
+help: Remove assignment to unused variable `name_to_idx`
+
+F841 Local variable `cls_id` is assigned to but never used
+   --> wire_detection/api/routes/current_overlay.py:212:9
+    |
+211 |     for i, comp in enumerate(components):
+212 |         cls_id = comp[0]
+    |         ^^^^^^
+213 |         comp_name = comp_names.get(i)
+214 |         if comp_name is None:
+    |
+help: Remove assignment to unused variable `cls_id`
+
+F841 Local variable `l_val` is assigned to but never used
+   --> wire_detection/api/routes/current_overlay.py:243:13
+    |
+241 |         elif prefix == "L":
+242 |             # Inductor: DC steady state → I = V / R_series (small R)
+243 |             l_val = comp_values.get(comp_name, 0.001)
+    |             ^^^^^
+244 |             r_series = 0.01  # Small series resistance
+245 |             current = v_diff / r_series if r_series > 0 else 0.0
+    |
+help: Remove assignment to unused variable `l_val`
+
+E402 Module level import not at top of file
+  --> wire_detection/api/routes/topology.py:35:1
+   |
+33 | router = APIRouter()
+34 |
+35 | import re as _re
+   | ^^^^^^^^^^^^^^^^
+36 | _ENDPOINT_RE = _re.compile(r"^wire_(\d+)_ep(1|2)$")
+   |
+
+F841 Local variable `wire_idx` is assigned to but never used
+  --> wire_detection/api/routes/topology.py:85:9
+   |
+83 |         if m is None:
+84 |             continue
+85 |         wire_idx = int(m.group(1))
+   |         ^^^^^^^^
+86 |         ep_num = int(m.group(2))
+   |
+help: Remove assignment to unused variable `wire_idx`
+
+F841 Local variable `ep_num` is assigned to but never used
+  --> wire_detection/api/routes/topology.py:86:9
+   |
+84 |             continue
+85 |         wire_idx = int(m.group(1))
+86 |         ep_num = int(m.group(2))
+   |         ^^^^^^
+87 |
+88 |         # Find target node via component name + pin name
+   |
+help: Remove assignment to unused variable `ep_num`
+
+E402 Module level import not at top of file
+   --> wire_detection/api/routes/topology.py:299:1
+    |
+298 | # Re-export for apply_overrides
+299 | import re as _re
+    | ^^^^^^^^^^^^^^^^
+300 | _ENDPOINT_RE = _re.compile(r"^wire_(\d+)_ep(1|2)$")
+    |
+
+E402 Module level import not at top of file
+  --> wire_detection/api/server.py:34:1
+   |
+32 | )
+33 |
+34 | from wire_detection.api.routes import api_router
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+35 | app.include_router(api_router)
+   |
+
+E401 [*] Multiple imports on one line
+ --> wire_detection/benchmark/audit_picks.py:4:1
+  |
+2 | """For every image: what label does find_hdc_label CURRENTLY pick, vs the IDENTITY label
+3 | (rf image == GT image)? Flag mismatches — those have rotated/augmented (wrong) boxes."""
+4 | import cv2, numpy as np, sys
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 | from wire_detection.benchmark.build_net_gt import (
+6 |     GT_IMAGES, find_hdc_label, HDC_BASE, HDC_SPLITS)
+  |
+help: Split imports
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/audit_picks.py:31:38
+   |
+29 |     gray = cv2.imread(str(GT_IMAGES / f"{name}_jpg.jpg"), cv2.IMREAD_GRAYSCALE)
+30 |     if gray is None:
+31 |         print(f"{name}: NO GT IMAGE"); continue
+   |                                      ^
+32 |     cur = find_hdc_label(name)
+33 |     ident, d = identity_label(name, gray)
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/bootstrap_ci.py:21:35
+   |
+20 | def micro_f1(counts):
+21 |     TP = sum(c[0] for c in counts); FP = sum(c[1] for c in counts); FN = sum(c[2] for c in counts)
+   |                                   ^
+22 |     P = TP / (TP + FP) if TP + FP else 1.0
+23 |     R = TP / (TP + FN) if TP + FN else 1.0
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/bootstrap_ci.py:21:67
+   |
+20 | def micro_f1(counts):
+21 |     TP = sum(c[0] for c in counts); FP = sum(c[1] for c in counts); FN = sum(c[2] for c in counts)
+   |                                                                   ^
+22 |     P = TP / (TP + FP) if TP + FP else 1.0
+23 |     R = TP / (TP + FN) if TP + FN else 1.0
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/bootstrap_ci.py:34:16
+   |
+32 |     xs = sorted(xs)
+33 |     i = q * (len(xs) - 1)
+34 |     lo = int(i); hi = min(lo + 1, len(xs) - 1)
+   |                ^
+35 |     return xs[lo] + (xs[hi] - xs[lo]) * (i - lo)
+   |
+
+E402 Module level import not at top of file
+  --> wire_detection/benchmark/build_net_gt.py:33:1
+   |
+31 |   _REPO = Path(__file__).resolve().parents[2]
+32 |
+33 | / from wire_detection.core.component_classes import (
+34 | |     COMPONENT_TYPES,
+35 | |     PREFIX_MAP,
+36 | |     SIMULATABLE_PREFIXES,
+37 | | )
+   | |_^
+38 |   from wire_detection.core.join_strategies import make_pins, make_pins_junction_aware, run_strategy
+   |
+
+E402 Module level import not at top of file
+  --> wire_detection/benchmark/build_net_gt.py:38:1
+   |
+36 |     SIMULATABLE_PREFIXES,
+37 | )
+38 | from wire_detection.core.join_strategies import make_pins, make_pins_junction_aware, run_strategy
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/build_verified_gt.py:58:44
+   |
+56 |             continue
+57 |         if v.get("excluded"):
+58 |             dropped.append((k, "excluded")); continue
+   |                                            ^
+59 |         probs = sanity(v)
+60 |         if probs:
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/build_verified_gt.py:61:50
+   |
+59 |         probs = sanity(v)
+60 |         if probs:
+61 |             dropped.append((k, "; ".join(probs))); continue
+   |                                                  ^
+62 |         e = {kk: vv for kk, vv in v.items() if kk != "_nets_original"}
+63 |         keep[k] = e
+   |
+
+F401 [*] `collections.Counter` imported but unused
+  --> wire_detection/benchmark/cc_baseline.py:17:25
+   |
+15 | import argparse
+16 | import json
+17 | from collections import Counter, defaultdict
+   |                         ^^^^^^^
+18 | from itertools import combinations
+19 | from pathlib import Path
+   |
+help: Remove unused import: `collections.Counter`
+
+F401 [*] `wire_detection.benchmark.build_net_gt.electrical_indices` imported but unused
+  --> wire_detection/benchmark/cc_baseline.py:25:50
+   |
+24 | from wire_detection.benchmark.build_net_gt import (
+25 |     GT_IMAGES, find_hdc_label, parse_components, electrical_indices)
+   |                                                  ^^^^^^^^^^^^^^^^^^
+26 | from wire_detection.benchmark.join_eval_real_f1 import gt_pairs, prf
+27 | from wire_detection.core.join_strategies import make_pins
+   |
+help: Remove unused import: `wire_detection.benchmark.build_net_gt.electrical_indices`
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> wire_detection/benchmark/cc_baseline.py:113:5
+    |
+111 |         items.append((img_id, gray, comps, keep, gt_pairs(entry["nets"], keep), make_pins([], comps)))
+112 |
+113 |     mean = lambda v: sum(v) / len(v) if v else 0.0
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+114 |     print(f"\nB1 CCL net-tracing (erase-and-label) vs verified GT ({len(items)} images)")
+115 |     print(f"{'config':<22}{'meanF1':>8}{'meanP':>8}{'meanR':>8}")
+    |
+help: Rewrite `mean` as a `def`
+
+F841 Local variable `mean` is assigned to but never used
+   --> wire_detection/benchmark/cc_baseline.py:113:5
+    |
+111 |         items.append((img_id, gray, comps, keep, gt_pairs(entry["nets"], keep), make_pins([], comps)))
+112 |
+113 |     mean = lambda v: sum(v) / len(v) if v else 0.0
+    |     ^^^^
+114 |     print(f"\nB1 CCL net-tracing (erase-and-label) vs verified GT ({len(items)} images)")
+115 |     print(f"{'config':<22}{'meanF1':>8}{'meanP':>8}{'meanR':>8}")
+    |
+help: Remove assignment to unused variable `mean`
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/cc_baseline.py:123:20
+    |
+121 |             pin_net = cc_nets(gray, comps, pins, reach=reach, **bkw)
+122 |             p, r, f1 = prf(gtp, pairs_from_pinnet(pin_net, keep))
+123 |             F += f1; P += p; R += r
+    |                    ^
+124 |         nz = len(items)
+125 |         results[cname] = {"f1": F / nz, "p": P / nz, "r": R / nz}
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/cc_baseline.py:123:28
+    |
+121 |             pin_net = cc_nets(gray, comps, pins, reach=reach, **bkw)
+122 |             p, r, f1 = prf(gtp, pairs_from_pinnet(pin_net, keep))
+123 |             F += f1; P += p; R += r
+    |                            ^
+124 |         nz = len(items)
+125 |         results[cname] = {"f1": F / nz, "p": P / nz, "r": R / nz}
+    |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/cc_baseline_detected.py:70:33
+   |
+68 |     def score(method, gtp, pred):
+69 |         p, r, f1 = prf(gtp, pred)
+70 |         acc[method][0].append(p); acc[method][1].append(r); acc[method][2].append(f1)
+   |                                 ^
+71 |         cnt[method].append((len(gtp & pred), len(pred - gtp), len(gtp - pred)))
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/cc_baseline_detected.py:70:59
+   |
+68 |     def score(method, gtp, pred):
+69 |         p, r, f1 = prf(gtp, pred)
+70 |         acc[method][0].append(p); acc[method][1].append(r); acc[method][2].append(f1)
+   |                                                           ^
+71 |         cnt[method].append((len(gtp & pred), len(pred - gtp), len(gtp - pred)))
+   |
+
+E731 Do not assign a `lambda` expression, use a `def`
+  --> wire_detection/benchmark/cc_baseline_detected.py:91:5
+   |
+89 |         score("ours_scale_completion", gtp, comp_pairs(nl, keep))
+90 |
+91 |     mean = lambda v: sum(v) / len(v) if v else 0.0
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+92 |
+93 |     def micro(m):
+   |
+help: Rewrite `mean` as a `def`
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/cc_baseline_detected.py:94:39
+   |
+93 |     def micro(m):
+94 |         TP = sum(c[0] for c in cnt[m]); FP = sum(c[1] for c in cnt[m]); FN = sum(c[2] for c in cnt[m])
+   |                                       ^
+95 |         P = TP / (TP + FP) if TP + FP else 1.0
+96 |         R = TP / (TP + FN) if TP + FN else 1.0
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/cc_baseline_detected.py:94:71
+   |
+93 |     def micro(m):
+94 |         TP = sum(c[0] for c in cnt[m]); FP = sum(c[1] for c in cnt[m]); FN = sum(c[2] for c in cnt[m])
+   |                                                                       ^
+95 |         P = TP / (TP + FP) if TP + FP else 1.0
+96 |         R = TP / (TP + FN) if TP + FN else 1.0
+   |
+
+F541 [*] f-string without any placeholders
+   --> wire_detection/benchmark/cc_baseline_detected.py:100:11
+    |
+ 98 |         return {"f1": F, "p": P, "r": R, "tp": TP, "fp": FP, "fn": FN}
+ 99 |
+100 |     print(f"\nB1b CCL-on-detected-wires vs our join (same detected wires), verified GT")
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+101 |     print(f"{'method':<26}{'microF1':>9}{'microP':>8}{'microR':>8}{'macroF1':>9}")
+102 |     print("-" * 60)
+    |
+help: Remove extraneous `f` prefix
+
+E401 [*] Multiple imports on one line
+ --> wire_detection/benchmark/check_align.py:4:1
+  |
+2 | """Alignment check: for each electrical component box, what fraction of pixels is ink?
+3 | A box on blank paper (misaligned / rotated-augmentation label) has near-zero ink."""
+4 | import cv2, numpy as np, json, sys
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 | from wire_detection.benchmark.build_net_gt import (
+6 |     GT_IMAGES, find_hdc_label, parse_components, electrical_indices)
+  |
+help: Split imports
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/connectivity_experiment.py:148:61
+    |
+146 |        ((d3 > 0 and d4 < 0) or (d3 < 0 and d4 > 0)):
+147 |         return True
+148 |     if d1 == 0 and _on_segment(bx1, by1, bx2, by2, ax1, ay1): return True
+    |                                                             ^
+149 |     if d2 == 0 and _on_segment(bx1, by1, bx2, by2, ax2, ay2): return True
+150 |     if d3 == 0 and _on_segment(ax1, ay1, ax2, ay2, bx1, by1): return True
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/connectivity_experiment.py:149:61
+    |
+147 |         return True
+148 |     if d1 == 0 and _on_segment(bx1, by1, bx2, by2, ax1, ay1): return True
+149 |     if d2 == 0 and _on_segment(bx1, by1, bx2, by2, ax2, ay2): return True
+    |                                                             ^
+150 |     if d3 == 0 and _on_segment(ax1, ay1, ax2, ay2, bx1, by1): return True
+151 |     if d4 == 0 and _on_segment(ax1, ay1, ax2, ay2, bx2, by2): return True
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/connectivity_experiment.py:150:61
+    |
+148 |     if d1 == 0 and _on_segment(bx1, by1, bx2, by2, ax1, ay1): return True
+149 |     if d2 == 0 and _on_segment(bx1, by1, bx2, by2, ax2, ay2): return True
+150 |     if d3 == 0 and _on_segment(ax1, ay1, ax2, ay2, bx1, by1): return True
+    |                                                             ^
+151 |     if d4 == 0 and _on_segment(ax1, ay1, ax2, ay2, bx2, by2): return True
+152 |     return False
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/connectivity_experiment.py:151:61
+    |
+149 |     if d2 == 0 and _on_segment(bx1, by1, bx2, by2, ax2, ay2): return True
+150 |     if d3 == 0 and _on_segment(ax1, ay1, ax2, ay2, bx1, by1): return True
+151 |     if d4 == 0 and _on_segment(ax1, ay1, ax2, ay2, bx2, by2): return True
+    |                                                             ^
+152 |     return False
+    |
+
+F841 Local variable `bbox_diag` is assigned to but never used
+   --> wire_detection/benchmark/connectivity_rca.py:132:5
+    |
+130 |     bx1, by1, bx2, by2 = nearest_bbox
+131 |     bbox_area = (bx2 - bx1) * (by2 - by1)
+132 |     bbox_diag = math.hypot(bx2 - bx1, by2 - by1)
+    |     ^^^^^^^^^
+133 |
+134 |     if nearest_dist <= threshold:
+    |
+help: Remove assignment to unused variable `bbox_diag`
+
+F841 Local variable `names` is assigned to but never used
+   --> wire_detection/benchmark/cross_drafter_test.py:121:9
+    |
+119 |     print("\nDrafter distribution:")
+120 |     for d in sorted(drafter_groups.keys()):
+121 |         names = [item[0] for item in drafter_groups[d]]
+    |         ^^^^^
+122 |         print(f"  {d}: {len(drafter_groups[d])} images")
+    |
+help: Remove assignment to unused variable `names`
+
+E741 Ambiguous variable name: `l`
+  --> wire_detection/benchmark/debug_cc.py:27:34
+   |
+25 |     x, y = int(p.x), int(p.y)
+26 |     sub = labels[max(0, y - 26):y + 27, max(0, x - 26):x + 27]
+27 |     near = sorted(set(int(l) for l in sub.ravel() if l != 0 and sizes[l] >= 25))
+   |                                  ^
+28 |     if near:
+29 |         hit += 1
+   |
+
+F401 [*] `wire_detection.benchmark.join_eval_real_f1.comp_pairs` imported but unused
+  --> wire_detection/benchmark/detected_boxes_eval.py:38:56
+   |
+36 | )
+37 | from wire_detection.benchmark.join_eval_134 import detect_wires
+38 | from wire_detection.benchmark.join_eval_real_f1 import comp_pairs, gt_pairs, prf
+   |                                                        ^^^^^^^^^^
+39 | from wire_detection.core.component_classes import COMPONENT_TYPES
+40 | from wire_detection.core.join_strategies import make_pins, make_pins_junction_aware, run_strategy
+   |
+help: Remove unused import: `wire_detection.benchmark.join_eval_real_f1.comp_pairs`
+
+F401 [*] `wire_detection.core.component_classes.COMPONENT_TYPES` imported but unused
+  --> wire_detection/benchmark/detected_boxes_eval.py:39:51
+   |
+37 | from wire_detection.benchmark.join_eval_134 import detect_wires
+38 | from wire_detection.benchmark.join_eval_real_f1 import comp_pairs, gt_pairs, prf
+39 | from wire_detection.core.component_classes import COMPONENT_TYPES
+   |                                                   ^^^^^^^^^^^^^^^
+40 | from wire_detection.core.join_strategies import make_pins, make_pins_junction_aware, run_strategy
+   |
+help: Remove unused import: `wire_detection.core.component_classes.COMPONENT_TYPES`
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/detected_boxes_eval.py:216:43
+    |
+215 |             p, r, f1 = prf(gtp, pred_int_pairs)
+216 |             tp = len(gtp & pred_int_pairs); fp = len(pred_int_pairs - gtp); fn = len(gtp - pred_int_pairs)
+    |                                           ^
+217 |             per_strategy_counts[s].append((tp, fp, fn))
+218 |             per_strategy_pr[s][0].append(p)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/detected_boxes_eval.py:216:75
+    |
+215 |             p, r, f1 = prf(gtp, pred_int_pairs)
+216 |             tp = len(gtp & pred_int_pairs); fp = len(pred_int_pairs - gtp); fn = len(gtp - pred_int_pairs)
+    |                                                                           ^
+217 |             per_strategy_counts[s].append((tp, fp, fn))
+218 |             per_strategy_pr[s][0].append(p)
+    |
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> wire_detection/benchmark/detected_boxes_eval.py:226:5
+    |
+225 |     runtime = time.time() - t0
+226 |     mean = lambda v: sum(v) / len(v) if v else 0.0
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+227 |
+228 |     def micro(s):
+    |
+help: Rewrite `mean` as a `def`
+
+F541 [*] f-string without any placeholders
+   --> wire_detection/benchmark/detected_boxes_eval.py:295:15
+    |
+293 |         mi = micro_all[s]
+294 |         md.append(f"| {s} | {mi['f1']:.3f} | {mi['p']:.3f} | {mi['r']:.3f} | {macro_f1[s]:.3f} |")
+295 |     md.append(f"\n## Component detection quality (electrical subset)\n")
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+296 |     md.append(f"P={comp_p:.3f} R={comp_r:.3f} F1={comp_f1:.3f} "
+297 |               f"(gt={det_counts['gt_electrical']}, det={det_counts['det_electrical']}, matched={det_counts['matched_electrical']})\n")
+    |
+help: Remove extraneous `f` prefix
+
+E731 Do not assign a `lambda` expression, use a `def`
+  --> wire_detection/benchmark/detection_ceiling.py:91:5
+   |
+89 |         n += 1
+90 |
+91 |     mean = lambda v: sum(v) / len(v) if v else 0.0
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+92 |     out = {}
+93 |     for s in strategies:
+   |
+help: Rewrite `mean` as a `def`
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/detection_ceiling.py:94:39
+   |
+92 |     out = {}
+93 |     for s in strategies:
+94 |         TP = sum(c[0] for c in cnt[s]); FP = sum(c[1] for c in cnt[s]); FN = sum(c[2] for c in cnt[s])
+   |                                       ^
+95 |         P = TP / (TP + FP) if TP + FP else 1.0
+96 |         R = TP / (TP + FN) if TP + FN else 1.0
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/detection_ceiling.py:94:71
+   |
+92 |     out = {}
+93 |     for s in strategies:
+94 |         TP = sum(c[0] for c in cnt[s]); FP = sum(c[1] for c in cnt[s]); FN = sum(c[2] for c in cnt[s])
+   |                                                                       ^
+95 |         P = TP / (TP + FP) if TP + FP else 1.0
+96 |         R = TP / (TP + FN) if TP + FN else 1.0
+   |
+
+F841 Local variable `issues` is assigned to but never used
+   --> wire_detection/benchmark/endpoint_clustering.py:311:5
+    |
+309 | def validate_netlist(netlist: ClusteredNetlist) -> dict:
+310 |     """Validate netlist for basic sanity checks."""
+311 |     issues = []
+    |     ^^^^^^
+312 |
+313 |     # Count components with connections
+    |
+help: Remove assignment to unused variable `issues`
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/expanded_benchmark.py:179:21
+    |
+178 |         tags = []
+179 |         if f1 < 0.40: tags.append("hard")
+    |                     ^
+180 |         if fn >= max(4, len(gt_lines) // 3): tags.append("fn_heavy")
+181 |         if fp >= max(4, len(gt_lines) // 4): tags.append("fp_heavy")
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/expanded_benchmark.py:180:44
+    |
+178 |         tags = []
+179 |         if f1 < 0.40: tags.append("hard")
+180 |         if fn >= max(4, len(gt_lines) // 3): tags.append("fn_heavy")
+    |                                            ^
+181 |         if fp >= max(4, len(gt_lines) // 4): tags.append("fp_heavy")
+182 |         if red >= max(4, img_result.tp // 3) if img_result.tp else red >= 4: tags.append("redundant")
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/expanded_benchmark.py:181:44
+    |
+179 |         if f1 < 0.40: tags.append("hard")
+180 |         if fn >= max(4, len(gt_lines) // 3): tags.append("fn_heavy")
+181 |         if fp >= max(4, len(gt_lines) // 4): tags.append("fp_heavy")
+    |                                            ^
+182 |         if red >= max(4, img_result.tp // 3) if img_result.tp else red >= 4: tags.append("redundant")
+183 |         if len(lines_global) == 0: tags.append("no_det")
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/expanded_benchmark.py:182:76
+    |
+180 |         if fn >= max(4, len(gt_lines) // 3): tags.append("fn_heavy")
+181 |         if fp >= max(4, len(gt_lines) // 4): tags.append("fp_heavy")
+182 |         if red >= max(4, img_result.tp // 3) if img_result.tp else red >= 4: tags.append("redundant")
+    |                                                                            ^
+183 |         if len(lines_global) == 0: tags.append("no_det")
+184 |         img_result.tags = tags
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/expanded_benchmark.py:183:34
+    |
+181 |         if fp >= max(4, len(gt_lines) // 4): tags.append("fp_heavy")
+182 |         if red >= max(4, img_result.tp // 3) if img_result.tp else red >= 4: tags.append("redundant")
+183 |         if len(lines_global) == 0: tags.append("no_det")
+    |                                  ^
+184 |         img_result.tags = tags
+185 |         results.append(img_result)
+    |
+
+F401 [*] `wire_detection.core.component_classes.COMPONENT_TYPES` imported but unused
+  --> wire_detection/benchmark/export_meta.py:9:51
+   |
+ 7 | import cv2
+ 8 |
+ 9 | from wire_detection.core.component_classes import COMPONENT_TYPES
+   |                                                   ^^^^^^^^^^^^^^^
+10 | from wire_detection.benchmark.build_net_gt import (
+11 |     GT_IMAGES, GT_WIRE_LABELS, find_hdc_label, parse_components, parse_gt_wires,
+   |
+help: Remove unused import: `wire_detection.core.component_classes.COMPONENT_TYPES`
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/export_meta.py:26:28
+   |
+24 |     wf = GT_WIRE_LABELS / f"{name}_jpg.txt"
+25 |     if gray is None or hdc is None or not wf.exists():
+26 |         print("skip", name); continue
+   |                            ^
+27 |     h, w = gray.shape
+28 |     comps = parse_components(hdc.read_text(), w, h)
+   |
+
+E731 Do not assign a `lambda` expression, use a `def`
+  --> wire_detection/benchmark/export_meta.py:35:5
+   |
+33 |     if scale > 1:
+34 |         img = cv2.resize(img, (w * scale, h * scale), interpolation=cv2.INTER_CUBIC)
+35 |     S = lambda p: (int(p[0] * scale), int(p[1] * scale))
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+36 |     for a, b in wires:                       # draw wires clearly (dark), nothing else
+37 |         cv2.line(img, S(a), S(b), (40, 40, 40), max(2, scale))
+   |
+help: Rewrite `S` as a `def`
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/gen_batch.py:80:34
+   |
+78 |     if not comps or not wires:
+79 |         return None, None
+80 |     std = make_pins(wires, comps); junc = make_pins_junction_aware(wires, comps)
+   |                                  ^
+81 |     _p, nl = run_strategy(GT_STRATEGY, wires, comps, std_pins=std, junc_pins=junc)
+82 |     nets = netlist_to_nets(nl)
+   |
+
+E731 Do not assign a `lambda` expression, use a `def`
+  --> wire_detection/benchmark/gen_batch.py:97:5
+   |
+95 |     if scale > 1:
+96 |         img = cv2.resize(img, (w * scale, h * scale), interpolation=cv2.INTER_CUBIC)
+97 |     S = lambda p: (int(p[0] * scale), int(p[1] * scale))
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+98 |     for a, b in wires:
+99 |         cv2.line(img, S(a), S(b), (40, 40, 40), max(2, scale))
+   |
+help: Rewrite `S` as a `def`
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/gen_batch.py:116:31
+    |
+114 |         e, m = build(n, outdir)
+115 |         if e is None:
+116 |             print("  skip", n); continue
+    |                               ^
+117 |         nets_out[f"{n}_jpg"] = e; meta_out[f"{n}_jpg"] = m
+118 |         print(f"  {n}: {len(e['electrical_idxs'])} elec, {len([x for x in e['nets'] if len({c for c,_ in x})>1])} multi-nets")
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/gen_batch.py:117:33
+    |
+115 |         if e is None:
+116 |             print("  skip", n); continue
+117 |         nets_out[f"{n}_jpg"] = e; meta_out[f"{n}_jpg"] = m
+    |                                 ^
+118 |         print(f"  {n}: {len(e['electrical_idxs'])} elec, {len([x for x in e['nets'] if len({c for c,_ in x})>1])} multi-nets")
+119 |     Path("ground_truth/real_nets_batch2.json").write_text(json.dumps(nets_out, indent=2))
+    |
+
+E741 Ambiguous variable name: `l`
+  --> wire_detection/benchmark/hough_baseline.py:34:64
+   |
+32 |         cv2.rectangle(ink, (max(0, x1 - 1), max(0, y1 - 1)), (min(w - 1, x2 + 1), min(h - 1, y2 + 1)), 0, -1)
+33 |     lines = cv2.HoughLinesP(ink, 1, np.pi / 180, threshold=30, minLineLength=min_len, maxLineGap=10)
+34 |     segs = [] if lines is None else [tuple(map(int, l[0])) for l in lines]
+   |                                                                ^
+35 |     if not segs:
+36 |         return {(p.component_idx, p.pin_name): -1 for p in pins}
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/hough_baseline.py:41:42
+   |
+39 |     def find(a):
+40 |         while parent[a] != a:
+41 |             parent[a] = parent[parent[a]]; a = parent[a]
+   |                                          ^
+42 |         return a
+43 |     def union(a, b):
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/hough_baseline.py:44:34
+   |
+42 |         return a
+43 |     def union(a, b):
+44 |         ra, rb = find(a), find(b); parent[ra] = rb
+   |                                  ^
+45 |     eps = [((s[0], s[1]), (s[2], s[3])) for s in segs]
+46 |     for i in range(len(segs)):
+   |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/hough_baseline.py:105:25
+    |
+103 |             pred = pairs_from_pinnet(pn, keep)
+104 |             p, r, f1 = prf(gtp, pred)
+105 |             macroF += f1; macroP += p; macroR += r
+    |                         ^
+106 |             TP += len(gtp & pred); FP += len(pred - gtp); FN += len(gtp - pred)
+107 |         n = len(items)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/hough_baseline.py:105:38
+    |
+103 |             pred = pairs_from_pinnet(pn, keep)
+104 |             p, r, f1 = prf(gtp, pred)
+105 |             macroF += f1; macroP += p; macroR += r
+    |                                      ^
+106 |             TP += len(gtp & pred); FP += len(pred - gtp); FN += len(gtp - pred)
+107 |         n = len(items)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/hough_baseline.py:106:34
+    |
+104 |             p, r, f1 = prf(gtp, pred)
+105 |             macroF += f1; macroP += p; macroR += r
+106 |             TP += len(gtp & pred); FP += len(pred - gtp); FN += len(gtp - pred)
+    |                                  ^
+107 |         n = len(items)
+108 |         mP = TP / (TP + FP) if TP + FP else 1.0
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/hough_baseline.py:106:57
+    |
+104 |             p, r, f1 = prf(gtp, pred)
+105 |             macroF += f1; macroP += p; macroR += r
+106 |             TP += len(gtp & pred); FP += len(pred - gtp); FN += len(gtp - pred)
+    |                                                         ^
+107 |         n = len(items)
+108 |         mP = TP / (TP + FP) if TP + FP else 1.0
+    |
+
+E402 Module level import not at top of file
+  --> wire_detection/benchmark/join_eval_134.py:33:1
+   |
+31 |   sys.path.insert(0, str(SCRIPT_DIR.parent.parent))
+32 |
+33 | / from wire_detection.benchmark.experiment_harness import (
+34 | |     ExperimentConfig,
+35 | |     build_component_mask,
+36 | |     crop_to_roi,
+37 | |     detect_wires_experiment,
+38 | |     shift_components,
+39 | | )
+   | |_^
+40 |   from wire_detection.core.join_strategies import (
+41 |       STRATEGIES,
+   |
+
+E402 Module level import not at top of file
+  --> wire_detection/benchmark/join_eval_134.py:40:1
+   |
+38 |       shift_components,
+39 |   )
+40 | / from wire_detection.core.join_strategies import (
+41 | |     STRATEGIES,
+42 | |     make_pins,
+43 | |     make_pins_junction_aware,
+44 | |     run_strategy,
+45 | |     score_netlist,
+46 | | )
+   | |_^
+47 |
+48 |   # ── Data paths (134-image GT set) ──
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/join_eval_all.py:62:28
+   |
+60 |             continue
+61 |         try:
+62 |             cls = int(p[0]); c = [float(x) for x in p[1:9]]
+   |                            ^
+63 |         except ValueError:
+64 |             continue
+   |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_eval_real_f1.py:104:33
+    |
+102 |             pred = comp_pairs(nl, keep)
+103 |             p, r, f1 = prf(gtp, pred)
+104 |             tp = len(gtp & pred); fp = len(pred - gtp); fn = len(gtp - pred)
+    |                                 ^
+105 |             per_strategy[s].append(f1)
+106 |             per_pr[s][0].append(p); per_pr[s][1].append(r)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_eval_real_f1.py:104:55
+    |
+102 |             pred = comp_pairs(nl, keep)
+103 |             p, r, f1 = prf(gtp, pred)
+104 |             tp = len(gtp & pred); fp = len(pred - gtp); fn = len(gtp - pred)
+    |                                                       ^
+105 |             per_strategy[s].append(f1)
+106 |             per_pr[s][0].append(p); per_pr[s][1].append(r)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_eval_real_f1.py:106:35
+    |
+104 |             tp = len(gtp & pred); fp = len(pred - gtp); fn = len(gtp - pred)
+105 |             per_strategy[s].append(f1)
+106 |             per_pr[s][0].append(p); per_pr[s][1].append(r)
+    |                                   ^
+107 |             counts[s].append((tp, fp, fn))
+108 |             per_image[img_id][s] = {"f1": round(f1, 3), "p": round(p, 3), "r": round(r, 3),
+    |
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> wire_detection/benchmark/join_eval_real_f1.py:112:5
+    |
+111 |     # summary
+112 |     mean = lambda v: sum(v) / len(v) if v else 0.0
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+113 |
+114 |     def micro(s):
+    |
+help: Rewrite `mean` as a `def`
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_eval_real_f1.py:115:42
+    |
+114 |     def micro(s):
+115 |         TP = sum(c[0] for c in counts[s]); FP = sum(c[1] for c in counts[s]); FN = sum(c[2] for c in counts[s])
+    |                                          ^
+116 |         P = TP / (TP + FP) if TP + FP else 1.0
+117 |         R = TP / (TP + FN) if TP + FN else 1.0
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_eval_real_f1.py:115:77
+    |
+114 |     def micro(s):
+115 |         TP = sum(c[0] for c in counts[s]); FP = sum(c[1] for c in counts[s]); FN = sum(c[2] for c in counts[s])
+    |                                                                             ^
+116 |         P = TP / (TP + FP) if TP + FP else 1.0
+117 |         R = TP / (TP + FN) if TP + FN else 1.0
+    |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/join_variant_search.py:53:42
+   |
+51 |         parent.setdefault(x, x)
+52 |         while parent[x] != x:
+53 |             parent[x] = parent[parent[x]]; x = parent[x]
+   |                                          ^
+54 |         return x
+   |
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/join_variant_search.py:93:29
+   |
+92 |     def witness_cost(fp, tg):
+93 |         fx, fy = pin_pos[fp]; tx, ty = pin_pos[tg]
+   |                             ^
+94 |         best = float("inf")
+95 |         for (e0, e1) in wends:
+   |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:103:17
+    |
+101 |         return best
+102 |
+103 |     targets = []; target_index = {}; edges = []
+    |                 ^
+104 |     fp_index = {fp: i for i, fp in enumerate(floating)}
+105 |     for fp in floating:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:103:36
+    |
+101 |         return best
+102 |
+103 |     targets = []; target_index = {}; edges = []
+    |                                    ^
+104 |     fp_index = {fp: i for i, fp in enumerate(floating)}
+105 |     for fp in floating:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:106:20
+    |
+104 |     fp_index = {fp: i for i, fp in enumerate(floating)}
+105 |     for fp in floating:
+106 |         fci = fp[0]; fx, fy = pin_pos[fp]
+    |                    ^
+107 |         for tg, (tx, ty) in pin_pos.items():
+108 |             if tg[0] == fci or find(tg) == find(fp):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:121:48
+    |
+119 |                 cost = wc
+120 |             if tg not in target_index:
+121 |                 target_index[tg] = len(targets); targets.append(tg)
+    |                                                ^
+122 |             edges.append((fp_index[fp], target_index[tg], cost))
+123 |     if not edges:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:130:24
+    |
+128 |     for _f, t, _c in edges:
+129 |         demand[t] += 1
+130 |     slot_of_target = []; target_slots = defaultdict(list)
+    |                        ^
+131 |     for t in range(len(targets)):
+132 |         for _ in range(max(1, min(slot_cap, demand.get(t, 1)))):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:133:56
+    |
+131 |     for t in range(len(targets)):
+132 |         for _ in range(max(1, min(slot_cap, demand.get(t, 1)))):
+133 |             target_slots[t].append(len(slot_of_target)); slot_of_target.append(t)
+    |                                                        ^
+134 |     n_slot = len(slot_of_target); big = 1e6; dummy_cost = reach * 1.5
+135 |     cost_mat = np.full((nF, n_slot + nF), big, dtype=float)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:134:33
+    |
+132 |         for _ in range(max(1, min(slot_cap, demand.get(t, 1)))):
+133 |             target_slots[t].append(len(slot_of_target)); slot_of_target.append(t)
+134 |     n_slot = len(slot_of_target); big = 1e6; dummy_cost = reach * 1.5
+    |                                 ^
+135 |     cost_mat = np.full((nF, n_slot + nF), big, dtype=float)
+136 |     for i in range(nF):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:134:44
+    |
+132 |         for _ in range(max(1, min(slot_cap, demand.get(t, 1)))):
+133 |             target_slots[t].append(len(slot_of_target)); slot_of_target.append(t)
+134 |     n_slot = len(slot_of_target); big = 1e6; dummy_cost = reach * 1.5
+    |                                            ^
+135 |     cost_mat = np.full((nF, n_slot + nF), big, dtype=float)
+136 |     for i in range(nF):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:150:25
+    |
+148 |         if c >= n_slot or cost_mat[r, c] >= big:
+149 |             continue
+150 |         fp = floating[r]; tg = targets[slot_of_target[c]]
+    |                         ^
+151 |         rf, rt = find(fp), find(tg)
+152 |         if rf == rt or (net_comps[rf] & net_comps[rt]):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:180:37
+    |
+178 |     gt = json.load(open(args.gt))
+179 |
+180 |     accF = {v: [] for v in VARIANTS}; accP = {v: [] for v in VARIANTS}; accR = {v: [] for v in VARIANTS}
+    |                                     ^
+181 |     for img_id, entry in gt.items():
+182 |         name = img_id.replace("_jpg", "")
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:180:71
+    |
+178 |     gt = json.load(open(args.gt))
+179 |
+180 |     accF = {v: [] for v in VARIANTS}; accP = {v: [] for v in VARIANTS}; accR = {v: [] for v in VARIANTS}
+    |                                                                       ^
+181 |     for img_id, entry in gt.items():
+182 |         name = img_id.replace("_jpg", "")
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:196:35
+    |
+194 |             nl = completion_variant(wires, comps, std, **kw)
+195 |             p, r, f1 = prf(gtp, comp_pairs(nl, keep))
+196 |             accF[vname].append(f1); accP[vname].append(p); accR[vname].append(r)
+    |                                   ^
+197 |
+198 |     mean = lambda v: sum(v) / len(v) if v else 0.0
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/join_variant_search.py:196:58
+    |
+194 |             nl = completion_variant(wires, comps, std, **kw)
+195 |             p, r, f1 = prf(gtp, comp_pairs(nl, keep))
+196 |             accF[vname].append(f1); accP[vname].append(p); accR[vname].append(r)
+    |                                                          ^
+197 |
+198 |     mean = lambda v: sum(v) / len(v) if v else 0.0
+    |
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> wire_detection/benchmark/join_variant_search.py:198:5
+    |
+196 |             accF[vname].append(f1); accP[vname].append(p); accR[vname].append(r)
+197 |
+198 |     mean = lambda v: sum(v) / len(v) if v else 0.0
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+199 |     n = len(accF[list(VARIANTS)[0]])
+200 |     print(f"\nJoin variant search vs verified GT ({n} images)")
+    |
+help: Rewrite `mean` as a `def`
+
+F841 Local variable `edge_count` is assigned to but never used
+   --> wire_detection/benchmark/mapping_experiment_v2.py:517:9
+    |
+515 |         # Count edge pixels in this region near the endpoint
+516 |         roi_edges = edges[y1:y2, x1:x2]
+517 |         edge_count = cv2.countNonZero(roi_edges)
+    |         ^^^^^^^^^^
+518 |
+519 |         # Distance to component
+    |
+help: Remove assignment to unused variable `edge_count`
+
+F841 Local variable `j_cx` is assigned to but never used
+   --> wire_detection/benchmark/mapping_phase2.py:428:13
+    |
+426 |         for ji, jd in junctions:
+427 |             j_bbox = components[ji][2]
+428 |             j_cx = (j_bbox[0] + j_bbox[2]) / 2
+    |             ^^^^
+429 |             j_cy = (j_bbox[1] + j_bbox[3]) / 2
+    |
+help: Remove assignment to unused variable `j_cx`
+
+F841 Local variable `j_cy` is assigned to but never used
+   --> wire_detection/benchmark/mapping_phase2.py:429:13
+    |
+427 |             j_bbox = components[ji][2]
+428 |             j_cx = (j_bbox[0] + j_bbox[2]) / 2
+429 |             j_cy = (j_bbox[1] + j_bbox[3]) / 2
+    |             ^^^^
+430 |
+431 |             for wi2, (wep1, wep2) in enumerate(all_wires):
+    |
+help: Remove assignment to unused variable `j_cy`
+
+F841 Local variable `wire_dilated` is assigned to but never used
+   --> wire_detection/benchmark/mapping_phase4.py:281:5
+    |
+279 |     # Dilate wire mask slightly
+280 |     kernel = np.ones((5, 5), np.uint8)
+281 |     wire_dilated = cv2.dilate(wire_mask, kernel, iterations=1)
+    |     ^^^^^^^^^^^^
+282 |
+283 |     # Check overlap with each component polygon
+    |
+help: Remove assignment to unused variable `wire_dilated`
+
+F841 Local variable `cx` is assigned to but never used
+   --> wire_detection/benchmark/netlist_exploration.py:169:5
+    |
+168 |     # Center of the OBB
+169 |     cx = int(np.mean(xs))
+    |     ^^
+170 |     cy = int(np.mean(ys))
+    |
+help: Remove assignment to unused variable `cx`
+
+F841 Local variable `cy` is assigned to but never used
+   --> wire_detection/benchmark/netlist_exploration.py:170:5
+    |
+168 |     # Center of the OBB
+169 |     cx = int(np.mean(xs))
+170 |     cy = int(np.mean(ys))
+    |     ^^
+171 |
+172 |     # Find the 4 edges and their lengths
+    |
+help: Remove assignment to unused variable `cy`
+
+F841 Local variable `short_edges` is assigned to but never used
+   --> wire_detection/benchmark/netlist_exploration.py:184:5
+    |
+182 |     # Short edges (first 2) define the "width" of the component
+183 |     # Long edges (last 2) define the "length"
+184 |     short_edges = edges[:2]
+    |     ^^^^^^^^^^^
+185 |     long_edges = edges[2:]
+    |
+help: Remove assignment to unused variable `short_edges`
+
+F841 Local variable `long_edges` is assigned to but never used
+   --> wire_detection/benchmark/netlist_exploration.py:185:5
+    |
+183 |     # Long edges (last 2) define the "length"
+184 |     short_edges = edges[:2]
+185 |     long_edges = edges[2:]
+    |     ^^^^^^^^^^
+186 |
+187 |     # For 2-pin components, pins are at midpoints of short edges
+    |
+help: Remove assignment to unused variable `long_edges`
+
+F841 Local variable `issues` is assigned to but never used
+   --> wire_detection/benchmark/netlist_exploration.py:426:5
+    |
+424 | def validate_netlist(netlist: Netlist) -> dict:
+425 |     """Validate netlist for basic sanity checks."""
+426 |     issues = []
+    |     ^^^^^^
+427 |
+428 |     # Check 1: Floating components (no connections)
+    |
+help: Remove assignment to unused variable `issues`
+
+F841 Local variable `dangling` is assigned to but never used
+   --> wire_detection/benchmark/netlist_viz.py:247:9
+    |
+245 |                     break
+246 |
+247 |         dangling = end1_float or end2_float
+    |         ^^^^^^^^
+248 |         thickness = 2
+249 |         cv2.line(canvas, ep1, ep2, color, thickness, cv2.LINE_AA)
+    |
+help: Remove assignment to unused variable `dangling`
+
+E401 [*] Multiple imports on one line
+ --> wire_detection/benchmark/probe_identity.py:5:1
+  |
+3 | GT image and (b) pixel-match of their rf IMAGE to the GT image. The identity copy = best
+4 | image match; verify its boxes also have high ink (i.e. it aligns)."""
+5 | import cv2, numpy as np, sys
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+6 | from wire_detection.benchmark.build_net_gt import (
+7 |     GT_IMAGES, parse_components, electrical_indices, HDC_BASE, HDC_SPLITS)
+  |
+help: Split imports
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/pseudo_gt_eval.py:222:25
+    |
+221 |             total_gt_endpoints += 2
+222 |             if ep1_comps: total_gt_connected += 1
+    |                         ^
+223 |             if ep2_comps: total_gt_connected += 1
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/benchmark/pseudo_gt_eval.py:223:25
+    |
+221 |             total_gt_endpoints += 2
+222 |             if ep1_comps: total_gt_connected += 1
+223 |             if ep2_comps: total_gt_connected += 1
+    |                         ^
+224 |         
+225 |         # ── Detected wire connectivity ──
+    |
+
+F841 Local variable `y_proba` is assigned to but never used
+   --> wire_detection/benchmark/random_forest_v3.py:361:5
+    |
+359 |     X_test_top = X_test[:, [feature_names.index(f) for f in top_features]]
+360 |     y_pred = clf_final.predict(X_test_top)
+361 |     y_proba = clf_final.predict_proba(X_test_top)[:, 1]
+    |     ^^^^^^^
+362 |
+363 |     print("\nTest set classification report:")
+    |
+help: Remove assignment to unused variable `y_proba`
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/reference_pipeline.py:477:24
+    |
+475 |     tp_t = fp_t = fn_t = red_t = 0
+476 |     for r in results:
+477 |         tp_t += r["tp"]; fp_t += r["fp"]; fn_t += r["fn"]; red_t += r["red"]
+    |                        ^
+478 |         print(f"{r['image']:20s} {r['gt']:3d} {r['detected']:4d} {r['tp']:3d} "
+479 |               f"{r['fp']:4d} {r['fn']:3d} {r['red']:3d} {r['f1']:7.4f} {r['comps']:5d}")
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/reference_pipeline.py:477:41
+    |
+475 |     tp_t = fp_t = fn_t = red_t = 0
+476 |     for r in results:
+477 |         tp_t += r["tp"]; fp_t += r["fp"]; fn_t += r["fn"]; red_t += r["red"]
+    |                                         ^
+478 |         print(f"{r['image']:20s} {r['gt']:3d} {r['detected']:4d} {r['tp']:3d} "
+479 |               f"{r['fp']:4d} {r['fn']:3d} {r['red']:3d} {r['f1']:7.4f} {r['comps']:5d}")
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/benchmark/reference_pipeline.py:477:58
+    |
+475 |     tp_t = fp_t = fn_t = red_t = 0
+476 |     for r in results:
+477 |         tp_t += r["tp"]; fp_t += r["fp"]; fn_t += r["fn"]; red_t += r["red"]
+    |                                                          ^
+478 |         print(f"{r['image']:20s} {r['gt']:3d} {r['detected']:4d} {r['tp']:3d} "
+479 |               f"{r['fp']:4d} {r['fn']:3d} {r['red']:3d} {r['f1']:7.4f} {r['comps']:5d}")
+    |
+
+F401 [*] `wire_detection.core.component_classes.COMPONENT_TYPES` imported but unused
+  --> wire_detection/benchmark/render_neutral.py:9:51
+   |
+ 7 | import cv2
+ 8 |
+ 9 | from wire_detection.core.component_classes import COMPONENT_TYPES
+   |                                                   ^^^^^^^^^^^^^^^
+10 | from wire_detection.benchmark.build_net_gt import (
+11 |     GT_IMAGES, GT_WIRE_LABELS, find_hdc_label, parse_components, parse_gt_wires,
+   |
+help: Remove unused import: `wire_detection.core.component_classes.COMPONENT_TYPES`
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/render_neutral.py:21:32
+   |
+19 |     gt_wire_file = GT_WIRE_LABELS / f"{name}_jpg.txt"
+20 |     if gray is None or hdc is None or not gt_wire_file.exists():
+21 |         print(f"  skip {name}"); return
+   |                                ^
+22 |     h, w = gray.shape
+23 |     components = parse_components(hdc.read_text(), w, h)
+   |
+
+E731 Do not assign a `lambda` expression, use a `def`
+  --> wire_detection/benchmark/render_neutral.py:30:5
+   |
+28 |     if scale > 1:
+29 |         img = cv2.resize(img, (w * scale, h * scale), interpolation=cv2.INTER_CUBIC)
+30 |     S = lambda p: (int(p[0] * scale), int(p[1] * scale))
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+31 |     # draw GT wires faintly so wiring is visible but not coloured
+32 |     for a, b in wires:
+   |
+help: Rewrite `S` as a `def`
+
+F401 [*] `wire_detection.core.component_classes.COMPONENT_TYPES` imported but unused
+  --> wire_detection/benchmark/render_verify.py:9:51
+   |
+ 7 | import cv2
+ 8 |
+ 9 | from wire_detection.core.component_classes import COMPONENT_TYPES
+   |                                                   ^^^^^^^^^^^^^^^
+10 | from wire_detection.core.join_strategies import make_pins, make_pins_junction_aware, run_strategy
+11 | from wire_detection.benchmark.build_net_gt import (
+   |
+help: Remove unused import: `wire_detection.core.component_classes.COMPONENT_TYPES`
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/benchmark/render_verify.py:30:32
+   |
+28 |     gt_wire_file = GT_WIRE_LABELS / f"{name}_jpg.txt"
+29 |     if gray is None or hdc is None or not gt_wire_file.exists():
+30 |         print(f"  skip {name}"); return
+   |                                ^
+31 |     h, w = gray.shape
+32 |     components = parse_components(hdc.read_text(), w, h)
+   |
+
+F841 Local variable `feature_names` is assigned to but never used
+   --> wire_detection/benchmark/simpler_models.py:221:5
+    |
+219 |     )
+220 |
+221 |     feature_names = [
+    |     ^^^^^^^^^^^^^
+222 |         'pixel_density', 'length', 'wire_width', 'min_component_dist',
+223 |         'avg_component_dist', 'component_alignment', 'endpoint_cluster_density',
+    |
+help: Remove assignment to unused variable `feature_names`
+
+E702 Multiple statements on one line (semicolon)
+  --> wire_detection/core/completion.py:67:42
+   |
+65 |         parent.setdefault(x, x)
+66 |         while parent[x] != x:
+67 |             parent[x] = parent[parent[x]]; x = parent[x]
+   |                                          ^
+68 |         return x
+69 |     roots: dict = {}
+   |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:120:42
+    |
+118 |         parent.setdefault(x, x)
+119 |         while parent[x] != x:
+120 |             parent[x] = parent[parent[x]]; x = parent[x]
+    |                                          ^
+121 |         return x
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:164:33
+    |
+163 |     def witness_cost(fp_key, tg_key):
+164 |         fx, fy = pin_pos[fp_key]; tx, ty = pin_pos[tg_key]
+    |                                 ^
+165 |         best = float("inf")
+166 |         for (e0, e1) in wends:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:174:17
+    |
+172 |         return best
+173 |
+174 |     targets = []; target_index = {}; edges = []
+    |                 ^
+175 |     fp_index = {fp: i for i, fp in enumerate(floating)}
+176 |     for fp in floating:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:174:36
+    |
+172 |         return best
+173 |
+174 |     targets = []; target_index = {}; edges = []
+    |                                    ^
+175 |     fp_index = {fp: i for i, fp in enumerate(floating)}
+176 |     for fp in floating:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:177:20
+    |
+175 |     fp_index = {fp: i for i, fp in enumerate(floating)}
+176 |     for fp in floating:
+177 |         fci = fp[0]; fx, fy = pin_pos[fp]
+    |                    ^
+178 |         for tg, (tx, ty) in pin_pos.items():
+179 |             if tg[0] == fci or find(tg) == find(fp):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:192:48
+    |
+190 |                 cost = wc
+191 |             if tg not in target_index:
+192 |                 target_index[tg] = len(targets); targets.append(tg)
+    |                                                ^
+193 |             edges.append((fp_index[fp], target_index[tg], cost))
+194 |     if not edges:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:201:24
+    |
+199 |     for _f, t, _c in edges:
+200 |         demand[t] += 1
+201 |     slot_of_target = []; target_slots = defaultdict(list)
+    |                        ^
+202 |     for t in range(len(targets)):
+203 |         for _ in range(max(1, min(slot_cap, demand.get(t, 1)))):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:204:56
+    |
+202 |     for t in range(len(targets)):
+203 |         for _ in range(max(1, min(slot_cap, demand.get(t, 1)))):
+204 |             target_slots[t].append(len(slot_of_target)); slot_of_target.append(t)
+    |                                                        ^
+205 |     n_slot = len(slot_of_target); big = 1e6; dummy_cost = reach * 1.5
+206 |     cost_mat = np.full((nF, n_slot + nF), big, dtype=float)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:205:33
+    |
+203 |         for _ in range(max(1, min(slot_cap, demand.get(t, 1)))):
+204 |             target_slots[t].append(len(slot_of_target)); slot_of_target.append(t)
+205 |     n_slot = len(slot_of_target); big = 1e6; dummy_cost = reach * 1.5
+    |                                 ^
+206 |     cost_mat = np.full((nF, n_slot + nF), big, dtype=float)
+207 |     for i in range(nF):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:205:44
+    |
+203 |         for _ in range(max(1, min(slot_cap, demand.get(t, 1)))):
+204 |             target_slots[t].append(len(slot_of_target)); slot_of_target.append(t)
+205 |     n_slot = len(slot_of_target); big = 1e6; dummy_cost = reach * 1.5
+    |                                            ^
+206 |     cost_mat = np.full((nF, n_slot + nF), big, dtype=float)
+207 |     for i in range(nF):
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/core/completion.py:225:25
+    |
+223 |         if c >= n_slot or cost_mat[r, c] >= big:
+224 |             continue
+225 |         fp = floating[r]; tg = targets[slot_of_target[c]]
+    |                         ^
+226 |         rf, rt = find(fp), find(tg)
+227 |         if rf == rt:
+    |
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> wire_detection/core/join_strategies.py:433:9
+    |
+431 |         return degree_budget_completion(wires, components, pins, **s.get("completion", {}))
+432 |     if kind == "all":
+433 |         attach = lambda ep, pp, comps: attach_all(ep, pp, radius)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+434 |     elif kind == "anchored":
+435 |         attach = lambda ep, pp, comps: attach_anchored(ep, pp, radius, k, comps)
+    |
+help: Rewrite `attach` as a `def`
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> wire_detection/core/join_strategies.py:435:9
+    |
+433 |         attach = lambda ep, pp, comps: attach_all(ep, pp, radius)
+434 |     elif kind == "anchored":
+435 |         attach = lambda ep, pp, comps: attach_anchored(ep, pp, radius, k, comps)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+436 |     elif kind == "density":
+437 |         attach = lambda ep, pp, comps: attach_density(ep, pp, radius, k)
+    |
+help: Rewrite `attach` as a `def`
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> wire_detection/core/join_strategies.py:437:9
+    |
+435 |         attach = lambda ep, pp, comps: attach_anchored(ep, pp, radius, k, comps)
+436 |     elif kind == "density":
+437 |         attach = lambda ep, pp, comps: attach_density(ep, pp, radius, k)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+438 |     else:  # nearest
+439 |         attach = lambda ep, pp, comps: attach_nearest_k(ep, pp, radius, k)
+    |
+help: Rewrite `attach` as a `def`
+
+E731 Do not assign a `lambda` expression, use a `def`
+   --> wire_detection/core/join_strategies.py:439:9
+    |
+437 |         attach = lambda ep, pp, comps: attach_density(ep, pp, radius, k)
+438 |     else:  # nearest
+439 |         attach = lambda ep, pp, comps: attach_nearest_k(ep, pp, radius, k)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+440 |     return build_variant(wires, components, pins, attach)
+    |
+help: Rewrite `attach` as a `def`
+
+F841 Local variable `n` is assigned to but never used
+  --> wire_detection/evaluate/report.py:23:5
+   |
+21 |         total.gt_count += e.gt_count
+22 |
+23 |     n = max(len(results), 1)
+   |     ^
+24 |     avg_precision = total.tp / max(total.tp + total.fp + total.redundant, 1)
+25 |     avg_recall = total.tp / max(total.tp + total.fn, 1)
+   |
+help: Remove assignment to unused variable `n`
+
+E741 Ambiguous variable name: `l`
+   --> wire_detection/experiment/sweep.py:154:32
+    |
+152 |             continue
+153 |         gt_lines = registry.load_labels(img_path)
+154 |         gt = [(l.p1, l.p2) for l in gt_lines]
+    |                                ^
+155 |
+156 |         result = pipeline.run(image)
+    |
+
+E741 Ambiguous variable name: `l`
+   --> wire_detection/experiment/sweep.py:218:32
+    |
+216 |             continue
+217 |         gt_lines = registry.load_labels(img_path)
+218 |         gt = [(l.p1, l.p2) for l in gt_lines]
+    |                                ^
+219 |
+220 |         result = pipeline.run(image)
+    |
+
+E402 Module level import not at top of file
+  --> wire_detection/pipeline/stages/__init__.py:21:1
+   |
+19 | register_stage("dedup", DedupStage)
+20 | register_stage("length_filter", LengthFilterStage)
+21 | from wire_detection.pipeline.stages.normalize import NormalizeStage
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+22 | register_stage("normalize", NormalizeStage)
+23 | from wire_detection.pipeline.stages.close_merge import CloseStage, MergeStage
+   |
+
+E402 Module level import not at top of file
+  --> wire_detection/pipeline/stages/__init__.py:23:1
+   |
+21 | from wire_detection.pipeline.stages.normalize import NormalizeStage
+22 | register_stage("normalize", NormalizeStage)
+23 | from wire_detection.pipeline.stages.close_merge import CloseStage, MergeStage
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 | register_stage("close", CloseStage)
+25 | register_stage("merge", MergeStage)
+   |
+
+E402 Module level import not at top of file
+  --> wire_detection/pipeline/stages/crop.py:18:1
+   |
+18 | import cv2
+   | ^^^^^^^^^^
+   |
+
+F841 Local variable `fill_value` is assigned to but never used
+  --> wire_detection/pipeline/stages/mask.py:11:9
+   |
+10 |     def run(self, image: np.ndarray, params: dict[str, Any]) -> StageOutput:
+11 |         fill_value = params.get("fill_value", 255)
+   |         ^^^^^^^^^^
+12 |         return StageOutput(image)
+   |
+help: Remove assignment to unused variable `fill_value`
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/sdg/primitives.py:122:18
+    |
+120 |         dist_b = (ry + rh) - cy
+121 |         scales = []
+122 |         if dx < 0: scales.append(dist_l / -dx)
+    |                  ^
+123 |         if dx > 0: scales.append(dist_r / dx)
+124 |         if dy < 0: scales.append(dist_t / -dy)
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/sdg/primitives.py:123:18
+    |
+121 |         scales = []
+122 |         if dx < 0: scales.append(dist_l / -dx)
+123 |         if dx > 0: scales.append(dist_r / dx)
+    |                  ^
+124 |         if dy < 0: scales.append(dist_t / -dy)
+125 |         if dy > 0: scales.append(dist_b / dy)
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/sdg/primitives.py:124:18
+    |
+122 |         if dx < 0: scales.append(dist_l / -dx)
+123 |         if dx > 0: scales.append(dist_r / dx)
+124 |         if dy < 0: scales.append(dist_t / -dy)
+    |                  ^
+125 |         if dy > 0: scales.append(dist_b / dy)
+126 |         scale = min(scales) if scales else 0
+    |
+
+E701 Multiple statements on one line (colon)
+   --> wire_detection/sdg/primitives.py:125:18
+    |
+123 |         if dx > 0: scales.append(dist_r / dx)
+124 |         if dy < 0: scales.append(dist_t / -dy)
+125 |         if dy > 0: scales.append(dist_b / dy)
+    |                  ^
+126 |         scale = min(scales) if scales else 0
+127 |         ix = int(cx + dx * scale)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/synthgt/evaluate.py:129:22
+    |
+127 |                                   std_pins=_make_std_pins(pin_pos, spec))
+128 |             p, r, f = _prf(gt_pairs, _comp_pairs(net))
+129 |             accP += p; accR += r; accF += f
+    |                      ^
+130 |             if spice_on:
+131 |                 text = SpiceGenerator().generate(components, net, vov)
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/synthgt/evaluate.py:129:33
+    |
+127 |                                   std_pins=_make_std_pins(pin_pos, spec))
+128 |             p, r, f = _prf(gt_pairs, _comp_pairs(net))
+129 |             accP += p; accR += r; accF += f
+    |                                 ^
+130 |             if spice_on:
+131 |                 text = SpiceGenerator().generate(components, net, vov)
+    |
+
+F841 Local variable `cos_a` is assigned to but never used
+  --> wire_detection/synthgt/synthesize.py:83:13
+   |
+81 |             half_long = c.size / 2
+82 |             rad = math.radians(angle)
+83 |             cos_a, sin_a = math.cos(rad), math.sin(rad)
+   |             ^^^^^
+84 |             if c.orient == "H":
+85 |                 # Long axis is X before rotation
+   |
+help: Remove assignment to unused variable `cos_a`
+
+F841 Local variable `sin_a` is assigned to but never used
+  --> wire_detection/synthgt/synthesize.py:83:20
+   |
+81 |             half_long = c.size / 2
+82 |             rad = math.radians(angle)
+83 |             cos_a, sin_a = math.cos(rad), math.sin(rad)
+   |                    ^^^^^
+84 |             if c.orient == "H":
+85 |                 # Long axis is X before rotation
+   |
+help: Remove assignment to unused variable `sin_a`
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/synthgt/synthesize.py:213:38
+    |
+211 |         (x1, y1), (x2, y2) = w
+212 |         if sigma:
+213 |             x1 += rng.gauss(0, sigma); y1 += rng.gauss(0, sigma)
+    |                                      ^
+214 |             x2 += rng.gauss(0, sigma); y2 += rng.gauss(0, sigma)
+215 |         ends = [(int(x1), int(y1)), (int(x2), int(y2))]
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/synthgt/synthesize.py:214:38
+    |
+212 |         if sigma:
+213 |             x1 += rng.gauss(0, sigma); y1 += rng.gauss(0, sigma)
+214 |             x2 += rng.gauss(0, sigma); y2 += rng.gauss(0, sigma)
+    |                                      ^
+215 |         ends = [(int(x1), int(y1)), (int(x2), int(y2))]
+216 |         if wrong and pins:
+    |
+
+F841 Local variable `metadata` is assigned to but never used
+   --> wire_detection/tests/test_integration.py:436:9
+    |
+434 |         )
+435 |         sdg = SDG(cfg)
+436 |         metadata = sdg.generate()
+    |         ^^^^^^^^
+437 |         img_count = len(list((tmp_path / "sdg_labels" / "images").glob("*.jpg")))
+438 |         label_count = len(list((tmp_path / "sdg_labels" / "labels").glob("*.txt")))
+    |
+help: Remove assignment to unused variable `metadata`
+
+F841 Local variable `degraded` is assigned to but never used
+   --> wire_detection/tests/test_join_metrics.py:611:9
+    |
+610 |         # At least one metric should degrade
+611 |         degraded = (
+    |         ^^^^^^^^
+612 |             m_err.net_assignment_accuracy < m_clean.net_assignment_accuracy
+613 |             or m_err.under_merge_rate > m_clean.under_merge_rate
+    |
+help: Remove assignment to unused variable `degraded`
+
+E402 Module level import not at top of file
+   --> wire_detection/tests/test_metrics.py:794:1
+    |
+792 | # ═══════════════════════════════════════════════════════════════════
+793 |
+794 | from pathlib import Path
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+795 | import numpy as np
+    |
+
+E402 Module level import not at top of file
+   --> wire_detection/tests/test_metrics.py:795:1
+    |
+794 | from pathlib import Path
+795 | import numpy as np
+    | ^^^^^^^^^^^^^^^^^^
+    |
+
+E741 Ambiguous variable name: `l`
+   --> wire_detection/tests/test_metrics.py:939:25
+    |
+937 |             total = 0.0
+938 |             for (ox, oy), (px, py) in zip(
+939 |                 [pt for l in SAMPLE_LINES for pt in l],
+    |                         ^
+940 |                 [pt for l in perturbed for pt in l],
+941 |             ):
+    |
+
+E741 Ambiguous variable name: `l`
+   --> wire_detection/tests/test_metrics.py:940:25
+    |
+938 |             for (ox, oy), (px, py) in zip(
+939 |                 [pt for l in SAMPLE_LINES for pt in l],
+940 |                 [pt for l in perturbed for pt in l],
+    |                         ^
+941 |             ):
+942 |                 total += np.hypot(px - ox, py - oy)
+    |
+
+E402 Module level import not at top of file
+  --> wire_detection/tests/test_pipeline.py:85:1
+   |
+83 | # =============================================================================
+84 |
+85 | from wire_detection.pipeline.stages.dedup import point_line_dist
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+E402 Module level import not at top of file
+   --> wire_detection/tests/test_pipeline.py:293:1
+    |
+291 | # =============================================================================
+292 |
+293 | import math
+    | ^^^^^^^^^^^
+    |
+
+E741 Ambiguous variable name: `l`
+   --> wire_detection/tests/test_spice.py:142:24
+    |
+140 |         # exclude voltage sources: their tail is `DC <value>` (two tokens), which
+141 |         # breaks the "middle tokens are all nodes" positional assumption used here.
+142 |         lines = [l for l in result.split("\n")
+    |                        ^
+143 |                  if l and not l.startswith(("*", ".", "V"))]
+144 |         for line in lines:
+    |
+
+E702 Multiple statements on one line (semicolon)
+   --> wire_detection/tests/test_synthgt.py:220:18
+    |
+218 |     # (2) self-loop guard: under heavy error, degree_budget must not short more
+219 |     # two-terminal components than graph_rescue (it used to ~double them).
+220 |     db = gr = 0.0; n = 0
+    |                  ^
+221 |     for s in CATALOG:
+222 |         c, w0, p = synthesize_clean(s)
+    |
+
+Found 157 errors.
+[*] 12 fixable with the `--fix` option (40 hidden fixes can be enabled with the `--unsafe-fixes` option).

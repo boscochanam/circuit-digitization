@@ -1,0 +1,38 @@
+  skip C84_D2_P1 (missing image/labels)
+  skip C22_D2_P3 (missing image/labels)
+  skip C29_D2_P4 (missing image/labels)
+  skip C15_D2_P2 (missing image/labels)
+  skip C20_D2_P2 (missing image/labels)
+  skip C138_D1_P3 (missing image/labels)
+  skip C109_D2_P3 (missing image/labels)
+  skip C21_D1_P3 (missing image/labels)
+  skip C28_D1_P3 (missing image/labels)
+  skip C113_D2_P3 (missing image/labels)
+  skip C5_D1_P1 (missing image/labels)
+  skip C10_D2_P3 (missing image/labels)
+  skip C115_D2_P3 (missing image/labels)
+  skip C134_D2_P2 (missing image/labels)
+  skip C134_D2_P4 (missing image/labels)
+  skip C4_D2_P4 (missing image/labels)
+  skip C111_D1_P1 (missing image/labels)
+  skip C137_D1_P2 (missing image/labels)
+  skip C9_D1_P1 (missing image/labels)
+  skip C9_D1_P3 (missing image/labels)
+  skip C9_D2_P3 (missing image/labels)
+  skip C103_D2_P1 (missing image/labels)
+  skip C112_D1_P1 (missing image/labels)
+  skip C19_D1_P2 (missing image/labels)
+  skip C242_D1_P1 (missing image/labels)
+  skip C2_D2_P1 (missing image/labels)
+  skip C33_D2_P2 (missing image/labels)
+  skip C37_D2_P4 (missing image/labels)
+  skip C66_D2_P4 (missing image/labels)
+  skip C83_D2_P4 (missing image/labels)
+  skip C77_D2_P2 (missing image/labels)
+
+Real-image join connectivity (0 images, vs net-GT)
+strategy          microF1  microP  microR  macroF1  macroP  macroR
+------------------------------------------------------------------
+scale_completion    1.000   1.000   1.000    0.000   0.000   0.000
+
+wrote ../notes/scratch/empty-join.json

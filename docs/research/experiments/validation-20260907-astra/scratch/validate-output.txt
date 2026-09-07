@@ -1,0 +1,27 @@
+HEAD 36b9a8ebfd7d38856c8fe12e533dbdc91e5947c5
+ENV {'WIRE_GT_IMAGES': '/home/claw/workspace/ground_truth/labels_few_annot/images', 'WIRE_GT_LABELS': '/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images', 'WIRE_HDC_BASE': '/home/claw/circuit-digitization/roboflow_test2'}
+TeX {'pdflatex': None, 'latexmk': None, 'tectonic': None}
+Model available False
+Modules {'wire_detection.benchmark.reference_pipeline': '/home/claw/circuit-digitization-validation-20260907/repo/wire_detection/benchmark/reference_pipeline.py', 'wire_detection.benchmark.experiment_harness': '/home/claw/circuit-digitization-validation-20260907/repo/wire_detection/benchmark/experiment_harness.py', 'wire_detection.benchmark.build_net_gt': '/home/claw/circuit-digitization-validation-20260907/repo/wire_detection/benchmark/build_net_gt.py', 'wire_detection.benchmark.join_eval_real_f1': '/home/claw/circuit-digitization-validation-20260907/repo/wire_detection/benchmark/join_eval_real_f1.py', 'wire_detection.core.completion': '/home/claw/circuit-digitization-validation-20260907/repo/wire_detection/core/completion.py', 'wire_detection.core.join_graph': '/home/claw/circuit-digitization-validation-20260907/repo/wire_detection/core/join_graph.py'}
+Committed recomputation scale_completion {'tp': 418, 'fp': 37, 'fn': 66, 'f1': 0.8903088391906283, 'p': 0.9186813186813186, 'r': 0.8636363636363636}
+Committed recomputation degree_budget {'tp': 423, 'fp': 113, 'fn': 61, 'f1': 0.8294117647058824, 'p': 0.789179104477612, 'r': 0.8739669421487604}
+Committed recomputation graph_scale {'tp': 352, 'fp': 27, 'fn': 132, 'f1': 0.8157589803012746, 'p': 0.9287598944591029, 'r': 0.7272727272727273}
+Committed recomputation graph_rescue {'tp': 370, 'fp': 86, 'fn': 114, 'f1': 0.7872340425531915, 'p': 0.8114035087719298, 'r': 0.7644628099173554}
+Committed recomputation production {'tp': 309, 'fp': 134, 'fn': 175, 'f1': 0.6666666666666666, 'p': 0.6975169300225733, 'r': 0.6384297520661157}
+VLM recomputation {'tp': 426, 'fp': 13, 'fn': 58, 'f1': 0.9230769230769231, 'p': 0.9703872437357631, 'r': 0.8801652892561983}
+Complexity Counter({10: 6, 4: 6, 5: 6, 7: 4, 12: 3, 3: 3, 14: 2, 11: 1}) small 15 >=10 12
+VLM exact 21 small exact 14
+Reach 3-5 macro actual range 0.8954648168964782 0.9032210952911355
+FRESH n 31 differences from committed full counts []
+FULL {'full': {'tp': 418, 'fp': 37, 'fn': 66, 'f1': 0.8903088391906283, 'p': 0.9186813186813186, 'r': 0.8636363636363636}, 'no_t': {'tp': 418, 'fp': 37, 'fn': 66, 'f1': 0.8903088391906283, 'p': 0.9186813186813186, 'r': 0.8636363636363636}, 'no_rail': {'tp': 418, 'fp': 37, 'fn': 66, 'f1': 0.8903088391906283, 'p': 0.9186813186813186, 'r': 0.8636363636363636}, 'no_both': {'tp': 418, 'fp': 37, 'fn': 66, 'f1': 0.8903088391906283, 'p': 0.9186813186813186, 'r': 0.8636363636363636}, 'no_direction': {'tp': 418, 'fp': 37, 'fn': 66, 'f1': 0.8903088391906283, 'p': 0.9186813186813186, 'r': 0.8636363636363636}, 'fixed_base': {'tp': 418, 'fp': 37, 'fn': 66, 'f1': 0.8903088391906283, 'p': 0.9186813186813186, 'r': 0.8636363636363636}}
+BASE {'full': {'tp': 352, 'fp': 27, 'fn': 132, 'f1': 0.8157589803012746, 'p': 0.9287598944591029, 'r': 0.7272727272727273}, 'no_t': {'tp': 352, 'fp': 27, 'fn': 132, 'f1': 0.8157589803012746, 'p': 0.9287598944591029, 'r': 0.7272727272727273}, 'no_rail': {'tp': 352, 'fp': 27, 'fn': 132, 'f1': 0.8157589803012746, 'p': 0.9287598944591029, 'r': 0.7272727272727273}, 'no_both': {'tp': 352, 'fp': 27, 'fn': 132, 'f1': 0.8157589803012746, 'p': 0.9287598944591029, 'r': 0.7272727272727273}, 'no_direction': {'tp': 352, 'fp': 27, 'fn': 132, 'f1': 0.8157589803012746, 'p': 0.9287598944591029, 'r': 0.7272727272727273}, 'fixed_base': {'tp': 356, 'fp': 28, 'fn': 128, 'f1': 0.8202764976958525, 'p': 0.9270833333333334, 'r': 0.7355371900826446}}
+PERFECT {'tp': 420, 'fp': 40, 'fn': 64, 'f1': 0.8898305084745762, 'p': 0.9130434782608695, 'r': 0.8677685950413223}
+CROSSOVERS 13 images 8
+SHORTED TWO-PIN COMPONENTS {'C29_D2_P4_jpg': [3], 'C109_D2_P3_jpg': [5], 'C19_D1_P2_jpg': [1, 3], 'C242_D1_P1_jpg': [30, 43, 51, 83]}
+Scale CV range 0.30279054396626853 1.4485848654997893
+Expanded sample count 134 module /home/claw/circuit-digitization-validation-20260907/repo/wire_detection/benchmark/expanded_benchmark.py
+Expanded run_config signature
+(cfg: 'ExperimentConfig') -> 'RunSummary'
+Showcase GT C37_D2_P4_jpg nets 7 components 11 wire detected 35
+Showcase GT C111_D1_P1_jpg nets 4 components 5 wire detected 12
+Foreign wire_detection imports {}
