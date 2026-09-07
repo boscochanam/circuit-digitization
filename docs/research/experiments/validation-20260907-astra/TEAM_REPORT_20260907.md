@@ -13,6 +13,12 @@
 
 August revision commits (`fe109ec`, `36b9a8e`) are Bosco-authored.
 
+## Fork update (Sept 3) — the revision he actually wrote
+
+Correction to the activity record: Pranavesh's latest work is not the June PRs but `tkprnv/circuit-digitization@review/ieee-access-revision-2026-09` (commit `10c1b92`, Sept 3), one commit ahead of `origin/main`. It retitles to Structural Circuit Netlists, recasts the VLM as an oracle diagnostic, adds honest ablation and per-drafter tables, and ships a 12-point response draft with change index. Deterministically verified: `manuscript_changes.diff` is byte-exact, tau multipliers (0.62/0.30/0.20) and clamps match code, drafter cell counts match the committed map, ablation numbers match the committed JSON.
+
+Remaining gaps: stale July base (rebase onto the August revision branch needed), no compiled/highlighted PDFs and no IEEE template conversion (bundle README overclaims them), no device tier table, reach sweep still unlabeled as macro, wire-config ledger untouched. Recommended path: rebase his branch, keep the newer experiments and figures, verify carried-forward numbers, then build the PDFs.
+
 ## Reviewer closeout — status and the one fix per comment
 
 | Comment | Status | The one fix |
