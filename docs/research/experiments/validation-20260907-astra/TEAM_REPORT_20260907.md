@@ -1,42 +1,58 @@
 # IEEE Access 33821 — Team Action Brief
 
-> **Bottom line: NO-GO as-is, fixable without new data.** The controlled results reproduce (join micro-F1 0.890 on 31 images, VLM 0.923, synthetic 0.95 vs 0.36). What blocks resubmission is prose scope, contradictory claims, and package artifacts — not missing science.
+> **Bottom line: NO-GO as-is, fixable without new data.** Controlled results reproduce (join micro-F1 0.890 on 31 images, VLM 0.923, synthetic 0.95 vs 0.36). What blocks resubmission is prose scope, contradictory claims, and package artifacts. Two revision lines now exist — the first decision is how to merge them.
 
-**Scope:** Independent Astra audit of Pranavesh's work + 12-comment reviewer closeout, 7 Sept 2026. Audit base: detached commit `36b9a8e`. Full evidence in branch `validation/audit-20260907-astra`. No production code was changed by the audit.
+**Scope:** Independent audit (Astra, 7 Sept 2026) of the revision work + 12-comment reviewer closeout. Audit base: detached commit `36b9a8e`. Full evidence in branch `validation/audit-20260907-astra`. No production code was changed by the audit.
 
-## What Pranavesh did (verified)
+## Where things stand — two revision lines
 
-- **PR #2 (merged):** experiment harness, portability paths, entry point, regression test. Real, retained infrastructure.
-- **PR #4 (merged):** threshold/skeleton/Hough experiments, port gating, quality analysis, learned branch (in-sample, not held-out), MethodsX draft (now archived). Retained as experimental branches, not the production winner.
-- **PR #75 (closed):** legacy-paper rewrite ("NetGuard"), generator tweaks. Not merged, not the live manuscript.
-- **PR #77 (closed, integrated via #78):** TeX/TikZ layout, shortened abstract, author/funding edits. Survives in ancestry — needs author confirmation.
+| Line | Base | Contains | Still missing |
+|---|---|---|---|
+| Bosco branch (`revision/access-2026-33821` @ `36b9a8e` + working tree) | Aug revision | Newer experiments: complexity histogram, C242 causal detail, full CI treatment, rebuilt figures, C138 escape, detected-box row | Retitle not locked; no response letter; no highlighted/clean PDFs |
+| Pranavesh fork (`review/ieee-access-revision-2026-09` @ `10c1b92`, Sept 3) | July `main` | Structural retitle, VLM recast, ablation + per-drafter tables, 12-point response draft with change index | Stale base; no compiled PDFs; no template conversion; no device table |
 
-August revision commits (`fe109ec`, `36b9a8e`) are Bosco-authored.
+Fork facts verified deterministically: change diff is byte-exact, tau multipliers (0.62/0.30/0.20) and pixel clamps match code, drafter cell counts and ablation numbers match committed JSONs. Earlier contributions (PR #2 harness, PR #4 experiments, PR #75 closed draft, PR #77 layout integrated via #78) are retained infrastructure, not the live revision question.
 
-## Fork update (Sept 3) — the revision he actually wrote
+## Decisions for the team (discuss first)
 
-Correction to the activity record: Pranavesh's latest work is not the June PRs but `tkprnv/circuit-digitization@review/ieee-access-revision-2026-09` (commit `10c1b92`, Sept 3), one commit ahead of `origin/main`. It retitles to Structural Circuit Netlists, recasts the VLM as an oracle diagnostic, adds honest ablation and per-drafter tables, and ships a 12-point response draft with change index. Deterministically verified: `manuscript_changes.diff` is byte-exact, tau multipliers (0.62/0.30/0.20) and clamps match code, drafter cell counts match the committed map, ablation numbers match the committed JSON.
+- **D1 — Merge direction.** Proposal: rebase the fork onto the revision branch, keeping the newer experiments and figures where they supersede carried-forward values.
+- **D2 — Retitle lock.** Proposal: accept "Structural Circuit Netlists" (the fork implements it; the plan recommended it).
+- **D3 — Response starting point.** Proposal: fork draft as the base, converted into the IEEE template, plus the missing author-verification rows.
+- **D4 — PDF ownership.** Proposal: one owner builds both layouts + highlighted copy and visually checks every page before anyone calls the package done.
 
-Remaining gaps: stale July base (rebase onto the August revision branch needed), no compiled/highlighted PDFs and no IEEE template conversion (bundle README overclaims them), no device tier table, reach sweep still unlabeled as macro, wire-config ledger untouched. Recommended path: rebase his branch, keep the newer experiments and figures, verify carried-forward numbers, then build the PDFs.
+## Reviewer closeout — status, fix, and who already has it
 
-## Reviewer closeout — status and the one fix per comment
+Status describes the Bosco branch. "Fork" = whether Pranavesh's branch already contains the fix.
 
-| Comment | Status | The one fix |
-|---|---|---|
-| R1-1 single corpus / N=31 | Partial | Soften "cross-drafter generalization" to descriptive within-corpus variation |
-| R1-2 complex-device pins | Gap | Capability table (evaluated vs generic-guess vs export); switches export as resistors today |
-| R1-3 manual thresholds | Partial | Correct sign: fixed pixels 0.820 beats scale-relative 0.816 here; concede extremes untested |
-| R1-4 no OCR / not simulatable | Gap | Scope sentence in abstract + intro + conclusion: topological recovery, illustrative export |
-| R1-5 small circuits | Partial | Add limit: counts (15 ≤5, 12 ≥10, max 14) do not prove dense-bus/multilayer coverage |
-| R1-6 memristor cites | Gap | One polite decline paragraph in response; no citation needed |
-| R2-1 stats / cost / roadmap | Partial | Roadmap paragraph (stratified expansion + timing logs as future); fix "same accuracy" |
-| R2-2 VLM oracle / cost claims | Gap | Conditional GT-box wording; drop 100–1000x and global-validity claims |
-| R2-3 SPICE title | Gap | Retitle to Topological Netlists + running heads; rebuild PDF |
-| R2-4 crossover merges | Partial | Full tradeoff (C242: 27/4/0 → 19/0/8 on suppression); GT-box vs detector-miss effects |
-| R2-5 ablation | Partial | Fix caption sign + base-only scope; fix clipped Table p.6 |
-| R2-6 one scalar limit | Closed | None — keep disclosure, attach no new robustness claims |
+| Comment | Status | The fix | Fork |
+|---|---|---|---|
+| R1-1 single corpus / N=31 | Partial | Descriptive within-corpus wording; no generalization claims | Partial |
+| R1-2 complex-device pins | Gap | Capability table (evaluated vs generic-guess vs export) | Partial |
+| R1-3 manual thresholds | Partial | Correct sign; concede extremes untested | Partial |
+| R1-4 no OCR / not simulatable | Gap | Scope sentence in abstract + intro + conclusion | Yes |
+| R1-5 small circuits | Partial | Dense-bus/multilayer limit sentence | Partial |
+| R1-6 memristor cites | Gap | Polite decline paragraph in response | Yes |
+| R2-1 stats / roadmap | Partial | Roadmap paragraph; fix "same accuracy" | Partial |
+| R2-2 VLM oracle / cost | Gap | Conditional wording; drop cost multiples | Yes |
+| R2-3 SPICE title | Gap | Retitle + running heads; rebuild PDF | Yes |
+| R2-4 crossover merges | Partial | Full tradeoff; GT-box vs detector-miss wording | Partial |
+| R2-5 ablation | Partial | Caption sign + scope; unclip Table p.6 | Yes |
+| R2-6 one scalar limit | Closed | None — keep disclosure as-is | Yes |
 
-Shared language fixes everywhere: nonsignificance is not equivalence; no global short-free guarantee; GT-box wire ceiling does not prove end-to-end dominance.
+Shared language fixes everywhere: nonsignificance is not equivalence; no global short-free guarantee; GT-box results do not prove end-to-end dominance.
+
+## Task list (proposed owners — confirm together)
+
+| # | Task | Proposed owner | Blocked by |
+|---|---|---|---|
+| T1 | Rebase fork onto revision branch; resolve conflicts keeping newer experiments | Bosco + Pranavesh | D1 |
+| T2 | Lock retitle across title, heads, abstract, intro, conclusion | Bosco (decision) | D2 |
+| T3 | Device capability table; fix switch-export wording | Assignee TBD | D1 |
+| T4 | Response letter in IEEE template from fork draft, incl. R1-6 decline | Assignee TBD | D3 |
+| T5 | VLM + stats prose pass (conditional wording, roadmap paragraph) | Assignee TBD | D1 |
+| T6 | Numbers pass (ablation sign, reach label, config ledger, Otsu kept) | Assignee TBD | D1 |
+| T7 | Rebuild both PDF layouts + highlighted copy; visual page check | Assignee TBD | D4, T1–T6 |
+| T8 | Author verification: byline, affiliations, ORCIDs, bios, funding, consent | All | — |
 
 ## Numbers to keep straight
 
@@ -44,29 +60,8 @@ Shared language fixes everywhere: nonsignificance is not equivalence; no global 
 - 0.9755 = dedup 10°/18px config; mandated 12°/8px gives 0.9726. Label each table.
 - Keep Otsu 0.789 (fresh rerun); do not substitute 0.828.
 - VLM 0.923, 21/31 exact, 14/15 small — recomputed, CIs match.
-- Reach sweep is macro 0.895–0.903 (not 0.898–0.903); detected-box join 0.247 stays provisional.
-
-## Package checklist (all missing at audit time)
-
-1. 12-row response (concern / response / action) — R1-6 decline included.
-2. Highlighted PDF with every change marked.
-3. Clean manuscript LaTeX + PDF, both layouts built, Table p.6 unclipped, C138 escaped, figures checked.
-4. Author verification: byline order/spelling, affiliations, ORCIDs, bios, no-funding line, consent for any change.
-
-## Next actions (in order)
-
-1. **Scope pass:** title, abstract, intro, conclusion + device table (closes R1-4, R2-3, R1-2 prose).
-2. **VLM + stats pass:** conditional comparison, roadmap paragraph, equivalence language removed (R2-2, R2-1).
-3. **Ablation/crossover/numbers pass:** sign, range, tradeoff, config labels, Otsu kept (R1-3, R2-4, R2-5).
-4. **Response letter** + R1-6 decline paragraph.
-5. **Author sign-off, then rebuild + visual check** of both PDFs.
-
-> After these prose/package corrections the revision is conditionally submittable. TeX compilation was unverified in the audit (no toolchain); acceptance cannot be guaranteed.
-
-## Finding index — where to look in the full notes
-
-High severity: F1 global structural guarantee false · F2 scope/bottleneck exceeds experiment · F3 stale PDF vs source vs package · F4 ablation sign reversed · F5 wire-config identity (0.9755 vs 0.9726) · F6 entry points bypass model-source switch · F7 detected-box evidence provisional. Medium: F8 crossover causality without safe fix · F9 empty-data eval reports F1 1.0 · F10 learned branch in-sample · F11 ablation gaps · F12 equivalence/cost unproven · F13 drafter/device precision · F14 stale algorithm prose · F15 byline/funding unverified. Lower: F16 machine-specific paths and figure issues.
+- Reach sweep is macro 0.895–0.903 (not 0.898–0.903). Detected-box join 0.247 stays provisional.
 
 ## Sources
 
-Full evidence in branch `validation/audit-20260907-astra`: `VALIDATION_NOTES.md` (F1–F16), `REVIEWER_CLOSEOUT.md`, `PHASE1_ASSESSMENT.md`, scratch reruns (pytest 495 passed, join/synthetic/wire/CI JSONs). Audit base `36b9a8e`; decision letter Access-2026-33821 (13 Aug 2026).
+Full evidence in branch `validation/audit-20260907-astra`: `VALIDATION_NOTES.md` (findings F1–F16), `REVIEWER_CLOSEOUT.md`, `PHASE1_ASSESSMENT.md`, scratch reruns (pytest 495 passed, join/synthetic/wire/CI JSONs). Audit base `36b9a8e`; decision letter Access-2026-33821 (13 Aug 2026).
