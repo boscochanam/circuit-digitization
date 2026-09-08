@@ -19,7 +19,7 @@
 \node[stage, fill=stgGreen, right=of s2]   (s3) {\textbf{Component}\\\textbf{Occlusion}\\[3pt]\sub{Local median}\\\sub{fill}};
 \node[stage, fill=stgOrange,right=of s3]   (s4) {\textbf{Binarization}\\\textbf{+ Line Extract}\\[3pt]\sub{Sauvola + CCL}\\\sub{+ PCA}};
 \node[stage, fill=stgBlue,  right=of s4]   (s5) {\textbf{Wire}\\\textbf{Joining}\\[3pt]\sub{Endpoint-graph}\\\sub{+ degree-budget}};
-\node[stage, fill=stgGreen, right=of s5]   (s6) {\textbf{SPICE}\\\textbf{Netlist}\\[3pt]\sub{Pin discovery}\\\sub{+ simulation}};
+\node[stage, fill=stgGreen, right=of s5]   (s6) {\textbf{Structural}\\\textbf{Netlist}\\[3pt]\sub{Inferred}\\\sub{pin-to-node map}};
 \foreach \a/\b in {s1/s2,s2/s3,s3/s4,s4/s5,s5/s6}{\draw[arr] (\a) -- (\b);}
 \begin{scope}[on background layer]
   \node[draw=contribRed, dashed, line width=1pt, rounded corners=5pt,
