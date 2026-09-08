@@ -1,0 +1,51 @@
+{
+  "access": {
+    "author_block": {
+      "sha256": "437b91a0a889e594d3e82905bb03b61260a13ccf2dbfcf704967efbcd35906f4",
+      "unchanged": true,
+      "count": 1
+    },
+    "bios": {
+      "sha256": "76f87dc0ea2b3e94768aee564604f09623bdd4b0fea7540d542eb446cbc39913",
+      "unchanged": true,
+      "count": 6
+    },
+    "bio_names": [
+      "Bosco Chanam",
+      "Chris Dcosta",
+      "Pranavesh Kumar Talupuri",
+      "Shwetambari Chiwhane",
+      "Ashay Kumar Singh",
+      "Arghadeep Das"
+    ],
+    "orcid_values": [
+      "0009-0009-2527-0967",
+      "0009-0007-7295-0573",
+      "0009-0005-8974-2012",
+      "0000-0002-3534-9654",
+      "0009-0004-9105-7383",
+      "0009-0000-9207-7694"
+    ]
+  },
+  "build": {
+    "author_block": {
+      "sha256": "e17474722b368e4eba69abc8163b38bc6bf192b0042550ab3d0c47da26f36075",
+      "unchanged": true,
+      "count": 1
+    },
+    "bios": {
+      "sha256": "82981b3fae72bb5c738e0b97928bfd5438a478a0c89e12e09ec3b3585e2a840b",
+      "unchanged": true,
+      "count": 6
+    },
+    "bio_names": [
+      "Bosco Chanam",
+      "Chris Dcosta",
+      "Pranavesh Kumar Talupuri",
+      "Shwetambari Chiwhane",
+      "Ashay Kumar Singh",
+      "Arghadeep Das"
+    ],
+    "orcid_values": []
+  }
+}
