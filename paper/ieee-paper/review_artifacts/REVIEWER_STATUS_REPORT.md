@@ -1,6 +1,6 @@
 # Reviewer Response Status — IEEE Access 33821
 
-> 12 comments, one-shot resubmission. Every item below states what the reviewer asked, what changed, where the evidence lives, and what (if anything) is still open. Manuscript sources: `paper-access.tex` (A) and `paper-build.tex` (B), kept in sync. Work line: `main`.
+> 12 comments, one-shot resubmission. Every item below states what the reviewer asked, what changed, where the evidence lives, and what (if anything) is still open. Manuscript sources: paper-access.tex (A) and paper-build.tex (B), kept in sync. Work line: main.
 
 ## At a glance
 
@@ -30,13 +30,13 @@ Shared language enforced throughout: nonsignificance is not equivalence; no glob
 ## R1-2 — Complex-device pins — In manuscript
 
 **Asked:** which complex devices are actually handled, and how?
-**Done:** new capability table (`tab:capabilities`) separating evaluated connectivity from generic pin construction and illustrative export, with a metric-boundary row. Switch wording made exact: shorter OBB-edge midpoint pins, long-axis AABB fallback, fixed 0.001-ohm emission only when pins 0 and 1 reach distinct nodes. Verified against `netlist.py` / `spice.py`.
+**Done:** new capability table (Table tab:capabilities) separating evaluated connectivity from generic pin construction and illustrative export, with a metric-boundary row. Switch wording made exact: shorter OBB-edge midpoint pins, long-axis AABB fallback, fixed 0.001-ohm emission only when pins 0 and 1 reach distinct nodes. Verified against netlist.py / spice.py.
 **Remaining:** owner read-through (#83).
 
 ## R1-3 — Manual thresholds — In manuscript
 
 **Asked:** fixed scale-relative parameters (reviewer names alpha explicitly).
-**Done:** multipliers stated as fixed and manual (0.62/0.30/0.20, clamps 24–60/11–28/8–20); directional scoring fixed at alpha 0.35, fallback-only, with the exact formula; completion reach at 4x clamped pin scale; reach sweep reported as macro 0.895–0.903; extremes (rescaling, heterogeneous symbol sizes) conceded untested. Method prose rewritten from code (`join_graph.py`, `completion.py`).
+**Done:** multipliers stated as fixed and manual (0.62/0.30/0.20, clamps 24–60/11–28/8–20); directional scoring fixed at alpha 0.35, fallback-only, with the exact formula; completion reach at 4x clamped pin scale; reach sweep reported as macro 0.895–0.903; extremes (rescaling, heterogeneous symbol sizes) conceded untested. Method prose rewritten from code (join_graph.py, completion.py).
 **Remaining:** nothing.
 
 ## R1-4 — No OCR, not simulatable — In manuscript
@@ -78,7 +78,7 @@ Shared language enforced throughout: nonsignificance is not equivalence; no glob
 ## R2-4 — Crossover merges — Partial by design
 
 **Asked:** effect of crossing wires on netlist correctness, including detector misses.
-**Done:** causal two-edge C242 intervention reported with full tradeoff (TP/FP/FN 27/4/0 → 19/0/8, artifact `crossover-causal.json`); stated plainly that removing edges also removes true connections (no mitigation-gain claim) and that detector-miss effects were not measured.
+**Done:** causal two-edge C242 intervention reported with full tradeoff (TP/FP/FN 27/4/0 → 19/0/8, artifact crossover-causal.json); stated plainly that removing edges also removes true connections (no mitigation-gain claim) and that detector-miss effects were not measured.
 **Remaining:** nothing achievable without new experiments — submitted as an honest partial.
 
 ## R2-5 — Ablations — Partial
