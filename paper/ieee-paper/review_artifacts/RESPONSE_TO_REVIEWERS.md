@@ -6,6 +6,8 @@ Original Article Title: “From Hand-Drawn Schematics to SPICE Netlists: A Deter
 
 Revised Article Title: “From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark”
 
+Port provenance: the reviewer organization originates in fork `10c1b92`; the factual responses and complete concern texts below retain the newer revision at `cefe77b`. The sibling `manuscript_changes.diff` is historical fork provenance, not the diff for this response or the reviewed submission baseline.
+
 Draft for author review. Final PDF page references, rendered response, figure reconciliation and submission-package approvals are pending; this source draft does not certify package readiness.
 
 We thank the Associate Editor and reviewers for their assessment. We have narrowed the scientific claims, corrected descriptions to match the implementation, and qualified the existing evidence. Per-drafter results describe within-corpus variation. Component-pair scores do not certify pin-level correctness or simulation equivalence. No new experiments were run for this prose revision. The source changes and outstanding package checks are recorded in `REVIEW_CHANGES.md`.

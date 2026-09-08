@@ -64,7 +64,7 @@ circuit digitization, connectivity benchmark, graph-based connectivity, hand-dra
 
 \section{Introduction}
 
-Analog circuit schematics encode functional information (component types, values, and topological connections) in a visual format designed for human interpretation. Converting scanned schematics into machine-readable SPICE (Simulation Program with Integrated Circuit Emphasis) netlists enables automated simulation, design verification, and large-scale circuit analysis. The \emph{joining} problem determines which wire segments connect to which component pins and to each other. We study this stage with annotated component boxes; its relative contribution to autonomous reconstruction error is not established by that experiment.
+Analog circuit schematics encode component types, values, and topological connections in a visual format designed for human interpretation. Recovering a structural netlist from a scan is a prerequisite for simulation, design verification, and large-scale circuit analysis, but a complete simulatable SPICE (Simulation Program with Integrated Circuit Emphasis) deck also requires component values and device models. This work addresses the structural connectivity stage only. The \emph{joining} problem determines which wire segments connect to which component pins and to each other. We study this stage with annotated component boxes; its relative contribution to autonomous reconstruction error is not established by that experiment.
 
 The challenge is threefold. First, wire endpoints extracted from binarized images are inherently noisy: the same circuit drawn by different drafters produces endpoint positions that vary by 10--80 pixels. Second, components occupy bounding boxes that overlap with wire endpoints, creating ambiguity about whether an endpoint connects to a component's pin or merely passes nearby. Third, T-junctions, collinear fragments, and crossing wires create connectivity ambiguities for proximity-based rules, including the graph rules studied here.
 
@@ -346,6 +346,7 @@ We evaluate Claude Opus~4.8 as an oracle-component-box connectivity diagnostic. 
 On the 31 real images, the VLM reaches micro-F1 0.923 (precision 0.970, recall 0.880; macro-F1 0.949), versus micro-F1 0.890 for the geometric join, and is exact under the component-pair metric on 21/31 images. The paired VLM-minus-join difference is $+0.033$, with 95\% bootstrap CI $[-0.009,+0.078]$. Inclusion of zero does not establish equivalence. These results do not establish comparative cost superiority or a global guarantee against incorrect merges for either method. Autonomous performance requires separately auditable evaluation; the conditional scores do not certify pin-level or simulation correctness.
 
 \section{Discussion}
+\label{sec:limitations}
 
 The endpoint graph represents wire endpoints and component pins with separate rules for endpoint proximity, component assignment and mid-span contacts. Component-first assignment selects a nearby component by OBB distance and then a pin by Euclidean distance. These geometric choices provide inspectable connectivity candidates, but do not establish that a nearby wire is electrically connected or that a selected pin has the correct device-specific meaning.
 
