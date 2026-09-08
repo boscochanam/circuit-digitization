@@ -157,3 +157,20 @@ Source-only checks: abstract equality; Introduction-through-Data-and-Code equali
 No experiments, tests, builds, PDF judgments, pushes or email. No author/funding/bio changes. The inherited source hashes above are superseded by commits and any later source-hash entries, not silently reused.
 
 T1 verification result: the source checks above PASS. The full staged whitespace check flags only the preserved historical `.diff` file: its blank context lines consist of the required unified-diff space prefix, including the last context line. Preserve those bytes and the fork hash; do not strip patch syntax to satisfy a prose whitespace rule. `git diff --cached --check -- . ':!paper/ieee-paper/review_artifacts/manuscript_changes.diff'` passes for every live manuscript/review file. This archival-format exception is explicit, not a claim that the unfiltered check passes.
+
+
+## T3 — device capability and switch-export fidelity
+
+T1 commit: `f249ae6`. The requested capability table already existed at `cefe77b`; this task retains its three device-group rows and fourth red-team metric-boundary row, and refines the four columns in **both** manuscript sources. R1-2 response/action is synchronized. No duplicate table or algorithm change is introduced.
+
+| Claim / stable anchor | Static implementation or stored-data evidence | Disposition |
+|---|---|---|
+| R/C/L/D/Q, voltage and IC benchmark scope | `ground_truth/real_nets_verified.json`, each entry's `components.*.type`; `benchmark/join_eval_real_f1.py`, `comp_pairs` and `gt_pairs` | PASS: the stored 31-image electrical subset contains these groups and no switches or listed complex types. Metadata inventory only, no detection or scoring. Component-pair projection discards pin identity. |
+| Pin geometry versus endpoint localization | `core/netlist.py`, `PIN_DEFINITIONS`, `SPICE_ACTIVE_TYPES`, `discover_pins`, `derive_pins_from_obb` | PASS: named IC layouts and generic fallback geometry exist; endpoint clustering's type set does not define benchmark membership or export support. |
+| Switch geometry | `core/netlist.py`, `derive_pins_from_obb`: `switch` in `two_terminal`, ascending edge-length sort, two midpoints; AABB long-axis fallback | PASS: two generic pins, no inferred switch state/control semantics. |
+| Switch export | `core/spice.py`, `SpiceGenerator.generate`, `if type_name == "switch"`: consecutive pin indices starting at 0, at least two nodes and distinct first two, fixed resistor line `0.001`, then unconditional `continue` | PASS: explicit pins 0/1 condition; no switch line when either mapping is missing or both nodes coincide. Fixed substitution, not a recovered switch model. `DEFAULT_VALUES["switch"]` is not the emitted resistor value. |
+| Complex devices | `core/netlist.py`, transformer two-terminal geometry, optocoupler pin definition and unknown-name two-pin fallback; `core/spice.py` prefix lookup/unsupported-model branches; `core/component_classes.py`, `PREFIX_MAP` | PASS: named geometric guesses may exist while IC/transformer/thyristor/optocoupler export models do not. These named unsupported types are skipped. No claim of valid winding/control/isolation semantics. |
+| Detector vocabulary | `data/component_loader.py`, `TRAINED_MODEL_CLASSES` (16 merged labels) | PASS: a device group or legacy named template is not evidence of a separately detected class or recovered complex identity. |
+| Metric boundary | `tab:capabilities`, fourth row, plus introductory paragraph | PASS: component-pair F1 does not certify pin assignment, exact net partitions, absence of shorts or simulation equivalence. |
+
+Source checks: capability table/caption and all scientific prose match across A/B under the documented figure-wrapper exceptions; required device rows and metric-boundary row present; live prose contains no blanket claim that complex pins cannot be constructed or switches are always excluded from export. R1-2 reviewer concern remains quoted verbatim even where its allegation is corrected by the response. Protected code/config/evidence/figure/author paths are unchanged. No tests, reruns or builds were performed.
