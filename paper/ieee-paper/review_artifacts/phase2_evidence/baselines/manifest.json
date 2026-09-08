@@ -1,0 +1,91 @@
+{
+  "current_source_commit": "02da5e6",
+  "fork_parent": "9bbe9e9",
+  "warning": "Candidate inventory only. No determination of the source or PDF IEEE reviewed.",
+  "files": {
+    "august25.pdf": {
+      "origin": "/home/claw/circuit-digitization-validation-20260907/context/01_review_materials/paper-build_MANUSCRIPT_2026-08-25.pdf",
+      "sha256": "b9bd9bb9427761d302774a33e7c8b107caf3db3882b8880cc7468ea620317c6b",
+      "bytes": 4224902
+    },
+    "august25-provided.txt": {
+      "origin": "/home/claw/circuit-digitization-validation-20260907/context/01_review_materials/paper-build_MANUSCRIPT_2026-08-25.txt",
+      "sha256": "3729aa6c7248e10331845254efc59dbf8c0e1a8d51cc2626f52c8b1d28d9f84e",
+      "bytes": 82846
+    },
+    "august25-extracted.txt": {
+      "origin": "pdftotext August PDF (default reading order)",
+      "sha256": "42c6942233486bcf19176326443fd7e442857449c16f1f3414cc3276b83eda5e",
+      "bytes": 58450
+    },
+    "9bbe9e9-access.tex": {
+      "origin": "9bbe9e9:paper/ieee-paper/paper-access.tex",
+      "sha256": "424bf8b487f8a547e9f7d4555ca5af4883fceeb9c8cfc433065497c7c238100e",
+      "bytes": 63127
+    },
+    "02da5e6-access.tex": {
+      "origin": "02da5e6:paper/ieee-paper/paper-access.tex",
+      "sha256": "9eef5e0f38bcb4b141c321b9c715165a9450b953fc64bf21bed90b03daf76485",
+      "bytes": 63600
+    },
+    "original-access.tex": {
+      "origin": "/home/claw/circuit-digitization-validation-20260907/context/00_original_paper/paper-access-original.tex",
+      "sha256": "7fd65ff3550359f00437076fcb3b209ec83f6a0c37fdcc62b2bbc03a367f50aa",
+      "bytes": 52903
+    },
+    "9bbe9e9-build.tex": {
+      "origin": "9bbe9e9:paper/ieee-paper/paper-build.tex",
+      "sha256": "db4a0f80446185179ff91ff9694e082bd65497912647b6045a479574db43218f",
+      "bytes": 60346
+    },
+    "02da5e6-build.tex": {
+      "origin": "02da5e6:paper/ieee-paper/paper-build.tex",
+      "sha256": "511c463ea4452234e9bda7a69f0387eef83edea4f2ed72a3b2c167a63523e753",
+      "bytes": 62682
+    },
+    "original-build.tex": {
+      "origin": "/home/claw/circuit-digitization-validation-20260907/context/00_original_paper/paper-build-original.tex",
+      "sha256": "60ef6a49a89841d9cc11b28f4d6a50de918833e65df60ea4db8f93384b780153",
+      "bytes": 52226
+    },
+    "original.pdf": {
+      "origin": "/home/claw/circuit-digitization-validation-20260907/context/00_original_paper/paper-build-original.pdf",
+      "sha256": "342be819e81d78ca2efa14065016e265418510660b321d0f38748533c38c3bb4",
+      "bytes": 3527534
+    },
+    "existing-current.pdf": {
+      "origin": "paper/ieee-paper/paper-build.pdf",
+      "sha256": "f5dee2131f8fa3d9d8adee5439b27cb5d674edd37dfd4bb745440bf031ffcd71",
+      "bytes": 4201442
+    }
+  },
+  "diffs": {
+    "parent-to-current-access.diff": {
+      "removed_lines": 111,
+      "added_lines": 147,
+      "hunks": 14
+    },
+    "parent-to-current-build.diff": {
+      "removed_lines": 114,
+      "added_lines": 171,
+      "hunks": 15
+    },
+    "august-to-parent-build.cross-format.diff": {
+      "removed_lines": 1415,
+      "added_lines": 425,
+      "hunks": 1
+    },
+    "august-to-current-build.cross-format.diff": {
+      "removed_lines": 1414,
+      "added_lines": 481,
+      "hunks": 1
+    },
+    "august-to-existing-current-pdf.diff": {
+      "removed_lines": 452,
+      "added_lines": 240,
+      "hunks": 30
+    }
+  },
+  "fork_parent_pdf_present": false,
+  "pdf_tools": "pdftotext version 24.02.0\nCopyright 2005-2024 The Poppler Developers - http://poppler.freedesktop.org\nCopyright 1996-2011, 2022 Glyph & Cog, LLC"
+}
