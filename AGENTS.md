@@ -288,8 +288,8 @@ Full details: `docs/research/join-verification.md`
 
 ## IEEE resubmission — active work (Sept 2026, read before touching the manuscript)
 
-- **Work line:** `revision/access-2026-33821-merge-20260907` — all T1–T8 edits land here.
-- **Plan:** `IMPLEMENTATION_PLAN.md` on branch `validation/audit-2026-09-07-astra`
+- **Work line:** `revision/access-2026-33821` — all T1–T8 edits land here.
+- **Plan:** `IMPLEMENTATION_PLAN.md` on branch `audit/access-2026-33821`
   (D1–D4 verdicts, per-comment specs, OPEN items). Team brief: `TEAM_REPORT_20260907.pdf`.
 - **Fork source:** `tkprnv/review/ieee-access-revision-2026-09` (`10c1b92`). Shares NO git
   history with this line — hand-port prose/artifacts file by file; never merge or rebase.

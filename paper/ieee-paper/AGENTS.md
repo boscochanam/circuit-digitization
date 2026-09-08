@@ -7,9 +7,9 @@
 
 ## Active work (do this first)
 
-- **Work line:** `revision/access-2026-33821-merge-20260907` — all T1–T8 edits land here.
+- **Work line:** `revision/access-2026-33821` — all T1–T8 edits land here.
 - **Plan (read before touching the manuscript):** `IMPLEMENTATION_PLAN.md` on branch
-  `validation/audit-2026-09-07-astra` (D1–D4 verdicts, per-comment specs, OPEN items).
+  `audit/access-2026-33821` (D1–D4 verdicts, per-comment specs, OPEN items).
   Team brief: `TEAM_REPORT_20260907.pdf` (same branch).
 - **Fork source:** `tkprnv/review/ieee-access-revision-2026-09` (`10c1b92`) holds the
   retitle, VLM recast, ablation + per-drafter tables, and response draft.
