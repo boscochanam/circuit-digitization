@@ -152,7 +152,7 @@ We evaluate on 134 images from CGHD-1152 with ground-truth wire and component la
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/wire_benchmark.pdf}
-\caption{Wire detection F1 across the tested thresholding methods and pipeline variants (134 images, annotated component boxes). The historical Sauvola configuration with a 16\,px anchor filter and overlap deduplication at $10^{\circ}$/18\,px achieves F1~=~0.976; this is distinct from the production $12^{\circ}$/8\,px deduplication setting.}
+\caption{Wire detection F1 across the tested thresholding methods and pipeline variants (134 images, annotated component boxes). The historical Sauvola configuration with a 16\,px anchor filter and overlap deduplication at $10^{\circ}$/18\,px achieves F1~=~0.976; this is distinct from the production $12^{\circ}$/8\,px deduplication setting. The adaptive Gaussian and Triangle bars use the stored skeleton-extraction configurations (F1~=~0.845 and 0.758, respectively).}
 \label{fig:wire_benchmark}
 \end{figure}
 
