@@ -1,0 +1,2315 @@
+{
+  "verified_commit": "8538797d9a75392b02236a752e661e69e0175b57",
+  "hashes": {
+    "paper/ieee-paper/paper-access.tex": "3af1831456fba56f1935fc322e7407faf93b38d238297a5c93ddba70ccbd58b7",
+    "paper/ieee-paper/paper-build.tex": "3007bfa0c424913ac26dfb0530ca0373ff4893d3b808fa18c1e01b90f1547c70",
+    "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md": "d17bb1d1d0d5eae237fbfa982927e6a0dccc7d610b31734e4256a9cdb7e91cf4",
+    "/home/claw/circuit-digitization-validation-20260907/context/01_review_materials/decision-email-raw.txt": "5d9ac227a2ad93a703a955d0183cf2d5bd5d0c0138f81914c445109eee80e730",
+    "/home/claw/circuit-digitization-validation-20260907/context/01_review_materials/IEEE_Access_Response_to_Reviewers_TEMPLATE.txt": "efc079bd1c81a64a10aa4a751ee4da0dbc89b01a398f913adb2f224c86fb2051",
+    "/home/claw/circuit-digitization-validation-20260907/notes/IMPLEMENTATION_PLAN.md": "7fd5e7a295f11fd7f6b9b42fecc4a35a435d1860d54bf801e70bdab6c9c23323",
+    "/home/claw/circuit-digitization-validation-20260907/notes/PLAN_REDTEAM.md": "b29dcbab52ac68de57129c612ee6bd9e0edcde93f4e0a44e2287d700dd6c29ce",
+    "paper/ieee-paper/review_artifacts/verification_evidence/amended-plan.md": "5288998c45e83e29552d994e238704f44602f607566664071cca19f9cf49d951",
+    "/home/claw/circuit-digitization-validation-20260907/context/01_review_materials/IEEE_Access_Response_to_Reviewers_TEMPLATE.pdf": "e6a2986d1b5337a2a1e413cff3d3a44e690841e470e050eb91ae143a0cfea103",
+    "paper/ieee-paper/figures/completion_tikz.tex": "fa6541b8d9d3af1eebb076317e4b697e91dfcf936695a5336a9c10829245d8cf",
+    "paper/ieee-paper/figures/endpoint_graph_tikz.tex": "33c99e5860134a8ed4389d737226794423bb6427862c50ca92420fe0d594217a",
+    "paper/ieee-paper/figures/pipeline_overview_tikz.tex": "43ff4098b924e214a7124fd872bb11410b8823607d2a4967a19ed04baad2167c",
+    "paper/ieee-paper/figures/pipeline_overview.pdf": "a29120b1042237332b2724b0ccbaabef584bf77893a3c677676300831070178b",
+    "paper/ieee-paper/figures/endpoint_graph.pdf": "05ed63fb57b489c44d1f1e15f3ac029ca3849be66ee56e1a531b3192bb73fe40",
+    "paper/ieee-paper/figures/completion.pdf": "a31bbfdaa52a63df4f74cb9e448937980cbe55a385fb5aa13a0aeb8f70f57fd6",
+    "paper/ieee-paper/figures/wire_benchmark.pdf": "19c0b4903cfc7189f41e868fbeec2fbb8570aac18ac63f4ac8b5c5b1ca62d8a0",
+    "paper/ieee-paper/figures/join_comparison.pdf": "c4059b9617ea82a2f24acb0d54140ea398d1a20cf7663fc6fccefe9e3b77f3e0",
+    "paper/ieee-paper/figures/real_join_comparison.pdf": "4229b82e1a72ba3df16ff5fbabd0b4afc351b030427618592d3ee28ae845975d",
+    "paper/ieee-paper/figures/complexity_histogram.pdf": "a9333f787ae1fb4df863c355286b4671536a96ab9845dee4507e5e0cda38cdbf",
+    "docs/research/experiments/join_micro_n31.json": "939d8bbcefdf25d6583ac75052d3938f12d4769f01e532aa4b5a2c461f92a7ca",
+    "docs/research/experiments/bootstrap_ci_n31.json": "24cd4d2980ce800899f92bd1c199383c602d729304678835065023292c03ec7c",
+    "docs/research/experiments/vlm_clean_rerun_n31.json": "9f85bdee1b3a6dccb992f2d3e45eeb92bbaa5a386f1fc517c579947ae1239355",
+    "docs/research/experiments/revision_evidence/edge_ablation_results.json": "b96ba6dca15c23f4f7c351213ef2d4d934a726ff96a685379a2004c81ae9b509",
+    "docs/research/experiments/join_reach_sweep_n31.json": "b68fc4346c9e2fd47fb0e199e94220a2aa60aab8b4f93e4a7b764f7e2158082d",
+    "docs/research/experiments/drafter_map_n31.json": "f1769ae651f0a963e379644a8014a52964e9f137b8ecbea0137fd5ce6f9638d0",
+    "docs/research/experiments/synthetic_leaderboard.json": "37e294b85019c0843e42d00d193a196f9c123b21578c5ababc7b07d48202d8e0",
+    "/home/claw/circuit-digitization-validation-20260907/notes/scratch/fresh-join-ablation.json": "e65eab270d1ce4c3506ac12476c3b49b77e2e334d5fa238c31784ad076f34639",
+    "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json": "105bb706697e8b07f6f4445aaf3f8dd86dfff7395abca8f4e01df444219d76c7",
+    "/home/claw/circuit-digitization-validation-20260907/notes/scratch/wire-rerun.json": "8e58d76704aeb5e241b234f1e40bae43c413518a6c5f474def95110735d6d1cd",
+    "/home/claw/circuit-digitization-validation-20260907/notes/scratch/crossover-causal.json": "7346b9708d8575bafe9d44000209158984534839e2736a02df1a83f8c219e263",
+    "docs/research/experiments/cc_detected_micro_n31.json": "f9a244ce486d196df3e5f84967fd65fd9d1828b14a930d53e45e776e6c6c1538",
+    "docs/research/experiments/hough_micro_n31.json": "29b716e76bdecb1588cbccb8cb4d5a41c1849c50d177ecb7fdbd581b7abdd3a0",
+    "docs/research/experiments/per_circuit_scale_completion_l4_n16.json": "dd6eb06623ff5c1599f2222b2d162fc814397a70911c8dceb2c79d670bd1bf30",
+    "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v1/summary.json": "88fb81969c1a8808822b295d9485ad5490ef5f7c97020e963df107e33b5b787f",
+    "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v2/summary.json": "e6a5790dfe203cf59eb5ad2b9a99ee9144572ad1595359cbf496bb557b5f8616",
+    "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v3/summary.json": "70777fcad93b21e61e02b17abf1b74c28714e235a12f4fcb1ee422e06e9ed749",
+    "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/adaptive_gaussian_skeleton/summary.json": "82dd0d399ef7afdfd519cd0760a4ff2091d28d9bef75380a8b37f7255f80c930",
+    "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/triangle_skeleton/summary.json": "28ab750e7671eb93ca03912a888658006f74fbef1925be7439515f5ac89755ee"
+  },
+  "numbers": [
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.scale_completion.f1",
+      "stored": 0.8903088391906283,
+      "display": "0.890",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.scale_completion.p",
+      "stored": 0.9186813186813186,
+      "display": "0.919",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.scale_completion.r",
+      "stored": 0.8636363636363636,
+      "display": "0.864",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "macro.scale_completion.f1",
+      "stored": 0.9010706849335028,
+      "display": "0.901",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.degree_budget.f1",
+      "stored": 0.8294117647058824,
+      "display": "0.829",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.degree_budget.p",
+      "stored": 0.789179104477612,
+      "display": "0.789",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.degree_budget.r",
+      "stored": 0.8739669421487604,
+      "display": "0.874",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "macro.degree_budget.f1",
+      "stored": 0.853049133015369,
+      "display": "0.853",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.graph_scale.f1",
+      "stored": 0.8157589803012746,
+      "display": "0.816",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.graph_scale.p",
+      "stored": 0.9287598944591029,
+      "display": "0.929",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.graph_scale.r",
+      "stored": 0.7272727272727273,
+      "display": "0.727",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "macro.graph_scale.f1",
+      "stored": 0.8376192545481566,
+      "display": "0.838",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.graph_rescue.f1",
+      "stored": 0.7872340425531914,
+      "display": "0.787",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.graph_rescue.p",
+      "stored": 0.8114035087719298,
+      "display": "0.811",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.graph_rescue.r",
+      "stored": 0.7644628099173554,
+      "display": "0.764",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "macro.graph_rescue.f1",
+      "stored": 0.8128638158471498,
+      "display": "0.813",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.production.f1",
+      "stored": 0.6666666666666667,
+      "display": "0.667",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.production.p",
+      "stored": 0.6975169300225733,
+      "display": "0.698",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.production.r",
+      "stored": 0.6384297520661157,
+      "display": "0.638",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "macro.production.f1",
+      "stored": 0.6741995373176755,
+      "display": "0.674",
+      "status": "PASS"
+    },
+    {
+      "anchor": "Conclusion",
+      "path": "docs/research/experiments/join_micro_n31.json",
+      "key": "micro.scale_completion.f1",
+      "stored": 0.8903088391906283,
+      "display": "0.8903",
+      "status": "PASS"
+    },
+    {
+      "anchor": "Abstract; real/VLM evaluation",
+      "path": "docs/research/experiments/bootstrap_ci_n31.json",
+      "key": "join/scale_completion.micro.lo",
+      "stored": 0.8547155162311028,
+      "display": "0.855",
+      "status": "PASS"
+    },
+    {
+      "anchor": "Abstract; real/VLM evaluation",
+      "path": "docs/research/experiments/bootstrap_ci_n31.json",
+      "key": "join/scale_completion.micro.hi",
+      "stored": 0.9239503010306861,
+      "display": "0.924",
+      "status": "PASS"
+    },
+    {
+      "anchor": "Abstract; real/VLM evaluation",
+      "path": "docs/research/experiments/bootstrap_ci_n31.json",
+      "key": "VLM_minus_ours_micro.point",
+      "stored": 0.03276808388629482,
+      "display": "0.033",
+      "status": "PASS"
+    },
+    {
+      "anchor": "Abstract; real/VLM evaluation",
+      "path": "docs/research/experiments/bootstrap_ci_n31.json",
+      "key": "VLM_minus_ours_micro.lo",
+      "stored": -0.009184500410865945,
+      "display": "-0.009",
+      "status": "PASS"
+    },
+    {
+      "anchor": "Abstract; real/VLM evaluation",
+      "path": "docs/research/experiments/bootstrap_ci_n31.json",
+      "key": "VLM_minus_ours_micro.hi",
+      "stored": 0.07809612609512304,
+      "display": "0.078",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join; VLM",
+      "path": "docs/research/experiments/vlm_clean_rerun_n31.json",
+      "key": "micro.F1",
+      "stored": 0.9230769230769231,
+      "display": "0.923",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join; VLM",
+      "path": "docs/research/experiments/vlm_clean_rerun_n31.json",
+      "key": "micro.P",
+      "stored": 0.9703872437357631,
+      "display": "0.970",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join; VLM",
+      "path": "docs/research/experiments/vlm_clean_rerun_n31.json",
+      "key": "micro.R",
+      "stored": 0.8801652892561983,
+      "display": "0.880",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join; VLM",
+      "path": "docs/research/experiments/vlm_clean_rerun_n31.json",
+      "key": "macro_f1",
+      "stored": 0.9488709677419355,
+      "display": "0.949",
+      "status": "PASS"
+    },
+    {
+      "anchor": "VLM",
+      "path": "docs/research/experiments/vlm_clean_rerun_n31.json",
+      "key": "n",
+      "stored": 31,
+      "display": "31",
+      "status": "PASS"
+    },
+    {
+      "anchor": "VLM",
+      "path": "docs/research/experiments/vlm_clean_rerun_n31.json",
+      "key": "count(rows with stored F1 == 1)",
+      "stored": 21,
+      "display": "21",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.baseline.micro.f1",
+      "stored": 0.8903088391906283,
+      "display": "0.890",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.baseline.micro.tp",
+      "stored": 418,
+      "display": "418",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.baseline.micro.fp",
+      "stored": 37,
+      "display": "37",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.baseline.micro.fn",
+      "stored": 66,
+      "display": "66",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.baseline.micro.p",
+      "stored": 0.9186813186813186,
+      "display": "0.919",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.baseline.micro.r",
+      "stored": 0.8636363636363636,
+      "display": "0.864",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions_off.micro.f1",
+      "stored": 0.8903088391906283,
+      "display": "0.890",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions_off.micro.tp",
+      "stored": 418,
+      "display": "418",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions_off.micro.fp",
+      "stored": 37,
+      "display": "37",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions_off.micro.fn",
+      "stored": 66,
+      "display": "66",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions_off.micro.p",
+      "stored": 0.9186813186813186,
+      "display": "0.919",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions_off.micro.r",
+      "stored": 0.8636363636363636,
+      "display": "0.864",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.rail_taps_off.micro.f1",
+      "stored": 0.8903088391906283,
+      "display": "0.890",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.rail_taps_off.micro.tp",
+      "stored": 418,
+      "display": "418",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.rail_taps_off.micro.fp",
+      "stored": 37,
+      "display": "37",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.rail_taps_off.micro.fn",
+      "stored": 66,
+      "display": "66",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.rail_taps_off.micro.p",
+      "stored": 0.9186813186813186,
+      "display": "0.919",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.rail_taps_off.micro.r",
+      "stored": 0.8636363636363636,
+      "display": "0.864",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions+rail_taps_off.micro.f1",
+      "stored": 0.8903088391906283,
+      "display": "0.890",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions+rail_taps_off.micro.tp",
+      "stored": 418,
+      "display": "418",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions+rail_taps_off.micro.fp",
+      "stored": 37,
+      "display": "37",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions+rail_taps_off.micro.fn",
+      "stored": 66,
+      "display": "66",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions+rail_taps_off.micro.p",
+      "stored": 0.9186813186813186,
+      "display": "0.919",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.t_junctions+rail_taps_off.micro.r",
+      "stored": 0.8636363636363636,
+      "display": "0.864",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.directional_off.micro.f1",
+      "stored": 0.8903088391906283,
+      "display": "0.890",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.directional_off.micro.tp",
+      "stored": 418,
+      "display": "418",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.directional_off.micro.fp",
+      "stored": 37,
+      "display": "37",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.directional_off.micro.fn",
+      "stored": 66,
+      "display": "66",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.directional_off.micro.p",
+      "stored": 0.9186813186813186,
+      "display": "0.919",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.directional_off.micro.r",
+      "stored": 0.8636363636363636,
+      "display": "0.864",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.scale_rel_off_fixedpx.micro.f1",
+      "stored": 0.8903088391906283,
+      "display": "0.890",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.scale_rel_off_fixedpx.micro.tp",
+      "stored": 418,
+      "display": "418",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.scale_rel_off_fixedpx.micro.fp",
+      "stored": 37,
+      "display": "37",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.scale_rel_off_fixedpx.micro.fn",
+      "stored": 66,
+      "display": "66",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.scale_rel_off_fixedpx.micro.p",
+      "stored": 0.9186813186813186,
+      "display": "0.919",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "full_pipeline_scale_completion.scale_rel_off_fixedpx.micro.r",
+      "stored": 0.8636363636363636,
+      "display": "0.864",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.baseline.micro.f1",
+      "stored": 0.8157589803012746,
+      "display": "0.816",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.baseline.micro.tp",
+      "stored": 352,
+      "display": "352",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.baseline.micro.fp",
+      "stored": 27,
+      "display": "27",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.baseline.micro.fn",
+      "stored": 132,
+      "display": "132",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.t_junctions_off.micro.f1",
+      "stored": 0.8157589803012746,
+      "display": "0.816",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.t_junctions_off.micro.tp",
+      "stored": 352,
+      "display": "352",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.t_junctions_off.micro.fp",
+      "stored": 27,
+      "display": "27",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.t_junctions_off.micro.fn",
+      "stored": 132,
+      "display": "132",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.rail_taps_off.micro.f1",
+      "stored": 0.8157589803012746,
+      "display": "0.816",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.rail_taps_off.micro.tp",
+      "stored": 352,
+      "display": "352",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.rail_taps_off.micro.fp",
+      "stored": 27,
+      "display": "27",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.rail_taps_off.micro.fn",
+      "stored": 132,
+      "display": "132",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.t_junctions+rail_taps_off.micro.f1",
+      "stored": 0.8157589803012746,
+      "display": "0.816",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.t_junctions+rail_taps_off.micro.tp",
+      "stored": 352,
+      "display": "352",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.t_junctions+rail_taps_off.micro.fp",
+      "stored": 27,
+      "display": "27",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.t_junctions+rail_taps_off.micro.fn",
+      "stored": 132,
+      "display": "132",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.directional_off.micro.f1",
+      "stored": 0.8157589803012746,
+      "display": "0.816",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.directional_off.micro.tp",
+      "stored": 352,
+      "display": "352",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.directional_off.micro.fp",
+      "stored": 27,
+      "display": "27",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.directional_off.micro.fn",
+      "stored": 132,
+      "display": "132",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.scale_rel_off_fixedpx.micro.f1",
+      "stored": 0.8202764976958524,
+      "display": "0.820",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.scale_rel_off_fixedpx.micro.tp",
+      "stored": 356,
+      "display": "356",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.scale_rel_off_fixedpx.micro.fp",
+      "stored": 28,
+      "display": "28",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:edge_ablation",
+      "path": "docs/research/experiments/revision_evidence/edge_ablation_results.json",
+      "key": "graph_only_no_completion.scale_rel_off_fixedpx.micro.fn",
+      "stored": 128,
+      "display": "128",
+      "status": "PASS"
+    },
+    {
+      "anchor": "reach sweep",
+      "path": "docs/research/experiments/join_reach_sweep_n31.json",
+      "key": "min(selected stored f1)",
+      "stored": 0.8954648168964782,
+      "display": "0.895",
+      "status": "PASS"
+    },
+    {
+      "anchor": "reach sweep",
+      "path": "docs/research/experiments/join_reach_sweep_n31.json",
+      "key": "max(selected stored f1)",
+      "stored": 0.9032210952911355,
+      "display": "0.903",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=scale_completion].by_severity[0]",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=scale_completion].by_severity[1]",
+      "stored": 0.9993589743589744,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=scale_completion].by_severity[2]",
+      "stored": 0.9984330484330484,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=scale_completion].by_severity[3]",
+      "stored": 0.9553754763754764,
+      "display": "0.96",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=scale_completion].by_severity[4]",
+      "stored": 0.9480450306537264,
+      "display": "0.95",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=degree_budget].by_severity[0]",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=degree_budget].by_severity[1]",
+      "stored": 0.996741452991453,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=degree_budget].by_severity[2]",
+      "stored": 0.9962250712250712,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=degree_budget].by_severity[3]",
+      "stored": 0.9519652662152662,
+      "display": "0.95",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=degree_budget].by_severity[4]",
+      "stored": 0.9415891053391053,
+      "display": "0.94",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_rescue].by_severity[0]",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_rescue].by_severity[1]",
+      "stored": 0.996741452991453,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_rescue].by_severity[2]",
+      "stored": 0.9962250712250712,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_rescue].by_severity[3]",
+      "stored": 0.9382659562659562,
+      "display": "0.94",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_rescue].by_severity[4]",
+      "stored": 0.8984535834535835,
+      "display": "0.90",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_scale].by_severity[0]",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_scale].by_severity[1]",
+      "stored": 0.9993589743589744,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_scale].by_severity[2]",
+      "stored": 0.9984330484330484,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_scale].by_severity[3]",
+      "stored": 0.9390312388899346,
+      "display": "0.94",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=graph_scale].by_severity[4]",
+      "stored": 0.8497346232485551,
+      "display": "0.85",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=production].by_severity[0]",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=production].by_severity[1]",
+      "stored": 0.9664135401635402,
+      "display": "0.97",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=production].by_severity[2]",
+      "stored": 0.8999010341510342,
+      "display": "0.90",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=production].by_severity[3]",
+      "stored": 0.5579289038847862,
+      "display": "0.56",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:join_leaderboard",
+      "path": "docs/research/experiments/synthetic_leaderboard.json",
+      "key": "[strategy=production].by_severity[4]",
+      "stored": 0.36352869352869355,
+      "display": "0.36",
+      "status": "PASS"
+    },
+    {
+      "anchor": "perfect-wire reference",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/fresh-join-ablation.json",
+      "key": "perfect.f1",
+      "stored": 0.8898305084745762,
+      "display": "0.8898",
+      "status": "PASS"
+    },
+    {
+      "anchor": "perfect-wire reference",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/fresh-join-ablation.json",
+      "key": "perfect.p",
+      "stored": 0.9130434782608695,
+      "display": "0.913",
+      "status": "PASS"
+    },
+    {
+      "anchor": "perfect-wire reference",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/fresh-join-ablation.json",
+      "key": "perfect.r",
+      "stored": 0.8677685950413223,
+      "display": "0.868",
+      "status": "PASS"
+    },
+    {
+      "anchor": "perfect-wire reference",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/fresh-join-ablation.json",
+      "key": "perfect.tp",
+      "stored": 420,
+      "display": "420",
+      "status": "PASS"
+    },
+    {
+      "anchor": "perfect-wire reference",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/fresh-join-ablation.json",
+      "key": "perfect.fp",
+      "stored": 40,
+      "display": "40",
+      "status": "PASS"
+    },
+    {
+      "anchor": "perfect-wire reference",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/fresh-join-ablation.json",
+      "key": "perfect.fn",
+      "stored": 64,
+      "display": "64",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:wire_benchmark",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[0].global_f1",
+      "stored": 0.9730113636363635,
+      "display": "0.973",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:wire_benchmark",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[0].precision",
+      "stored": 0.9741183162684869,
+      "display": "0.974",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:wire_benchmark",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[0].recall",
+      "stored": 0.9719069239500567,
+      "display": "0.972",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire configuration",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[0].config.dedup_angle",
+      "stored": 10,
+      "display": "10",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire configuration",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[0].config.dedup_dist",
+      "stored": 18,
+      "display": "18",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:wire_benchmark",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[1].global_f1",
+      "stored": 0.9755200226404415,
+      "display": "0.976",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:wire_benchmark",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[1].precision",
+      "stored": 0.9729043183742591,
+      "display": "0.973",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:wire_benchmark",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[1].recall",
+      "stored": 0.978149829738933,
+      "display": "0.978",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire configuration",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[1].config.dedup_angle",
+      "stored": 10,
+      "display": "10",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire configuration",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[1].config.dedup_dist",
+      "stored": 18,
+      "display": "18",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire prose",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/historical-wire-config.json",
+      "key": "[1].global_f1",
+      "stored": 0.9755200226404415,
+      "display": "0.9755",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire prose",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/wire-rerun.json",
+      "key": "[0].global_f1",
+      "stored": 0.972629796839729,
+      "display": "0.9726",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire configuration",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/wire-rerun.json",
+      "key": "[0].config.dedup_angle",
+      "stored": 12,
+      "display": "12",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire configuration",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/wire-rerun.json",
+      "key": "[0].config.dedup_dist",
+      "stored": 8,
+      "display": "8",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:wire_benchmark Otsu",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/wire-rerun.json",
+      "key": "[2].global_f1",
+      "stored": 0.7893531768746423,
+      "display": "0.789",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:wire_benchmark Otsu",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/wire-rerun.json",
+      "key": "[2].precision",
+      "stored": 0.796189376443418,
+      "display": "0.796",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:wire_benchmark Otsu",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/wire-rerun.json",
+      "key": "[2].recall",
+      "stored": 0.782633371169126,
+      "display": "0.783",
+      "status": "PASS"
+    },
+    {
+      "anchor": "C242 Discussion; R2-4",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/crossover-causal.json",
+      "key": "C242_D1_P1_jpg.baseline.tp",
+      "stored": 27,
+      "display": "27",
+      "status": "PASS"
+    },
+    {
+      "anchor": "C242 Discussion; R2-4",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/crossover-causal.json",
+      "key": "C242_D1_P1_jpg.baseline.fp (list length)",
+      "stored": 4,
+      "display": "4",
+      "status": "PASS"
+    },
+    {
+      "anchor": "C242 Discussion; R2-4",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/crossover-causal.json",
+      "key": "C242_D1_P1_jpg.baseline.fn (list length)",
+      "stored": 0,
+      "display": "0",
+      "status": "PASS"
+    },
+    {
+      "anchor": "C242 Discussion; R2-4",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/crossover-causal.json",
+      "key": "C242_D1_P1_jpg.no_crossing_type2.tp",
+      "stored": 19,
+      "display": "19",
+      "status": "PASS"
+    },
+    {
+      "anchor": "C242 Discussion; R2-4",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/crossover-causal.json",
+      "key": "C242_D1_P1_jpg.no_crossing_type2.fp (list length)",
+      "stored": 0,
+      "display": "0",
+      "status": "PASS"
+    },
+    {
+      "anchor": "C242 Discussion; R2-4",
+      "path": "/home/claw/circuit-digitization-validation-20260907/notes/scratch/crossover-causal.json",
+      "key": "C242_D1_P1_jpg.no_crossing_type2.fn (list length)",
+      "stored": 8,
+      "display": "8",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/cc_detected_micro_n31.json",
+      "key": "detCCL_d15.micro.f1",
+      "stored": 0.6237762237762239,
+      "display": "0.624",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/cc_detected_micro_n31.json",
+      "key": "detCCL_d15.micro.p",
+      "stored": 0.9653679653679653,
+      "display": "0.965",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/cc_detected_micro_n31.json",
+      "key": "detCCL_d15.micro.r",
+      "stored": 0.4607438016528926,
+      "display": "0.461",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/cc_detected_micro_n31.json",
+      "key": "detCCL_d15.macro.f1",
+      "stored": 0.6114513460940891,
+      "display": "0.611",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/hough_micro_n31.json",
+      "key": "link44_reach48.micro.f1",
+      "stored": 0.8045977011494253,
+      "display": "0.805",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/hough_micro_n31.json",
+      "key": "link44_reach48.micro.p",
+      "stored": 0.75,
+      "display": "0.750",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/hough_micro_n31.json",
+      "key": "link44_reach48.micro.r",
+      "stored": 0.8677685950413223,
+      "display": "0.868",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:real_join",
+      "path": "docs/research/experiments/hough_micro_n31.json",
+      "key": "link44_reach48.macro.f1",
+      "stored": 0.8467870697676779,
+      "display": "0.847",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.parallel_rr.f1",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.parallel_rr.precision",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "round(100 * per_circuit.parallel_rr.sim_ok_rate), ties-to-even",
+      "stored": 25,
+      "display": "25",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.divider_rr.f1",
+      "stored": 0.9875,
+      "display": "0.99",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.divider_rr.precision",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "round(100 * per_circuit.divider_rr.sim_ok_rate), ties-to-even",
+      "stored": 69,
+      "display": "69",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.rl_series.f1",
+      "stored": 0.9875,
+      "display": "0.99",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.rl_series.precision",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "round(100 * per_circuit.rl_series.sim_ok_rate), ties-to-even",
+      "stored": 81,
+      "display": "81",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.diode_r.f1",
+      "stored": 0.9875,
+      "display": "0.99",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.diode_r.precision",
+      "stored": 1.0,
+      "display": "1.00",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "round(100 * per_circuit.diode_r.sim_ok_rate), ties-to-even",
+      "stored": 69,
+      "display": "69",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.dense_pair.f1",
+      "stored": 0.9271,
+      "display": "0.93",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.dense_pair.precision",
+      "stored": 0.8958,
+      "display": "0.90",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "round(100 * per_circuit.dense_pair.sim_ok_rate), ties-to-even",
+      "stored": 12,
+      "display": "12",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.loop4_r.f1",
+      "stored": 0.9427,
+      "display": "0.94",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.loop4_r.precision",
+      "stored": 0.9094,
+      "display": "0.91",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "round(100 * per_circuit.loop4_r.sim_ok_rate), ties-to-even",
+      "stored": 56,
+      "display": "56",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.wheatstone.f1",
+      "stored": 0.82,
+      "display": "0.82",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.wheatstone.precision",
+      "stored": 0.8491,
+      "display": "0.85",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "round(100 * per_circuit.wheatstone.sim_ok_rate), ties-to-even",
+      "stored": 6,
+      "display": "6",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.ring6_r.f1",
+      "stored": 0.9538,
+      "display": "0.95",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "per_circuit.ring6_r.precision",
+      "stored": 0.9167,
+      "display": "0.92",
+      "status": "PASS"
+    },
+    {
+      "anchor": "tab:per_circuit",
+      "path": "docs/research/experiments/per_circuit_scale_completion_l4_n16.json",
+      "key": "round(100 * per_circuit.ring6_r.sim_ok_rate), ties-to-even",
+      "stored": 50,
+      "display": "50",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire table / alternative figure row",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v1/summary.json",
+      "key": "global_f1",
+      "stored": 0.9498143819606765,
+      "display": "0.950",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire table / alternative figure row",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v1/summary.json",
+      "key": "precision",
+      "stored": 0.9213123499599893,
+      "display": "0.921",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire table / alternative figure row",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v1/summary.json",
+      "key": "recall",
+      "stored": 0.9801362088535754,
+      "display": "0.980",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire table / alternative figure row",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v2/summary.json",
+      "key": "global_f1",
+      "stored": 0.9589385474860336,
+      "display": "0.959",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire table / alternative figure row",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v2/summary.json",
+      "key": "precision",
+      "stored": 0.9441694169416942,
+      "display": "0.944",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire table / alternative figure row",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v2/summary.json",
+      "key": "recall",
+      "stored": 0.9741770715096482,
+      "display": "0.974",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire table / alternative figure row",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v3/summary.json",
+      "key": "global_f1",
+      "stored": 0.9489514348785872,
+      "display": "0.949",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire table / alternative figure row",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v3/summary.json",
+      "key": "precision",
+      "stored": 0.923469387755102,
+      "display": "0.923",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire table / alternative figure row",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/best_candidate_v3/summary.json",
+      "key": "recall",
+      "stored": 0.9758796821793416,
+      "display": "0.976",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire prose",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/adaptive_gaussian_skeleton/summary.json",
+      "key": "global_f1",
+      "stored": 0.8452311293153891,
+      "display": "0.845",
+      "status": "PASS"
+    },
+    {
+      "anchor": "wire_benchmark.pdf Gaussian label",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/adaptive_gaussian_skeleton/summary.json",
+      "key": "global_f1",
+      "stored": 0.8452311293153891,
+      "display": "0.928",
+      "status": "FAIL"
+    },
+    {
+      "anchor": "wire_benchmark.pdf Triangle label (this stored config)",
+      "path": "/home/claw/circuit-digitization/output/benchmark_experiments/expanded_full_ranking/triangle_skeleton/summary.json",
+      "key": "global_f1",
+      "stored": 0.7582635186595582,
+      "display": "0.758",
+      "status": "PASS"
+    }
+  ],
+  "sources": {
+    "abstract_equal": true,
+    "body_equal_without_figure_exceptions": false,
+    "body_equal_with_named_figure_exceptions": true,
+    "A": {
+      "label_count": 19,
+      "duplicate_labels": [],
+      "unresolved_refs": [],
+      "unresolved_citations": [],
+      "uncited_bibitems": [],
+      "bibliography_order": [
+        "bayer2021cghd",
+        "kelly2024digitizing",
+        "sina2026",
+        "masalachai2024",
+        "peker2026",
+        "instanceseg2023",
+        "handdrawn2021",
+        "juhccr2025",
+        "redmon2016yolo",
+        "jocher2023yolo",
+        "smith2007tesseract",
+        "nagel1973spice",
+        "amsnet2025",
+        "amsbench2025",
+        "diagramnet2026",
+        "llm4eda2024",
+        "kulkarni2025enhancing",
+        "duda1972hough",
+        "sauvola2000",
+        "he2017ccl",
+        "tarjan1975union",
+        "kuhn1955",
+        "schrijver2003combinatorial",
+        "alrahis2021gnn",
+        "netlistify2025",
+        "circuitnet"
+      ],
+      "first_citation_order": [
+        "bayer2021cghd",
+        "kelly2024digitizing",
+        "sina2026",
+        "masalachai2024",
+        "peker2026",
+        "instanceseg2023",
+        "handdrawn2021",
+        "juhccr2025",
+        "redmon2016yolo",
+        "jocher2023yolo",
+        "smith2007tesseract",
+        "nagel1973spice",
+        "amsnet2025",
+        "amsbench2025",
+        "diagramnet2026",
+        "llm4eda2024",
+        "kulkarni2025enhancing",
+        "duda1972hough",
+        "sauvola2000",
+        "he2017ccl",
+        "tarjan1975union",
+        "kuhn1955",
+        "schrijver2003combinatorial",
+        "alrahis2021gnn",
+        "netlistify2025",
+        "circuitnet"
+      ]
+    },
+    "B": {
+      "label_count": 19,
+      "duplicate_labels": [],
+      "unresolved_refs": [],
+      "unresolved_citations": [],
+      "uncited_bibitems": [],
+      "bibliography_order": [
+        "bayer2021cghd",
+        "kelly2024digitizing",
+        "sina2026",
+        "masalachai2024",
+        "peker2026",
+        "instanceseg2023",
+        "handdrawn2021",
+        "juhccr2025",
+        "redmon2016yolo",
+        "jocher2023yolo",
+        "smith2007tesseract",
+        "nagel1973spice",
+        "amsnet2025",
+        "amsbench2025",
+        "diagramnet2026",
+        "llm4eda2024",
+        "kulkarni2025enhancing",
+        "duda1972hough",
+        "sauvola2000",
+        "he2017ccl",
+        "tarjan1975union",
+        "kuhn1955",
+        "schrijver2003combinatorial",
+        "alrahis2021gnn",
+        "netlistify2025",
+        "circuitnet"
+      ],
+      "first_citation_order": [
+        "bayer2021cghd",
+        "kelly2024digitizing",
+        "sina2026",
+        "masalachai2024",
+        "peker2026",
+        "instanceseg2023",
+        "handdrawn2021",
+        "juhccr2025",
+        "redmon2016yolo",
+        "jocher2023yolo",
+        "smith2007tesseract",
+        "nagel1973spice",
+        "amsnet2025",
+        "amsbench2025",
+        "diagramnet2026",
+        "llm4eda2024",
+        "kulkarni2025enhancing",
+        "duda1972hough",
+        "sauvola2000",
+        "he2017ccl",
+        "tarjan1975union",
+        "kuhn1955",
+        "schrijver2003combinatorial",
+        "alrahis2021gnn",
+        "netlistify2025",
+        "circuitnet"
+      ]
+    },
+    "tables_equal": true,
+    "response": {
+      "headings": [
+        [
+          "1",
+          "1"
+        ],
+        [
+          "1",
+          "2"
+        ],
+        [
+          "1",
+          "3"
+        ],
+        [
+          "1",
+          "4"
+        ],
+        [
+          "1",
+          "5"
+        ],
+        [
+          "1",
+          "6"
+        ],
+        [
+          "2",
+          "1"
+        ],
+        [
+          "2",
+          "2"
+        ],
+        [
+          "2",
+          "3"
+        ],
+        [
+          "2",
+          "4"
+        ],
+        [
+          "2",
+          "5"
+        ],
+        [
+          "2",
+          "6"
+        ]
+      ],
+      "concerns": 12,
+      "verbatim_concerns": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "original_concerns": 12,
+      "responses": 12,
+      "actions": 12
+    }
+  },
+  "figures": {
+    "pipeline_overview": " Input      Component    Component       Binarization             Wire            SPICE\n Image       Detection    Occlusion     + Line Extract           Joining          Netlist\n Scanned    YOLO OBB     Local median   Sauvola + CCL         Endpoint-graph    Pin discovery\nschematic   88.5% mAP         fill         + PCA              + degree-budget   + simulation\n\n\n                                                 Our contribution\n\f",
+    "endpoint_graph": "(a) Radius-based joining                                                (b) Endpoint-graph (ours)\n\n\n\n  R1                  C1                    R2\n\n         radius grabs every pin in range                         R1       C1                R2\n         → R1, C1, R2 wrongly merged\n\n\n     Wire body                             Endpoint–pin               Endpoint–endpoint\n\n  T-junction (endpt–body)                  Rail-tap (pin–body)        Endpoint            Pin\n\f",
+    "completion": "     Before completion                    After completion\n                                              completion edge\n                   floating pin             (min-cost b-matching)\n     Net A                              Net A\nR1           R2            R3     R1              R2                 R3\n\n                                   self-loop guard: a component’s own two\n                                     terminals are never matched together\n\f",
+    "wire_benchmark": "Sauvola, anchor 16px (ours)                                   0.976\n      Sauvola, anchor 12px                                   0.973\n            Sauvola (w=61)                                  0.959\n        Sauvola (k=0.2875)                                 0.950\n              Sauvola (alt.)                               0.949\n         adaptive Gaussian                               0.928\n                       Otsu                   0.789\n                   Triangle                0.758\n                           0.6       0.7      0.8     0.9     1.0\n                                 Wire detection F1 (134 images)\n\f",
+    "join_comparison": "                             (a) Strategy robustness under error injection                                                         (b) Scale-relative completion join per circuit at L4\n          1.0                                                                                                     1.0\n                                                                                                                         1.00        0.99     0.99      0.99                                           100\n                                                                                                                                                                  0.93     0.94               0.95\n\n                                                                                                                                                                                     0.82\n          0.8                                                                                                     0.8                                                                                  80\n\n\n\n\n                                                                                                                                                                                                            Simulation accuracy (%)\n          0.6                                                                                                                                                                                          60\n\n\n\n\n                                                                                                   Join F1 (L4)\n                                                                                                                  0.6\nJoin F1\n\n\n\n\n          0.4                                                                                                     0.4                                                                                  40\n\n\n          0.2                                                                                                     0.2                                                                                  20\n                                                     Error level\n                                           L0      L1      L2      L3     L4\n          0.0                                                                                                     0.0                                                                                  0\n                Scale-rel.       Rescue         Rescue       Scale-rel.        Radius   Nearest                         Parallel      R-R       RL     Diode-R   Dual R   4-comp.   Wheat-   6-comp.\n                + compl.        + compl.         base          base            u-find   + anchor                          R-R       divider   series     loop    loops      loop    stone      ring\n                 (ours)\n\f",
+    "real_join_comparison": "Scale-rel. + compl. (ours)                          0.890\n         Rescue + compl.                          0.829\n            Scale-rel. base                      0.816\n              Rescue base                      0.787\n             Radius u-find               0.667\n      Hough+prox (best)                       0.805\n                                                      VLM\n      Conn.-comp. (best)         0.624                0.923\n                              0.6          0.8        1.0\n                                Connectivity micro-F1\n\f",
+    "complexity_histogram": "e 31-image human-verified benchmark (median 7, max 14)\n            7\n                                   6 6              6\n            6                 15 images\n                                5 comps\n                                                            12 images\n                                                             10 comps\n            5\n # images\n\n\n\n\n                                            4\n            4\n                              3                               3\n            3\n                                                                        2\n            2\n                                                        1\n            1\n            0\n                   3 4 5 7 10 11 12 14\n                SPICE-active components per image\n\f"
+  },
+  "claim_patterns": [
+    "statistically indistinguishable",
+    "same accuracy",
+    "far more expensive",
+    "two to three orders",
+    "100[–-]1000",
+    "structurally guaranteed",
+    "structurally.valid.by.construction",
+    "largely solved",
+    "primary failure mode",
+    "dominant failure mode",
+    "without over.merging",
+    "prevents?\\b.{0,35}short",
+    "rules? out.{0,35}bias",
+    "upper bounds?",
+    "\\bfair\\w*",
+    "guarantee\\w*",
+    "\\bequivalence\\b",
+    "SPICE.{0,8}Netlists?",
+    "simulation.ready",
+    "completion masks",
+    "same floating pins",
+    "endpoint.drop",
+    "0\\.247"
+  ],
+  "claim_hits": [
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 62,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "We present a deterministic pipeline for structural circuit-netlist recovery using an occlusion-first wire extractor, an endpoint graph, and degree-budget completion. The output represents inferred pin-to-node assignments; our component-pair metric does not certify pin identities, exact net partitions, absence of shorts, or simulation equivalence. Illustrative SPICE export requires externally specified values and device models; simulation equivalence on real scans is not validated. We provide a synthetic perturbation protocol and a human-verified connectivity benchmark of 31 CGHD-1152 images. With annotated component boxes and detected wires, the join achieves component-pair micro-F1 0.890 (macro-F1 0.901), compared with 0.805 for Hough plus proximity and 0.624 for connected-component tracing on the same detected wires. The wire extractor achieves F1 0.976 on 134 images with annotated component boxes under the historical benchmark configuration. Under the same component priors on the 31-image benchmark, a vision-language model reaches micro-F1 0.923; the paired difference is $+0.033$, with 95\\% confidence interval $[-0.009,+0.078]$. Inclusion of zero does not establish equivalence or comparative cost superiority. These results provide within-corpus evidence, not validation of autonomous reconstruction or unseen-style generalization."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 95,
+      "patterns": [
+        "guarantee\\w*",
+        "\\bequivalence\\b"
+      ],
+      "text": "A complementary approach is to prompt a vision-language model (VLM) for connectivity. Section~\\ref{sec:vlm_results} reports an oracle-component-box diagnostic in which both methods receive the same annotated component boxes and the geometric method uses detected wires. The observed component-pair scores do not establish equivalence, comparative cost superiority or a global structural-validity guarantee. The diagnostic examines the methods under those stated input conditions."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 97,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "We address these challenges with a deterministic structural-netlist pipeline whose proposed elements are: (1)~an \\emph{occlusion-first wire extractor} that masks detected components before binarization and estimates per-segment endpoints, producing a line-segment-with-endpoints representation (rather than tracing nets directly into connected components, as prior systems do) that is what makes graph-based joining possible; (2)~an \\emph{endpoint-graph join} model that constructs a graph over both wire endpoints and component pins, with five edge types capturing distinct connectivity patterns; and (3)~a \\emph{degree-budget completion} algorithm that proposes recovery connections using bounded assignment and merge guards. We evaluate on the CGHD-1152 dataset~\\cite{bayer2021cghd} with a synthetic error injection framework and a human-verified net-level benchmark. We evaluate topological recovery with illustrative SPICE export; component values and device models require external specification, and simulation equivalence on real scans is not validated. The output records inferred pin-to-node assignments, whereas the primary metric measures component-pair connectivity rather than exact pin topology."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 101,
+      "patterns": [
+        "SPICE.{0,8}Netlists?"
+      ],
+      "text": "The end-to-end conversion of schematic images into machine-readable netlists has progressed rapidly. Kelly and Cole~\\cite{kelly2024digitizing} presented a pattern-recognition workflow for digitizing circuit schematics with an 86.4\\% success rate, combining optical character recognition (OCR) for component values with network-graph construction. SINA~\\cite{sina2026}, the closest contemporary system, pairs a YOLOv11 detector with connected-component labeling (CCL) and OCR, and invokes a vision-language model (VLM) for reference-designator assignment, reporting 96.47\\% netlist-generation accuracy, a 2.72$\\times$ improvement over the prior state of the art. SINA confines the VLM to symbolic labeling and derives nets from CCL proximity rather than trusting the VLM with connectivity, an insight we share (Section~\\ref{sec:vlm_connectivity}). Masala-CHAI~\\cite{masalachai2024} (Auto-SPICE) uses large language models to produce SPICE netlists from analog schematics at scale. Most directly comparable to our setting, the concurrent work of Peker et al.~\\cite{peker2026} (IEEE Access, 2026) builds a fully automated image-to-SPICE pipeline for printed and hand-drawn transistor-level circuits, pairing YOLOv8/11 detection with a \\emph{contour-based} node-detection module (components are erased and nets are read from the contours of the residual wire pixels) and validates netlists by automated LTspice simulation against a reference. On their in-house seven-topology MOSFET dataset they report 93.33\\% (printed) and 85.33\\% (hand-drawn) whole-netlist success. Their node detection is an instance of the connected-component/contour recipe we evaluate as a baseline (Section~\\ref{sec:real_eval}); because their dataset (transistor-level analog, authored in-house) and metric (LTspice node-voltage pass/fail) differ from ours (discrete components on CGHD-1152, component-pair F1), the headline numbers are not directly comparable. Our controlled comparison evaluates a CCL baseline on identical detected wires, rather than reproducing their complete system. Instance-segmentation approaches extract circuit graphs directly from pixels: Bayer et al.~\\cite{instanceseg2023} segment components and wires for graph extraction over the CGHD lineage. For hand-drawn inputs, object-detection pipelines~\\cite{handdrawn2021} and the recent JUHCCR-v1 database~\\cite{juhccr2025} target component recognition on freehand sketches. Most of these pipelines build on general-purpose object detectors such as the YOLO family~\\cite{redmon2016yolo,jocher2023yolo} and OCR engines such as Tesseract~\\cite{smith2007tesseract}, with the ultimate goal of producing simulator-ready descriptions in formats such as SPICE~\\cite{nagel1973spice}. These works address detection, recognition and connectivity under different datasets and metrics. Our contribution evaluates joining under specified component priors, without treating detection or recognition as solved."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 114,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "Figure~\\ref{fig:pipeline} summarizes the six-stage pipeline. The full pipeline proceeds through six stages: (1)~component detection via oriented bounding box (OBB) YOLO model; (2)~component occlusion (filling detected regions with local median color); (3)~Sauvola adaptive binarization; (4)~connected component labeling with morphological post-processing; (5)~wire endpoint extraction via principal component analysis (PCA) on endpoint regions; and (6)~wire joining via the endpoint-graph model with degree-budget completion. The output is a structural netlist mapping inferred component pins to electrical nodes. Component-pair evaluation does not certify those pin assignments or the exact net partition. SPICE export is illustrative: component values and device models require external specification, and simulation equivalence on real scans is not validated. Figure~\\ref{fig:pipeline_examples} shows two representative circuits at each stage."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 151,
+      "patterns": [
+        "guarantee\\w*"
+      ],
+      "text": "Matches are then applied sequentially. Dummy or unavailable assignments add no edge. A proposed merge is also skipped if its endpoints are already in the same net or if their current nets share a component. This guard limits additional completion merges; it does not undo incorrect base unions or guarantee globally short-free output. Rejected matches are not reassigned, so the final guarded result is not claimed to minimize the assignment objective over all valid netlists."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 170,
+      "patterns": [
+        "\\bequivalence\\b",
+        "SPICE.{0,8}Netlists?"
+      ],
+      "text": "We report join F1 as the component-connectivity F1 score, measuring which unordered pairs of components share a net in the predicted versus ground-truth netlist. This metric discards terminal identity: even a perfect component-pair score does not certify pin assignment, the exact net partition, absence of shorts, or simulation equivalence. We report simulation accuracy as the percentage of random seeds for which every source current in the predicted SPICE netlist matches the clean oracle within 5\\%."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 228,
+      "patterns": [
+        "prevents?\\b.{0,35}short"
+      ],
+      "text": "On the authored synthetic suite at L4, the scale-relative graph with completion scores F1 0.95, rescue graph with completion 0.94, rescue graph alone 0.90, scale-relative graph alone 0.85 and radius union-find 0.36 (Table~\\ref{tab:join_leaderboard}). These results compare the reported configurations under the specified perturbations. They do not establish that completion repairs every dropped connection or prevents all shorts. The scale-relative completion configuration also has the highest component-pair score among the deterministic configurations reported on the real-image benchmark (Section~\\ref{sec:real_eval}). For readability, two intermediate synthetic variants whose scores round to rows shown are omitted: nearest-pin without anchoring, and the scale-relative base with end-extension but no dead-end rescue."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 240,
+      "patterns": [
+        "rules? out.{0,35}bias"
+      ],
+      "text": "The synthetic results above measure robustness under an authored error model. For the real-image evaluation, we constructed a human-verified net-level benchmark of 31 CGHD-1152 images using a purpose-built verification tool. Net-level proposals were bootstrapped by a conservative endpoint-graph join over the dataset's annotated wires and then corrected by one human annotator. Human correction and evaluation on independently authored synthetic ground truth mitigate concern about method-dependent labels, but do not rule out residual bootstrap or annotator bias in the real benchmark. Both the geometric join and the VLM diagnostic receive annotated component boxes. Connectivity is scored as component-pair F1 restricted to the evaluated electrical-component subset, discarding terminal identities as in the synthetic connectivity metric."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 264,
+      "patterns": [
+        "completion masks"
+      ],
+      "text": "Table~\\ref{tab:edge_ablation} reports bounded interventions on the base graph and the resulting pipeline with completion. Disabling T-junctions, rail taps or directional preference leaves the displayed base and full aggregate counts unchanged. Fixed-pixel base tolerances increase base micro-F1 from 0.816 to 0.820; the full-pipeline counts again tie at 418/37/66. Equal aggregate counts do not establish identical recovered connections, explain which mechanisms were active, or prove that completion masks differences. The baseline comparison shows an increase from base micro-F1 0.816 to 0.890 with completion, but these ablations do not establish that other mechanisms are generally unnecessary. Full occlusion removal and removal of scale dependence throughout completion were not tested. The ablation evidence therefore does not cover every proposed module or extreme-size input condition."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 298,
+      "patterns": [
+        "guarantee\\w*",
+        "\\bequivalence\\b"
+      ],
+      "text": "\\caption{Micro-averaged connectivity F1 on the 31-image human-verified net-level benchmark (component-pair metric). The scale-relative completion join has the highest score among the evaluated deterministic configurations and classical baselines on these detected wires. The dashed line marks the VLM diagnostic (Claude Opus 4.8). Both methods receive annotated component boxes; the VLM-minus-join difference is $+0.033$ (95\\% bootstrap CI $[-0.009,+0.078]$). The interval does not establish equivalence, cost superiority or a global validity guarantee. Error bars are 95\\% bootstrap CIs.}"
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 304,
+      "patterns": [
+        "upper bounds?"
+      ],
+      "text": "Several image-to-netlist systems erase component regions and infer nets from the remaining wire pixels using connected components or contours, including SINA~\\cite{sina2026} and Peker et al.~\\cite{peker2026}. We evaluate a connected-component baseline on our detected wire segments to control the wire input. Its best tested configuration reaches component-pair micro-F1 0.624, versus 0.890 for the endpoint-graph join (Table~\\ref{tab:real_join}). Hough line fitting~\\cite{duda1972hough} followed by proximity linking reaches 0.805 at its best tested linking tolerance on the same detected wires. These are the best configurations in the reported sweeps, not upper bounds on all implementations of the classical methods. Their ordering is evidence for these configurations and this benchmark, not a direct performance comparison with the cited complete systems."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 370,
+      "patterns": [
+        "guarantee\\w*",
+        "\\bequivalence\\b"
+      ],
+      "text": "On the 31 real images, the VLM reaches micro-F1 0.923 (precision 0.970, recall 0.880; macro-F1 0.949), versus micro-F1 0.890 for the geometric join, and is exact under the component-pair metric on 21/31 images. The paired VLM-minus-join difference is $+0.033$, with 95\\% bootstrap CI $[-0.009,+0.078]$. Inclusion of zero does not establish equivalence. These results do not establish comparative cost superiority or a global guarantee against incorrect merges for either method. Autonomous performance requires separately auditable evaluation; the conditional scores do not certify pin-level or simulation correctness."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 377,
+      "patterns": [
+        "endpoint.drop"
+      ],
+      "text": "Degree-budget completion proposes connections for pins left in single-component nets. Each floating-pin assignment selects at most one recovery target, and the shared-component guard can reject additional merges. Neither mechanism repairs shorts already present in the base graph. Wire-detection F1 does not measure an endpoint-drop rate or establish the causal contribution of missing endpoints to simulation failures."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 394,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "Metric boundary (all evaluated groups) & Component pairs discard terminal identity & F1 does not certify pin assignment or the exact net partition & F1 does not certify absence of shorts or simulation equivalence. \\\\"
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 405,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "We present structural circuit-netlist recovery using an occlusion-first wire extractor and endpoint-graph joining with degree-budget completion. On the 31-image within-corpus benchmark with annotated component boxes, component-pair micro-F1 is 0.8903; perfect-wire input gives 0.8898. These scores round alike but do not establish an autonomous detection bottleneck. The component-pair metric does not certify pin identities, exact net partitions, absence of shorts, or simulation equivalence. Synthetic L4 connectivity F1 is 0.95 versus 0.36 for the radius baseline. The VLM comparison is conditional on annotated component boxes and does not establish equivalence or cost superiority. Export remains illustrative: values and device models require external specification, and real-scan simulation equivalence is unvalidated. Broader styles, dense buses, and mixed-scale schematics require future evaluation."
+    },
+    {
+      "file": "paper/ieee-paper/paper-access.tex",
+      "line": 426,
+      "patterns": [
+        "SPICE.{0,8}Netlists?"
+      ],
+      "text": "\\bibitem{masalachai2024} J.~Bhandari, V.~Bhat, Y.~He, H.~Rahmani, S.~Garg, and R.~Karri, ``Masala-CHAI: A large-scale SPICE netlist dataset for analog circuits by harnessing AI,'' arXiv:2411.14299, 2024."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 42,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "We present a deterministic pipeline for structural circuit-netlist recovery using an occlusion-first wire extractor, an endpoint graph, and degree-budget completion. The output represents inferred pin-to-node assignments; our component-pair metric does not certify pin identities, exact net partitions, absence of shorts, or simulation equivalence. Illustrative SPICE export requires externally specified values and device models; simulation equivalence on real scans is not validated. We provide a synthetic perturbation protocol and a human-verified connectivity benchmark of 31 CGHD-1152 images. With annotated component boxes and detected wires, the join achieves component-pair micro-F1 0.890 (macro-F1 0.901), compared with 0.805 for Hough plus proximity and 0.624 for connected-component tracing on the same detected wires. The wire extractor achieves F1 0.976 on 134 images with annotated component boxes under the historical benchmark configuration. Under the same component priors on the 31-image benchmark, a vision-language model reaches micro-F1 0.923; the paired difference is $+0.033$, with 95\\% confidence interval $[-0.009,+0.078]$. Inclusion of zero does not establish equivalence or comparative cost superiority. These results provide within-corpus evidence, not validation of autonomous reconstruction or unseen-style generalization."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 71,
+      "patterns": [
+        "guarantee\\w*",
+        "\\bequivalence\\b"
+      ],
+      "text": "A complementary approach is to prompt a vision-language model (VLM) for connectivity. Section~\\ref{sec:vlm_results} reports an oracle-component-box diagnostic in which both methods receive the same annotated component boxes and the geometric method uses detected wires. The observed component-pair scores do not establish equivalence, comparative cost superiority or a global structural-validity guarantee. The diagnostic examines the methods under those stated input conditions."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 73,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "We address these challenges with a deterministic structural-netlist pipeline whose proposed elements are: (1)~an \\emph{occlusion-first wire extractor} that masks detected components before binarization and estimates per-segment endpoints, producing a line-segment-with-endpoints representation (rather than tracing nets directly into connected components, as prior systems do) that is what makes graph-based joining possible; (2)~an \\emph{endpoint-graph join} model that constructs a graph over both wire endpoints and component pins, with five edge types capturing distinct connectivity patterns; and (3)~a \\emph{degree-budget completion} algorithm that proposes recovery connections using bounded assignment and merge guards. We evaluate on the CGHD-1152 dataset~\\cite{bayer2021cghd} with a synthetic error injection framework and a human-verified net-level benchmark. We evaluate topological recovery with illustrative SPICE export; component values and device models require external specification, and simulation equivalence on real scans is not validated. The output records inferred pin-to-node assignments, whereas the primary metric measures component-pair connectivity rather than exact pin topology."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 77,
+      "patterns": [
+        "SPICE.{0,8}Netlists?"
+      ],
+      "text": "The end-to-end conversion of schematic images into machine-readable netlists has progressed rapidly. Kelly and Cole~\\cite{kelly2024digitizing} presented a pattern-recognition workflow for digitizing circuit schematics with an 86.4\\% success rate, combining optical character recognition (OCR) for component values with network-graph construction. SINA~\\cite{sina2026}, the closest contemporary system, pairs a YOLOv11 detector with connected-component labeling (CCL) and OCR, and invokes a vision-language model (VLM) for reference-designator assignment, reporting 96.47\\% netlist-generation accuracy, a 2.72$\\times$ improvement over the prior state of the art. SINA confines the VLM to symbolic labeling and derives nets from CCL proximity rather than trusting the VLM with connectivity, an insight we share (Section~\\ref{sec:vlm_connectivity}). Masala-CHAI~\\cite{masalachai2024} (Auto-SPICE) uses large language models to produce SPICE netlists from analog schematics at scale. Most directly comparable to our setting, the concurrent work of Peker et al.~\\cite{peker2026} (IEEE Access, 2026) builds a fully automated image-to-SPICE pipeline for printed and hand-drawn transistor-level circuits, pairing YOLOv8/11 detection with a \\emph{contour-based} node-detection module (components are erased and nets are read from the contours of the residual wire pixels) and validates netlists by automated LTspice simulation against a reference. On their in-house seven-topology MOSFET dataset they report 93.33\\% (printed) and 85.33\\% (hand-drawn) whole-netlist success. Their node detection is an instance of the connected-component/contour recipe we evaluate as a baseline (Section~\\ref{sec:real_eval}); because their dataset (transistor-level analog, authored in-house) and metric (LTspice node-voltage pass/fail) differ from ours (discrete components on CGHD-1152, component-pair F1), the headline numbers are not directly comparable. Our controlled comparison evaluates a CCL baseline on identical detected wires, rather than reproducing their complete system. Instance-segmentation approaches extract circuit graphs directly from pixels: Bayer et al.~\\cite{instanceseg2023} segment components and wires for graph extraction over the CGHD lineage. For hand-drawn inputs, object-detection pipelines~\\cite{handdrawn2021} and the recent JUHCCR-v1 database~\\cite{juhccr2025} target component recognition on freehand sketches. Most of these pipelines build on general-purpose object detectors such as the YOLO family~\\cite{redmon2016yolo,jocher2023yolo} and OCR engines such as Tesseract~\\cite{smith2007tesseract}, with the ultimate goal of producing simulator-ready descriptions in formats such as SPICE~\\cite{nagel1973spice}. These works address detection, recognition and connectivity under different datasets and metrics. Our contribution evaluates joining under specified component priors, without treating detection or recognition as solved."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 90,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "Figure~\\ref{fig:pipeline} summarizes the six-stage pipeline. The full pipeline proceeds through six stages: (1)~component detection via oriented bounding box (OBB) YOLO model; (2)~component occlusion (filling detected regions with local median color); (3)~Sauvola adaptive binarization; (4)~connected component labeling with morphological post-processing; (5)~wire endpoint extraction via principal component analysis (PCA) on endpoint regions; and (6)~wire joining via the endpoint-graph model with degree-budget completion. The output is a structural netlist mapping inferred component pins to electrical nodes. Component-pair evaluation does not certify those pin assignments or the exact net partition. SPICE export is illustrative: component values and device models require external specification, and simulation equivalence on real scans is not validated. Figure~\\ref{fig:pipeline_examples} shows two representative circuits at each stage."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 127,
+      "patterns": [
+        "guarantee\\w*"
+      ],
+      "text": "Matches are then applied sequentially. Dummy or unavailable assignments add no edge. A proposed merge is also skipped if its endpoints are already in the same net or if their current nets share a component. This guard limits additional completion merges; it does not undo incorrect base unions or guarantee globally short-free output. Rejected matches are not reassigned, so the final guarded result is not claimed to minimize the assignment objective over all valid netlists."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 146,
+      "patterns": [
+        "\\bequivalence\\b",
+        "SPICE.{0,8}Netlists?"
+      ],
+      "text": "We report join F1 as the component-connectivity F1 score, measuring which unordered pairs of components share a net in the predicted versus ground-truth netlist. This metric discards terminal identity: even a perfect component-pair score does not certify pin assignment, the exact net partition, absence of shorts, or simulation equivalence. We report simulation accuracy as the percentage of random seeds for which every source current in the predicted SPICE netlist matches the clean oracle within 5\\%."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 204,
+      "patterns": [
+        "prevents?\\b.{0,35}short"
+      ],
+      "text": "On the authored synthetic suite at L4, the scale-relative graph with completion scores F1 0.95, rescue graph with completion 0.94, rescue graph alone 0.90, scale-relative graph alone 0.85 and radius union-find 0.36 (Table~\\ref{tab:join_leaderboard}). These results compare the reported configurations under the specified perturbations. They do not establish that completion repairs every dropped connection or prevents all shorts. The scale-relative completion configuration also has the highest component-pair score among the deterministic configurations reported on the real-image benchmark (Section~\\ref{sec:real_eval}). For readability, two intermediate synthetic variants whose scores round to rows shown are omitted: nearest-pin without anchoring, and the scale-relative base with end-extension but no dead-end rescue."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 216,
+      "patterns": [
+        "rules? out.{0,35}bias"
+      ],
+      "text": "The synthetic results above measure robustness under an authored error model. For the real-image evaluation, we constructed a human-verified net-level benchmark of 31 CGHD-1152 images using a purpose-built verification tool. Net-level proposals were bootstrapped by a conservative endpoint-graph join over the dataset's annotated wires and then corrected by one human annotator. Human correction and evaluation on independently authored synthetic ground truth mitigate concern about method-dependent labels, but do not rule out residual bootstrap or annotator bias in the real benchmark. Both the geometric join and the VLM diagnostic receive annotated component boxes. Connectivity is scored as component-pair F1 restricted to the evaluated electrical-component subset, discarding terminal identities as in the synthetic connectivity metric."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 240,
+      "patterns": [
+        "completion masks"
+      ],
+      "text": "Table~\\ref{tab:edge_ablation} reports bounded interventions on the base graph and the resulting pipeline with completion. Disabling T-junctions, rail taps or directional preference leaves the displayed base and full aggregate counts unchanged. Fixed-pixel base tolerances increase base micro-F1 from 0.816 to 0.820; the full-pipeline counts again tie at 418/37/66. Equal aggregate counts do not establish identical recovered connections, explain which mechanisms were active, or prove that completion masks differences. The baseline comparison shows an increase from base micro-F1 0.816 to 0.890 with completion, but these ablations do not establish that other mechanisms are generally unnecessary. Full occlusion removal and removal of scale dependence throughout completion were not tested. The ablation evidence therefore does not cover every proposed module or extreme-size input condition."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 274,
+      "patterns": [
+        "guarantee\\w*",
+        "\\bequivalence\\b"
+      ],
+      "text": "\\caption{Micro-averaged connectivity F1 on the 31-image human-verified net-level benchmark (component-pair metric). The scale-relative completion join has the highest score among the evaluated deterministic configurations and classical baselines on these detected wires. The dashed line marks the VLM diagnostic (Claude Opus 4.8). Both methods receive annotated component boxes; the VLM-minus-join difference is $+0.033$ (95\\% bootstrap CI $[-0.009,+0.078]$). The interval does not establish equivalence, cost superiority or a global validity guarantee. Error bars are 95\\% bootstrap CIs.}"
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 280,
+      "patterns": [
+        "upper bounds?"
+      ],
+      "text": "Several image-to-netlist systems erase component regions and infer nets from the remaining wire pixels using connected components or contours, including SINA~\\cite{sina2026} and Peker et al.~\\cite{peker2026}. We evaluate a connected-component baseline on our detected wire segments to control the wire input. Its best tested configuration reaches component-pair micro-F1 0.624, versus 0.890 for the endpoint-graph join (Table~\\ref{tab:real_join}). Hough line fitting~\\cite{duda1972hough} followed by proximity linking reaches 0.805 at its best tested linking tolerance on the same detected wires. These are the best configurations in the reported sweeps, not upper bounds on all implementations of the classical methods. Their ordering is evidence for these configurations and this benchmark, not a direct performance comparison with the cited complete systems."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 346,
+      "patterns": [
+        "guarantee\\w*",
+        "\\bequivalence\\b"
+      ],
+      "text": "On the 31 real images, the VLM reaches micro-F1 0.923 (precision 0.970, recall 0.880; macro-F1 0.949), versus micro-F1 0.890 for the geometric join, and is exact under the component-pair metric on 21/31 images. The paired VLM-minus-join difference is $+0.033$, with 95\\% bootstrap CI $[-0.009,+0.078]$. Inclusion of zero does not establish equivalence. These results do not establish comparative cost superiority or a global guarantee against incorrect merges for either method. Autonomous performance requires separately auditable evaluation; the conditional scores do not certify pin-level or simulation correctness."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 353,
+      "patterns": [
+        "endpoint.drop"
+      ],
+      "text": "Degree-budget completion proposes connections for pins left in single-component nets. Each floating-pin assignment selects at most one recovery target, and the shared-component guard can reject additional merges. Neither mechanism repairs shorts already present in the base graph. Wire-detection F1 does not measure an endpoint-drop rate or establish the causal contribution of missing endpoints to simulation failures."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 370,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "Metric boundary (all evaluated groups) & Component pairs discard terminal identity & F1 does not certify pin assignment or the exact net partition & F1 does not certify absence of shorts or simulation equivalence. \\\\"
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 381,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "We present structural circuit-netlist recovery using an occlusion-first wire extractor and endpoint-graph joining with degree-budget completion. On the 31-image within-corpus benchmark with annotated component boxes, component-pair micro-F1 is 0.8903; perfect-wire input gives 0.8898. These scores round alike but do not establish an autonomous detection bottleneck. The component-pair metric does not certify pin identities, exact net partitions, absence of shorts, or simulation equivalence. Synthetic L4 connectivity F1 is 0.95 versus 0.36 for the radius baseline. The VLM comparison is conditional on annotated component boxes and does not establish equivalence or cost superiority. Export remains illustrative: values and device models require external specification, and real-scan simulation equivalence is unvalidated. Broader styles, dense buses, and mixed-scale schematics require future evaluation."
+    },
+    {
+      "file": "paper/ieee-paper/paper-build.tex",
+      "line": 403,
+      "patterns": [
+        "SPICE.{0,8}Netlists?"
+      ],
+      "text": "\\bibitem{masalachai2024} J.~Bhandari, V.~Bhat, Y.~He, H.~Rahmani, S.~Garg, and R.~Karri, ``Masala-CHAI: A large-scale SPICE netlist dataset for analog circuits by harnessing AI,'' arXiv:2411.14299, 2024."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 5,
+      "patterns": [
+        "SPICE.{0,8}Netlists?"
+      ],
+      "text": "Original Article Title: “From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark”"
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 19,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "Thank you for the opportunity to resubmit our manuscript and address the reviewers’ concerns. We have narrowed the scientific claims, corrected descriptions to match the implementation, and qualified the existing evidence. Per-drafter results describe within-corpus variation. Component-pair scores do not certify pin-level correctness or simulation equivalence. No new experiments were run for this prose revision. The source changes and outstanding package checks are recorded in `REVIEW_CHANGES.md`. The intended submission package comprises this point-by-point response, a highlighted revised manuscript and a clean revised manuscript; this draft does not assert that those PDFs have been produced or uploaded."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 39,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "**Author response:** We distinguish evaluated component-pair connectivity, geometric pin construction and illustrative export. The benchmark includes R/C/L/D/Q, voltage-source and IC groups, but this does not validate universal device-specific pin templates. The named transformer type receives a two-pin geometric guess; optocoupler templates and unknown-type fallback pins also exist, without validated electrical pin semantics. The detector merges original classes, so these templates do not establish separately detected device identities. Switches are absent from the evaluated electrical subset. For a switch, pin construction uses the shorter OBB-edge midpoints, with a long-axis AABB fallback. Export emits a fixed 0.001-ohm resistor only if pins 0 and 1 map to distinct nodes; otherwise it emits no switch line. It does not recover open/closed state or a control model. ICs and the listed complex devices have no implemented export model and are skipped. Component-pair F1 discards terminal identity and does not certify pin assignment, exact net partition, absence of shorts or simulation equivalence."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 51,
+      "patterns": [
+        "simulation.ready"
+      ],
+      "text": "### Reviewer#1, Concern # 4: Values and simulation-ready output"
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 55,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "**Author response:** We agree that image-derived values and device models are required for faithful simulation and are outside the evaluated task. The revised title says “Structural Circuit Netlists.” The manuscript describes inferred pin-to-node output and illustrative SPICE export, requiring external values and device models; real-scan simulation equivalence is not validated. Export substitutions and unsupported primitives are disclosed. Component-pair connectivity does not certify a simulator-ready or pin-correct reconstruction. Simulation results for authored synthetic circuits remain separately scoped."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 69,
+      "patterns": [
+        "SPICE.{0,8}Netlists?"
+      ],
+      "text": "**Reviewer concern:** It is suggested that the authors cite two papers in the sections related to SPICE simulation of memristive analog circuits: \"A Memristor-Based Neural Network Circuit with Classical Conditioning and Fear Generalization\" and \"Biologically Plausible Memristive Decision-Making Circuit for Adaptive Control in Industrial Autonomous Navigation\". Both papers complete full SPICE netlist modeling and simulation verification for memristive circuits, which complement the EDA technical route of converting hand-drawn schematics to SPICE netlists proposed in this paper in application scenarios, and can enrich relevant literature support for digital parsing and simulation deployment of analog memristive circuits."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 81,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "**Author response:** We retain the existing bootstrap intervals and explicitly limit conclusions to 31 images from one corpus. Annotation was performed by one human annotator without per-image timing logs, so we cannot report a measured annotation-cost figure. The proposed expansion protocol stratifies by component count, drafter, crossing/bus structure and capture conditions, uses independent annotation followed by adjudication, and records per-image effort and provenance. It is future work, not completed collection. A confidence interval containing zero is not evidence of equivalence, and synthetic corroboration does not exclude residual real-label bias."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 87,
+      "patterns": [
+        "\\bfair\\w*"
+      ],
+      "text": "**Reviewer concern:** There is a fundamental fairness issue in the VLM comparison experiment. The VLM enjoys an \"oracle advantage\" with respect to critical prior information, whereas the geometric pipeline must bear the burden of detection errors. In the paper, the VLM is provided with ground-truth annotated component bounding boxes; under such conditions, the fact that the VLM still shows no statistically significant difference from the geometric method does not sufficiently support the conclusion that \"the geometric method is superior in terms of cost and structural validity.\""
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 89,
+      "patterns": [
+        "guarantee\\w*",
+        "\\bequivalence\\b"
+      ],
+      "text": "**Author response:** We correct the experiment's scope and the prior superiority claims. Both methods receive the same annotated component boxes; the geometric method uses detected wires. This is an oracle-component-box connectivity diagnostic, not an autonomous end-to-end comparison. The VLM scores component-pair micro-F1 0.923 versus 0.890, and is exact under that metric on 21/31 images. The paired VLM-minus-join difference is +0.033 with 95% CI [−0.009, +0.078], which does not establish equivalence. We make no comparative cost-superiority or global short-free guarantee. The provisional autonomous numeric paragraph has been removed because its prediction/matching provenance is not sufficiently auditable for this submission draft."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 91,
+      "patterns": [
+        "guarantee\\w*",
+        "\\bequivalence\\b"
+      ],
+      "text": "**Author action:** Replaced the VLM section and Introduction comparison; revised Abstract, real-join caption (`fig:real_join_fig`), Discussion and Conclusion. Removed cost/token multiples, free-form-output criticism, equivalence language, autonomous bottleneck claims and global structural guarantees."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 95,
+      "patterns": [
+        "SPICE.{0,8}Netlists?"
+      ],
+      "text": "**Reviewer concern:** The paper title claims to generate SPICE netlists, yet the paper explicitly acknowledges that it \"makes no attempt to read component values.\" This implies that the current system outputs a topological netlist rather than a simulatable SPICE netlist, which constitutes a notable discrepancy with the claims made in both the title and the abstract."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 97,
+      "patterns": [
+        "\\bequivalence\\b"
+      ],
+      "text": "**Author response:** The title is now “From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark.” We distinguish the pin-to-node representation produced from component-pair connectivity evaluated. The latter discards terminal identity and does not certify exact pin assignments, net partitions, shorts or simulation equivalence. External values and device models are required for illustrative SPICE export, and real-scan simulation equivalence remains unvalidated."
+    },
+    {
+      "file": "paper/ieee-paper/review_artifacts/RESPONSE_TO_REVIEWERS.md",
+      "line": 113,
+      "patterns": [
+        "completion masks"
+      ],
+      "text": "**Author response:** We report the existing base-graph/full-pipeline interventions for T-junctions, rail taps, directional preference and base tolerance scaling. Several base rows tie; fixed-pixel base tolerances score 0.820 versus 0.816. Every full-pipeline row has aggregate TP/FP/FN 418/37/66. These ties neither establish identical recovered connections nor prove that completion masks differences. The baseline comparison improves from 0.816 to 0.890 with completion, but the ablations do not establish that other mechanisms are generally unnecessary. Full occlusion removal and removal of scale dependence throughout completion were not tested. This is bounded ablation evidence, not complete coverage of all proposed modules."
+    }
+  ],
+  "complexity_inventory": {
+    "n": 31,
+    "min": 3,
+    "max": 14,
+    "median": 7,
+    "at_most_five": 15,
+    "at_least_ten": 12
+  },
+  "reach_macro": {
+    "db_scale_r3.0": 0.8980855107440096,
+    "db_scale_r3.5": 0.8954648168964782,
+    "db_scale_r4.0": 0.9010706849335028,
+    "db_scale_r4.5": 0.9017548196313113,
+    "db_scale_r5.0": 0.9032210952911355
+  },
+  "drafter_counts": {
+    "drafter_9": 1,
+    "drafter_10": 5,
+    "drafter_1": 7,
+    "drafter_12": 4,
+    "drafter_2": 5,
+    "drafter_21": 1,
+    "drafter_3": 3,
+    "drafter_4": 1,
+    "drafter_6": 1,
+    "drafter_7": 3
+  },
+  "drafter_stored_count_sums": {
+    "drafter_1": {
+      "tp": 56,
+      "fp": 6,
+      "fn": 2
+    },
+    "drafter_2": {
+      "tp": 85,
+      "fp": 14,
+      "fn": 15
+    },
+    "drafter_10": {
+      "tp": 37,
+      "fp": 1,
+      "fn": 0
+    },
+    "drafter_12": {
+      "tp": 21,
+      "fp": 0,
+      "fn": 4
+    }
+  },
+  "crossover_summary": {
+    "C84_D2_P1_jpg": 0,
+    "C22_D2_P3_jpg": 1,
+    "C29_D2_P4_jpg": 1,
+    "C15_D2_P2_jpg": 1,
+    "C20_D2_P2_jpg": 0,
+    "C138_D1_P3_jpg": 0,
+    "C109_D2_P3_jpg": 0,
+    "C21_D1_P3_jpg": 1,
+    "C28_D1_P3_jpg": 0,
+    "C113_D2_P3_jpg": 0,
+    "C5_D1_P1_jpg": 0,
+    "C10_D2_P3_jpg": 0,
+    "C115_D2_P3_jpg": 0,
+    "C134_D2_P2_jpg": 0,
+    "C134_D2_P4_jpg": 0,
+    "C4_D2_P4_jpg": 0,
+    "C111_D1_P1_jpg": 0,
+    "C137_D1_P2_jpg": 0,
+    "C9_D1_P1_jpg": 0,
+    "C9_D1_P3_jpg": 0,
+    "C9_D2_P3_jpg": 0,
+    "C103_D2_P1_jpg": 0,
+    "C112_D1_P1_jpg": 1,
+    "C19_D1_P2_jpg": 1,
+    "C242_D1_P1_jpg": 1,
+    "C2_D2_P1_jpg": 0,
+    "C33_D2_P2_jpg": 0,
+    "C37_D2_P4_jpg": 0,
+    "C66_D2_P4_jpg": 6,
+    "C83_D2_P4_jpg": 0,
+    "C77_D2_P2_jpg": 0
+  },
+  "wire_inventory": {
+    "n": 134,
+    "median": 1.0,
+    "at_least_90": 117
+  },
+  "removed_edges": [
+    [
+      [
+        459.0,
+        369.0
+      ],
+      [
+        456.0,
+        364.0
+      ]
+    ],
+    [
+      [
+        460.0,
+        357.0
+      ],
+      [
+        456.0,
+        364.0
+      ]
+    ]
+  ],
+  "triangle_boundary": "The prior REVIEW_CHANGES.md claims corrected Triangle 0.795, but the recovered triangle_skeleton summary stores 0.7582635. Do not silently replace it without identifying the intended configuration."
+}
