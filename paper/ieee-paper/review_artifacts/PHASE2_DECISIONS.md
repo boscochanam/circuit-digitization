@@ -1,0 +1,18 @@
+# Phase 2(e): Bosco's yes/no decision briefs
+
+Prepared for approval; no answer, owner acceptance or waiver is inferred. Evidence: committed VERIFICATION.md, `verification_evidence/issue-81.json`, `issue-84.json`, recovered `amended-plan.md` and PLAN_REDTEAM.md. These briefs do not authorize a push, email, submission, benchmark or author-field edit.
+
+- **D1 — TEAM-DECISION:** Accept synchronized `paper-build.tex` B-edits as the explicit exception to #81's “diff limited to paper-access.tex plus review artifacts,” preserving selective hand-porting and immutable experimental evidence? **YES** accepts that specific wording exception; **NO** keeps #81 blocked pending revised acceptance wording/scope.
+- **D3 — TEAM-DECISION:** Accept R1-6 as a response-only exception to #84's all-twelve manuscript-section-reference condition, retaining the exact suggested titles and “No citation added; relevance rationale supplied here”? **YES** accepts the exception; **NO** returns the condition to Bosco for disposition without inventing a manuscript edit or citation.
+- **D4 — TEAM-DECISION:** Approve one accountable builder, named before building, with factual inputs and source/figure gates → clean IEEEtran → clean Access → final response pages/render → highlighted Access and mapping checks → package freeze → hash-bound human approval, with every correction reopening affected downstream checks? **YES** adopts this freeze order; **NO** holds freeze until Bosco supplies an alternative order.
+
+## D4's reviewable dependency details
+
+1. Confirm baseline candidate identity from the submission record; name the accepting builder; establish actual IEEE Access template environment. Collect approved author facts before any protected-field change/source freeze. Human title D2 approval was already authorized in the recovered amendment and is not being re-requested.
+2. Complete scientific source/response, number/provenance and presentation tasks; reconcile all three concept-figure dependencies, histogram label/width and chart update. Resolve source exceptions in PHASE2_DEFECTS.md. Preserve experiment data. A/B scientific text and table equality must pass with explicit template exceptions.
+3. The one builder makes clean IEEEtran then clean IEEE Access in fresh output directories; records source/asset hashes, commands/logs and zero missing files, undefined references/citations, missing glyphs and overfull boxes. These future builds were not run in this pass.
+4. Use clean Access pagination to finalize response manuscript page anchors; render/check the response PDF. Produce the highlighted Access copy against the confirmed reviewed baseline and map every source/figure change, including deletion-only hunks. Keep a separate clean PDF; compare surviving text.
+5. Complete one checklist row per page per PDF, bounds/table/caption checks and source/asset manifest; freeze the package only after response/highlight checks. Obtain author/editorial/page-appearance approval tied to those final hashes. Mechanical PASS alone is not publication readiness.
+6. Any scientific, author, bibliography, layout or figure correction invalidates affected PDFs, response page references, highlight mappings, manifest and approvals. Pagination changes return to response work; new author facts return to factual approval. Renew final approvals after rebuilding. Push/submission require separate authorization.
+
+D1/D3 approvals resolve specific acceptance-wording conflicts only. They do not automatically close issues, waive unverified provenance, repair figures, establish a reviewed baseline, or empirically answer R2-4/R2-5. D4 approval adopts a procedure; a real person still must accept builder ownership.
