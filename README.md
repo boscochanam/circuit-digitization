@@ -1,7 +1,8 @@
-# Circuit Digitization: Hand-Drawn Schematics to SPICE Netlists
+# Circuit Digitization: Hand-Drawn Schematics to Structural Circuit Netlists
 
 A deterministic pipeline that converts scanned, hand-drawn circuit schematics into
-simulation-ready SPICE netlists. The pipeline runs component detection, an occlusion-first
+structural circuit netlists (topological pin connectivity — component values and device
+models require external specification, and simulation equivalence is not validated). The pipeline runs component detection, an occlusion-first
 wire extractor, an endpoint-graph join that resolves which terminals are electrically the same
 net, and netlist emission — no learned connectivity model in the loop. Alongside the pipeline,
 this repository publishes the first human-verified, net-level connectivity benchmark for
@@ -14,20 +15,20 @@ directly rather than inferred from downstream tasks.
 
 This repository contains the code and benchmark for:
 
-> **From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph
+> **From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with Endpoint-Graph
 > Wire Joining and a Human-Verified Connectivity Benchmark.**
-> Under review at IEEE Access (2026).
+> Under revision for resubmission to IEEE Access (2026).
 
 ### How to cite
 
 ```bibtex
 @article{chanam2026handdrawn,
-  title   = {From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline
+  title   = {From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline
              with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark},
   author  = {Chanam, Bosco and Dcosta, Chris and Talupuri, Pranavesh Kumar and
              Chiwhane, Shwetambari and Singh, Ashay Kumar and Das, Arghadeep},
   year    = {2026},
-  note    = {Under review at IEEE Access}
+  note    = {Under revision for resubmission to IEEE Access}
 }
 ```
 
@@ -48,11 +49,11 @@ provenance for every figure is in [`docs/research/experiments/SUMMARY.md`](docs/
 | Connectivity micro-F1 — frontier VLM reference | 0.923 |
 | Synthetic suite at maximum severity — ours vs. radius baseline | 0.95 vs. 0.36 |
 
-The VLM reference (0.923) is statistically indistinguishable from our join: the paired
-difference has a bootstrap 95% CI of [−0.009, +0.078], which includes zero, while costing two
-to three orders of magnitude more per image and producing non-simulatable output. Running the
-join on perfect wire labels leaves micro-F1 unchanged at 0.890, so connectivity — not wire
-detection — is the remaining bottleneck.
+The VLM reference (0.923) is an oracle-component-box diagnostic, not an end-to-end comparison:
+both methods receive annotated component boxes, and the paired difference (+0.033, bootstrap
+95% CI [−0.009, +0.078]) is nonsignificant, which establishes neither equivalence nor
+superiority. Running the join on perfect wire labels leaves micro-F1 essentially unchanged
+at 0.890, conditional on annotated boxes — not proof about the autonomous bottleneck.
 
 ## Quickstart
 
