@@ -68,9 +68,9 @@ Best regards,
 
 **Reviewer concern:** It is suggested that the authors cite two papers in the sections related to SPICE simulation of memristive analog circuits: "A Memristor-Based Neural Network Circuit with Classical Conditioning and Fear Generalization" and "Biologically Plausible Memristive Decision-Making Circuit for Adaptive Control in Industrial Autonomous Navigation". Both papers complete full SPICE netlist modeling and simulation verification for memristive circuits, which complement the EDA technical route of converting hand-drawn schematics to SPICE netlists proposed in this paper in application scenarios, and can enrich relevant literature support for digital parsing and simulation deployment of analog memristive circuits.
 
-**Author response:** We respectfully did not add “A Memristor-Based Neural Network Circuit with Classical Conditioning and Fear Generalization” or “Biologically Plausible Memristive Decision-Making Circuit for Adaptive Control in Industrial Autonomous Navigation.” Based on the application and SPICE-simulation context described in the recommendation, these references do not strengthen the present comparison of image-based connectivity extraction. Our narrowed task does not evaluate memristive-circuit simulation deployment. We verified both records at abstract level (Gao et al., IEEE Trans. Consumer Electronics, Feb 2026; Gao et al., IEEE Trans. Industrial Informatics, vol. 22, 2026): both report neuromorphic memristive hardware for associative learning and navigation control, with no schematic-digitization, netlist-extraction, or connectivity-benchmark content. The topic mismatch is confirmed, not assumed.
+**Author response:** We thank the reviewer for the suggestion and have cited both works in Related Work. We verified both records at abstract level (Gao et al., IEEE Trans. Consumer Electronics, Feb 2026; Gao et al., IEEE Trans. Industrial Informatics, vol. 22, 2026): both report neuromorphic memristive hardware for associative learning and navigation control, cited here as neighboring SPICE-deployment domains. Our comparison, benchmark claims, and narrowed scope are unchanged.
 
-**Author action:** No citation added; relevance rationale supplied here.
+**Author action:** Cited both works in Related Work with bibliography entries; no comparison or benchmark claim altered.
 
 ## Reviewer 2
 
