@@ -6,7 +6,7 @@ This is a source-review handoff for `revision/access-2026-33821-astra-exec`, sta
 
 - `../paper-access.tex`: IEEE Access submission source.
 - `../paper-build.tex`: IEEEtran source with synchronized scientific prose and tables.
-- `RESPONSE_TO_REVIEWERS.md`: twelve concerns and factual responses retained from the newer revision, to be aligned with the local IEEE template in T4.
+- `RESPONSE_TO_REVIEWERS.md`: twelve complete concern/author-response/author-action sets aligned with the locally supplied IEEE template in T4; author signature and final pagination remain pending.
 - `REVIEW_CHANGES.md`: prior revision record followed by this session's T1 decision ledger, task records and source checks.
 - `manuscript_changes.diff`: **historical fork artifact**, preserved byte for byte from `10c1b92`. It records the fork's `9bbe9e9`-based changes, including claims rejected during this port. It is not the final-source diff, a patch to apply here, or proof of the identity of the manuscript reviewed by IEEE.
 

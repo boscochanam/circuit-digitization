@@ -174,3 +174,50 @@ T1 commit: `f249ae6`. The requested capability table already existed at `cefe77b
 | Metric boundary | `tab:capabilities`, fourth row, plus introductory paragraph | PASS: component-pair F1 does not certify pin assignment, exact net partitions, absence of shorts or simulation equivalence. |
 
 Source checks: capability table/caption and all scientific prose match across A/B under the documented figure-wrapper exceptions; required device rows and metric-boundary row present; live prose contains no blanket claim that complex pins cannot be constructed or switches are always excluded from export. R1-2 reviewer concern remains quoted verbatim even where its allegation is corrected by the response. Protected code/config/evidence/figure/author paths are unchanged. No tests, reruns or builds were performed.
+
+
+## T4 — IEEE response-template conversion
+
+T3 commit: `f0cfeb2`. The starting response already contained the full scientific answers and concerns. T4 completes template alignment without replacing those newer answers with the fork's obsolete prose.
+
+Template found and read locally: `/home/claw/circuit-digitization-validation-20260907/context/01_review_materials/IEEE_Access_Response_to_Reviewers_TEMPLATE.txt`, SHA256 `efc079bd1c81a64a10aa4a751ee4da0dbc89b01a398f913adb2f224c86fb2051`. Its sibling PDF is also present (SHA256 `e6a2986d1b5337a2a1e413cff3d3a44e690841e470e050eb91ae143a0cfea103`); no PDF judgment or build was performed. **There is no missing-template gap.**
+
+The response now uses the template's explicit `Reviewer#N, Concern # M`, `Author response:` and `Author action:` structure for six concerns per reviewer. Original manuscript ID/title and revised title are retained separately. Editor addressee, subject, salutation and closing are present. The signatory is an explicitly unsigned author-confirmation placeholder; this does not invent author consent or change manuscript author fields. The template's “We are uploading” assertion is adapted to an intended package because no PDFs or upload were produced in this session.
+
+Decision-letter provenance: sibling `decision-email-raw.txt`, SHA256 `5d9ac227a2ad93a703a955d0183cf2d5bd5d0c0138f81914c445109eee80e730`. All twelve full concern texts match its plain-text reviewer sections with whitespace normalization only. PASS: exactly six numbered concerns per reviewer, twelve nonempty author responses and twelve nonempty author actions. The R1-6 titles match verbatim; the rationale neither promises a citation nor implies reading the full papers.
+
+The retained response opening describes within-corpus evidence, not added cross-style validation. R1-2 includes T3's exact pin/export distinctions. R2-2 retains matched component priors and removes autonomous/cost/equivalence claims. R2-4 explicitly calls the detector-error effect unmeasured; R2-5 explicitly concedes incomplete ablation coverage and rejects causal explanations from aggregate ties. Complete fields do not establish reviewer acceptance of those scientific limitations.
+
+### Current action-to-source index
+
+A/B are `paper-access.tex`/`paper-build.tex`. Line numbers below are source locations after T3, not PDF pages. T4 does not edit manuscript bodies. All final PDF page references remain pending the separately authorized build/package stage; no page numbers are invented.
+
+| Concern | Quoted final-source anchor | A / B line | Action / boundary |
+|---|---|---|---|
+| R1-1 | `These groups describe within-corpus variation, not evidence of unseen-drafter transfer.` | 318 / 294 | Descriptive groups and no held-out-drafter claim; existing uncertainty and proposed expansion retained. |
+| R1-2 | `\label{tab:capabilities}` | 385 / 361 | T3 four-column device/metric table and exact switch export/omission condition; no validated complex pin semantics claimed. |
+| R1-3 | `The tolerances are manually configured scale-relative rules` | 130 / 106 | Actual multipliers/clamps, fallback alpha, bounded reach sensitivity and untested extreme sizes. |
+| R1-4 | `SPICE export is illustrative:` | 114 / 90 | Separate values/models and unvalidated real-scan simulation; title/metric boundaries retained. Pipeline graphic reconciliation remains later work. |
+| R1-5 | `\label{fig:complexity_hist}` | 314 / 290 | Electrical-subset range/median and dense-bus/multilayer limitation; asset preserved. |
+| R1-6 | “No citation added; relevance rationale supplied here.” | Response only | No citation added; relevance rationale supplied. Both exact suggested titles retained from the letter; no full-paper-review claim or email. |
+| R2-1 | `A proposed expansion protocol would stratify sampling` | 379 / 355 | Four sampling strata, independent annotation/adjudication and effort/provenance logs; missing historical timing disclosed. |
+| R2-2 | `\label{sec:vlm_results}` | 366 / 342 | Matched annotated component boxes, conditional scores/CI, no equivalence or cost/validity superiority; provisional autonomous figures excluded. |
+| R2-3 | `\title{From Hand-Drawn Schematics to Structural Circuit Netlists` | 41 / 28 | Preserve already revised title and heads; distinguish inferred pin-to-node output from component-pair evaluation. |
+| R2-4 | `Removing these edges also removes true connections; this is not a demonstrated mitigation gain.` | 399 / 375 | Preserve full two-edge tradeoff and explicit unmeasured detector-error effect. Partial scientific answer, not closed empirically. |
+| R2-5 | `\label{tab:edge_ablation}` | 246 / 222 | Existing base/full ablations retained; no masking/identical-connections inference; full occlusion and completion-wide scale removal untested. |
+| R2-6 | `Because $s$ is a single scalar per image, intra-image size variance is not modeled` | 130 / 106 | Retain mixed IC/discrete example, scale dependence and untested controlled rescaling. |
+
+### Current session boundaries and unresolved decisions
+
+- T1 is a selective port onto the user-designated execution branch, T3 refines the existing device table, and T4 completes the response-source conversion. Existing earlier manuscript edits are credited to the inherited revision, not claimed as new experiments or new work here.
+- No human decision was invented: reviewed source/PDF identity, author signatory/consent, protected byline/funding/bio facts, final editorial/render approval and package ownership remain with the appropriate people. None is required to complete these authorized source tasks.
+- Technical follow-through outside this no-build session remains figure-dependency reconciliation, clean/highlighted/response PDFs, final pagination and package verification. The Access pipeline PDF still differs from the corrected TikZ source. Template presence does not certify a working Access build environment or rendered pages.
+- Scientific limits remain actual pin correctness/net partition/shorts, autonomous detector-error causality, full occlusion/completion-wide scale ablations and broader corpus/style/complexity evaluation. No rerun or new acceptance judgment was substituted for the requested prose work.
+- Session quota percentage is not available from the exposed tools: no authoritative start/end quota counters or session-attributed quota denominator are provided. No percentage is fabricated from context size or elapsed time.
+
+### Current source hashes after T3/T4 (not package approval)
+
+- `paper-access.tex`: `3af1831456fba56f1935fc322e7407faf93b38d238297a5c93ddba70ccbd58b7`
+- `paper-build.tex`: `3007bfa0c424913ac26dfb0530ca0373ff4893d3b808fa18c1e01b90f1547c70`
+- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `d17bb1d1d0d5eae237fbfa982927e6a0dccc7d610b31734e4256a9cdb7e91cf4`
+- `review_artifacts/COAUTHOR_README.md`: `182621d166fd26d614787e3d60305e43ee8c3aeb9c2ee3e98e15d081cf151863`
