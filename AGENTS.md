@@ -99,7 +99,7 @@ Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 ### Key Findings
 - **a16** (Sauvola + component extraction + anchor_endpoint_dist=16) is the winner
 - Only change from v4 baseline: anchor_endpoint_dist 12 → 16 (+0.0025 F1)
-- **Sauvola dominates all other thresholding methods** — adaptive Gaussian F1=0.845 (best adaptive-Gaussian config, `adaptive_gaussian_skeleton`), OTSU F1=0.828, Triangle F1=0.795
+- **Sauvola dominates all other thresholding methods** — adaptive Gaussian F1=0.845 (best adaptive-Gaussian config, `adaptive_gaussian_skeleton`), OTSU F1=0.789 (best Otsu config `otsu_component`; re-verified 2026-08-16 against the corrected eval — the older 0.828 figure was from a pre-correction generation and is stale), Triangle F1=0.795
 - Skeleton extraction loses recall (FN=402 vs 77) — breaks thin wires
 - Adaptive thresholding fusion adds nothing — Sauvola already captures optimal per-pixel threshold
 - Parameter sweep shows pipeline is **robust** — k, window, link_dist, dedup_angle variations have minimal effect
@@ -285,6 +285,19 @@ registry-based. `DEFAULT_STRATEGY = "scale_completion"` (promoted Jun 2026; was
 `degree_budget` = graph_rescue + floating-pin recovery. Lowest balanced+composite, 0 regressions.
 
 Full details: `docs/research/join-verification.md`
+
+## IEEE resubmission — active work (Sept 2026, read before touching the manuscript)
+
+- **Work line:** `revision/access-2026-33821-merge-20260907` — all T1–T8 edits land here.
+- **Plan:** `IMPLEMENTATION_PLAN.md` on branch `validation/audit-2026-09-07-astra`
+  (D1–D4 verdicts, per-comment specs, OPEN items). Team brief: `TEAM_REPORT_20260907.pdf`.
+- **Fork source:** `tkprnv/review/ieee-access-revision-2026-09` (`10c1b92`). Shares NO git
+  history with this line — hand-port prose/artifacts file by file; never merge or rebase.
+- **Issues #81–88** track T1–T8 + closeout with acceptance checks.
+- **Paper agent notes** (`paper/ieee-paper/AGENTS.md`) carry the resubmission framing and
+  banned claims — obey them over the older sections below where they conflict.
+- **Banned until human sign-off:** author/funding/bio edits, pushes off the merge line,
+  email, PDF judgments beyond mechanical checks.
 
 ## IEEE Paper (current state)
 

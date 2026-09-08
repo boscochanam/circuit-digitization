@@ -105,6 +105,7 @@ def build_endpoint_graph(
     tau_t=10.0,
     directional=False,
     t_junctions=True,
+    rail_taps=True,
     scale_rel=False,
     dead_end_rescue=False,
     rescue_factor=2.2,
@@ -222,11 +223,12 @@ def build_endpoint_graph(
     # (the wire's body, not its end, reaches the pin). This connects rail-tapped
     # components the endpoint-only binding misses, lifting real connectivity without
     # the all-to-all over-merge. Mid-span only (ends are covered by edge 3).
-    for p in pins:
-        for wi, (a, b) in enumerate(wires):
-            d, t = _pt_seg((p.x, p.y), a, b)
-            if d <= tau_t and 0.05 <= t <= 0.95:
-                uf.union(pkey(p), ekey(wi, 0))
+    if rail_taps:
+        for p in pins:
+            for wi, (a, b) in enumerate(wires):
+                d, t = _pt_seg((p.x, p.y), a, b)
+                if d <= tau_t and 0.05 <= t <= 0.95:
+                    uf.union(pkey(p), ekey(wi, 0))
 
     # dead-end rescue: a wire firmly anchored at ONE end (its net spans exactly one
     # component) but dangling at the other is almost always a real connection the
