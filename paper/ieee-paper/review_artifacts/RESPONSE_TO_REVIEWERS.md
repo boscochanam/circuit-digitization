@@ -1,7 +1,9 @@
 # Response to Reviewers
 
-Original Manuscript ID: Access-2026-33821  
-Original Article Title: “From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark”  
+Original Manuscript ID: Access-2026-33821
+
+Original Article Title: “From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark”
+
 Revised Article Title: “From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark”
 
 Draft for author review. Final PDF page references, rendered response, figure reconciliation and submission-package approvals are pending; this source draft does not certify package readiness.

@@ -98,4 +98,4 @@ Technical work still outside this pass: template/environment preparation; correc
 
 - `paper-access.tex`: `b264325a5168cc35f4258c971f62f781c3631531127e83be0e343e654aa3d0ee`
 - `paper-build.tex`: `10e1e45c23baa35791d20a4e0d907ccf96becd130ef380958b12e41b9aa53795`
-- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `129728e884f4df23bd1b0cfb9d1fafcfda8440bab57b97482199e1255a75fda9`
+- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `ba20f96d8c905d17631b1fb8f995d1aef518f105ecb936bfe1803dffbc7fc3dd`
