@@ -25,7 +25,7 @@ All six are present in the same byline order (A:45–50, B:32). A has six active
 | Bio grammar | A:480/B:455 “Engineering specializing from”; A:483/B:458 “She is life member”; A:492–493/B:467–468 “Presently” mid-sentence and “4 research scholar” | **HUMAN-ONLY:** approve protected bio editing and supply intended specialization if any; concrete grammar defects are inventoried, not repaired |
 | Publication history placeholder | A:35 `Date of publication xxxx 00, 0000, date of current version xxxx 00, 0000.` | **HUMAN-ONLY:** accountable builder obtains template/editorial disposition; **TEAM-DECISION:** remove/omit as instructed by the actual template or retain publisher-populated placeholder if required; never invent dates |
 | DOI template value | A:36 `10.1109/ACCESS.2024.0429000` | **HUMAN-ONLY:** confirm publisher/template disposition; this inventory supplies no evidence that it is this article's assigned DOI. Do not substitute a guessed identifier |
-| Author approval assertion | A:411/B:387 acknowledgment says authors reviewed and take responsibility | **HUMAN-ONLY:** obtain actual approvals tied to final package hashes; the sentence is not a consent record |
+| Author approval assertion | A:410/B:387 acknowledgment says authors reviewed and take responsibility | **HUMAN-ONLY:** obtain actual approvals tied to final package hashes; the sentence is not a consent record |
 | Response signer | R:23 `[Author signatory pending confirmation] et al.` | **HUMAN-ONLY:** Bosco designates/approves authorized signer; no signature or email sent |
 
 A:35–36 publication metadata are explicitly included; B has no corresponding history/DOI fields. These are template/production disposition gaps, not a request for authors to create a DOI or publication date.

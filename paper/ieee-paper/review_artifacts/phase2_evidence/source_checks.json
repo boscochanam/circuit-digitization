@@ -1,0 +1,26 @@
+{
+  "access": {
+    "labels": 19,
+    "duplicate_labels": [],
+    "unresolved_refs": [],
+    "unresolved_cites": [],
+    "uncited_bibitems": [],
+    "bib_count": 26,
+    "first_citation_order_matches": true,
+    "environment_mismatches": [],
+    "unclosed_environments": [],
+    "unescaped_dollar_count": 146
+  },
+  "build": {
+    "labels": 19,
+    "duplicate_labels": [],
+    "unresolved_refs": [],
+    "unresolved_cites": [],
+    "uncited_bibitems": [],
+    "bib_count": 26,
+    "first_citation_order_matches": true,
+    "environment_mismatches": [],
+    "unclosed_environments": [],
+    "unescaped_dollar_count": 146
+  }
+}

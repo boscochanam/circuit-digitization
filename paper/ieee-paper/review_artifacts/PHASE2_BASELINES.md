@@ -38,7 +38,7 @@ August anchors below refer to stored `august25-extracted.txt` (default pdftotext
 |---|---|---|---|
 | Title/product scope | Extracted title: SPICE Netlists; :15 explicitly says structural SPICE-format, external values | B:30 title SPICE Netlists; B:44 abstract says SPICE netlist | B:28 Structural Circuit Netlists; B:42 metric/export limits |
 | VLM interpretation | :32 and :69 say statistically indistinguishable | B:44,73 same phrase | B:42,70 and `sec:vlm_results` explicitly reject equivalence and cost superiority |
-| Pipeline example counts | :135 left 35 wires/7 nets, right 11 wires/4 nets | B:63 left 36/12, right 12/4 | B:60 left 35/7, right 11/4 |
+| Pipeline example counts | :135 left 35 wires/7 nets, right 11 wires/4 nets | B:63 left 36/12, right 12/4 | B:61 left 35/7, right 11/4 |
 | Completion description | :335 optimization and :538 short-prevention caption | B:160 constrained-optimization paragraph and B:167 caption | B:122–128 clamped reach, slot/dummy assignment and post-assignment guard |
 | Wire chart | :556 Gaussian 0.928, :558 Triangle 0.758 | Shared graphic referenced by parent TeX; parent/current source diff alone does not compare graphic interiors | B:155 caption specifies skeleton 0.845/0.758; corrected shared PDF hash in chart ledger |
 
