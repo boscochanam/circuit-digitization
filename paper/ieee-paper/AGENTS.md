@@ -7,17 +7,11 @@
 
 ## Active work (do this first)
 
-- **Work line:** `revision/access-2026-33821` — all T1–T8 edits land here.
-- **Plan (read before touching the manuscript):** `IMPLEMENTATION_PLAN.md` on branch
-  `audit/access-2026-33821` (D1–D4 verdicts, per-comment specs, OPEN items).
-  Team brief: `TEAM_REPORT_20260907.pdf` (same branch).
-- **Fork source:** `tkprnv/review/ieee-access-revision-2026-09` (`10c1b92`) holds the
-  retitle, VLM recast, ablation + per-drafter tables, and response draft.
-  **Critical:** the fork shares no git history with this line — hand-port prose and
-  artifacts file by file. Never merge or rebase across; the fork patch does not apply cleanly.
-- **Issues #81–88** track T1–T8 + closeout. Close an issue only when its acceptance check passes.
-- **Banned until human sign-off:** author names/affiliations/funding/bios edits, pushes to
-  any branch but the merge line, email, PDF judgments beyond mechanical checks.
+- **Work line:** `main` — all remaining edits land here. Old `revision/*` lines are deleted.
+- **Plan (read before touching the manuscript):** `IMPLEMENTATION_PLAN.md` in tag `audit/evidence-20260908` (D1–D4 verdicts, per-comment specs). Full evidence in that tag's scratch JSONs.
+- **Fork source:** `tkprnv/review/ieee-access-revision-2026-09` (`10c1b92`) — already hand-ported (see `REVIEW_CHANGES.md` ledger); do not re-port.
+- **Issues #83–88** track the remaining tasks (#81 T1 and #82 T2 closed). Close an issue only when its acceptance check passes.
+- **Banned until human sign-off:** author names/affiliations/funding/bios edits, email, PDF judgments beyond mechanical checks, pushes altering the v1.0.x tags.
 
 ## Live sources (keep the two in sync)
 
@@ -30,10 +24,10 @@
 
 ## Title
 
-**PENDING D2.** Proposal (implemented in the fork, recommended): "From Hand-Drawn
-Schematics to **Structural Circuit Netlists** …". Do NOT ship "SPICE netlists" /
-"simulation-ready" product claims under either title — the pipeline reads no
-component values. Retitle lock is Bosco's decision; apply mechanically once locked (T2).
+**LOCKED (D2, 2026-09-08).** Title: "From Hand-Drawn
+Schematics to **Structural Circuit Netlists** …" — applied in both sources including running heads. Do NOT ship "SPICE netlists" /
+"simulation-ready" product claims anywhere — the pipeline reads no
+component values.
 
 **Authors (matches committed manuscript; changes need written consent of all):**
 Bosco Chanam, Chris Dcosta, Pranavesh Kumar Talupuri, Shwetambari A. Chiwhane,
