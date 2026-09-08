@@ -229,9 +229,10 @@ def wire_benchmark():
         ("Sauvola (w=61)", 0.959, "ours"),
         ("Sauvola (k=0.2875)", 0.950, "ours"),
         ("Sauvola (alt.)", 0.949, "ours"),
-        ("adaptive Gaussian", 0.928, "alt"),
+        # Stored expanded_full_ranking summaries, global_f1 (no evaluation rerun).
+        ("adaptive Gaussian (skeleton)", 0.8452311293153891, "alt"),
         ("Otsu", 0.789, "bad"),
-        ("Triangle", 0.758, "bad"),
+        ("Triangle (skeleton)", 0.7582635186595582, "bad"),
     ]
     rows = rows[::-1]  # worst at bottom, best at top
     fig, ax = plt.subplots(figsize=(4.6, 3.0))
