@@ -8,7 +8,7 @@ Revised Article Title: “From Hand-Drawn Schematics to Structural Circuit Netli
 
 Port provenance: the reviewer organization originates in fork `10c1b92`; the factual responses and complete concern texts below retain the newer revision at `cefe77b`. The sibling `manuscript_changes.diff` is historical fork provenance, not the diff for this response or the reviewed submission baseline.
 
-Draft for author review. The concern/response/action structure follows the locally supplied IEEE Access response template; template conversion is complete. Final PDF page references, rendered response, figure reconciliation and submission-package approvals are pending; this source draft does not certify package readiness.
+Draft for author review. The concern/response/action structure follows the locally supplied IEEE Access response template. The local build adds page references from the accompanying Access PDF; see output/pdf/response_page_map.json and response-to-reviewers.pdf. The highlighted comparison uses commit 33f5e3d, selected by the author as the latest manuscript before August 13. Portal identity confirmation, author-field reconciliation and final package approvals remain pending.
 
 To: IEEE Access Editor
 
@@ -68,7 +68,7 @@ Best regards,
 
 **Reviewer concern:** It is suggested that the authors cite two papers in the sections related to SPICE simulation of memristive analog circuits: "A Memristor-Based Neural Network Circuit with Classical Conditioning and Fear Generalization" and "Biologically Plausible Memristive Decision-Making Circuit for Adaptive Control in Industrial Autonomous Navigation". Both papers complete full SPICE netlist modeling and simulation verification for memristive circuits, which complement the EDA technical route of converting hand-drawn schematics to SPICE netlists proposed in this paper in application scenarios, and can enrich relevant literature support for digital parsing and simulation deployment of analog memristive circuits.
 
-**Author response:** We thank the reviewer for the suggestion and have cited both works in Related Work. We verified both records at abstract level (Gao et al., IEEE Trans. Consumer Electronics, Feb 2026; Gao et al., IEEE Trans. Industrial Informatics, vol. 22, 2026): both report neuromorphic memristive hardware for associative learning and navigation control, cited here as neighboring SPICE-deployment domains. Our comparison, benchmark claims, and narrowed scope are unchanged.
+**Author response:** We thank the reviewer for the suggestion and have cited both works in Related Work. We verified both records at abstract level and updated their publication details from the publisher-deposited DOI metadata (Gao et al., IEEE Trans. Consumer Electronics, vol. 72, no. 2, pp. 3213-3224, May 2026; Gao et al., IEEE Trans. Industrial Informatics, vol. 22, no. 6, pp. 4801-4812, June 2026): both report neuromorphic memristive hardware for associative learning and navigation control, cited here as neighboring SPICE-deployment domains. Our comparison, benchmark claims, and narrowed scope are unchanged.
 
 **Author action:** Cited both works in Related Work with bibliography entries; no comparison or benchmark claim altered.
 
@@ -112,7 +112,7 @@ Best regards,
 
 **Author response:** We report the existing base-graph/full-pipeline interventions for T-junctions, rail taps, directional preference and base tolerance scaling. Several base rows tie; fixed-pixel base tolerances score 0.820 versus 0.816. Every full-pipeline row has aggregate TP/FP/FN 418/37/66. These ties neither establish identical recovered connections nor prove that completion masks differences. The baseline comparison improves from 0.816 to 0.890 with completion, but the ablations do not establish that other mechanisms are generally unnecessary. Full occlusion removal and removal of scale dependence throughout completion were not tested. This is bounded ablation evidence, not complete coverage of all proposed modules.
 
-**Author action:** Corrected `tab:edge_ablation` caption/row label and interpretation; removed activation/identical-connection explanations and the unsupported quantified occlusion benefit. Rewrote the method description to distinguish graph selection, mandatory slot/dummy assignment and guarded application. Table layout verification remains for T7.
+**Author action:** Corrected `tab:edge_ablation` caption/row label and interpretation; removed activation/identical-connection explanations and the unsupported quantified occlusion benefit. Rewrote the method description to distinguish graph selection, mandatory slot/dummy assignment and guarded application. The ablation table now spans both columns; the local rebuild removes its column overlap. Final coauthor page approval remains pending.
 
 ### Reviewer#2, Concern # 6: Mixed component sizes
 

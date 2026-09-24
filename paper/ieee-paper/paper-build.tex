@@ -18,6 +18,7 @@
 \usepackage{url}
 \usepackage{etoolbox}
 \usepackage{hyperref}
+\hypersetup{hidelinks}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -103,7 +104,15 @@ Given a set of wire segments $\mathcal{W} = \{w_1, \ldots, w_m\}$ with endpoints
 
 \textbf{Edge type 5 (pin--wire-body):} For a component pin $p$ and wire segment $w_j$, add an edge if the point-to-segment distance is at most $\tau_t$ and the normalized projection parameter lies in $[0.05,0.95]$. This rule represents pin-to-rail candidates along a wire's body; geometric proximity alone does not certify an electrical connection.
 
-The tolerances are manually configured scale-relative rules with fixed pixel clamps: $\tau_{\text{pin}}=\min(60,\max(24,0.62s))$, $\tau_{\text{join}}=\min(28,\max(11,0.30s))$, and $\tau_t=\min(20,\max(8,0.20s))$, in pixels. Here $s$ is the characteristic component-bounding-box diagonal scale; the implementation uses the middle sorted diagonal (the upper middle for an even count), falling back to a wire-length scale when component geometry is unavailable or degenerate. The multipliers and clamps are fixed, not learned. Because $s$ is a single scalar per image, intra-image size variance is not modeled: a schematic mixing a large IC with small discrete symbols shares one tolerance per rule. Extreme-size performance was not evaluated by controlled image rescaling.
+The tolerances are manually configured scale-relative rules with fixed pixel clamps (in pixels):
+\begin{equation*}
+\begin{aligned}
+\tau_{\text{pin}} &= \min(60,\max(24,0.62s)),\\
+\tau_{\text{join}} &= \min(28,\max(11,0.30s)),\\
+\tau_t &= \min(20,\max(8,0.20s)).
+\end{aligned}
+\end{equation*}
+ Here $s$ is the characteristic component-bounding-box diagonal scale; the implementation uses the middle sorted diagonal (the upper middle for an even count), falling back to a wire-length scale when component geometry is unavailable or degenerate. The multipliers and clamps are fixed, not learned. Because $s$ is a single scalar per image, intra-image size variance is not modeled: a schematic mixing a large IC with small discrete symbols shares one tolerance per rule. Extreme-size performance was not evaluated by controlled image rescaling.
 
 \textbf{Component-first pin assignment:} For edge type 3, we use a two-step assignment. First, compute the distance from each endpoint to each component's oriented bounding box (OBB): 0 inside the rectangle, otherwise the minimum distance to its edges. If four OBB vertices are unavailable, use axis-aligned bounding-box (AABB) distance instead. Assign the endpoint to the nearest component whose distance is within $\max(\tau_{\text{pin}}, 0.5 \cdot \text{diagonal})$, where the diagonal is computed from that component's AABB. Second, within the assigned component, select the pin with the smallest Euclidean distance to the endpoint. Figure~\ref{fig:endpoint_graph} contrasts the legacy radius join with our endpoint-graph model.
 
@@ -217,7 +226,7 @@ The synthetic results above measure robustness under an authored error model. Fo
 
 Table~\ref{tab:real_join} reports the evaluated join configurations on the verified set, run on the pipeline's own detected wires. We report micro-averaged (pair-pooled) component-pair F1 as the primary metric, so that a dense 14-component board contributes in proportion to its connections rather than counting the same as a 3-component one; the macro (mean per-image) F1 is listed alongside for reference. The best configuration, the scale-relative completion join (degree-budget completion applied to a high-precision scale-relative endpoint-graph base), achieves micro-F1~=~0.890 (P~=~0.92, R~=~0.86; 95\% bootstrap CI [0.855, 0.924]), improving on the prior default that applies the same completion to the rescue base (0.829) and the radius union-find join (0.667) (Figure~\ref{fig:real_join_fig}). The scale-relative completion configuration omits the rescue base's 12\,px end-extension and dead-end rescue and has higher reported precision. This comparison does not isolate the causal contribution of those individual changes. A bounded within-benchmark reach sweep over $\rho\in[3,5]$, with $r=\rho\tau_c$, yields macro-F1 0.895--0.903. This is sensitivity evidence for the tested settings, not a controlled image-rescaling or mixed-size robustness experiment. Confidence intervals are wide at $N=31$ and the per-strategy intervals overlap, but the ranking is consistent and is corroborated on the independently authored synthetic suite (Table~\ref{tab:join_leaderboard}).
 
-\begin{table}[htbp]
+\begin{table*}[t]
 \caption{Leave-one-out ablation of endpoint-graph rules at the base-graph level and with completion, using annotated component boxes and detected wires on the 31-image benchmark. All full-pipeline rows have the same aggregate TP/FP/FN (418/37/66). Fixed-pixel base tolerances give micro-F1 0.820 versus 0.816 for the scale-relative base; completion retains its scale dependence. Aggregate ties do not establish identical recovered connections or a causal explanation for the ties.}
 \label{tab:edge_ablation}
 \centering
@@ -235,7 +244,7 @@ Directional preference disabled & 0.816 & 352/27/132 & 0.890 & 0.919 & 0.864 \\
 Fixed-pixel base tolerances; completion unchanged & 0.820 & 356/28/128 & 0.890 & 0.919 & 0.864 \\
 \hline
 \end{tabular}
-\end{table}
+\end{table*}
 
 Table~\ref{tab:edge_ablation} reports bounded interventions on the base graph and the resulting pipeline with completion. Disabling T-junctions, rail taps or directional preference leaves the displayed base and full aggregate counts unchanged. Fixed-pixel base tolerances increase base micro-F1 from 0.816 to 0.820; the full-pipeline counts again tie at 418/37/66. Equal aggregate counts do not establish identical recovered connections, explain which mechanisms were active, or prove that completion masks differences. The baseline comparison shows an increase from base micro-F1 0.816 to 0.890 with completion, but these ablations do not establish that other mechanisms are generally unnecessary. Full occlusion removal and removal of scale dependence throughout completion were not tested. The ablation evidence therefore does not cover every proposed module or extreme-size input condition.
 
@@ -285,7 +294,7 @@ With annotated component boxes held fixed, replacing detected wires by the datas
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.82\textwidth]{figures/complexity_histogram.pdf}
+\includegraphics[width=\columnwidth]{figures/complexity_histogram.pdf}
 \caption{Complexity of the 31-image human-verified benchmark, counting components in the evaluated electrical subset: 15 images have $\leq$5 and 12 have $\geq$10 (median 7, range 3--14). Component-count breadth does not validate dense buses or multilayer crossings; performance on these cases remains untested.}
 \label{fig:complexity_hist}
 \end{figure}
@@ -402,8 +411,8 @@ on the CGHD-1152 dataset~\cite{bayer2021cghd}.
 \bibitem{sina2026} S.~Aldowaish, Y.~Karumanchi, K.-C.~Chiang, S.~Noorzad, and M.~Fayazi, ``SINA: A circuit schematic image-to-netlist generator using artificial intelligence,'' in \textit{Proc. Design, Automation \& Test in Europe Conf. (DATE)}, 2026. [Online]. Available: \url{https://doi.org/10.23919/DATE69613.2026.11539285}
 \bibitem{masalachai2024} J.~Bhandari, V.~Bhat, Y.~He, H.~Rahmani, S.~Garg, and R.~Karri, ``Masala-CHAI: A large-scale SPICE netlist dataset for analog circuits by harnessing AI,'' arXiv:2411.14299, 2024.
 \bibitem{peker2026} \"{O}.~B.~Peker, E.~Toker, D.~\"{O}cal, T.~Dalyan, E.~Afacan, and Y.~D.~G\"{o}kdel, ``A fully automated SPICE-compatible netlist extraction from image using deep learning and image preprocessing techniques,'' \textit{IEEE Access}, vol.~14, pp.~19750--19765, 2026, doi: 10.1109/ACCESS.2026.3656316.
-\bibitem{gao2026memristor} S.~Gao, F.~Shi, X.~Xu, J.~Chen, H.~H.-C.~Iu, et al., ``A memristor-based neural network circuit with classical conditioning and fear generalization,'' \textit{IEEE Trans. Consumer Electron.}, 2026, doi: 10.1109/TCE.2026.3663359.
-\bibitem{gao2026memristive} S.~Gao, Y.~Song, Y.~Cao, H.~H.-C.~Iu, L.~Qin, Y.~Zhang, and J.~Mou, ``Biologically plausible memristive decision-making circuit for adaptive control in industrial autonomous navigation,'' \textit{IEEE Trans. Ind. Informat.}, vol.~22, pp.~4801--4812, 2026, doi: 10.1109/TII.2026.3668794.
+\bibitem{gao2026memristor} S.~Gao et al., ``A memristor-based neural network circuit with classical conditioning and fear generalization,'' \textit{IEEE Trans. Consumer Electron.}, vol.~72, no.~2, pp.~3213--3224, May 2026, doi: 10.1109/TCE.2026.3663359.
+\bibitem{gao2026memristive} S.~Gao et al., ``Biologically plausible memristive decision-making circuit for adaptive control in industrial autonomous navigation,'' \textit{IEEE Trans. Ind. Informat.}, vol.~22, no.~6, pp.~4801--4812, Jun. 2026, doi: 10.1109/TII.2026.3668794.
 \bibitem{instanceseg2023} J.~Bayer, A.~Roy, and A.~Dengel, ``Instance segmentation based graph extraction for handwritten circuit diagram images,'' in \textit{Proc. 12th Int. Conf. Pattern Recognition Applications and Methods (ICPRAM)}, 2023. [Online]. Available: \url{https://doi.org/10.5220/0011752600003411}
 \bibitem{handdrawn2021} R.~R.~Reddy and M.~R.~Panicker, ``Hand-drawn electrical circuit recognition using object detection and node recognition,'' \textit{SN Comput. Sci.}, vol.~3, no.~3, p.~244, 2022. arXiv:2106.11559.
 \bibitem{juhccr2025} A.~Roy, S.~Pani, S.~Malakar, and R.~Sarkar, ``JUHCCR-v1: A database for hand-drawn electrical and electronics circuit component recognition,'' \textit{Sci. Rep.}, vol.~15, art.~no.~22404, 2025, doi: 10.1038/s41598-025-22404-5.
