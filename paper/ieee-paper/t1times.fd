@@ -1,0 +1,12 @@
+% Font definitions for the Times metrics supplied with the IEEE Access template.
+\ProvidesFile{t1times.fd}[2026/09/24 IEEE Access Times font definitions]
+\DeclareFontFamily{T1}{times}{}
+\DeclareFontShape{T1}{times}{m}{n}{<-> t1-times}{}
+\DeclareFontShape{T1}{times}{m}{it}{<-> t1-times-italic}{}
+\DeclareFontShape{T1}{times}{b}{n}{<-> t1-times-bold}{}
+\DeclareFontShape{T1}{times}{b}{it}{<-> t1-times-bolditalic}{}
+\DeclareFontShape{T1}{times}{n}{n}{<->ssub * times/m/n}{}
+\DeclareFontShape{T1}{times}{n}{it}{<->ssub * times/m/it}{}
+\DeclareFontShape{T1}{times}{bx}{n}{<->ssub * times/b/n}{}
+\DeclareFontShape{T1}{times}{bx}{it}{<->ssub * times/b/it}{}
+\endinput
