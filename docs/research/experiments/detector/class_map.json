@@ -1,0 +1,116 @@
+{
+  "class_names": [
+    "resistor",
+    "terminal",
+    "crossover",
+    "capacitor",
+    "diode",
+    "transistor",
+    "switch",
+    "inductor",
+    "voltage_source",
+    "text",
+    "junction",
+    "gnd",
+    "vss",
+    "integrated_circuit",
+    "operational_amplifier",
+    "other"
+  ],
+  "merge_map": {
+    "resistor": [
+      "resistor",
+      "resistor.adjustable",
+      "resistor.photo"
+    ],
+    "terminal": [
+      "terminal"
+    ],
+    "crossover": [
+      "crossover"
+    ],
+    "capacitor": [
+      "capacitor.adjustable",
+      "capacitor.polarized",
+      "capacitor.unpolarized"
+    ],
+    "diode": [
+      "diode",
+      "diode.light_emitting",
+      "diode.thyrector",
+      "diode.zener"
+    ],
+    "transistor": [
+      "transistor.bjt",
+      "transistor.fet",
+      "transistor.photo"
+    ],
+    "switch": [
+      "switch"
+    ],
+    "inductor": [
+      "inductor",
+      "inductor.coupled",
+      "inductor.ferrite"
+    ],
+    "voltage_source": [
+      "voltage.ac",
+      "voltage.battery",
+      "voltage.dc"
+    ],
+    "text": [
+      "text"
+    ],
+    "junction": [
+      "junction"
+    ],
+    "gnd": [
+      "gnd"
+    ],
+    "vss": [
+      "vss"
+    ],
+    "integrated_circuit": [
+      "integrated_circuit",
+      "integrated_circuit.ne555",
+      "integrated_circuit.voltage_regulator"
+    ],
+    "operational_amplifier": [
+      "operational_amplifier",
+      "operational_amplifier.schmitt_trigger"
+    ],
+    "other": [
+      "and",
+      "antenna",
+      "block",
+      "crystal",
+      "diac",
+      "explanatory",
+      "fuse",
+      "lamp",
+      "magnetic",
+      "mechanical",
+      "microphone",
+      "motor",
+      "nand",
+      "nor",
+      "not",
+      "optical",
+      "optocoupler",
+      "or",
+      "probe",
+      "probe.current",
+      "probe.voltage",
+      "relay",
+      "socket",
+      "speaker",
+      "thyristor",
+      "transformer",
+      "triac",
+      "unknown",
+      "varistor",
+      "xor"
+    ]
+  },
+  "n_original_classes": 61
+}
