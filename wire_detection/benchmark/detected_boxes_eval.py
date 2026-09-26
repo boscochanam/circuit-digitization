@@ -43,37 +43,58 @@ DEFAULT_STRATEGIES = ["scale_completion", "scale_completion_w"]
 MODEL_PATH = "models/component_detection/yolo26m_obb_16class_aug.pt"
 CONF_THRESHOLD = 0.5
 
-# Trained model's 16-class scheme (wire_detection/data/component_loader.py).
-TRAINED_MODEL_CLASSES = {
-    0: "resistor", 1: "capacitor", 2: "diode", 3: "transistor", 4: "inductor",
-    5: "voltage_source", 6: "integrated_circuit", 7: "operational_amplifier",
-    8: "other", 9: "gnd", 10: "text", 11: "junction", 12: "terminal",
-    13: "switch", 14: "vss", 15: "crossover",
+# The checkpoint embeds its OWN class-name table (``model.names``), and the index
+# order is NOT stable across retrains. Do not hardcode index -> class: the shipped
+# `yolo26m_obb_16class_aug.pt` reports
+#   0 resistor, 1 terminal, 2 crossover, 3 capacitor, 4 diode, 5 transistor,
+#   6 switch, 7 inductor, 8 voltage_source, 9 text, 10 junction, 11 gnd,
+#   12 vss, 13 integrated_circuit, 14 operational_amplifier, 15 other
+# whereas an earlier hardcoded table here listed 2=diode/15=crossover and agreed on
+# only 1 of 16 indices. That silently relabelled every detected crossover as a diode.
+# Resolve by NAME at load time instead.
+MODEL_CLASS_NAME_TO_GT_CLASS = {
+    "resistor": 37,                 # -> resistor
+    "capacitor": 4,                 # -> capacitor-unpolarized
+    "diode": 8,                     # -> diode
+    "transistor": 47,               # -> transistor-BJT
+    "inductor": 14,                 # -> inductor
+    "voltage_source": 55,           # -> voltage-DC
+    "integrated_circuit": 16,       # -> IC
+    "operational_amplifier": 28,    # -> opamp
+    "other": 51,                    # -> unknown
+    "gnd": 13,                      # -> gnd
+    "text": 44,                     # -> text
+    "junction": 19,                 # -> junction
+    "terminal": 43,                 # -> terminal
+    "switch": 42,                   # -> switch
+    "vss": 56,                      # -> vss
+    "crossover": 5,                 # -> crossover
 }
+# Kept for backwards compatibility; prefer name-based resolution below.
+TRAINED_MODEL_CLASSES = dict(MODEL_CLASS_NAME_TO_GT_CLASS)
 
-# Map each of the model's 16 output classes onto a representative class ID in the
-# 58-class GT scheme (COMPONENT_TYPES) that join_strategies.py/netlist.py key pin
-# geometry off of (via PIN_DEFINITIONS / two_terminal / PREFIX_MAP). Where the model
-# collapses several GT subtypes into one bucket (e.g. all capacitors), we pick a
-# representative subtype with identical pin geometry and SPICE prefix.
-MODEL_TO_GT_CLASS = {
-    0: 37,   # resistor            -> resistor
-    1: 4,    # capacitor           -> capacitor-unpolarized
-    2: 8,    # diode               -> diode
-    3: 47,   # transistor          -> transistor-BJT
-    4: 14,   # inductor            -> inductor
-    5: 55,   # voltage_source      -> voltage-DC
-    6: 16,   # integrated_circuit  -> IC
-    7: 28,   # operational_amplifier -> opamp
-    8: 51,   # other               -> unknown
-    9: 13,   # gnd                 -> gnd
-    10: 44,  # text                -> text
-    11: 19,  # junction            -> junction
-    12: 43,  # terminal            -> terminal
-    13: 42,  # switch              -> switch
-    14: 56,  # vss                 -> vss
-    15: 5,   # crossover           -> crossover
-}
+_MODEL_CLASS_TO_GT_CLASS = None
+
+
+def _model_to_gt_class_map(model) -> dict:
+    """index -> GT class id, resolved from the checkpoint's own class names."""
+    global _MODEL_CLASS_TO_GT_CLASS
+    if _MODEL_CLASS_TO_GT_CLASS is None:
+        names = getattr(model, "names", None) or {}
+        unknown = []
+        mapping = {}
+        for idx, name in names.items():
+            key = str(name).strip().lower()
+            if key in MODEL_CLASS_NAME_TO_GT_CLASS:
+                mapping[int(idx)] = MODEL_CLASS_NAME_TO_GT_CLASS[key]
+            else:
+                mapping[int(idx)] = 51          # unknown bucket
+                unknown.append(name)
+        if unknown:
+            print(f"  warning: unmapped model classes -> 'unknown': {sorted(set(unknown))}")
+        _MODEL_CLASS_TO_GT_CLASS = mapping
+    return _MODEL_CLASS_TO_GT_CLASS
+
 
 _YOLO_MODEL = None
 
@@ -98,7 +119,7 @@ def detect_components(image_path: Path) -> list:
             model_cls = int(result.obb.cls[i])
             x1, y1, x2, y2 = [int(v) for v in result.obb.xyxy[i].tolist()]
             poly = [(int(p[0]), int(p[1])) for p in result.obb.xyxyxyxy[i].tolist()]
-            gt_cls = MODEL_TO_GT_CLASS.get(model_cls, 51)  # default: unknown
+            gt_cls = _model_to_gt_class_map(model).get(model_cls, 51)  # default: unknown
             out.append((gt_cls, poly, (x1, y1, x2, y2)))
     return out
 

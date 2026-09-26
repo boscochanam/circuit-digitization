@@ -28,25 +28,55 @@ from wire_detection.config.schema import ComponentDetectionConfig
 
 log = logging.getLogger(__name__)
 
-# Class names from the trained model (16 classes)
+# Class names emitted by the shipped checkpoint, in ITS index order. Read from the
+# checkpoint's own embedded ``model.names``, which is authoritative — the index order
+# is NOT stable across retrains, so never assume an earlier ordering.
+#   0 resistor, 1 terminal, 2 crossover, 3 capacitor, 4 diode, 5 transistor,
+#   6 switch, 7 inductor, 8 voltage_source, 9 text, 10 junction, 11 gnd,
+#   12 vss, 13 integrated_circuit, 14 operational_amplifier, 15 other
 TRAINED_MODEL_CLASSES = {
     0: "resistor",
-    1: "capacitor",
-    2: "diode",
-    3: "transistor",
-    4: "inductor",
-    5: "voltage_source",
-    6: "integrated_circuit",
-    7: "operational_amplifier",
-    8: "other",
-    9: "gnd",
-    10: "text",
-    11: "junction",
-    12: "terminal",
-    13: "switch",
-    14: "vss",
-    15: "crossover",
+    1: "terminal",
+    2: "crossover",
+    3: "capacitor",
+    4: "diode",
+    5: "transistor",
+    6: "switch",
+    7: "inductor",
+    8: "voltage_source",
+    9: "text",
+    10: "junction",
+    11: "gnd",
+    12: "vss",
+    13: "integrated_circuit",
+    14: "operational_amplifier",
+    15: "other",
 }
+
+# Model class NAME -> representative id in the 58-class GT scheme (COMPONENT_TYPES)
+# that the rest of the pipeline keys pin geometry and SPICE prefixes off of
+# (PIN_DEFINITIONS / two_terminal / PREFIX_MAP). Where the model collapses several GT
+# subtypes into one bucket we pick a representative with identical pin geometry.
+MODEL_CLASS_NAME_TO_GT_CLASS = {
+    "resistor": 37,                 # -> resistor
+    "capacitor": 4,                 # -> capacitor-unpolarized
+    "diode": 8,                     # -> diode
+    "transistor": 47,               # -> transistor-BJT
+    "inductor": 14,                 # -> inductor
+    "voltage_source": 55,           # -> voltage-DC
+    "integrated_circuit": 16,       # -> IC
+    "operational_amplifier": 28,    # -> opamp
+    "other": 51,                    # -> unknown
+    "gnd": 13,                      # -> gnd
+    "text": 44,                     # -> text
+    "junction": 19,                 # -> junction
+    "terminal": 43,                 # -> terminal
+    "switch": 42,                   # -> switch
+    "vss": 56,                      # -> vss
+    "crossover": 5,                 # -> crossover
+}
+GT_CLASS_UNKNOWN = 51
+
 
 
 def load_components(
@@ -141,6 +171,28 @@ def _load_from_model(
         log.error("Failed to load YOLO model from %s: %s", model_path, exc)
         raise RuntimeError(f"Cannot load model {model_path}: {exc}") from exc
 
+    # The checkpoint's own ``names`` are authoritative for its output indices. Map
+    # them by NAME into the 58-class GT scheme the rest of the pipeline expects;
+    # passing raw model indices through would mis-type nearly every component.
+    model_names = getattr(model, "names", None) or TRAINED_MODEL_CLASSES
+    idx_to_gt: dict[int, int] = {}
+    unmapped: list[str] = []
+    for idx, nm in model_names.items():
+        key = str(nm).strip().lower()
+        idx_to_gt[int(idx)] = MODEL_CLASS_NAME_TO_GT_CLASS.get(key, GT_CLASS_UNKNOWN)
+        if key not in MODEL_CLASS_NAME_TO_GT_CLASS:
+            unmapped.append(str(nm))
+    if unmapped:
+        log.warning(
+            "Checkpoint classes not in the GT scheme, mapped to 'unknown': %s",
+            sorted(set(unmapped)),
+        )
+    if len(idx_to_gt) != len(TRAINED_MODEL_CLASSES):
+        log.warning(
+            "Checkpoint exposes %d classes but TRAINED_MODEL_CLASSES lists %d",
+            len(idx_to_gt), len(TRAINED_MODEL_CLASSES),
+        )
+
     # --- Run inference ---
     try:
         results = model(str(image_path), task="obb", conf=config.confidence_threshold)
@@ -157,7 +209,9 @@ def _load_from_model(
         if result.obb is None:
             continue
         for i in range(len(result.obb.cls)):
-            cls_id = int(result.obb.cls[i])
+            raw_cls = int(result.obb.cls[i])
+            # Translate the checkpoint's own index into the 58-class GT scheme.
+            cls_id = idx_to_gt.get(raw_cls, GT_CLASS_UNKNOWN)
             # xyxy format: [x1, y1, x2, y2]
             bbox = result.obb.xyxy[i].tolist()
             x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])

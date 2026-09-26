@@ -198,7 +198,7 @@ Otsu threshold + CCL & 0.789 & 0.796 & 0.783 \\
 \end{center}
 \end{table}
 
-The historical 16\,px-anchor configuration achieves median F1 1.000, with 87\% of benchmark images scoring F1 at least 0.90. Its aggregate F1 is 0.9755 at $10^{\circ}$/18\,px overlap deduplication; the $12^{\circ}$/8\,px production configuration gives 0.9726 with the same 16\,px anchor distance. Among the tested alternatives, Otsu yields F1 0.789 and adaptive Gaussian 0.845. Occlusion is intended to remove component internals before wire extraction, but a full occlusion-removal ablation is not reported here; no quantified gain from that intervention is claimed.
+The historical 16\,px-anchor configuration achieves median F1 1.000, with 87\% of benchmark images scoring F1 at least 0.90. Its aggregate F1 is 0.9755 at $10^{\circ}$/18\,px overlap deduplication; the $12^{\circ}$/8\,px production configuration gives 0.9726 with the same 16\,px anchor distance. Among the tested alternatives, Otsu yields F1 0.789 and adaptive Gaussian 0.845. Occlusion is intended to remove component internals before wire extraction. Disabling that masking step while holding the rest of the extraction path fixed has a large measured downstream effect on the 31-image connectivity benchmark (Section~\ref{sec:mech_ablation}): component-pair micro-F1 falls from 0.890 to 0.336. This is a mechanism ablation scored on downstream connectivity; it is not a wire-level F1 measurement for the extractor, whose human annotations are attached to the unmasked images.
 
 \subsection{Join Strategy Comparison}
 
@@ -261,7 +261,36 @@ Fixed-pixel base tolerances; completion unchanged & 0.820 & 356/28/128 & 0.890 &
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:edge_ablation} reports bounded interventions on the base graph and the resulting pipeline with completion. Disabling T-junctions, rail taps or directional preference leaves the displayed base and full aggregate counts unchanged. Fixed-pixel base tolerances increase base micro-F1 from 0.816 to 0.820; the full-pipeline counts again tie at 418/37/66. Equal aggregate counts do not establish identical recovered connections, explain which mechanisms were active, or prove that completion masks differences. The baseline comparison shows an increase from base micro-F1 0.816 to 0.890 with completion, but these ablations do not establish that other mechanisms are generally unnecessary. Full occlusion removal and removal of scale dependence throughout completion were not tested. The ablation evidence therefore does not cover every proposed module or extreme-size input condition.
+Table~\ref{tab:edge_ablation} reports bounded interventions on the base graph and the resulting pipeline with completion. Disabling T-junctions, rail taps or directional preference leaves the displayed base and full aggregate counts unchanged. Fixed-pixel base tolerances increase base micro-F1 from 0.816 to 0.820; the full-pipeline counts again tie at 418/37/66. Equal aggregate counts do not establish identical recovered connections, explain which mechanisms were active, or prove that completion masks differences. The baseline comparison shows an increase from base micro-F1 0.816 to 0.890 with completion, but these ablations do not establish that other mechanisms are generally unnecessary. Full occlusion removal and the completion safeguards are tested separately (Table~\ref{tab:mech_ablation}, Section~\ref{sec:mech_ablation}). Removal of scale dependence throughout completion, and extreme-size or mixed-size input conditions, were not tested. The ablation evidence therefore still does not cover every proposed module or every input condition.
+
+\subsection{Occlusion Removal and Completion-Safeguard Ablations}
+\label{sec:mech_ablation}
+
+Table~\ref{tab:mech_ablation} reports the mechanism interventions that Table~\ref{tab:edge_ablation} does not cover, evaluated on the same 31-image benchmark with annotated component boxes and detected wires.
+
+\begin{table}[htbp]
+\caption{Mechanism ablations on the 31-image benchmark. The occlusion arm removes only the component-masking call from the extraction path; ROI cropping, extractor configuration and coordinate restoration are held fixed. Guard and witness arms act on \texttt{scale\_completion}. ``Images changed'' counts images whose predicted component pairs differ from the reference arm.}
+\label{tab:mech_ablation}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccl}
+\hline
+Arm & TP/FP/FN & micro-F1 & macro-F1 & Images changed \\
+\hline
+Occlusion on (reference) & 418/37/66 & \textbf{0.890} & 0.901 & --- \\
+Occlusion off & 103/26/381 & 0.336 & 0.294 & 31/31 \\
+\hline
+Guard on (reference) & 418/37/66 & \textbf{0.890} & 0.901 & --- \\
+Guard off & 418/37/66 & 0.890 & 0.901 & 0/31 \\
+Witness required & 413/37/71 & 0.884 & 0.907 & 6/31 \\
+\hline
+\end{tabular}
+\end{table}
+
+Removing component occlusion leaves component coordinates available for region-of-interest selection and anchor filtering but exposes the component pixels to the extractor, which then returns 466 wire segments instead of 666. Component-pair micro-F1 falls from 0.890 to 0.336 (precision 0.798, recall 0.213) and predicted pairs change on all 31 images. This establishes a large measured downstream contribution for the occlusion step on this benchmark. It is a mechanism ablation, not a wire-level extractor score: no validated one-to-one wire-matching scorer was run, and the human wire annotations are attached to the unmasked images, so wire-level F1 is not reported. The occlusion-off arm is not a proposed configuration and is not a replacement estimate for the pipeline's benchmark performance.
+
+For the completion safeguards, the shared-component (self-loop) guard fires on 18 of 31 images and rejects 38 candidate merges. Because the primary metric projects each net to distinct component pairs, disabling the guard leaves the scored pair sets unchanged: the guard's protection against same-device-pin shorts is invisible to this metric and therefore unquantified here. Requiring a wire witness instead of the relaxed distance fallback changes predictions on 6 of 31 images (TP/FP/FN 413/37/71; micro-F1 0.884, macro-F1 0.907). These arms establish activation and paired effects; they do not rank the safeguards by safety.
 
 \begin{table}[htbp]
 \caption{Join strategy and baseline comparison on human-verified net-level ground truth (31 real images, annotated component boxes; detected wires except for the stated perfect-wire reference). Primary metric is micro-averaged (pair-pooled) component-pair F1; macro (mean per-image) F1 is shown for reference.}
@@ -315,10 +344,10 @@ With annotated component boxes held fixed, replacing detected wires by the datas
 \end{figure}
 
 \subsection{Descriptive Per-Drafter Results}
-Table~\ref{tab:per_drafter} reports the scale-relative completion join grouped by CGHD drafter. Drafter identities were recovered from the source tree for 16 of 31 images by direct filename match; the remaining 15 were inferred from the dataset's documented 12-circuits-per-drafter block structure. Four groups contain at least four images, with micro-F1 ranging from 0.854 to 0.987. These groups describe within-corpus variation, not evidence of unseen-drafter transfer. No held-out-drafter experiment was performed; the small, partly inferred groups do not support strong statistical separation.
+Table~\ref{tab:per_drafter} reports the scale-relative completion join grouped by CGHD drafter. The published CGHD-1152 dataset file index (version~14) places each of the 31 benchmark image filenames under exactly one \texttt{drafter\_N/images/} path, matching the drafter assignments used here. Thus all 31 assignments are direct matches to the corpus's drafter labels rather than inferences from circuit numbering; the version~13 image-path index agrees. Four groups contain at least four images, with micro-F1 ranging from 0.854 to 0.987. These groups describe within-corpus variation, not evidence of unseen-drafter transfer. No held-out-drafter experiment was performed; the small groups do not support strong statistical separation.
 
 \begin{table}[htbp]
-\caption{Descriptive join micro-F1 (scale-relative completion) by CGHD drafter. Groups with at least four images; overall includes all benchmark images. Drafter identities include direct and inferred assignments.}
+\caption{Descriptive join micro-F1 (scale-relative completion) by CGHD drafter. Groups with at least four images; overall includes all benchmark images. Drafter identities are direct filename matches to the published CGHD-1152 file index (31/31).}
 \label{tab:per_drafter}
 \centering
 \begin{tabular}{lcccc}
@@ -396,7 +425,7 @@ Metric boundary (all evaluated groups) & Component pairs discard terminal identi
 \end{tabular}
 \end{table*}
 
-Component detection has reported mAP@0.5 of 88.5\%, with crossover recall of 70.7\%. Geometric edge types 2, 4 and 5 do not consult crossover class labels when joining nearby wire fragments or mid-span contacts, creating a possible false-merge pathway. An audit using annotated component boxes found 13 crossover instances across eight benchmark images. In C242\_D1\_P1, suppressing two crossing-adjacent endpoint--endpoint edges changed component-pair TP/FP/FN from 27/4/0 to 19/0/8. Removing these edges also removes true connections; this is not a demonstrated mitigation gain. Detector-miss effects were not measured. This conditional joining intervention does not attribute the four false pairs to missed or misclassified detector outputs and is not a prevalence estimate. Crossover-aware suppression remains an unvalidated intervention, and the impact of crossover recognition errors on autonomous netlists remains unresolved.
+Component detection has reported mAP@0.5 of 88.5\%, with crossover recall of 70.7\%. Geometric edge types 2, 4 and 5 do not consult crossover class labels when joining nearby wire fragments or mid-span contacts, creating a possible false-merge pathway. An audit using annotated component boxes found 13 crossover instances across eight benchmark images. In C242\_D1\_P1, suppressing two crossing-adjacent endpoint--endpoint edges changed component-pair TP/FP/FN from 27/4/0 to 19/0/8. Removing these edges also removes true connections; this is not a demonstrated mitigation gain. To test the detector half of this pathway directly, we ran the trained detector over the 31 benchmark images and compared its crossover outputs with the 13 annotated instances. Every annotated crossover was localized and assigned to the crossover class at a confidence of at least 0.25 (confidence 0.28--0.97, IoU 0.43--0.91); at a 0.50 threshold, 12 of 13 are retained and one falls below threshold. This does not contradict the reported 70.7\% class recall, which is measured on the detector's own validation data at its deployment threshold, and training-split membership for these benchmark images is unknown, so these are not held-out estimates. As a paired counterfactual, deleting the annotated crossover boxes before joining changes the recovered predictions on 6 of 31 images and changes component-pair micro-F1 by $+0.010$, with identical net partitions on 23 of 31 images. These two conditional checks therefore give no evidence that crossover misclassification is the driver of the false pairs observed here. Both are annotated-box, within-benchmark diagnostics: they are not a prevalence estimate, not an end-to-end error rate, and not a validation of crossover-aware suppression, which remains unvalidated.
 
 The VLM comparison uses a single model (Claude Opus~4.8) on 31 images; evaluating additional models and prompting strategies is future work. The component detector was trained on CGHD-1152 after excluding drafter\_0, whose drawing style differed from the retained drafters; performance on that excluded style is not established here. The synthetic error model is an authored approximation rather than a calibrated fit to detector errors. Calibration to measured errors is future work.
 

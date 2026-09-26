@@ -30,9 +30,10 @@ The framework uses several datasets for wire detection, component detection, and
 | Property | Value |
 |---|---|
 | Source | johannesbayer/cghd1152 (Kaggle) |
-| Total images | 4,503 |
-| Total annotations | 3,269 (PASCAL VOC XML) |
-| Resolution | 1000×1000 |
+| Total files with image extensions | 4,503 (includes 346 segmentation PNG/JPG maps) |
+| Raw `drafter_*/images/` paths | 4,157 (published v13/v14 index) |
+| XML annotations | 3,269 (PASCAL VOC XML; not one per image) |
+| Resolution | Varies by source image (not universally 1000×1000) |
 | Drafters | 33 (drafter_-1 through drafter_31) |
 | Classes | 61 (all 58 HDC classes covered + 3 extras) |
 | Extras | Instance segmentation polygons + binary stroke masks |
@@ -42,11 +43,11 @@ The framework uses several datasets for wire detection, component detection, and
 
 | Drafter | Annotations | Images | Status |
 |---|---|---|---|
-| drafter_0 | 149 | 1,039 | ⚠️ Outlier (10× others) |
-| drafter_-1 | 144 | 145 | Pre-numbering batch |
-| drafter_1–31 | 96 each | ~108 each | Standard 12×2×4 structure |
-| drafter_17 | 96 | 19 | ⚠️ Missing 77 images |
-| drafter_28 | 96 | 0 | ❌ Annotations only, no images |
+| drafter_0 | 149 | 1,037 | ⚠️ Outlier (many images without XML) |
+| drafter_-1 | 144 | 144 | Pre-numbering batch |
+| drafter_1–31 | 96 each | 96 each | Standard 12×2×4 structure |
+| drafter_17 | 96 | 96 | Published v13/v14 index; an older local copy listed only 19 |
+| drafter_28 | 96 | 96 | Published v13/v14 index; an older local copy listed 0 |
 
 ### Class Coverage
 

@@ -24,7 +24,7 @@ false alarm. Remaining items are portal-side actions the repo cannot contain (li
 | References: IEEE style, relevant, accurate | ✅ | 26 `\bibitem`s, first-citation order (commit 9a0f7b1) |
 | Biographies required for ALL authors, below references | ✅ | 6 `IEEEbiography` blocks with photos (`figures/authors/*.jpg`) |
 | ORCID: submitting author must have a public, populated ORCID | ✅/☐ | `\orcidlink` for all 6 authors; **verify the submitting author's ORCID profile is public** (portal) |
-| Graphical abstract: 660×295 JPG < 45 KB, from an article figure | ✅ | Created `paper/ieee-paper/figures/graphical_abstract.jpg` (660×295, 32 KB; Fig. 1 pipeline + Fig. 7 results). Upload separately in the portal — not referenced in the .tex |
+| Graphical abstract: 660×295 JPG < 45 KB, from an article figure | ✅ | `paper/ieee-paper/figures/graphical_abstract.jpg` (660×295, 36 KB). **Regenerated 2026-09-26**: the top strip still read “SPICE Netlist / Pin discovery + simulation”; it now carries the corrected Fig. 1 labels (“Structural Netlist / Inferred pin-to-node map”), with the results chart unchanged. Upload separately in the portal — not referenced in the .tex |
 | Acronyms defined at first use | ✅ | SPICE/OCR etc. expanded (commit 9a0f7b1) |
 | Funding statement | ✅ | `\tfootnote{This work received no external funding.}` (Access convention) |
 | Correct grammar (immediate-reject rule) | ✅ | Prose humanized/re-read in the 2026-06-28 pass |

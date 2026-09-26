@@ -8,22 +8,22 @@ The plan was read from `/home/claw/circuit-digitization-validation-20260907/note
 
 ## Per-finding disposition
 
-All manuscript anchors below occur in **both** live sources. PDF pages remain pending a later authorized build against the confirmed reviewed baseline.
+All manuscript anchors below occur in **both** live sources. PDF pages were subsequently built in Revision round 3 (clean and highlighted Access PDFs, both 12 pages); final page-reference reconciliation remains outstanding.
 
 | Finding | Disposition / source action | Evidence or stable anchors | Local commit group |
 |---|---|---|---|
 | 1 | Source correction complete: authorized D2 title/heads; output/metric distinction; four-row capability table | Abstract; Introduction; Pipeline Overview; synthetic metric definition; `tab:capabilities`, including “Metric boundary”; Conclusion; evaluator `comp_pairs`/`gt_pairs` discards pin identity | `1cc61ec` |
-| 2 | Source claim sweep complete, including captions and the authorized pipeline node text; stale binary contents remain a T7 blocker | `fig:pipeline`, `fig:endpoint_graph`, `fig:completion`, `fig:join_comparison`, `fig:real_join_fig`; Related Work; real evaluation; VLM section; Discussion. No equivalence/global-short/endpoint-drop/baseline-upper-bound claims retained | `8d97dcc`, `10c1208` |
+| 2 | Source claim sweep complete, including captions and the authorized pipeline node text; the pipeline overview figure and graphical abstract were later regenerated from source in round 3, and any remaining stale binary contents (if any) are a T7 reconciliation item | `fig:pipeline`, `fig:endpoint_graph`, `fig:completion`, `fig:join_comparison`, `fig:real_join_fig`; Related Work; real evaluation; VLM section; Discussion. No equivalence/global-short/endpoint-drop/baseline-upper-bound claims retained | `8d97dcc`, `10c1208` |
 | 3 | Source correction complete: component-first versus fallback selection, alpha 0.35, unweighted union-find, clamped completion reach, witness costs, mandatory row/slot/dummy assignment and guarded application | “Edge type 3”; “The tolerances”; “Degree-budget completion retains”; “When candidates exist”; “Matches are then applied”; `core/join_graph.py:176–209`, `core/completion.py:139–235` | `7a11ae4` |
-| 4 | Honest source/response qualification complete; scientific detector-error effect remains unmeasured | Discussion “Component detection has reported”; R2-4; two-edge C242 TP/FP/FN 27/4/0 → 19/0/8 | `79e5017`; response group |
-| 5 | Honest negative-ablation wording complete; no full-occlusion or completion-wide scale-removal evidence claimed | `tab:edge_ablation` and following paragraph; Wire Detection Benchmark; R2-5. Same aggregate counts do not prove same pairs, activations or completion masking | `79e5017`, `10c1208`; response group |
+| 4 | Conditional detector crossover check and annotated-box counterfactual reported; autonomous end-to-end detector-error effect remains unmeasured | Discussion “Component detection has reported”; R2-4; two-edge C242 TP/FP/FN 27/4/0 → 19/0/8 | `79e5017`; response group; round 3 |
+| 5 | Occlusion-removal and completion-safeguard evidence reported; completion-wide scale-removal evidence remains untested | `tab:edge_ablation` and `tab:mech_ablation` with following paragraphs; Wire Detection Benchmark; R2-5. Same aggregate counts do not prove same pairs, activations or completion masking | `79e5017`, `10c1208`; response group; round 3 |
 | 6 | Plan/figure ledger complete for this pass; figure reconciliation and rendering remain technical T7 work | Ledger below; A uses three PDF concept assets, B uses TikZ. Binary-only changes must later receive highlight mappings | `0f410c9`; this index |
 | 7 | Response scaffold factual rewrite complete; twelve verbatim concerns + twelve responses/actions; final pagination/render/approval pending | `RESPONSE_TO_REVIEWERS.md`, including opening, electrical-subset range, crossover and ablation answers. No claim that per-drafter cells show transfer | response group |
 | 8 | Plan back-edges corrected; actual package freeze not performed | T1 before overlapping edits; T8 factual input before freeze; clean pagination before T4 page references; response/highlight checks before package freeze; subsequent edits invalidate affected artifacts/approvals | `0f410c9` |
 | 9 | Numeric provenance CLOSED from existing local files and verified hashes; no rerun | Exact paths/fields/hashes below and plan T6 ledger | `0f410c9`; this index |
 | 10 | Agent/human responsibilities separated; original A:35–36 publication-history/DOI fields explicitly added to T8 spec and left untouched | Plan OPEN/T8; protected fields checked against starting SHA; technical template/source checks are not author-only inputs | `0f410c9` |
 
-Additional planned prose completed: descriptive drafter groups/provenance (R1-1), generic-device/export distinctions (R1-2), manual threshold/mixed-size limits (R1-3/R2-6), electrical-subset complexity and dense-bus limits (R1-5), proposed annotation/expansion protocol with no invented timing (R2-1), conditional VLM comparison with provisional autonomous numbers removed (R2-2), and exact-title relevance decline (R1-6). Otsu remains 0.789. The wire caption/text identifies historical 10°/18px deduplication versus production 12°/8px; no production setting changed.
+Additional planned prose completed: descriptive drafter groups/provenance (31/31 now filename-verified against CGHD-1152 v14; R1-1), generic-device/export distinctions (R1-2), manual threshold/mixed-size limits (R1-3/R2-6), electrical-subset complexity and dense-bus limits (R1-5), proposed annotation/expansion protocol with no invented timing (R2-1), conditional VLM comparison with provisional autonomous numbers removed (R2-2), and exact-title relevance decline (R1-6). Otsu remains 0.789. The wire caption/text identifies historical 10°/18px deduplication versus production 12°/8px; no production setting changed.
 
 ## Existing-artifact numeric ledger
 
@@ -44,7 +44,7 @@ All paths below are relative to `paper/ieee-paper`. A = Access; B = local IEEEtr
 
 | Scientific figure | A consumption | B consumption | Source/data/config provenance and required T7 action |
 |---|---|---|---|
-| Pipeline overview | `figures/pipeline_overview.pdf`, text width | `figures/pipeline_overview_tikz.tex`, input | TikZ node 22 now says Structural Netlist / Inferred pin-to-node map. Existing PDF still extracts “SPICE Netlist”, “Pin discovery”, “+ simulation”. **Must reconcile before submission.** The legacy `generate_concept_figures.py` also defines a pipeline generator; do not assume it reproduces the TikZ. |
+| Pipeline overview | `figures/pipeline_overview.pdf`, text width | `figures/pipeline_overview_tikz.tex`, input | TikZ node 22 now says Structural Netlist / Inferred pin-to-node map. **PDF regenerated 2026-09-26** from the corrected TikZ using the standalone recipe (mathptmx, border 3pt) and installed as `figures/pipeline_overview.pdf`; it now extracts “Structural Netlist” / “Inferred pin-to-node map”, retains the original 533.924$\times$83.589 pt single-page layout, and no other figure was rebuilt. The legacy `generate_concept_figures.py` also defines a pipeline generator; do not assume it reproduces the TikZ. |
 | Endpoint graph | `figures/endpoint_graph.pdf`, column width | `figures/endpoint_graph_tikz.tex`, input | Existing PDF/TikZ relationship is not certified by source equality. Current `generate_concept_figures.py` emits a differently named `endpoint_graph_concept.pdf`. Confirm correct production path and content during T7. |
 | Completion | `figures/completion.pdf`, column width | `figures/completion_tikz.tex`, input | Existing PDF has a local same-component matching guard label; caption now limits the guarantee. Current concept generator emits `completion_concept.pdf`, not this consumed filename. Reconcile actual dependency/provenance at T7. |
 | C37 pipeline example | `figures/pipeline_examples/C37-D2-P4-jpg.png`, 0.48 text width | Same | `generate_pipeline_examples.py`, `cfg` uses dedup 12°/18px and anchor 16, distinct from both wire-table historical 10°/18px and production 12°/8px. Preserve the image/config-specific caption, not benchmark wire counts. |
@@ -61,7 +61,7 @@ Immutable scientific evidence must be preserved. Presentation assets need not be
 | Path | SHA256 | Relative to starting commit |
 |---|---|---|
 | `figures/pipeline_overview_tikz.tex` | `43ff4098b924e214a7124fd872bb11410b8823607d2a4967a19ed04baad2167c` | authorized node-label text only |
-| `figures/pipeline_overview.pdf` | `a29120b1042237332b2724b0ccbaabef584bf77893a3c677676300831070178b` | unchanged |
+| `figures/pipeline_overview.pdf` | `f3afe8547776bc6c576ecb365d58bc9e7e0a85b36ac153df2891431c3d2cfd1e` | regenerated 2026-09-26 from corrected TikZ; label-only change, page geometry identical |
 | `figures/endpoint_graph_tikz.tex` | `33c99e5860134a8ed4389d737226794423bb6427862c50ca92420fe0d594217a` | unchanged |
 | `figures/endpoint_graph.pdf` | `05ed63fb57b489c44d1f1e15f3ac029ca3849be66ee56e1a531b3192bb73fe40` | unchanged |
 | `figures/completion_tikz.tex` | `fa6541b8d9d3af1eebb076317e4b697e91dfcf936695a5336a9c10829245d8cf` | unchanged |
@@ -94,7 +94,7 @@ Immutable scientific evidence must be preserved. Presentation assets need not be
 3. Approve author/byline/order, affiliations, existing ORCIDs, biographies/photos, funding and publication-history/template-DOI disposition. Provide byline-change permission/form if comparison to the confirmed reviewed byline requires it. No such field was edited.
 4. Give editorial and rendered-page approval, then final consent tied to the frozen source/PDF/package hashes after T7 and final response pagination. A later edit invalidates affected checks and approvals.
 
-Technical work still outside this pass: template/environment preparation; correction/reconciliation of stale figure assets; layout and clean/highlighted/response PDF builds; final page references; evidence packaging and final manifest. These are not inherently human-only tasks. Scientific limitations remain pin-level correctness, detector-miss causality, full occlusion/scale ablations and broader generalization; a signature or build does not resolve them.
+Technical work still outside this pass: template/environment preparation; final page references; response-letter rendering; evidence packaging and final manifest. Clean and highlighted PDF builds and figure reconciliation were completed in Revision round 3. These are not inherently human-only tasks. Scientific limitations remain pin-level correctness, autonomous detector-miss causality, completion-wide scale removal, extreme/mixed-size inputs and broader generalization; a signature or build does not resolve them.
 
 ## Source hashes (not submission-package approval)
 
@@ -121,13 +121,13 @@ The base already contains the red-team manuscript corrections, ablation and draf
 | H04, line 92, Introduction opening | Port selectively to both sources | Port the fork's prerequisite-for-simulation and separate values/models framing, retain the SPICE acronym expansion, and preserve the revision's final sentences limiting the experiment to annotated boxes. Reject the fork's unestablished “primary failure mode” assertion. |
 | H05, line 96, VLM motivation | Keep revision | Both methods' annotated boxes are explicit. Reject fairness/asymmetry framing and the implication that free-form output motivates superiority. |
 | H06, line 115, Pipeline Overview | Keep revision | Inferred pin-to-node output, metric limitations and illustrative export are already explicit. Reject any implication that adding values/models alone certifies simulatable correctness. |
-| H07, line 124, detector paragraph | Keep revision's Discussion coverage; reject restoring older section | Crossover recall 70.7% and the unmeasured detector-error effect are retained beside the two-edge audit. Do not restore fork detector figures 89.0/78.5/95.8 or its class-merge section over the revision structure; revision mAP50 is 88.5%. No detector claim or experiment is added. |
+| H07, line 124, detector paragraph | Keep revision's Discussion coverage; reject restoring older section | Crossover recall 70.7% and the conditional detector crossover check are reported beside the two-edge audit; autonomous end-to-end detector-error causality remains unmeasured. Do not restore fork detector figures 89.0/78.5/95.8 or its class-merge section over the revision structure; revision mAP50 is 88.5%. The round-3 detector audit is reported in the current Discussion. |
 | H08, line 166, scale tolerances | Keep corrected revision | Preserve fixed multipliers/clamps, actual upper-middle scale definition/fallback, alpha 0.35 and component-first/fallback behavior. Reject retuning/scale-invariance implications; mixed-size and controlled-rescaling limitations remain. |
 | H09, line 272, real benchmark description | Keep revision | Convenience-sample, single-annotator, no timing-log and future-expansion disclosures already exist. Reject the fork's residual “answer key is independent of every method” and SPICE-active-set shorthand; preserve actual component-pair evaluation scope. |
 | H10, lines 305–326, ablation table | Keep revision table and all values | Base/full table already exists with full TP/FP/FN columns. Reject the fork caption's “completion reconnects the same floating pins” causal inference and reduced table columns. Do not perform the later layout/build task. |
 | H11, line 330, real-join figure caption | Keep revision caption and asset | Conditional VLM framing already incorporated; preserve explicit paired CI and metric boundary. No figure replacement or regeneration. |
-| H12, lines 334–336, ranking and ablation interpretation | Keep revision | Preserve residual bootstrap-bias concession, base 0.816 versus fixed-pixel 0.820, and full-count ties. Reject “same floating pins,” sparse-pattern/activation explanations and claims that tied counts establish matching connections. Missing occlusion/completion-wide scale ablations remain explicit. |
-| H13, lines 342–366, perfect wires, complexity and drafter table | Keep revision | Preserve 0.8903 versus 0.8898 instead of “unchanged,” the electrical-subset 3–14 range/median 7, histogram and dense-bus limitation. Preserve direct/inferred drafter provenance (16/15), all table cells and no held-out-drafter claim. Do not reintroduce the removed size/F1 correlation or “no catastrophic group” conclusion without a current evidence mapping. |
+| H12, lines 334–336, ranking and ablation interpretation | Keep revision | Preserve residual bootstrap-bias concession, base 0.816 versus fixed-pixel 0.820, and full-count ties. Reject “same floating pins,” sparse-pattern/activation explanations and claims that tied counts establish matching connections. Missing completion-wide scale ablations remain explicit; the occlusion-removal and completion-safeguard ablations were added in Revision round 3. |
+| H13, lines 342–366, perfect wires, complexity and drafter table | Keep revision | Preserve 0.8903 versus 0.8898 instead of “unchanged,” the electrical-subset 3–14 range/median 7, histogram and dense-bus limitation. Preserve drafter provenance (now 31/31 filename-verified against the published CGHD-1152 v14 index), all table cells and no held-out-drafter claim. Do not reintroduce the removed size/F1 correlation or “no catastrophic group” conclusion without a current evidence mapping. |
 | H14, line 398, VLM procedure | Keep revision | Retain matched annotated boxes, independent calls and scored unordered pairs. Do not restore the synthetic-control 0.99 claim or broader task-understanding inference absent from the newer submission prose. |
 | H15, line 400, VLM/autonomous results | Keep revision; reject fork autonomous paragraph | Preserve 0.923 versus 0.890, 21/31 exact component-pair scores and nonsignificance without equivalence. Reject provisional detector F1 0.632/join 0.247, free-form/token-cost criticism, and detector-transfer explanation. Auditable predictions/matches remain unavailable; no run is authorized or needed for default exclusion. |
 | H16, line 403, limitations label | Port to both sources | Add `\label{sec:limitations}` immediately after Discussion, preserving the fork's stable limitations anchor without replacing its corrected content. |
@@ -147,7 +147,7 @@ The base already contains the red-team manuscript corrections, ablation and draf
 | `manuscript_changes.diff` | Preserve the fork artifact byte for byte solely as historical provenance, with SHA256 `ad5b4b5d230a61294330fb69f654d01a7c781cd7e85a8cc5b460ccd6f955a30a` (44,899 bytes). README, response and this log explicitly reject using it as the current/confirmed-reviewed-baseline diff or applying it here. Its obsolete text is archival, not live manuscript claims. |
 | Experiments, figures, generators and existing table values | Preserve the session base exactly; do not regress to the fork or regenerate anything. Revision pipeline-example caption retains C37/C111 and 35/7 versus 11/4; values are not rerun here. |
 | Component assignment and completion descriptions | Preserve the newer OBB/AABB, nearest-pin, fallback-only directional scoring and guarded slot/dummy assignment corrections. Reject the fork's old AABB center-side pin routing and generic weighted-graph prose. No code or parameter changes. |
-| Figure consumption | Preserve the documented pre-existing Access PDF versus IEEEtran TikZ exceptions for pipeline overview, endpoint graph and completion. The stale Access pipeline graphic is a later technical reconciliation gap, not permission to overwrite newer figures or make PDF judgments now. |
+| Figure consumption | Preserve the documented pre-existing Access PDF versus IEEEtran TikZ exceptions for pipeline overview, endpoint graph and completion. The stale Access pipeline graphic was reconciled in Revision round 3 (regenerated from the corrected TikZ; the consumed PDF now extracts "Structural Netlist / Inferred pin-to-node map"). Do not overwrite newer figures or retroactively change this historical record. |
 | Protected manuscript material | Preserve title/frontmatter already settled at the base, byline/affiliations/ORCIDs, funding, Acknowledgment, biographies, publication/DOI fields and bibliography. No consent inferred. |
 
 ### T1 source verification
@@ -182,11 +182,11 @@ T3 commit: `f0cfeb2`. The starting response already contained the full scientifi
 
 Template found and read locally: `/home/claw/circuit-digitization-validation-20260907/context/01_review_materials/IEEE_Access_Response_to_Reviewers_TEMPLATE.txt`, SHA256 `efc079bd1c81a64a10aa4a751ee4da0dbc89b01a398f913adb2f224c86fb2051`. Its sibling PDF is also present (SHA256 `e6a2986d1b5337a2a1e413cff3d3a44e690841e470e050eb91ae143a0cfea103`); no PDF judgment or build was performed. **There is no missing-template gap.**
 
-The response now uses the template's explicit `Reviewer#N, Concern # M`, `Author response:` and `Author action:` structure for six concerns per reviewer. Original manuscript ID/title and revised title are retained separately. Editor addressee, subject, salutation and closing are present. The signatory is an explicitly unsigned author-confirmation placeholder; this does not invent author consent or change manuscript author fields. The template's “We are uploading” assertion is adapted to an intended package because no PDFs or upload were produced in this session.
+The response now uses the template's explicit `Reviewer#N, Concern # M`, `Author response:` and `Author action:` structure for six concerns per reviewer. Original manuscript ID/title and revised title are retained separately. Editor addressee, subject, salutation and closing are present. The signatory is an explicitly unsigned author-confirmation placeholder; this does not invent author consent or change manuscript author fields. The template's “We are uploading” assertion is adapted to an intended package: clean and highlighted manuscript PDFs were produced locally, but no portal upload is claimed.
 
 Decision-letter provenance: sibling `decision-email-raw.txt`, SHA256 `5d9ac227a2ad93a703a955d0183cf2d5bd5d0c0138f81914c445109eee80e730`. All twelve full concern texts match its plain-text reviewer sections with whitespace normalization only. PASS: exactly six numbered concerns per reviewer, twelve nonempty author responses and twelve nonempty author actions. The R1-6 titles match verbatim; the rationale neither promises a citation nor implies reading the full papers.
 
-The retained response opening describes within-corpus evidence, not added cross-style validation. R1-2 includes T3's exact pin/export distinctions. R2-2 retains matched component priors and removes autonomous/cost/equivalence claims. R2-4 explicitly calls the detector-error effect unmeasured; R2-5 explicitly concedes incomplete ablation coverage and rejects causal explanations from aggregate ties. Complete fields do not establish reviewer acceptance of those scientific limitations.
+The retained response opening describes within-corpus evidence, not added cross-style validation. R1-2 includes T3's exact pin/export distinctions. R2-2 retains matched component priors and removes autonomous/cost/equivalence claims. R2-4 reports conditional detector crossover measurements while leaving autonomous end-to-end detector-error causality unmeasured; R2-5 reports occlusion-removal and completion-safeguard ablations, while completion-wide scale removal remains untested and aggregate ties do not establish identical connections. Complete fields do not establish reviewer acceptance of those scientific limitations.
 
 ### Current action-to-source index
 
@@ -197,22 +197,22 @@ A/B are `paper-access.tex`/`paper-build.tex`. Line numbers below are source loca
 | R1-1 | `These groups describe within-corpus variation, not evidence of unseen-drafter transfer.` | 318 / 294 | Descriptive groups and no held-out-drafter claim; existing uncertainty and proposed expansion retained. |
 | R1-2 | `\label{tab:capabilities}` | 385 / 361 | T3 four-column device/metric table and exact switch export/omission condition; no validated complex pin semantics claimed. |
 | R1-3 | `The tolerances are manually configured scale-relative rules` | 130 / 106 | Actual multipliers/clamps, fallback alpha, bounded reach sensitivity and untested extreme sizes. |
-| R1-4 | `SPICE export is illustrative:` | 114 / 90 | Separate values/models and unvalidated real-scan simulation; title/metric boundaries retained. Pipeline graphic reconciliation remains later work. |
+| R1-4 | `SPICE export is illustrative:` | 114 / 90 | Separate values/models and unvalidated real-scan simulation; title/metric boundaries retained. Pipeline graphic reconciliation DONE: both `figures/pipeline_overview.pdf` and the graphical abstract were regenerated from source and now read "Structural Netlist / Inferred pin-to-node map". |
 | R1-5 | `\label{fig:complexity_hist}` | 314 / 290 | Electrical-subset range/median and dense-bus/multilayer limitation; asset preserved. |
 | R1-6 | “No citation added; relevance rationale supplied here.” | Response only | No citation added; relevance rationale supplied. Both exact suggested titles retained from the letter; no full-paper-review claim or email. |
 | R2-1 | `A proposed expansion protocol would stratify sampling` | 379 / 355 | Four sampling strata, independent annotation/adjudication and effort/provenance logs; missing historical timing disclosed. |
 | R2-2 | `\label{sec:vlm_results}` | 366 / 342 | Matched annotated component boxes, conditional scores/CI, no equivalence or cost/validity superiority; provisional autonomous figures excluded. |
 | R2-3 | `\title{From Hand-Drawn Schematics to Structural Circuit Netlists` | 41 / 28 | Preserve already revised title and heads; distinguish inferred pin-to-node output from component-pair evaluation. |
-| R2-4 | `Removing these edges also removes true connections; this is not a demonstrated mitigation gain.` | 399 / 375 | Preserve full two-edge tradeoff and explicit unmeasured detector-error effect. Partial scientific answer, not closed empirically. |
-| R2-5 | `\label{tab:edge_ablation}` | 246 / 222 | Existing base/full ablations retained; no masking/identical-connections inference; full occlusion and completion-wide scale removal untested. |
+| R2-4 | `Removing these edges also removes true connections; this is not a demonstrated mitigation gain.` | 399 / 375 | Full two-edge tradeoff retained, plus a direct detector crossover check (13/13 localized to the crossover class at conf >= 0.25, 12/13 at 0.50) and a paired box-removal counterfactual (+0.010 micro-F1, 23/31 identical partitions). Annotated-box, within-benchmark, not held out. |
+| R2-5 | `\label{tab:edge_ablation}` | 246 / 222 | Existing base/full ablations retained with no masking/identical-connections inference, plus new Table `tab:mech_ablation` / Section IV-E: occlusion removal 0.890 -> 0.336 (103/26/381, 31/31 images changed), guard fires 18/31 rejecting 38 merges, witness-required 0.884/0.907 (6/31 changed). Completion-wide scale removal, extreme/mixed-size untested. |
 | R2-6 | `Because $s$ is a single scalar per image, intra-image size variance is not modeled` | 130 / 106 | Retain mixed IC/discrete example, scale dependence and untested controlled rescaling. |
 
 ### Current session boundaries and unresolved decisions
 
 - T1 is a selective port onto the user-designated execution branch, T3 refines the existing device table, and T4 completes the response-source conversion. Existing earlier manuscript edits are credited to the inherited revision, not claimed as new experiments or new work here.
 - No human decision was invented: reviewed source/PDF identity, author signatory/consent, protected byline/funding/bio facts, final editorial/render approval and package ownership remain with the appropriate people. None is required to complete these authorized source tasks.
-- Technical follow-through outside this no-build session remains figure-dependency reconciliation, clean/highlighted/response PDFs, final pagination and package verification. The Access pipeline PDF still differs from the corrected TikZ source. Template presence does not certify a working Access build environment or rendered pages.
-- Scientific limits remain actual pin correctness/net partition/shorts, autonomous detector-error causality, full occlusion/completion-wide scale ablations and broader corpus/style/complexity evaluation. No rerun or new acceptance judgment was substituted for the requested prose work.
+- Round 3 regenerated the Access pipeline PDF and graphical abstract and built clean and highlighted manuscript PDFs. Response rendering, final pagination/page references and submission-package verification remain outstanding; local builds do not establish portal upload. Template presence does not certify a working Access build environment or rendered pages.
+- Scientific limits remain actual pin correctness/net partition/shorts, autonomous detector-error causality, completion-wide scale removal and extreme/mixed-size inputs, and broader corpus/style/complexity evaluation. The occlusion-removal and completion-safeguard ablations were added in Revision round 3. No rerun or new acceptance judgment was substituted for the requested prose work.
 - Session quota percentage is not available from the exposed tools: no authoritative start/end quota counters or session-attributed quota denominator are provided. No percentage is fabricated from context size or elapsed time.
 
 ### Current source hashes after T3/T4 (not package approval)
@@ -221,3 +221,73 @@ A/B are `paper-access.tex`/`paper-build.tex`. Line numbers below are source loca
 - `paper-build.tex`: `3007bfa0c424913ac26dfb0530ca0373ff4893d3b808fa18c1e01b90f1547c70`
 - `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `d17bb1d1d0d5eae237fbfa982927e6a0dccc7d610b31734e4256a9cdb7e91cf4`
 - `review_artifacts/COAUTHOR_README.md`: `182621d166fd26d614787e3d60305e43ee8c3aeb9c2ee3e98e15d081cf151863`
+
+## Revision round 3 — mechanism ablations, detector audit, package rebuild
+
+Supersedes the round-3 "no new experiments" position for R2-4 and R2-5 only. Every pre-existing
+number is unchanged; this round adds measurements and rebuilds the package.
+
+### New evidence (all run on detached worktrees; the shipped pipeline was not re-engineered)
+
+- **Occlusion removal** (Table `tab:mech_ablation`, Section IV-E): disabling the component-masking
+  call while holding ROI cropping, extractor config and coordinate restoration fixed returns 466
+  segments instead of 666 and drops component-pair micro-F1 from **0.890 to 0.336**
+  (TP/FP/FN 103/26/381; P 0.798, R 0.213); predicted pairs change on **31/31** images.
+- **Completion safeguards**: the shared-component guard fires on **18/31** images and rejects
+  **38** candidate merges; guard-off leaves the scored pair sets unchanged (the pair metric is
+  blind to same-device-pin shorts). Witness-required gives TP/FP/FN 413/37/71, micro-F1 0.884,
+  macro-F1 0.907, changing **6/31** images.
+- **Detector crossover check** (Discussion): all **13** annotated crossovers are localized and
+  classified to the crossover class at conf >= 0.25 (0.28-0.97; IoU 0.43-0.91); 12/13 at 0.50.
+  A paired counterfactual deleting the annotated crossover boxes changes micro-F1 by **+0.010**
+  with identical net partitions on **23/31** images. Annotated-box, within-benchmark; the
+  benchmark images' training-split membership is unknown, so these are not held-out estimates.
+
+### Verification performed
+
+- The ablation arms were **independently replayed** (fresh worktree) to exact agreement:
+  occlusion_off 103/26/381 / 0.33605220228384997; guard_on == guard_off 418/37/66 /
+  0.8903088391906283; witness_required 413/37/71 / 0.8843683083511776; pair_changes
+  {guard_off: 0, occlusion_off: 31, witness_required: 6}.
+- The crossover audit was **independently replayed**: reference 418/37/66, crossovers_removed
+  420/29/64, delta f1 +0.010012704217731816, 6/31 changed, 23/31 exact cluster agreement.
+- The **class-mapping bug** found in round 2 (`detected_boxes_eval.py`, `component_loader.py`)
+  is the reason the original crossover headline read "0 detected / 12 diode". The checkpoint's
+  own `model.names` is authoritative: `{2: crossover, 4: diode, 10: junction, 1: terminal}`.
+
+### Package rebuild
+
+- **Access manuscript now builds locally.** IEEE's kit (supplied by the author) is installed at
+  the repo root as `paper-access-overleaf-full.zip`; `build-overleaf-zip.sh` runs end to end and
+  produced `paper-access-overleaf.zip` (4.5 MB) containing the class files plus the current
+  manuscript and figure. The manuscript `.tex` inside the author's supplied bundle was an
+  **older pre-retitle version** ("...to SPICE Netlists") and was deliberately not used — only its
+  kit files were taken.
+- Clean Access PDF: 12 pages, 576 x 782.929 pt (Access trim, not letter), Formata/Giovanni fonts
+  embedded; 0 hits for "SPICE Netlist", "Pin discovery", "simulation-ready", "89.0%".
+- Highlighted PDF: built with the repository's own `build-highlighted.py` against baseline
+  `33f5e3d` (the pre-revision submission); 599 text changes highlighted, 5 changed figure assets
+  framed, and the assertion that the annotated PDF's text equals the clean PDF's text passed.
+- Reviewer status report PDF regenerated via the newly committed `build-status-report.py`
+  (WeasyPrint); no generator had previously been committed.
+
+### Source hashes after round 3 (not submission-package approval)
+
+- `paper/ieee-paper/paper-access.tex`: `db6be4af431172a7a74817f48a202e142b4729d96932574bb6e68cce26e63ee2`
+- `paper/ieee-paper/paper-build.tex`: `3a98b85c7c8465d6bbe28c10c2c9788fcd7978b82519851291f20eee9f5a3e1e`
+- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `3054f0e4a634b48458c1389ec5f90be8dcd11c7c56d32657897a03e3f73301cc`
+- `review_artifacts/REVIEWER_STATUS_REPORT.md`: `9ba9fd3d3ce363ee700610311f04264928c7dfa32c9c3326f73edde5be4d43b1`
+- `review_artifacts/REVIEWER_STATUS_REPORT.pdf`: `5749132464c0c229b1ff7980ee9fda5b4005e66389166a56d2e2410621054978`
+- `figures/pipeline_overview.pdf`: `f3afe8547776bc6c576ecb365d58bc9e7e0a85b36ac153df2891431c3d2cfd1e`
+- `figures/graphical_abstract.jpg`: `a88cd0a1a7aa2440a9d19650ec671ef56f77db6e978a82da1d3300f386c1597f`
+- `paper-access-overleaf.zip`: `d585697a71e0ee3bb87e214cbb765ef47c955f7cefb618798d19fba60086c7a4`
+- Access clean PDF (`output/pdf/paper-access.pdf`): `36dfed297edfbd6b94f65d20581393dbe9df0ae5efbbeceb717192a047a661ef`
+- Access highlighted PDF (`output/pdf/paper-access-highlighted.pdf`): `f4e42aa8155110c3e4052764cbae1dd0d4e741cd9d4a83e793a0a71a6fceae33`
+
+### Still not closed
+
+- Removal of scale dependence **throughout** completion; controlled rescaling and mixed-size inputs.
+- Held-out detector-error causality: the benchmark images' training-split membership is unknown,
+  and R2-1's per-image annotation-cost figure still cannot be reported (no timing log was kept).
+- The 34-annotated to 31-scored accounting still requires the author's substantive sign-off.
+- No commit, push or upload was performed in this round.
