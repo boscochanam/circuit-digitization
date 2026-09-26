@@ -100,7 +100,7 @@ Technical work still outside this pass: template/environment preparation; final 
 
 - `paper-access.tex`: `b264325a5168cc35f4258c971f62f781c3631531127e83be0e343e654aa3d0ee`
 - `paper-build.tex`: `10e1e45c23baa35791d20a4e0d907ccf96becd130ef380958b12e41b9aa53795`
-- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `ba20f96d8c905d17631b1fb8f995d1aef518f105ecb936bfe1803dffbc7fc3dd`
+- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `e7131ade5123e359bbcfebf66f09683de3bfc36af53cbd64b933b21452b83b60`
 
 
 ## T1 — selective fork port on the execution branch
@@ -219,7 +219,7 @@ A/B are `paper-access.tex`/`paper-build.tex`. Line numbers below are source loca
 
 - `paper-access.tex`: `3af1831456fba56f1935fc322e7407faf93b38d238297a5c93ddba70ccbd58b7`
 - `paper-build.tex`: `3007bfa0c424913ac26dfb0530ca0373ff4893d3b808fa18c1e01b90f1547c70`
-- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `d17bb1d1d0d5eae237fbfa982927e6a0dccc7d610b31734e4256a9cdb7e91cf4`
+- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `e7131ade5123e359bbcfebf66f09683de3bfc36af53cbd64b933b21452b83b60`
 - `review_artifacts/COAUTHOR_README.md`: `182621d166fd26d614787e3d60305e43ee8c3aeb9c2ee3e98e15d081cf151863`
 
 ## Revision round 3 — mechanism ablations, detector audit, package rebuild
@@ -275,11 +275,12 @@ number is unchanged; this round adds measurements and rebuilds the package.
 
 - `paper/ieee-paper/paper-access.tex`: `db6be4af431172a7a74817f48a202e142b4729d96932574bb6e68cce26e63ee2`
 - `paper/ieee-paper/paper-build.tex`: `3a98b85c7c8465d6bbe28c10c2c9788fcd7978b82519851291f20eee9f5a3e1e`
-- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `3054f0e4a634b48458c1389ec5f90be8dcd11c7c56d32657897a03e3f73301cc`
+- `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `e7131ade5123e359bbcfebf66f09683de3bfc36af53cbd64b933b21452b83b60`
 - `review_artifacts/REVIEWER_STATUS_REPORT.md`: `9ba9fd3d3ce363ee700610311f04264928c7dfa32c9c3326f73edde5be4d43b1`
 - `review_artifacts/REVIEWER_STATUS_REPORT.pdf`: `5749132464c0c229b1ff7980ee9fda5b4005e66389166a56d2e2410621054978`
 - `figures/pipeline_overview.pdf`: `f3afe8547776bc6c576ecb365d58bc9e7e0a85b36ac153df2891431c3d2cfd1e`
 - `figures/graphical_abstract.jpg`: `a88cd0a1a7aa2440a9d19650ec671ef56f77db6e978a82da1d3300f386c1597f`
+- `review_artifacts/RESPONSE_TO_REVIEWERS.pdf`: `1bdc69a8c6724730463b754db9eede2fd2793a988dc8f5b054a7675d9b26eda1`
 - `paper-access-overleaf.zip`: `d585697a71e0ee3bb87e214cbb765ef47c955f7cefb618798d19fba60086c7a4`
 - Access clean PDF (`output/pdf/paper-access.pdf`): `36dfed297edfbd6b94f65d20581393dbe9df0ae5efbbeceb717192a047a661ef`
 - Access highlighted PDF (`output/pdf/paper-access-highlighted.pdf`): `f4e42aa8155110c3e4052764cbae1dd0d4e741cd9d4a83e793a0a71a6fceae33`

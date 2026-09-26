@@ -8,7 +8,7 @@ Revised Article Title: “From Hand-Drawn Schematics to Structural Circuit Netli
 
 Port provenance: the reviewer organization originates in fork `10c1b92`; the factual responses and complete concern texts below retain the newer revision at `cefe77b`. The sibling `manuscript_changes.diff` is historical fork provenance, not the diff for this response or the reviewed submission baseline.
 
-Draft for author review. The concern/response/action structure follows the locally supplied IEEE Access response template; template conversion is complete. Final PDF page references, rendered response, figure reconciliation and submission-package approvals are pending; this source draft does not certify package readiness.
+Draft for author review. The concern/response/action structure follows the locally supplied IEEE Access response template; template conversion is complete. A rendered PDF of this response now exists (`RESPONSE_TO_REVIEWERS.pdf`, 6 pages). Final PDF page references and submission-package approvals remain pending; this source draft does not certify package readiness.
 
 To: IEEE Access Editor
 
