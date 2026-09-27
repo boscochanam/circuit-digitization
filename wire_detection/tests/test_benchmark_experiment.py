@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pathlib import Path
 
+from wire_detection.benchmark import reference_pipeline as ref
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig,
     build_binary_masks,
@@ -11,10 +11,15 @@ from wire_detection.benchmark.experiment_harness import (
     run_experiment,
 )
 
-_has_hdc_data = Path("/home/claw/circuit-digitization/roboflow_test2").is_dir()
+_has_hdc_data = (
+    ref.HDC_BASE.is_dir()
+    and ref.GT_IMAGES.is_dir()
+    and ref.GT_LABELS.is_dir()
+    and bool(list(ref.GT_LABELS.glob("*_jpg.txt")))
+)
 
 
-@pytest.mark.skipif(not _has_hdc_data, reason="HDC dataset not present")
+@pytest.mark.skipif(not _has_hdc_data, reason="HDC export plus wire GT images and labels not present")
 def test_baseline_harness_matches_reference():
     summary = run_experiment(ExperimentConfig(name="baseline_control_test"))
 

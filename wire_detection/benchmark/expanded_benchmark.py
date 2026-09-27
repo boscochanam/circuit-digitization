@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""
-EXPANDED BENCHMARK — Run ALL experiment configs across all 134 images.
-Uses filename prefix matching instead of pixel-diff.
+"""EXPANDED BENCHMARK — run the 134-image wire study with committed identity labels.
+
+Requires WIRE_GT_IMAGES to point to the original CGHD scans. Missing inputs fail closed;
+no Roboflow prefix fallback can silently score augmented component labels.
 """
 from __future__ import annotations
 import json
-import sys
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -13,8 +13,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-sys.path.insert(0, '/home/claw/circuit-digitization')
-sys.path.insert(0, '/home/claw/workspace')
+from wire_detection import paths
 from wire_detection.benchmark import reference_pipeline as ref
 from wire_detection.benchmark.experiment_harness import (
     ExperimentConfig, ImageResult, RunSummary,
@@ -22,84 +21,10 @@ from wire_detection.benchmark.experiment_harness import (
     crop_to_roi, shift_components, detect_wires_experiment, wave1_configs, wave2_configs, wave3_configs, wave4_configs,
 )
 
-# ── Override data paths ──
-GT_LABELS = Path("/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images")
-GT_IMAGES = Path("/home/claw/workspace/ground_truth/labels_few_annot/images")
-HDC_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
-ROB_IMAGES_BASE = Path("/home/claw/circuit-digitization/roboflow_test2")
-HDC_SPLITS = ["train", "valid", "test"]
-
-
-def find_hdc_label_by_prefix(image_name: str) -> Path | None:
-    """Find HDC label by filename prefix matching (handles .rf.XXXX suffixes).
-
-    .. warning::
-       Returns the FIRST match — may be from an augmented version whose labels
-       do NOT align with the original image.  Prefer :func:`find_exact_match`
-       when loading labels for occlusion on original images.
-    """
-    for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
-        matches = sorted(label_dir.glob(f"{image_name}_jpg.rf.*.txt"))
-        if matches:
-            return matches[0]
-    for split in HDC_SPLITS:
-        label_dir = HDC_BASE / split / "labels"
-        matches = sorted(label_dir.glob(f"{image_name}_png.rf.*.txt"))
-        if matches:
-            return matches[0]
-        matches = sorted(label_dir.glob(f"{image_name}_jpeg.rf.*.txt"))
-        if matches:
-            return matches[0]
-    return None
-
-
-def find_exact_match(image_name: str, orig_gray: np.ndarray) -> tuple[Path, Path] | None:
-    """Find the Roboflow version pixel-identical to ``orig_gray`` and its label.
-
-    CRITICAL (Jun 2026): Each Roboflow image has multiple ``.rf.<hash>`` versions —
-    some augmented, some untouched.  ``find_rob_image()`` returns the first match
-    (sorted by filename), which may be augmented.  Its labels are in a different
-    coordinate space and will produce wrong occlusion polygons on the original.
-
-    This function finds the version with pixel error < 0.01 (identical) and
-    returns its label path.  Always prefer this over ``find_hdc_label_by_prefix``
-    when the caller loads the original (non-augmented) image.
-    """
-    stem = f"{image_name}_jpg"
-    for split in HDC_SPLITS:
-        img_dir = ROB_IMAGES_BASE / split / "images"
-        label_dir = ROB_IMAGES_BASE / split / "labels"
-        if not img_dir.exists():
-            continue
-        for f in sorted(img_dir.glob(f"{stem}.rf.*.jpg")):
-            rob = cv2.imread(str(f), cv2.IMREAD_GRAYSCALE)
-            if rob is not None and rob.shape == orig_gray.shape:
-                err = np.mean(np.abs(orig_gray.astype(float) - rob.astype(float)))
-                if err < 0.01:  # pixel-identical
-                    label = label_dir / f"{f.stem}.txt"
-                    if label.exists():
-                        return (f, label)
-    return None
-
-
-# Cache: image_name -> components
-_component_cache: dict[str, list] = {}
-def load_components(image_name: str, w: int, h: int) -> list:
-    """Load and cache HDC components for an image."""
-    if image_name not in _component_cache:
-        hdc_path = find_hdc_label_by_prefix(image_name)
-        _component_cache[image_name] = ref.parse_components(hdc_path, w, h)
-    return _component_cache[image_name]
-
-def find_rob_image(image_name: str) -> Path | None:
-    """Find the Roboflow augmented image (matches label orientation)."""
-    for split in HDC_SPLITS:
-        img_dir = ROB_IMAGES_BASE / split / "images"
-        matches = sorted(img_dir.glob(f"{image_name}_jpg.rf.*.jpg"))
-        if matches:
-            return matches[0]
-    return None
+# The committed label sets use matching `<stem>_jpg.txt` filenames. External source
+# images must be supplied explicitly; see ground_truth/README.md.
+GT_LABELS = paths.wire_labels_dir()
+COMPONENT_LABELS = paths.component_labels_dir()
 
 
 # Preload all image data
@@ -112,31 +37,27 @@ def preload_all_images():
         return _all_image_data
 
     data = []
+    image_root = paths.gt_images_dir()  # fail before computing any plausible partial result
+    if not GT_LABELS.is_dir() or not COMPONENT_LABELS.is_dir():
+        raise FileNotFoundError("Committed wire/component label directories are missing")
     all_images = sorted(GT_LABELS.glob("*_jpg.txt"))
+    component_names = {p.name for p in COMPONENT_LABELS.glob("*_jpg.txt")}
+    if len(all_images) != 134 or {p.name for p in all_images} != component_names:
+        raise ValueError("Expected 134 matching wire and component identity-label files")
     for gt_file in all_images:
-        image_name = gt_file.stem.replace("_jpg", "")
-        image_path = GT_IMAGES / f"{image_name}_jpg.jpg"
-
-        # Load the ORIGINAL image (correct for evaluation)
+        image_name = gt_file.stem.removesuffix("_jpg")
+        image_path = image_root / f"{image_name}_jpg.jpg"
+        if not image_path.is_file():
+            image_path = image_root / f"{image_name}.jpg"
         gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
         if gray is None:
-            continue
-
+            raise FileNotFoundError(f"CGHD image missing or unreadable: {image_path}")
         h, w = gray.shape
         gt_lines = ref.load_ground_truth(gt_file, w, h)
-
-        # CRITICAL (Jun 2026): Use exact-match Roboflow label for occlusion.
-        # find_hdc_label_by_prefix() returns the FIRST match which may be from
-        # an augmented version — its labels are in the wrong coordinate space
-        # for the original image, causing incorrect occlusion polygons.
-        exact = find_exact_match(image_name, gray)
-        if exact:
-            _, label_path = exact
-            components = ref.parse_components(label_path, w, h)
-        else:
-            components = load_components(image_name, w, h)
+        label_path = COMPONENT_LABELS / gt_file.name
+        components = ref.parse_components(label_path, w, h)
         if not components:
-            continue
+            raise ValueError(f"No components in identity label file: {label_path}")
         data.append((image_name, gray, gt_lines, components))
 
     _all_image_data = data

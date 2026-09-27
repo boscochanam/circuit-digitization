@@ -65,24 +65,25 @@ Three inputs are resolved from the environment:
 | `WIRE_GT_IMAGES` | **none — must be set** | CGHD scans | ✗ not redistributed (CC BY source images) |
 | `WIRE_GT_WIRE_LABELS` | `ground_truth/wire_labels/` | ground-truth wire polylines | ✓ **committed** (134 files, MIT) |
 | `WIRE_COMPONENT_LABELS` | `ground_truth/component_labels/` | component labels, for occlusion | ✓ **committed** (134 files, CC BY 4.0) |
-| `WIRE_HDC_BASE` | `roboflow_test2/` | Roboflow export — **only a fallback** | ✗ gitignored symlink |
+| `WIRE_HDC_BASE` | `roboflow_test2/` | Historical Roboflow export, used by other scripts but **not** by `expanded_benchmark.py` | ✗ external |
 
-Because the component labels are committed, the Roboflow export is no longer needed: the
-wire-detection benchmark runs on a fresh clone plus the CGHD images alone.
+The expanded 134-image benchmark consumes the two committed label sets and the original
+CGHD images supplied by `WIRE_GT_IMAGES`; it does not use the Roboflow export.
 
 `WIRE_GT_IMAGES` deliberately has **no default**. `ground_truth/local_eval/images` is the
 *31-image net-GT set*, a different dataset; defaulting there would silently score 31 of 134 and
-print a plausible-looking F1. `expanded_benchmark.py` now refuses to run without it, and warns
-loudly if fewer than all 134 labelled images resolve.
+print a plausible-looking F1. `expanded_benchmark.py` refuses to run without it, rejects missing
+labels/images, and requires all 134 identity-labelled files.
 
 ### The Roboflow identity-copy trap
 
-`WIRE_HDC_BASE` must point at an export that contains, for every image stem, the **identity**
+For **other scripts still using** `WIRE_HDC_BASE`, the export must contain, for every image stem, the **identity**
 `.rf.<hash>` copy — the one pixel-identical to the original CGHD scan. Roboflow exports also
 contain *augmented* (rotated/flipped) copies whose labels live in a different coordinate space.
-`find_exact_match()` picks the identity copy by pixel comparison; if it is absent it falls back to
-`find_hdc_label_by_prefix()`, which returns an arbitrary — often augmented — label. Occlusion
-polygons then land in the wrong place and every F1 silently collapses.
+`find_exact_match()` in the historical benchmark version selected the pixel-identical copy;
+without a match that version fell back to `find_hdc_label_by_prefix()`, which returned an
+arbitrary — often augmented — label. Occlusion polygons could then land in the wrong place and
+every F1 silently collapse.
 
 Observed, on an export missing the identity copies (1993 train files instead of 3986): **0 of 134
 images matched exactly**, and the thresholding numbers came out `otsu_component` 0.5854,
@@ -94,10 +95,10 @@ alike. Across the 134 benchmark images, all 216 augmented copies carry labels di
 identity's, and for 31 of 111 stems the identity copy is *not* the alphabetically first — which is
 exactly what `find_hdc_label_by_prefix()` would have picked.
 
-**This is now defused two ways.** `component_labels/` ships the correct identity labels, so the
-export is unnecessary; and if it is ever needed and no pixel-identical copy is found,
-`expanded_benchmark.py` raises rather than falling back to an arbitrary one. It will not print a
-plausible number from wrong labels again.
+**This is now defused for the expanded benchmark.** `component_labels/` ships identity labels;
+`expanded_benchmark.py` reads them directly, never calls the Roboflow-prefix fallback, and raises
+if any expected image or label is missing. Other historical scripts may still use Roboflow exports;
+audit their matching behavior separately before trusting rerun metrics.
 
 Mind the filename convention. The scripts build image paths as `f"{name}_jpg.jpg"`
 (`build_net_gt.py:54`, `detection_ceiling.py:64`), where `name` is a JSON key with its trailing
