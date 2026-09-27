@@ -24,6 +24,26 @@ Three tiers of reproducibility, in increasing order of external data required:
 
 ---
 
+## Local-only review inputs (supplement to GitHub)
+
+[Download the Google Drive supplement](https://drive.google.com/file/d/1fIM2fxTW5bEsbaWL1nSKS3ZlmauJSNjx/view?usp=drivesdk).
+It contains **only** two PDFs absent from the repository: the old manuscript
+snapshot used for the alternating review comparison
+(`old_snapshot_NOT_PORTAL_VERIFIED.pdf`) and the locally generated
+highlighted-PDF input (`current_highlighted.pdf`), plus a README and checksums.
+The old snapshot has **not** been confirmed as the journal-portal submission.
+Anyone with the link can read the ZIP; it is not listed in Drive search.
+
+Get the current clean PDF, annotated old/new comparison, generator, open-points
+list, labels, identity manifest, and experiment results from **this GitHub
+repository**; they are not duplicated in the supplement. To rerun the
+134-image benchmark, obtain images matched to the committed labels separately:
+the recorded rerun used 704×704 Roboflow identity copies, not full-resolution
+originals. Those third-party images are **not** in the Drive ZIP while
+redistribution terms remain unresolved. The model has a separate documented
+Hugging Face download, and the IEEE template kit is not included. This review
+supplement is not a submission-ready package.
+
 ## 1. What reproduces from this repo alone
 
 ### Synthetic robustness suite (zero external data)
