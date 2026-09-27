@@ -17,7 +17,7 @@ library_name: ultralytics
 # Circuit Component Detector (YOLO26M-OBB, 16 classes)
 
 Oriented-bounding-box detector for hand-drawn electronic circuit components. It is
-Stage 1 of the pipeline in *"From Hand-Drawn Schematics to SPICE Netlists"* — it
+Stage 1 of the pipeline in *"From Hand-Drawn Schematics to Structural Circuit Netlists"* — it
 localizes and orients components so a downstream occlusion + graph-join stage can
 recover electrical connectivity.
 
@@ -25,7 +25,7 @@ recover electrical connectivity.
 - **Task:** oriented bounding-box detection.
 - **Classes:** 16, merged down from CGHD-1152's 61 (variants the netlist does not
   distinguish are collapsed; 30 rare device types fold into a single `other` class).
-- **Reported performance:** mAP@0.5 = 89.0% on 468 held-out scans.
+- **Released checkpoint:** mAP@0.5 = 89.0% on the 468-image validation split (best-fitness epoch 121; embedded mAP50 = 0.88977). The final training epoch scores 88.5% and is not the distributed checkpoint. See [`detector/README.md`](research/experiments/detector/README.md).
 
 ## Intended use
 
@@ -60,7 +60,7 @@ If you use this model, please cite the paper and the software archive:
 
 ```bibtex
 @article{chanam2026circuitdigitization,
-  title   = {From Hand-Drawn Schematics to SPICE Netlists: A Deterministic
+  title   = {From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic
              Pipeline with Endpoint-Graph Wire Joining and a Human-Verified
              Connectivity Benchmark},
   author  = {Chanam, Bosco and Dcosta, Chris and Talupuri, Pranavesh Kumar and

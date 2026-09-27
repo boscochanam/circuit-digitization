@@ -54,25 +54,24 @@ All artifacts in `docs/research/experiments/` unless noted. **Every row verified
 | Synthetic L4 leaderboard 0.95 / 0.94 / 0.90 / 0.85 / 0.36 (radius), 2.6× claim | `synthetic_leaderboard.json` (0.9480/0.9416/0.8985/0.8497/0.3635) | ✅ |
 | Per-circuit L4 table (16 seeds; Wheatstone 0.82, ring 0.95, divider 0.99) | `per_circuit_scale_completion_l4_n16.json` | ✅ |
 | Reach plateau ρ∈[3,5] | `join_reach_sweep_n31.json` (r3.0 0.898 … r5.0 0.903) | ✅ |
-| Component detection 88.5% mAP@0.5, crossover recall 70.7%, 16 classes, drafter_0 excluded | `AGENTS.md:134-150`, `docs/datasets.md` | ✅ (see caveat below) |
+| Component detection 89.0% mAP@0.5 for released `best.pt` (epoch 121); 88.5% is the final-epoch log, crossover recall 70.7%, 16 classes, drafter_0 excluded | `docs/research/experiments/detector/README.md`, its committed `results.csv`, and checkpoint-embedded `train_metrics` | ✅ for checkpoint-log identity; validation images unavailable for independent rerun |
 | 31-image human-verified GT | `ground_truth/real_nets_verified.json` — exactly 31 keys | ✅ |
 | "Claude Opus 4.8" VLM identity | `wire_detection/benchmark/data/vlm_responses_*.json` record the same model string | ✅ |
 | Related-work numbers (SINA 96.47%, DiagramNet F1s, Kelly&Cole 86.4%, Peker 85.33/93.33%) | Cited literature, cross-checked against `SUMMARY.md` notes | ✅ |
 
 ### Reproducibility caveats (honest notes, not defects)
-- **134-image wire GT is not in-repo**: `labels_few_annot` is a symlink to claw
-  (`/home/claw/workspace/...`) — dangling on this machine. The wire F1 0.976 reproduces only
-  where CGHD data is staged; paper correctly cites CGHD-1152 as the external source.
+- **134-image wire GT labels are now committed** in `ground_truth/wire_labels/`; full image pixels and the training split remain external, so the wire F1 0.976 still requires staging CGHD images to rerun.
 - **Detector weights gitignored** (46 MB `.pt`); published at
-  huggingface.co/boscochanam/circuit-component-detector with SHA256 in `docs/datasets.md:12`.
-  No training `results.csv` committed — the 88.5% mAP rests on `AGENTS.md` prose + the HF model.
+  huggingface.co/boscochanam/circuit-component-detector with SHA256 in `docs/datasets.md`.
+  The training CSV/metadata are committed under `docs/research/experiments/detector/` and match
+  the released checkpoint's embedded 89.0% mAP@0.5. The validation images are not available locally;
+  this is a log/checkpoint check, not a fresh validation run.
 - The 31-image join benchmark, synthetic suite, VLM responses, and all baseline JSONs **are**
   fully reproducible from the repo.
 
 ## 3. Remaining author-owed items (portal / off-repo)
 
-1. Upload refreshed `paper-access-overleaf.zip`, recompile on Overleaf (true `ieeeaccess.cls`
-   render), download the PDF → this becomes the matching submission PDF. Re-check page count (~18).
+1. The Access PDF and `paper-access-overleaf.zip` build locally; upload the verified current source/PDF in the IEEE portal and inspect the portal's generated proof before final submission.
 2. Upload `paper/ieee-paper/figures/graphical_abstract.jpg` in the portal's graphical-abstract slot.
 3. Confirm submitting author's ORCID profile is **public and populated**.
 4. Select manuscript type "Research Article"; enter the 10 keywords as in the .tex.

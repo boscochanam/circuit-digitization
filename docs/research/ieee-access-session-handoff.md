@@ -1,7 +1,9 @@
-# IEEE Access paper push — session handoff (updated 2026-06-28)
+# IEEE Access paper push — historical session handoff (2026-06-28)
 
-Persistent state for continuing the IEEE Access paper overhaul. **Read this first.**
-Supersedes the 2026-06-27 version. Project memory: `ieee-access-paper-push.md`.
+> **Archived snapshot, not current instructions or metrics.** The released detector checkpoint
+> has mAP@0.5 = 89.0%, not the 88.5% final-epoch figure below. The Access PDF now builds locally.
+> Use `paper/ieee-paper/paper-access.tex`, `docs/benchmark-provenance.md` and
+> `docs/research/experiments/detector/README.md` for current claims.
 
 ## UPDATE 2026-06-28 (paper finalization): reframing, TikZ figures, full re-verification
 

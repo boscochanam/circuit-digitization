@@ -1,12 +1,12 @@
 # Dataset Setup
 
-The framework uses several datasets for wire detection, component detection, and evaluation. These datasets are **not** included in the repository — they must be downloaded or generated separately.
+The framework uses several datasets for wire detection, component detection, and evaluation. Raw images are **not** included in this repository — download or stage them separately. The published component and wire annotation labels are included under `ground_truth/`; see its README and licenses.
 
 ## Trained Models
 
 | Model | Source | Classes | mAP50 | Purpose |
 |-------|--------|---------|-------|---------|
-| `yolo26m_obb_16class_aug.pt` | [HuggingFace](https://huggingface.co/boscochanam/circuit-component-detector) | 16 | 88.5% | Component detection (single source of truth) |
+| `yolo26m_obb_16class_aug.pt` | [HuggingFace](https://huggingface.co/boscochanam/circuit-component-detector) | 16 | 89.0% (released `best.pt`; 88.5% final epoch) | Component detection; see [training log/checkpoint audit](research/experiments/detector/README.md) |
 
 **Location:** `models/component_detection/yolo26m_obb_16class_aug.pt` (46MB, gitignored)
 **SHA256:** `d700b33f90191968af9f7f2798fff5e90a3f1ea473b811adc241bc570987264d`

@@ -121,7 +121,7 @@ The base already contains the red-team manuscript corrections, ablation and draf
 | H04, line 92, Introduction opening | Port selectively to both sources | Port the fork's prerequisite-for-simulation and separate values/models framing, retain the SPICE acronym expansion, and preserve the revision's final sentences limiting the experiment to annotated boxes. Reject the fork's unestablished “primary failure mode” assertion. |
 | H05, line 96, VLM motivation | Keep revision | Both methods' annotated boxes are explicit. Reject fairness/asymmetry framing and the implication that free-form output motivates superiority. |
 | H06, line 115, Pipeline Overview | Keep revision | Inferred pin-to-node output, metric limitations and illustrative export are already explicit. Reject any implication that adding values/models alone certifies simulatable correctness. |
-| H07, line 124, detector paragraph | Keep revision's Discussion coverage; reject restoring older section | Crossover recall 70.7% and the conditional detector crossover check are reported beside the two-edge audit; autonomous end-to-end detector-error causality remains unmeasured. Do not restore fork detector figures 89.0/78.5/95.8 or its class-merge section over the revision structure; revision mAP50 is 88.5%. The round-3 detector audit is reported in the current Discussion. |
+| H07, line 124, detector paragraph | Keep revision's Discussion coverage; correct checkpoint metric | Crossover recall 70.7% and the conditional detector crossover check are reported beside the two-edge audit; autonomous end-to-end detector-error causality remains unmeasured. The newly imported training log and released checkpoint agree on mAP50 0.88977 (89.0%, best epoch 121); the older 88.5% belongs to the final epoch, not the shipped checkpoint. Retain the revision structure without restoring the fork's full detector section. |
 | H08, line 166, scale tolerances | Keep corrected revision | Preserve fixed multipliers/clamps, actual upper-middle scale definition/fallback, alpha 0.35 and component-first/fallback behavior. Reject retuning/scale-invariance implications; mixed-size and controlled-rescaling limitations remain. |
 | H09, line 272, real benchmark description | Keep revision | Convenience-sample, single-annotator, no timing-log and future-expansion disclosures already exist. Reject the fork's residual “answer key is independent of every method” and SPICE-active-set shorthand; preserve actual component-pair evaluation scope. |
 | H10, lines 305–326, ablation table | Keep revision table and all values | Base/full table already exists with full TP/FP/FN columns. Reject the fork caption's “completion reconnects the same floating pins” causal inference and reduced table columns. Do not perform the later layout/build task. |
@@ -264,26 +264,26 @@ number is unchanged; this round adds measurements and rebuilds the package.
   **older pre-retitle version** ("...to SPICE Netlists") and was deliberately not used — only its
   kit files were taken.
 - Clean Access PDF: 12 pages, 576 x 782.929 pt (Access trim, not letter), Formata/Giovanni fonts
-  embedded; 0 hits for "SPICE Netlist", "Pin discovery", "simulation-ready", "89.0%".
+  embedded; 0 hits for "SPICE Netlist", "Pin discovery", "simulation-ready". The detector sentence now reports the released checkpoint's 89.0% mAP50 and explicitly distinguishes the final epoch's 88.5%.
 - Highlighted PDF: built with the repository's own `build-highlighted.py` against baseline
-  `33f5e3d` (the pre-revision submission); 599 text changes highlighted, 5 changed figure assets
+  `33f5e3d` (the pre-revision submission); 602 text changes highlighted, 5 changed figure assets
   framed, and the assertion that the annotated PDF's text equals the clean PDF's text passed.
 - Reviewer status report PDF regenerated via the newly committed `build-status-report.py`
   (WeasyPrint); no generator had previously been committed.
 
 ### Source hashes after round 3 (not submission-package approval)
 
-- `paper/ieee-paper/paper-access.tex`: `db6be4af431172a7a74817f48a202e142b4729d96932574bb6e68cce26e63ee2`
-- `paper/ieee-paper/paper-build.tex`: `3a98b85c7c8465d6bbe28c10c2c9788fcd7978b82519851291f20eee9f5a3e1e`
+- `paper/ieee-paper/paper-access.tex`: `4ca350d7b5a79b3f404c5485300ab4e7751caa336bc637665e5f8c2c118a949c`
+- `paper/ieee-paper/paper-build.tex`: `7f09f655ca72e343b74428e1343fbfed90ec63207e58e785101a5a6d09507170`
 - `review_artifacts/RESPONSE_TO_REVIEWERS.md`: `e7131ade5123e359bbcfebf66f09683de3bfc36af53cbd64b933b21452b83b60`
 - `review_artifacts/REVIEWER_STATUS_REPORT.md`: `9ba9fd3d3ce363ee700610311f04264928c7dfa32c9c3326f73edde5be4d43b1`
 - `review_artifacts/REVIEWER_STATUS_REPORT.pdf`: `5749132464c0c229b1ff7980ee9fda5b4005e66389166a56d2e2410621054978`
-- `figures/pipeline_overview.pdf`: `f3afe8547776bc6c576ecb365d58bc9e7e0a85b36ac153df2891431c3d2cfd1e`
-- `figures/graphical_abstract.jpg`: `a88cd0a1a7aa2440a9d19650ec671ef56f77db6e978a82da1d3300f386c1597f`
+- `figures/pipeline_overview.pdf`: `f133ae6f6d5ef910ee01df1077efa566ce11d6909b6e58c0b71b3c40b6742c24`
+- `figures/graphical_abstract.jpg`: `8847ca2776fb4d31659b90cac76346e72adcdb3321089d2b6e560f4829304e51`
 - `review_artifacts/RESPONSE_TO_REVIEWERS.pdf`: `1bdc69a8c6724730463b754db9eede2fd2793a988dc8f5b054a7675d9b26eda1`
-- `paper-access-overleaf.zip`: `d585697a71e0ee3bb87e214cbb765ef47c955f7cefb618798d19fba60086c7a4`
-- Access clean PDF (`output/pdf/paper-access.pdf`): `36dfed297edfbd6b94f65d20581393dbe9df0ae5efbbeceb717192a047a661ef`
-- Access highlighted PDF (`output/pdf/paper-access-highlighted.pdf`): `f4e42aa8155110c3e4052764cbae1dd0d4e741cd9d4a83e793a0a71a6fceae33`
+- `paper-access-overleaf.zip`: `c6c5ff9487dbc6ffbaa84986364aa819c8701f848c9a963bf9d0e649efeff042`
+- Access clean PDF (`output/pdf/paper-access.pdf`): `1f8ac86df1e2bf03372b1ec32a22a4a4c8a7e0a1666951eecc9667bb5eb8fd3e`
+- Access highlighted PDF (`output/pdf/paper-access-highlighted.pdf`): `7d239b1e569b563ba3e5a498b680d9f9ba69002a89af7b82ce985a9f45a99e07`
 
 ### Still not closed
 

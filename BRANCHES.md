@@ -10,4 +10,4 @@
 
 Retired 2026-09-08: `revision/access-2026-33821`, `validation/audit-2026-33821`-style lines (merged or tagged; see git history). If you hold a local checkout of a deleted branch, switch to `main` — your work may need rebasing onto it.
 
-Rules: keep `paper-access.tex` and `paper-build.tex` bodies in sync on every edit. Banned until Bosco signs off: author/funding/bio edits, email, submission.
+Rules: keep `paper-access.tex` and `paper-build.tex` bodies in sync on every edit. Bosco signed off on pushing in Sept 2026; still human-only: author/funding/bio edits and the actual portal submission.

@@ -39,7 +39,7 @@ The component detection module uses a trained YOLO26M-OBB model as the single so
 
 **Model:** `models/component_detection/yolo26m_obb_16class_aug.pt`
 **HuggingFace:** [boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector)
-**Performance:** 88.5% mAP50, 88.6% recall on CGHD-1152 dataset
+**Performance:** released checkpoint 89.0% mAP50 (embedded 0.88977), 88.6% recall on the CGHD-1152 validation split; final-epoch log mAP50 is 88.5%. See [checkpoint/log provenance](research/experiments/detector/README.md).
 
 **Usage:**
 ```python

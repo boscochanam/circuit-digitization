@@ -188,7 +188,7 @@ def pipeline_overview():
     fig, ax = plt.subplots(figsize=(7.2, 1.9))
     stages = [
         ("Input\nImage", "Scanned\nschematic", "#d9d9d9"),
-        ("Component\nDetection", "YOLO OBB\n88.5% mAP", "#cfe0f3"),
+        ("Component\nDetection", "YOLO OBB\n89.0% mAP", "#cfe0f3"),
         ("Component\nOcclusion", "Local median\nfill", "#cdeccd"),
         ("Binarization\n+ Line Extract", "Sauvola + CCL\n+ PCA", "#f7d9c4"),
         ("Wire\nJoining", "Endpoint-graph\n+ degree-budget", "#cfe0f3"),

@@ -2,7 +2,7 @@
 
 Source for:
 
-> **From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph
+> **From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with Endpoint-Graph
 > Wire Joining and a Human-Verified Connectivity Benchmark.**
 > Under review at IEEE Access (2026).
 
