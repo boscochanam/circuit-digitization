@@ -1,4 +1,19 @@
-# Expanded Benchmark — All Configs on 134 Images
+# Expanded Benchmark — Historical Uncorrected Evaluation
+
+> **Historical record, not the current paper result.** The scores below come from
+> filename-prefix pairing with Roboflow-augmented component labels. That can put
+> labels in the wrong image coordinate space and understate performance. Do not
+> cite the `0.8334` ranking below as the corrected 134-image result. The current
+> `expanded_benchmark.py` uses the committed identity-matched labels and requires
+> externally staged images via `WIRE_GT_IMAGES`; the verified rerun used 704×704
+> Roboflow identity copies, **not** original full-resolution CGHD scans. Its
+> 36-config ranking is in
+> `docs/research/experiments/wire_threshold_full_ranking_jun2026.json` (best
+> sweep F1 0.9730). The separately recorded a16 config yields F1 0.9755 in
+> `docs/research/experiments/wire_a16_summary_jun2026.json`. Both were rerun
+> against 134 staged 704×704 identity copies and matched their artifacts.
+> This does not validate original-resolution performance.
+
 
 **Date:** June 2026  
 **Dataset:** 134 circuit schematic images, 3,524 ground-truth wire annotations  

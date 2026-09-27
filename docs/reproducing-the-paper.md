@@ -1,9 +1,11 @@
 # Reproducing the Paper
 
-This page maps each claim, table, and figure in *"From Hand-Drawn Schematics to
-SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a
+This page maps claims in *"From Hand-Drawn Schematics to Structural Circuit
+Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a
 Human-Verified Connectivity Benchmark"* to the artifact and command that
-produces it. It expands the paper's **Data and Code Availability** section into a
+produces them. This guide includes historical experiment commands; verify table
+numbers against the current Access manuscript rather than older labels below.
+It expands the paper's **Data and Code Availability** section into a
 step-by-step reviewer guide.
 
 All commands are run from the repository root. Use `uv run python ...` (the
@@ -132,22 +134,37 @@ curl -L -o ~/Downloads/cghd1152.zip \
 
 ### 134-image wire-detection benchmark (Table I / Fig. 5)
 
+The repository contains 134 paired wire and component label files in
+`ground_truth/`. The reported rerun used staged **704×704 Roboflow identity
+copies**, not full-resolution CGHD originals. Supply those matching images
+explicitly to reproduce the reported coordinate system:
+
 ```bash
-# Regenerates the wire-detection F1 sweep across 134 images.
+export WIRE_GT_IMAGES=/path/to/matching/704x704/identity/images
 uv run python -m wire_detection.benchmark.expanded_benchmark
 ```
 
-**Not dry-runnable here (claw-only).** `expanded_benchmark.py` hard-codes
-absolute data paths under `/home/claw/...` (see the `GT_LABELS` / `GT_IMAGES` /
-`HDC_BASE` constants near the top) and has no argparse; it must be run on the
-data host or with those constants edited to your paths. It backs the F1 = 0.976
-headline (Sauvola + 16 px anchor).
+The benchmark rejects missing images or mismatched label sets instead of selecting
+arbitrary Roboflow augmentations. The code does not check image dimensions or
+pixel identity: the operator must verify that the images match the labels.
+Original full-resolution scans have not been benchmarked with these annotations.
+The command writes its 36-config ranking under
+`output/benchmark_experiments/expanded_full_ranking/`. The 36-config sweep's
+best (`best_candidate_v4`) is F1 0.9730. A subsequent **a16** parameter
+change is recorded separately in
+`docs/research/experiments/wire_a16_summary_jun2026.json` (F1
+0.9755200226404415, TP 3447, FP 47, FN 77, redundant 49); instantiate `ExperimentConfig(**artifact["config"])` to replay
+that **exact** configuration, rather than guessing its parameters. This
+annotated-component wire benchmark does not run the YOLO detector.
 
 ### Real-image join eval + baselines (Table III), on detected wires
 
-These detect wires from CGHD images (needs the model and CGHD staged), run each
-join strategy, and score component-pair F1 against the verified GT. Run on the
-data host (`./.venv/bin/python`):
+These detect wires from CGHD images using annotated component boxes, then run
+each join strategy and score component-pair F1 against verified net ground truth.
+They need images paired to the annotation coordinate system; the recorded
+rerun used 704×704 identity copies, not original full-resolution scans. This
+**conditional** join evaluation does not itself test autonomous component
+detection. Run on the data host (`./.venv/bin/python`):
 
 ```bash
 # Table III — join strategies (pass scale_completion explicitly: the default
@@ -174,10 +191,14 @@ data host (`./.venv/bin/python`):
     --out docs/research/experiments/fair_join_comparison_n31.json
 ```
 
-**Not dry-runnable on the doc-authoring host** (no CGHD data or model there); the
-argparse flags above were read from each script's source, not executed. The
-`--strategies` caveat is verified from `join_eval_real_f1.py` (its `STRATEGIES`
-default omits `scale_completion`).
+The `join_eval_real_f1.py` command has now been executed on the data host
+against 31 images: its JSON matched the committed `join_micro_n31.json` exactly,
+including per-image counts. The script still selects a legacy Roboflow label by
+first filename match; for these **31 specific images**, every selected label was
+byte-identical to the corresponding committed identity label. Do not generalize
+that match to other datasets or take it as detector-to-netlist validation.
+The other commands above require separate execution and comparison; a listed
+command by itself is not a reproduced result.
 
 ---
 
@@ -227,6 +248,7 @@ caught real errors the pre-screen missed. See the session handoff doc for detail
 | **Fig. 7** — Micro-F1 bars + VLM band + CIs | `bootstrap_ci.py` (CIs); bars from the Table III artifacts | `bootstrap_ci_n31.json` | none (consumes committed artifacts) |
 | "Detection is not the bottleneck" | `detection_ceiling.py` | `fair_join_comparison_n31.json`, `detection_ceiling_n31.json` | CGHD + model to regenerate |
 
-Commands marked in §2 as claw-only were transcribed from each script's argparse
-and docstring, not executed on the doc host. All §1 and §3 commands were
-dry-run on a clean checkout.
+The wire benchmark and the real-image join command were rerun against staged
+704×704 identity copies paired to the committed labels. They were not rerun on
+full-resolution CGHD originals. Other rows have different dependencies and
+must not be treated as independently rerun without their own output checks.
