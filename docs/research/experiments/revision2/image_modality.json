@@ -203,5 +203,92 @@
    "r": 0.9707
   },
   "note": "FP includes redundant detections (red), as in the published aggregate"
+ },
+ "authoritative": {
+  "method": "pixel match of each benchmark copy against its CGHD stroke-segmentation map (cghd_ref/cghd_resolution.json bench_binary_fraction > 0.5); only images in CGHD segmentation subset can be stroke maps",
+  "wire134_stroke_maps": [
+   "C100_D2_P4",
+   "C105_D2_P4",
+   "C115_D2_P3",
+   "C12_D2_P2",
+   "C158_D1_P1",
+   "C15_D2_P2",
+   "C167_D2_P1",
+   "C19_D1_P2",
+   "C205_D1_P2",
+   "C20_D2_P2",
+   "C21_D1_P3",
+   "C21_D2_P1",
+   "C22_D2_P3",
+   "C23_D1_P2",
+   "C242_D1_P1",
+   "C245_D2_P1",
+   "C277_D1_P2",
+   "C278_D1_P4",
+   "C28_D1_P1",
+   "C29_D2_P4",
+   "C2_D2_P1",
+   "C33_D2_P2",
+   "C36_D1_P4",
+   "C37_D2_P4",
+   "C41_D2_P3",
+   "C4_D2_P4",
+   "C5_D1_P1",
+   "C60_D2_P1",
+   "C63_D2_P3",
+   "C66_D2_P4",
+   "C70_D2_P4",
+   "C71_D2_P1",
+   "C7_D2_P4",
+   "C83_D2_P2",
+   "C83_D2_P4",
+   "C84_D1_P2",
+   "C86_D2_P1",
+   "C88_D2_P2",
+   "C8_D1_P1",
+   "C91_D2_P3",
+   "C92_D1_P3",
+   "C93_D1_P1",
+   "C96_D1_P1",
+   "C96_D2_P4",
+   "C9_D2_P3"
+  ],
+  "wire_by_modality_a16": {
+   "stroke_map": {
+    "n": 45,
+    "f1": 0.9861,
+    "p": 0.9757,
+    "r": 0.9967,
+    "tp": 1524,
+    "fp": 38,
+    "fn": 5
+   },
+   "photo": {
+    "n": 89,
+    "f1": 0.9673,
+    "p": 0.9707,
+    "r": 0.9639,
+    "tp": 1923,
+    "fp": 58,
+    "fn": 72
+   }
+  },
+  "join_by_modality_scale_completion_gtbox": {
+   "stroke_map": {
+    "n": 16,
+    "f1": 0.895,
+    "tp": 259,
+    "fp": 25,
+    "fn": 36
+   },
+   "photo": {
+    "n": 15,
+    "f1": 0.883,
+    "tp": 159,
+    "fp": 12,
+    "fn": 30
+   }
+  },
+  "note": "supersedes the pixel-threshold classification above (36/134), which missed 9 stroke maps"
  }
 }

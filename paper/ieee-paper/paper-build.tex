@@ -39,17 +39,17 @@
 \maketitle
 
 \begin{abstract}
-We present a deterministic pipeline for structural circuit-netlist recovery using an occlusion-first wire extractor, an endpoint graph, and degree-budget completion. The output represents inferred pin-to-node assignments; our component-pair metric does not certify pin identities, exact net partitions, absence of shorts, or simulation equivalence. Illustrative SPICE export requires externally specified values and device models; simulation equivalence on real scans is not validated. We provide a synthetic perturbation protocol and a human-verified connectivity benchmark of 31 CGHD-1152 images. With annotated component boxes and detected wires, the join achieves component-pair micro-F1 0.890 (macro-F1 0.901), compared with 0.805 for Hough plus proximity and 0.624 for connected-component tracing on the same detected wires. The wire extractor achieves F1 0.976 on 134 images with annotated component boxes under the historical benchmark configuration. Under the same component priors on the 31-image benchmark, a vision-language model reaches micro-F1 0.923; the paired difference is $+0.033$, with 95\% confidence interval $[-0.009,+0.078]$. Inclusion of zero does not establish equivalence or comparative cost superiority. These results provide within-corpus evidence, not validation of autonomous reconstruction or unseen-style generalization.
+Recovering a netlist from a hand-drawn schematic requires deciding which wire strokes connect which component terminals. We present a deterministic pipeline for this structural connectivity task. An occlusion-first extractor masks components before binarization and returns wire segments with explicit endpoints. A typed endpoint graph links endpoints, pins and wire bodies under scale-relative tolerances, and a degree-budget completion step reconnects floating pins by bounded assignment. We evaluate on two real-image connectivity benchmarks from CGHD-1152: 31 images with human-verified nets, and 164 held-out photographs from 24 drafters whose reference nets we derive from the dataset's own stroke and symbol annotations. With annotated component boxes, the join reaches component-pair micro-F1 0.890 on the human-verified set and 0.711 on the held-out photographs. On both benchmarks it outperforms every deterministic baseline, including connected-component tracing and Hough line fitting, in paired tests with Holm correction. With annotated wires, its score stays within 0.005 of the native value when the images are rescaled from 0.5$\times$ to 3$\times$. Replacing the annotated boxes with a trained component detector gives micro-F1 0.627, and most of that loss comes from missed components. The wire extractor reaches F1 0.976 on 134 images; on the held-out photographs, wire extraction is the main source of error. A vision-language model given the same component boxes reaches micro-F1 0.923 on the human-verified set: the pooled difference from our join is not significant, and per-image scores favour the model. We release the code, both benchmarks and the evaluation scripts.
 \end{abstract}
 
 \begin{IEEEkeywords}
-circuit digitization, connectivity benchmark, graph-based connectivity, hand-drawn circuits, image-to-netlist, netlist extraction, schematic recognition, SPICE, wire extraction, wire joining
+circuit digitization, connectivity benchmark, graph-based connectivity, hand-drawn circuits, image-to-netlist, netlist extraction, schematic recognition, structural netlist, wire extraction, wire joining
 \end{IEEEkeywords}
 
 \begin{figure*}[t]
 \centering
 \input{figures/pipeline_overview_tikz.tex}
-\caption{Pipeline for structural circuit-netlist recovery. The highlighted stages extract wire endpoints and infer connectivity. The net-level experiments use annotated component boxes to isolate joining; they do not establish an end-to-end error hierarchy or validate illustrative SPICE export.}
+\caption{Pipeline for structural circuit-netlist recovery. The highlighted stages extract wire endpoints and join them into nets.}
 \label{fig:pipeline}
 \end{figure*}
 
@@ -58,132 +58,118 @@ circuit digitization, connectivity benchmark, graph-based connectivity, hand-dra
 \includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C37-D2-P4-jpg.png}
 \hfill
 \includegraphics[width=0.48\textwidth]{figures/pipeline_examples/C111-D1-P1-jpg.png}
-\caption{Pipeline stages on two real hand-drawn circuit images, joined with our scale-relative completion join (connectivity F1~=~1.000 on both). Left:~a four-transistor analog cell (35 wires, 7 nets); right:~an RLC loop photographed on a textured surface (11 wires, 4 nets). Each panel shows, in order: original scan, component occlusion, Sauvola binarization, morphological close, detected wires (red overlay), and the join result. In the join result every recovered net is a distinct colour drawn along its conductors; component bounding boxes are the ground-truth labels (as used throughout the net-level evaluation, isolating the join), filled dots are device pins, diamonds mark junctions, and triangles mark terminals and ground.}
+\caption{Pipeline stages on two hand-drawn circuits, joined with the scale-relative completion join (component-pair F1~=~1.000 on both). Left: a four-transistor analog cell (35 wires, 7 nets). Right: an RLC loop photographed on a textured surface (11 wires, 4 nets). Each panel shows the input, component occlusion, Sauvola binarization, morphological closing, detected wires (red) and the join result. In the join result each net has its own colour; boxes are the annotated components, filled dots are device pins, diamonds are junctions and triangles are terminals and ground.}
 \label{fig:pipeline_examples}
 \end{figure*}
 
 \section{Introduction}
 
-Analog circuit schematics encode component types, values, and topological connections in a visual format designed for human interpretation. Recovering a structural netlist from a scan is a prerequisite for simulation, design verification, and large-scale circuit analysis, but a complete simulatable SPICE (Simulation Program with Integrated Circuit Emphasis) deck also requires component values and device models. This work addresses the structural connectivity stage only. The \emph{joining} problem determines which wire segments connect to which component pins and to each other. We study this stage with annotated component boxes; its relative contribution to autonomous reconstruction error is not established by that experiment.
+A circuit schematic encodes component types, component values and the connections between components in a drawing made for people. A netlist records the same connections in a form that software can check, simulate and search. Converting hand-drawn schematics into netlists would let course material, lab notebooks and legacy designs enter these tools without manual re-entry. This paper addresses the structural part of that conversion: given the components in an image, decide which component terminals share an electrical node. We call this step \emph{joining}.
 
-The challenge is threefold. First, wire endpoints extracted from binarized images are inherently noisy: the same circuit drawn by different drafters produces endpoint positions that vary by 10--80 pixels. Second, components occupy bounding boxes that overlap with wire endpoints, creating ambiguity about whether an endpoint connects to a component's pin or merely passes nearby. Third, T-junctions, collinear fragments, and crossing wires create connectivity ambiguities for proximity-based rules, including the graph rules studied here.
+Joining is hard for three reasons. First, wire endpoints extracted from binarized images are noisy: across drafters, the same circuit produces endpoint positions that vary by 10--80 pixels. Second, component symbols overlap the wire endpoints that attach to them, so an endpoint near a component may belong to one of its pins or merely pass by. Third, T-junctions, collinear fragments and wire crossings all look alike to a proximity rule.
 
-A complementary approach is to prompt a vision-language model (VLM) for connectivity. Section~\ref{sec:vlm_results} reports an oracle-component-box diagnostic in which both methods receive the same annotated component boxes and the geometric method uses detected wires. The observed component-pair scores do not establish equivalence, comparative cost superiority or a global structural-validity guarantee. The diagnostic examines the methods under those stated input conditions.
+Most image-to-netlist systems erase the components and read nets from the connected components or contours of the remaining wire pixels~\cite{sina2026,peker2026}. A single stroke gap then splits a net, and a single touching stroke merges two. Other systems pass the image to a large language model and read connectivity from its answer~\cite{masalachai2024}. We keep an explicit representation of every wire endpoint and decide each connection with geometric rules that can be inspected. This paper makes four contributions:
+\begin{enumerate}
+\item An \emph{occlusion-first wire extractor} that fills each component region with its local median colour before Sauvola binarization and returns line segments with PCA-estimated endpoints. It reaches wire-detection F1 0.976 on 134 CGHD-1152 images.
+\item A typed \emph{endpoint-graph join} with five edge rules, component-first pin assignment and scale-relative tolerances, followed by \emph{degree-budget completion}, which reconnects floating pins through a bounded-capacity assignment with a shared-component guard.
+\item Two real-image connectivity benchmarks: 31 CGHD-1152 images with human-verified nets, and a 164-image held-out benchmark covering 24 drafters whose reference nets are derived from the CGHD authors' own stroke-segmentation maps and symbol polygons. The derived reference agrees with the human nets on 17 overlapping images at micro-F1 0.939.
+\item An evaluation protocol with paired significance tests under Holm correction, complexity and component-size strata, controlled image rescaling, end-to-end runs with a trained component detector, and a vision-language model (VLM) reference that receives the same component boxes as our join.
+\end{enumerate}
+The output is a structural netlist; recognizing component values and device models is outside the scope of this work.
 
-We address these challenges with a deterministic structural-netlist pipeline whose proposed elements are: (1)~an \emph{occlusion-first wire extractor} that masks detected components before binarization and estimates per-segment endpoints, producing a line-segment-with-endpoints representation (rather than tracing nets directly into connected components, as prior systems do) that is what makes graph-based joining possible; (2)~an \emph{endpoint-graph join} model that constructs a graph over both wire endpoints and component pins, with five edge types capturing distinct connectivity patterns; and (3)~a \emph{degree-budget completion} algorithm that proposes recovery connections using bounded assignment and merge guards. We evaluate on the CGHD-1152 dataset~\cite{bayer2021cghd} with a synthetic error injection framework and a human-verified net-level benchmark. We evaluate topological recovery with illustrative SPICE export; component values and device models require external specification, and simulation equivalence on real scans is not validated. The output records inferred pin-to-node assignments, whereas the primary metric measures component-pair connectivity rather than exact pin topology.
+Section~\ref{sec:related} reviews related work, Section~\ref{sec:method} describes the method and Section~\ref{sec:setup} the experimental setup. Section~\ref{sec:results} reports results, and Section~\ref{sec:discussion} discusses them together with the scope and limitations of the study.
 
 \section{Related Work}
+\label{sec:related}
 
-The end-to-end conversion of schematic images into machine-readable netlists has progressed rapidly. Kelly and Cole~\cite{kelly2024digitizing} presented a pattern-recognition workflow for digitizing circuit schematics with an 86.4\% success rate, combining optical character recognition (OCR) for component values with network-graph construction. SINA~\cite{sina2026}, the closest contemporary system, pairs a YOLOv11 detector with connected-component labeling (CCL) and OCR, and invokes a vision-language model (VLM) for reference-designator assignment, reporting 96.47\% netlist-generation accuracy, a 2.72$\times$ improvement over the prior state of the art. SINA confines the VLM to symbolic labeling and derives nets from CCL proximity rather than trusting the VLM with connectivity, an insight we share (Section~\ref{sec:vlm_connectivity}). Masala-CHAI~\cite{masalachai2024} (Auto-SPICE) uses large language models to produce SPICE netlists from analog schematics at scale. Most directly comparable to our setting, the concurrent work of Peker et al.~\cite{peker2026} (IEEE Access, 2026) builds a fully automated image-to-SPICE pipeline for printed and hand-drawn transistor-level circuits, pairing YOLOv8/11 detection with a \emph{contour-based} node-detection module (components are erased and nets are read from the contours of the residual wire pixels) and validates netlists by automated LTspice simulation against a reference. On their in-house seven-topology MOSFET dataset they report 93.33\% (printed) and 85.33\% (hand-drawn) whole-netlist success. Their node detection is an instance of the connected-component/contour recipe we evaluate as a baseline (Section~\ref{sec:real_eval}); because their dataset (transistor-level analog, authored in-house) and metric (LTspice node-voltage pass/fail) differ from ours (discrete components on CGHD-1152, component-pair F1), the headline numbers are not directly comparable. Our controlled comparison evaluates a CCL baseline on identical detected wires, rather than reproducing their complete system. Instance-segmentation approaches extract circuit graphs directly from pixels: Bayer et al.~\cite{instanceseg2023} segment components and wires for graph extraction over the CGHD lineage. For hand-drawn inputs, object-detection pipelines~\cite{handdrawn2021} and the recent JUHCCR-v1 database~\cite{juhccr2025} target component recognition on freehand sketches. Most of these pipelines build on general-purpose object detectors such as the YOLO family~\cite{redmon2016yolo,jocher2023yolo} and OCR engines such as Tesseract~\cite{smith2007tesseract}, with the ultimate goal of producing simulator-ready descriptions in formats such as SPICE~\cite{nagel1973spice}. These works address detection, recognition and connectivity under different datasets and metrics. Our contribution evaluates joining under specified component priors, without treating detection or recognition as solved. SPICE-level circuit modeling likewise underpins application deployment in neighboring hardware domains, including memristor-based neuromorphic circuits that realize brain-inspired learning in hardware~\cite{gao2026memristor} and memristive decision-making frameworks for autonomous navigation~\cite{gao2026memristive}.
+Several systems convert schematic images into machine-readable netlists. Kelly and Cole~\cite{kelly2024digitizing} presented a pattern-recognition workflow for printed schematics with an 86.4\% success rate, combining optical character recognition (OCR) for component values with network-graph construction. SINA~\cite{sina2026} pairs a YOLOv11 detector with connected-component labeling (CCL) and OCR, and uses a VLM only for reference-designator assignment, reporting 96.47\% netlist-generation accuracy, a 2.72$\times$ improvement over the prior state of the art. SINA derives nets from CCL proximity rather than from the VLM. Masala-CHAI~\cite{masalachai2024} uses large language models to generate SPICE descriptions of analog schematics at scale. The concurrent work of Peker et al.~\cite{peker2026} builds an automated image-to-SPICE pipeline for printed and hand-drawn transistor-level circuits. It pairs YOLOv8/11 detection with a contour-based node-detection module, in which components are erased and nets are read from the contours of the residual wire pixels, and it validates netlists by LTspice simulation against a reference. On an in-house seven-topology MOSFET dataset it reports 93.33\% (printed) and 85.33\% (hand-drawn) whole-netlist success. Its node detection belongs to the connected-component family that we evaluate as a baseline on identical wire inputs (Section~\ref{sec:real_eval}); its dataset and metric differ from ours, so the headline numbers are not directly comparable. Bayer et al.~\cite{instanceseg2023} segment components and wires for graph extraction on the CGHD lineage. For hand-drawn inputs, object-detection pipelines~\cite{handdrawn2021} and the JUHCCR-v1 database~\cite{juhccr2025} target component recognition on freehand sketches. Most of these pipelines build on general-purpose detectors such as the YOLO family~\cite{redmon2016yolo,jocher2023yolo} and OCR engines such as Tesseract~\cite{smith2007tesseract}, and target simulator input formats such as SPICE~\cite{nagel1973spice}. SPICE-level modeling also supports hardware work in neighboring domains, including memristor-based neuromorphic circuits that realize brain-inspired learning~\cite{gao2026memristor} and memristive decision-making circuits for autonomous navigation~\cite{gao2026memristive}. We focus on the joining stage and evaluate it with both annotated and detected components.
 
-Progress depends on annotated corpora. The CGHD hand-drawing dataset~\cite{bayer2021cghd} provides component- and wire-level annotations for handwritten schematics. In the analog/mixed-signal (AMS) domain, AMSnet~2.0~\cite{amsnet2025} contributes a large database built with AI-assisted segmentation for net detection, while AMSBench~\cite{amsbench2025} is a benchmark for evaluating multimodal LLM capabilities across AMS circuit tasks. Beyond circuits, DiagramNet~\cite{diagramnet2026} introduces an end-to-end framework and dataset for non-standard system-level diagrams, including an explicit connection-recognition task scored by F1. These benchmarks provide context for component recognition and connectivity evaluation. Our synthetic perturbation protocol isolates joining under authored errors; it does not measure the relative autonomous error contributions of those stages.
+Progress depends on annotated corpora. The CGHD dataset~\cite{bayer2021cghd} provides component- and wire-level annotations for handwritten schematics. In the analog/mixed-signal (AMS) domain, AMSnet~2.0~\cite{amsnet2025} contributes a large database built with AI-assisted segmentation for net detection, and AMSBench~\cite{amsbench2025} evaluates multimodal LLMs across AMS circuit tasks. DiagramNet~\cite{diagramnet2026} introduces a framework and dataset for non-standard system-level diagrams, including a connection-recognition task scored by F1. To our knowledge, no prior benchmark reports net-level connectivity on hand-drawn circuit images.
 
-\label{sec:vlm_connectivity}
-General-purpose VLMs and LLMs have been applied broadly to electronic design~\cite{llm4eda2024}, and to circuit understanding in particular. Kulkarni et al.~\cite{kulkarni2025enhancing} proposed Near Sight Correction using VLMs, reporting 87.4\% accuracy on circuit visual question answering (VQA) and 0.87 F1 on connection-matrix prediction. Connectivity-specific benchmarks report results that depend on the task, model and input conditions. On the DiagramNet connection task~\cite{diagramnet2026}, leading general models score very low F1 (GPT-5 at 0.029, Claude-Sonnet-4 at 0.265, and Gemini-2.5-Pro at 0.008), whereas a task-tuned 3B model reaches 0.735. AMSBench~\cite{amsbench2025} reports a similar gap for MLLMs on AMS connectivity. These task-specific results motivate a separately scoped connectivity diagnostic; they do not establish that geometry is superior to VLMs on our corpus. Our Claude-VLM experiment uses matched annotated component priors, as described in Section~\ref{sec:vlm_results}.
+General-purpose VLMs and LLMs have been applied broadly to electronic design~\cite{llm4eda2024} and to circuit understanding. Kulkarni et al.~\cite{kulkarni2025enhancing} proposed Near Sight Correction with VLMs, reporting 87.4\% accuracy on circuit visual question answering and 0.87 F1 on connection-matrix prediction. On the DiagramNet connection task~\cite{diagramnet2026}, general models score low F1 (GPT-5 0.029, Claude-Sonnet-4 0.265, Gemini-2.5-Pro 0.008), whereas a task-tuned 3B model reaches 0.735. AMSBench~\cite{amsbench2025} reports a similar gap for AMS connectivity. These results vary with task and input, which motivates measuring VLM connectivity directly on our benchmark (Section~\ref{sec:vlm_results}).
 
-Classical wire extraction relies on edge detection, morphological operations, and the Hough transform~\cite{duda1972hough}, typically preceded by adaptive binarization such as Sauvola thresholding~\cite{sauvola2000} and connected-component labeling~\cite{he2017ccl}. Our legacy join baseline uses radius-based proximity: each wire endpoint grabs all component pins within a fixed threshold (typically 30px), connected via transitive union-find~\cite{tarjan1975union}. This can over-merge when multiple components fall within the threshold, assigning both pins of a two-terminal part (R, C, L, D) to the same net. SINA~\cite{sina2026} likewise derives nets from CCL proximity, which is similarly vulnerable to over-merge under detector noise. We instead model joining as a typed endpoint graph that incorporates component geometry and directional preference, and resolve residual ambiguity with a degree-budget completion: a bounded $b$-matching formulation~\cite{kuhn1955,schrijver2003combinatorial} that caps per-pin degree and thereby limits over-merge when endpoints are dropped or displaced. This differs from graph neural networks for netlist reverse engineering~\cite{alrahis2021gnn}, which learn representations over already-extracted gate-level graphs; our graph is a purely \emph{geometric} model whose edges encode spatial relationships between wire endpoints and component pins. A complementary recent direction replaces rule-based connectivity with a \emph{learned} model: Netlistify~\cite{netlistify2025} predicts terminal connectivity with a Transformer and reports a 12.4\% F1 gain over AMSnet on printed AMS schematics. Such models use task-specific connectivity training data. Transfer of the cited printed-schematic model to this hand-drawn benchmark is not established here; our geometric join requires no connectivity training. Open hand-drawn efforts such as CircuitNet~\cite{circuitnet} likewise rely on traditional image processing plus a classifier and a heuristic netlist generator.
+Classical wire extraction relies on edge detection, morphological operations and the Hough transform~\cite{duda1972hough}, usually after adaptive binarization such as Sauvola thresholding~\cite{sauvola2000} and connected-component labeling~\cite{he2017ccl}. The legacy join in our pipeline uses radius-based proximity: each wire endpoint takes every component pin within a fixed threshold (30\,px), and connections are merged transitively with union-find~\cite{tarjan1975union}. When several components fall within the threshold, this rule assigns both pins of a two-terminal part to the same net. We model joining instead as a typed endpoint graph that uses component geometry, and we resolve residual ambiguity with degree-budget completion, a bounded $b$-matching formulation~\cite{kuhn1955,schrijver2003combinatorial} that caps the number of recovery connections per pin. Graph neural networks for netlist reverse engineering~\cite{alrahis2021gnn} learn representations over already-extracted gate-level graphs; our graph is geometric, and its edges encode spatial relations between endpoints and pins. Netlistify~\cite{netlistify2025} predicts terminal connectivity with a Transformer and reports a 12.4\% F1 gain over AMSnet on printed AMS schematics; such learned models need connectivity training data, whereas our join needs none. Open hand-drawn efforts such as CircuitNet~\cite{circuitnet} combine traditional image processing with a classifier and a heuristic netlist generator.
 
 \section{Method}
+\label{sec:method}
 
 \subsection{Pipeline Overview}
 
-Figure~\ref{fig:pipeline} summarizes the six-stage pipeline. The full pipeline proceeds through six stages: (1)~component detection via oriented bounding box (OBB) YOLO model; (2)~component occlusion (filling detected regions with local median color); (3)~Sauvola adaptive binarization; (4)~connected component labeling with morphological post-processing; (5)~wire endpoint extraction via principal component analysis (PCA) on endpoint regions; and (6)~wire joining via the endpoint-graph model with degree-budget completion. The output is a structural netlist mapping inferred component pins to electrical nodes. Component-pair evaluation does not certify those pin assignments or the exact net partition. SPICE export is illustrative: component values and device models require external specification, and simulation equivalence on real scans is not validated. Figure~\ref{fig:pipeline_examples} shows two representative circuits at each stage.
+Figure~\ref{fig:pipeline} summarizes the six stages: (1)~component detection with an oriented-bounding-box (OBB) YOLO model; (2)~component occlusion, which fills each component region, enlarged by 15\% of its box size (at least 5\,px), with the median colour of its surroundings; (3)~Sauvola binarization ($k=0.285$, window 67\,px) inside the union of component boxes plus 10\,px padding; (4)~connected-component labeling after a $3\times3$ elliptical closing, discarding components under 28\,px; (5)~wire-segment and endpoint estimation by principal component analysis (PCA) of each connected component, followed by overlap deduplication ($12^{\circ}$, 8\,px) and an anchor filter with a 16\,px endpoint distance; and (6)~joining with the endpoint graph and degree-budget completion. The output maps each component pin to an electrical node. Figure~\ref{fig:pipeline_examples} shows two circuits at each stage.
 
 \subsection{Endpoint-Graph Join Model}
 
-Given a set of wire segments $\mathcal{W} = \{w_1, \ldots, w_m\}$ with endpoints $\text{ep}(w_i) = (a_i, b_i)$ and component pins $\mathcal{P} = \{p_1, \ldots, p_n\}$, we construct an undirected graph $G = (V, E)$ where $V = \text{eps}(\mathcal{W}) \cup \mathcal{P}$.
+Given wire segments $\mathcal{W} = \{w_1, \ldots, w_m\}$ with endpoints $\text{ep}(w_i) = (a_i, b_i)$ and component pins $\mathcal{P} = \{p_1, \ldots, p_n\}$, we construct an undirected graph $G = (V, E)$ with $V = \text{eps}(\mathcal{W}) \cup \mathcal{P}$ and five edge types.
 
-\textbf{Edge type 1 (wire body):} For each wire $w_i$, add edge $(a_i,b_i)$ so both endpoints belong to the same net. The implementation accumulates connectivity with union-find; it does not solve a weighted graph optimization.
+\textbf{Edge type 1 (wire body):} For each wire $w_i$, add edge $(a_i,b_i)$ so that both endpoints belong to the same net.
 
-\textbf{Edge type 2 (endpoint--endpoint):} For endpoints $e_i,e_j$ on different wires with $\|e_i-e_j\|\leq\tau_{\text{join}}$, add an edge. This proximity rule can connect fragments, corners and junctions, but can also merge unrelated nearby wires.
+\textbf{Edge type 2 (endpoint--endpoint):} For endpoints $e_i,e_j$ on different wires with $\|e_i-e_j\|\leq\tau_{\text{join}}$, add an edge. This rule connects fragments, corners and junctions.
 
-\textbf{Edge type 3 (endpoint--pin):} Each endpoint is connected to at most one selected pin by this edge rule. First apply the component-first assignment described below. Only if no component is assigned, search pins within Euclidean distance $d\leq\tau_{\text{pin}}$ and select the pin with the smallest score. The score is $d$ unless directional preference is enabled and $d>10^{-6}$\,px; in that case it is $d[1-\alpha\max(0,\cos\theta)]$, with fixed $\alpha=0.35$ and $\theta$ measured from the outward wire direction to the endpoint-to-pin vector. Directional preference is enabled in the scale-relative base, but applies only to this fallback search. If an assigned component has no eligible pin, or the fallback finds none, no endpoint--pin edge is added. The score selects a fallback pin; it is not a weight optimized over the final graph.
+\textbf{Edge type 3 (endpoint--pin):} Each endpoint connects to at most one pin. The component-first assignment described below chooses the pin. If no component is assigned, the endpoint takes the pin within $d\leq\tau_{\text{pin}}$ with the smallest score, where the score is $d[1-\alpha\max(0,\cos\theta)]$ with $\alpha=0.35$ and $\theta$ the angle between the outward wire direction and the endpoint-to-pin vector (for $d\le10^{-6}$\,px the score is $d$). If neither step finds a pin, no edge is added.
 
-\textbf{Edge type 4 (endpoint--wire-body):} For an endpoint $e$ and a different wire segment $w_j$, add an edge if the point-to-segment distance is at most $\tau_t$ and the normalized projection parameter lies in $[0.15,0.85]$. This rule represents T-junction candidates away from the segment ends.
+\textbf{Edge type 4 (endpoint--wire-body):} For an endpoint $e$ and a different segment $w_j$, add an edge if the point-to-segment distance is at most $\tau_t$ and the normalized projection parameter lies in $[0.15,0.85]$. This rule captures T-junctions away from segment ends.
 
-\textbf{Edge type 5 (pin--wire-body):} For a component pin $p$ and wire segment $w_j$, add an edge if the point-to-segment distance is at most $\tau_t$ and the normalized projection parameter lies in $[0.05,0.95]$. This rule represents pin-to-rail candidates along a wire's body; geometric proximity alone does not certify an electrical connection.
+\textbf{Edge type 5 (pin--wire-body):} For a pin $p$ and a segment $w_j$, add an edge if the point-to-segment distance is at most $\tau_t$ and the projection parameter lies in $[0.05,0.95]$. This rule captures pins tapped onto a rail.
 
-The tolerances are manually configured scale-relative rules with fixed pixel clamps: $\tau_{\text{pin}}=\min(60,\max(24,0.62s))$, $\tau_{\text{join}}=\min(28,\max(11,0.30s))$, and $\tau_t=\min(20,\max(8,0.20s))$, in pixels. Here $s$ is the characteristic component-bounding-box diagonal scale; the implementation uses the middle sorted diagonal (the upper middle for an even count), falling back to a wire-length scale when component geometry is unavailable or degenerate. The multipliers and clamps are fixed, not learned. Because $s$ is a single scalar per image, intra-image size variance is not modeled: a schematic mixing a large IC with small discrete symbols shares one tolerance per rule. Extreme-size performance was not evaluated by controlled image rescaling.
+The tolerances are scale-relative with fixed pixel clamps: $\tau_{\text{pin}}=\min(60,\max(24,0.62s))$, $\tau_{\text{join}}=\min(28,\max(11,0.30s))$ and $\tau_t=\min(20,\max(8,0.20s))$, in pixels. Here $s$ is the median component-box diagonal of the image (the upper middle value for an even count), with a wire-length scale as fallback when component geometry is unavailable. The multipliers and clamps are set by hand. Because $s$ is one scalar per image, these three tolerances do not vary with component size inside a drawing.
 
-\textbf{Component-first pin assignment:} For edge type 3, we use a two-step assignment. First, compute the distance from each endpoint to each component's oriented bounding box (OBB): 0 inside the rectangle, otherwise the minimum distance to its edges. If four OBB vertices are unavailable, use axis-aligned bounding-box (AABB) distance instead. Assign the endpoint to the nearest component whose distance is within $\max(\tau_{\text{pin}}, 0.5 \cdot \text{diagonal})$, where the diagonal is computed from that component's AABB. Second, within the assigned component, select the pin with the smallest Euclidean distance to the endpoint. Figure~\ref{fig:endpoint_graph} contrasts the legacy radius join with our endpoint-graph model.
+\textbf{Component-first pin assignment:} For edge type 3, each endpoint is first assigned to a component. Its distance to a component is 0 inside the component's OBB and otherwise the distance to the nearest OBB edge (axis-aligned box distance when OBB vertices are unavailable). The endpoint is assigned to the nearest component within $\max(\tau_{\text{pin}}, 0.5\,\delta_c)$, where $\delta_c$ is that component's own box diagonal. Because this radius grows with each component's diagonal, endpoint-to-component binding follows the size of each component in addition to the image-level scale $s$. Within the assigned component, the endpoint takes the nearest pin. Figure~\ref{fig:endpoint_graph} contrasts the legacy radius join with the endpoint graph.
 
 \begin{figure*}[t]
 \centering
 \input{figures/endpoint_graph_tikz.tex}
-\caption{Joining approaches compared. (a)~Radius-based join (legacy): each wire endpoint grabs all pins within a fixed threshold, causing over-merging. (b)~Our endpoint-graph model: typed edges and component-first pin assignment generate connectivity candidates, with directional scoring confined to the fallback pin search. Incorrect base merges remain possible.}
+\caption{Joining approaches. (a)~Radius-based join (legacy): each wire endpoint takes all pins within a fixed threshold, which over-merges. (b)~Endpoint-graph model: typed edges and component-first pin assignment; directional scoring applies only to the fallback pin search.}
 \label{fig:endpoint_graph}
 \end{figure*}
 
-Nets are computed as connected components of $G$, projected onto pins. The result is a netlist mapping each pin to a net identifier.
+Nets are the connected components of $G$, accumulated with union-find and projected onto pins. The result maps each pin to a net identifier.
 
 \subsection{Degree-Budget Completion}
 
-The endpoint-graph join may leave a pin in a net containing only pins from its own component. Completion treats such pins as candidates for recovery, excluding inert types such as ground, supply markers, text, antenna, probes, junctions and terminals. This condition can reflect a missing connection, but does not establish that the detector dropped a wire.
+After base joining, some pins lie in a net that contains only pins of their own component. Completion treats these \emph{floating} pins as candidates for recovery, excluding inert types (ground, supply markers, text, antennas, probes, junctions and terminals).
 
-Degree-budget completion retains the base net assignments and constructs candidates from each floating pin $p$ to pins $q$ on other components and different current nets. Candidate distance must not exceed $r=\rho\tau_c$, where $\tau_c=\min(60,\max(24,0.62s))$\,px and the deployed scale-relative completion uses $\rho=4$. Thus reach uses the clamped pin scale, not the raw component diagonal; completion retains this scale dependence when base tolerances are ablated. For each candidate, a wire witness is sought by pairing the endpoints of a detected segment with $p,q$ in either orientation. The witness cost is the smallest, over feasible segments and orientations, of the larger endpoint-to-pin distance, bounded by $r$. If no witness exists, the deployed relaxed-witness mode uses $\|p-q\|$ as the candidate cost.
+Completion keeps the base nets and proposes connections from each floating pin $p$ to pins $q$ of other components in other nets. A candidate's distance must not exceed the reach $r=\rho\tau_c$, where $\tau_c=\min(60,\max(24,0.62s))$\,px and $\rho=4$. For each candidate we look for a wire witness: a detected segment whose endpoints lie near $p$ and $q$ in either orientation. The witness cost is the smallest, over segments and orientations, of the larger endpoint-to-pin distance, bounded by $r$. Without a witness, the candidate cost is $\|p-q\|$.
 
-When candidates exist, the implementation builds a rectangular assignment matrix with one row per floating pin. Each target pin supplies up to three distinct slot columns, limited by its candidate demand, and each row has a private dummy column with cost $1.5r$ for opting out. Unavailable assignments carry sentinel cost $10^6$. The Hungarian algorithm~\cite{kuhn1955} (\texttt{scipy.optimize.linear\_sum\_assignment}) assigns every row to exactly one column, with at most one row per column. This mandatory assignment with dummy options avoids the empty-solution ambiguity of a nonnegative-cost objective with only at-most-one constraints; target slots implement the bounded-capacity matching~\cite{schrijver2003combinatorial}.
+The candidates form a rectangular assignment matrix with one row per floating pin. Each target pin supplies up to three slot columns, limited by its candidate demand, and each row has a private dummy column of cost $1.5r$ for opting out. Unavailable assignments cost $10^6$. The Hungarian algorithm~\cite{kuhn1955} (\texttt{scipy.optimize.linear\_sum\_assignment}) assigns every row to one column, with at most one row per column; the target slots implement bounded-capacity matching~\cite{schrijver2003combinatorial}.
 
-Matches are then applied sequentially. Dummy or unavailable assignments add no edge. A proposed merge is also skipped if its endpoints are already in the same net or if their current nets share a component. This guard limits additional completion merges; it does not undo incorrect base unions or guarantee globally short-free output. Rejected matches are not reassigned, so the final guarded result is not claimed to minimize the assignment objective over all valid netlists.
-
-Completion edges are ``wireless'': they represent inferred connections without corresponding wire segments, analogous to manual pin merges in schematic editors. Figure~\ref{fig:completion} illustrates the completion step.
+Matches are applied in sequence. Dummy and unavailable assignments add no edge. A merge is skipped if both pins are already in the same net or if their nets already share a component; this guard acts on completion merges only. Completion edges have no corresponding wire segment, much like a manual pin merge in a schematic editor. Figure~\ref{fig:completion} illustrates the step.
 
 \begin{figure*}[t]
 \centering
 \input{figures/completion_tikz.tex}
-\caption{Degree-budget completion. Left: After base joining, some pins are ``floating'' (touching only their own component). Right: Completion reconnects floating pins via min-cost $b$-matching (orange dashed), with a guard rejecting additional merges between nets that already share a component; existing base shorts are not repaired.}
+\caption{Degree-budget completion. Left: after base joining, some pins are floating (connected only to their own component). Right: completion reconnects floating pins by min-cost $b$-matching (orange dashed); a guard rejects merges between nets that already share a component.}
 \label{fig:completion}
 \end{figure*}
 
+\section{Experimental Setup}
+\label{sec:setup}
+
+\subsection{Datasets and Image Provenance}
+
+All real images come from CGHD-1152~\cite{bayer2021cghd}, a public corpus of hand-drawn circuit images organized by drafter. We use four evaluation sets. The \emph{wire benchmark} has 134 images with human wire labels and annotated component boxes. The \emph{human-verified net benchmark} has 31 images from 10 drafters. Thirty-four images were annotated and three were excluded before scoring (one unverified, two failing physical-sanity checks). Net proposals were bootstrapped by a conservative endpoint-graph join over the annotated wires and corrected by one annotator in a purpose-built verification tool. The 31 images contain 3--14 electrical components each (median 7); 15 have at most five and 12 have at least ten. The \emph{independent held-out benchmark} (164 images, 24 drafters) and the \emph{synthetic suite} (15 authored circuits) are described in Sections~\ref{sec:cghd_ref} and~\ref{sec:synthetic}.
+
+The 134 wire-benchmark and 31 net-benchmark images are $704\times704$ copies from a Roboflow export of CGHD. The export resized each original without preserving its aspect ratio. Of the 31 net-benchmark images, 14 are also flipped or rotated relative to the CGHD file, and 16 (45 of the 134 wire-benchmark images) are CGHD's binary stroke-segmentation renderings instead of photographs. Wire and net labels were drawn on these copies. The held-out benchmark uses the original CGHD photographs.
+
+\subsection{Connectivity Metric}
+
+For each image we form the set of unordered pairs of electrical components that share at least one net, and compare predicted with reference pairs. The electrical subset contains resistors, capacitors, inductors, diodes, transistors, sources and integrated circuits; junctions, terminals, ground symbols and crossovers affect the score only through the connections they mediate. The metric ignores which terminal of a component carries a connection. Micro-F1 pools true positives (TP), false positives (FP) and false negatives (FN) over images, so a dense board contributes in proportion to its connections; it is our primary metric. Macro-F1, the mean of per-image F1, is reported alongside.
+
+\subsection{Statistical Protocol}
+
+All comparisons are paired over images. We report 95\% percentile confidence intervals (CIs) from an image-level bootstrap with $B=10{,}000$ resamples, and test each difference with three procedures: the bootstrap itself, a sign-flip permutation test that swaps the two methods' outputs within each image (exact when at most 22 images differ, otherwise 100{,}000 Monte Carlo draws), and a Wilcoxon signed-rank test on per-image F1. The first two test the micro-F1 difference; the Wilcoxon test compares images. Holm's correction is applied within each procedure across the comparisons of a table. We also count per-image wins, ties and losses (W/T/L). Unless stated otherwise (Section~\ref{sec:e2e}), every join receives annotated component boxes and the pipeline's own detected wires.
+
 \section{Results}
+\label{sec:results}
 
-\subsection{Synthetic Evaluation Framework}
+\subsection{Synthetic Evaluation}
+\label{sec:synthetic}
 
-We author 15 synthetic circuits spanning 3--6 components and 2--6 nets, including parallel resistors, series dividers, Wheatstone bridges, RC/RL circuits, diode loops, and a 6-component ring (cyclic and bridge topologies being the main stress cases for join robustness). Each circuit has a known ground-truth netlist and SPICE deck with a test voltage source.
+We authored 15 circuits with 3--6 components and 2--6 nets, including parallel resistors, series dividers, Wheatstone bridges, RC/RL circuits, diode loops and a 6-component ring. Each circuit has a known netlist, component values and a test voltage source. We inject five error types at four severity levels (L1--L4) on top of the clean level L0: Gaussian endpoint jitter ($\sigma$ from 3\,px at L1 to 14\,px at L4); cut-short wires, shortened inward by 4\,px at L1 to 22\,px at L4; wire drops with probability up to 0.20 at L4; wrong-pin snaps with probability from 0.02 at L2 to 0.10 at L4; and anchor displacement, which moves one endpoint by up to 30\,px at L1 and 80\,px at L4. Besides component-pair F1, we report simulation accuracy: the percentage of seeds for which every source current of the predicted netlist, simulated with the authored values, matches the clean reference within 5\%.
 
-We inject five categories of error at four severity levels (L1--L4) on top of the clean (L0) baseline. These are Gaussian endpoint jitter with standard deviation $\sigma$ (from 3\,px at L1 to 14\,px at L4), cut-short corruption in which each wire is shortened inward by a fixed length to model endpoints that stop short of the pin (from 4\,px at L1 to 22\,px at L4), full wire drops with probability $p_{\text{drop}}$ (up to 0.20 at L4), wrong-pin snaps with probability $p_{\text{wp}}$ (from 0.02 at L2 to 0.10 at L4), and anchor displacement, where with probability $p_{\text{disp}}$ one endpoint is moved by up to $a_{\max}$ pixels (from 30\,px at L1 to 80\,px at L4).
-
-We report join F1 as the component-connectivity F1 score, measuring which unordered pairs of components share a net in the predicted versus ground-truth netlist. This metric discards terminal identity: even a perfect component-pair score does not certify pin assignment, the exact net partition, absence of shorts, or simulation equivalence. We report simulation accuracy as the percentage of random seeds for which every source current in the predicted SPICE netlist matches the clean oracle within 5\%.
-
-\subsection{Wire Detection Benchmark}
-
-We evaluate on 134 images from CGHD-1152 with ground-truth wire and component labels. Figure~\ref{fig:wire_benchmark} and Table~\ref{tab:wire_benchmark} summarize the top configurations across 36 tested variants.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/wire_benchmark.pdf}
-\caption{Wire detection F1 across the tested thresholding methods and pipeline variants (134 images, annotated component boxes). The historical Sauvola configuration with a 16\,px anchor filter and overlap deduplication at $10^{\circ}$/18\,px achieves F1~=~0.976; this is distinct from the production $12^{\circ}$/8\,px deduplication setting. The adaptive Gaussian and Triangle bars use the stored skeleton-extraction configurations (F1~=~0.845 and 0.758, respectively).}
-\label{fig:wire_benchmark}
-\end{figure}
-
-\begin{table}[htbp]
-\caption{Wire detection performance on 134 images with annotated component boxes. The two Sauvola anchor-distance rows use historical $10^{\circ}$/18\,px overlap deduplication; they are not the production $12^{\circ}$/8\,px configuration.}
-\label{tab:wire_benchmark}
-\begin{center}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Configuration} & \textbf{F1} & \textbf{Prec} & \textbf{Rec} \\
-\midrule
-Sauvola + anchor 16\,px (ours) & \textbf{0.976} & 0.973 & 0.978 \\
-Sauvola + anchor 12\,px & 0.973 & 0.974 & 0.972 \\
-Sauvola ($w{=}61$) + anchor 12\,px & 0.959 & 0.944 & 0.974 \\
-Sauvola ($k{=}0.2875$) + anchor 14\,px & 0.950 & 0.921 & 0.980 \\
-Otsu threshold + CCL & 0.789 & 0.796 & 0.783 \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-The historical 16\,px-anchor configuration achieves median F1 1.000, with 87\% of benchmark images scoring F1 at least 0.90. Its aggregate F1 is 0.9755 at $10^{\circ}$/18\,px overlap deduplication; the $12^{\circ}$/8\,px production configuration gives 0.9726 with the same 16\,px anchor distance. Among the tested alternatives, Otsu yields F1 0.789 and adaptive Gaussian 0.845. Occlusion is intended to remove component internals before wire extraction. Disabling that masking step while holding the rest of the extraction path fixed has a large measured downstream effect on the 31-image connectivity benchmark (Section~\ref{sec:mech_ablation}): component-pair micro-F1 falls from 0.890 to 0.336. This is a mechanism ablation scored on downstream connectivity; it is not a wire-level F1 measurement for the extractor, whose human annotations are attached to the unmasked images.
-
-\subsection{Join Strategy Comparison}
-
-Table~\ref{tab:join_leaderboard} and Figure~\ref{fig:join_comparison} compare joining strategies on the synthetic evaluation framework (15 circuits $\times$ 8 seeds, mean F1 over error levels L1--L4).
-
-\begin{table}[htbp]
-\caption{Join Strategy Leaderboard (Synthetic Eval)}
+\begin{table}[t]
+\caption{Synthetic join leaderboard: mean component-pair F1 over 15 circuits $\times$ 8 seeds at each error level.}
 \label{tab:join_leaderboard}
-\begin{center}
+\centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lccccc}
@@ -198,156 +184,22 @@ Radius union-find (legacy) & 1.00 & 0.97 & 0.90 & 0.56 & 0.36 \\
 Nearest-pin + bbox anchor & 1.00 & 0.97 & 0.89 & 0.38 & 0.32 \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
-On the authored synthetic suite at L4, the scale-relative graph with completion scores F1 0.95, rescue graph with completion 0.94, rescue graph alone 0.90, scale-relative graph alone 0.85 and radius union-find 0.36 (Table~\ref{tab:join_leaderboard}). These results compare the reported configurations under the specified perturbations. They do not establish that completion repairs every dropped connection or prevents all shorts. The scale-relative completion configuration also has the highest component-pair score among the deterministic configurations reported on the real-image benchmark (Section~\ref{sec:real_eval}). For readability, two intermediate synthetic variants whose scores round to rows shown are omitted: nearest-pin without anchoring, and the scale-relative base with end-extension but no dead-end rescue.
+Table~\ref{tab:join_leaderboard} and Figure~\ref{fig:join_comparison} compare the join strategies. At L4, the scale-relative graph with completion scores F1 0.95, the rescue graph with completion 0.94, the rescue graph alone 0.90, the scale-relative graph alone 0.85 and radius union-find 0.36. The rescue graph differs from the scale-relative graph by a 12\,px end-extension and a dead-end rescue step that gives dangling wire ends a longer directional reach. Table~\ref{tab:per_circuit} breaks down our join by circuit at L4. Precision is at least 0.85 on every circuit. The Wheatstone bridge is the hardest case, with F1 0.82 and simulation accuracy 6\%; the parallel R--R circuit keeps F1 1.00 at 25\% simulation accuracy, so the two measures capture different properties.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/join_comparison.pdf}
-\caption{(a)~Join strategy robustness under error injection (15 circuits $\times$ 8 seeds): bars give mean connectivity F1 at each severity level (L0--L4, dark to light to red). The completion-based strategies (left) stay near 1.0, while the radius union-find and nearest-pin baselines (right) collapse at L3--L4. (b)~The scale-relative completion join per circuit at L4 (16 seeds): bars are connectivity F1, the orange line is simulation accuracy. High precision does not exclude false merges or certify pin correctness; the Wheatstone bridge has the lowest reported connectivity F1 and simulation accuracy (Table~\ref{tab:per_circuit}).}
+\caption{(a)~Join strategies under error injection (15 circuits $\times$ 8 seeds): mean component-pair F1 at each severity level (L0--L4, dark to light to red). (b)~The scale-relative completion join per circuit at L4 (16 seeds): bars are component-pair F1, the orange line is simulation accuracy.}
 \label{fig:join_comparison}
 \end{figure*}
 
-\subsection{Real-Image Net-Level Evaluation}
-\label{sec:real_eval}
-
-The synthetic results above measure robustness under an authored error model. For the real-image evaluation, we constructed a human-verified net-level benchmark of 31 CGHD-1152 images using a purpose-built verification tool. Thirty-four images were annotated; three were excluded before scoring (one pending human verification, two failing the documented physical-sanity checks), leaving the scored N=31. Net-level proposals were bootstrapped by a conservative endpoint-graph join over the dataset's annotated wires and then corrected by one human annotator. Human correction and evaluation on independently authored synthetic ground truth mitigate concern about method-dependent labels, but do not rule out residual bootstrap or annotator bias in the real benchmark. Both the geometric join and the VLM diagnostic receive annotated component boxes. Connectivity is scored as component-pair F1 restricted to the evaluated electrical-component subset, discarding terminal identities as in the synthetic connectivity metric.
-
-Table~\ref{tab:real_join} reports the evaluated join configurations on the verified set, run on the pipeline's own detected wires. We report micro-averaged (pair-pooled) component-pair F1 as the primary metric, so that a dense 14-component board contributes in proportion to its connections rather than counting the same as a 3-component one; the macro (mean per-image) F1 is listed alongside for reference. The best configuration, the scale-relative completion join (degree-budget completion applied to a high-precision scale-relative endpoint-graph base), achieves micro-F1~=~0.890 (P~=~0.92, R~=~0.86; 95\% bootstrap CI [0.855, 0.924]), improving on the prior default that applies the same completion to the rescue base (0.829) and the radius union-find join (0.667) (Figure~\ref{fig:real_join_fig}). The scale-relative completion configuration omits the rescue base's 12\,px end-extension and dead-end rescue and has higher reported precision. This comparison does not isolate the causal contribution of those individual changes. A bounded within-benchmark reach sweep over $\rho\in[3,5]$, with $r=\rho\tau_c$, yields macro-F1 0.895--0.903. This is sensitivity evidence for the tested settings, not a controlled image-rescaling or mixed-size robustness experiment. Confidence intervals are wide at $N=31$ and the per-strategy intervals overlap, but the ranking is consistent and is corroborated on the independently authored synthetic suite (Table~\ref{tab:join_leaderboard}).
-
-\begin{table}[htbp]
-\caption{Leave-one-out ablation of endpoint-graph rules at the base-graph level and with completion, using annotated component boxes and detected wires on the 31-image benchmark. All full-pipeline rows have the same aggregate TP/FP/FN (418/37/66). Fixed-pixel base tolerances give micro-F1 0.820 versus 0.816 for the scale-relative base; completion retains its scale dependence. Aggregate ties do not establish identical recovered connections or a causal explanation for the ties.}
-\label{tab:edge_ablation}
-\centering
-\begin{tabular}{lccccl}
-\hline
-Configuration & \multicolumn{2}{c}{Base graph only} & \multicolumn{3}{c}{Full pipeline} \\
-\cline{2-3} \cline{4-6}
- & micro-F1 & TP/FP/FN & micro-F1 & P & R \\
-\hline
-Baseline (all edge types, scale-relative) & 0.816 & 352/27/132 & \textbf{0.890} & 0.919 & 0.864 \\
-T-junctions disabled & 0.816 & 352/27/132 & 0.890 & 0.919 & 0.864 \\
-Rail taps disabled & 0.816 & 352/27/132 & 0.890 & 0.919 & 0.864 \\
-T-junctions + rail taps disabled & 0.816 & 352/27/132 & 0.890 & 0.919 & 0.864 \\
-Directional preference disabled & 0.816 & 352/27/132 & 0.890 & 0.919 & 0.864 \\
-Fixed-pixel base tolerances; completion unchanged & 0.820 & 356/28/128 & 0.890 & 0.919 & 0.864 \\
-\hline
-\end{tabular}
-\end{table}
-
-Table~\ref{tab:edge_ablation} reports bounded interventions on the base graph and the resulting pipeline with completion. Disabling T-junctions, rail taps or directional preference leaves the displayed base and full aggregate counts unchanged. Fixed-pixel base tolerances increase base micro-F1 from 0.816 to 0.820; the full-pipeline counts again tie at 418/37/66. Equal aggregate counts do not establish identical recovered connections, explain which mechanisms were active, or prove that completion masks differences. The baseline comparison shows an increase from base micro-F1 0.816 to 0.890 with completion, but these ablations do not establish that other mechanisms are generally unnecessary. Full occlusion removal and the completion safeguards are tested separately (Table~\ref{tab:mech_ablation}, Section~\ref{sec:mech_ablation}). Removal of scale dependence throughout completion, and extreme-size or mixed-size input conditions, were not tested. The ablation evidence therefore still does not cover every proposed module or every input condition.
-
-\subsection{Occlusion Removal and Completion-Safeguard Ablations}
-\label{sec:mech_ablation}
-
-Table~\ref{tab:mech_ablation} reports the mechanism interventions that Table~\ref{tab:edge_ablation} does not cover, evaluated on the same 31-image benchmark with annotated component boxes and detected wires.
-
-\begin{table}[htbp]
-\caption{Mechanism ablations on the 31-image benchmark. The occlusion arm removes only the component-masking call from the extraction path; ROI cropping, extractor configuration and coordinate restoration are held fixed. Guard and witness arms act on \texttt{scale\_completion}. ``Images changed'' counts images whose predicted component pairs differ from the reference arm.}
-\label{tab:mech_ablation}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lcccl}
-\hline
-Arm & TP/FP/FN & micro-F1 & macro-F1 & Images changed \\
-\hline
-Occlusion on (reference) & 418/37/66 & \textbf{0.890} & 0.901 & --- \\
-Occlusion off & 103/26/381 & 0.336 & 0.294 & 31/31 \\
-\hline
-Guard on (reference) & 418/37/66 & \textbf{0.890} & 0.901 & --- \\
-Guard off & 418/37/66 & 0.890 & 0.901 & 0/31 \\
-Witness required & 413/37/71 & 0.884 & 0.907 & 6/31 \\
-\hline
-\end{tabular}
-\end{table}
-
-Removing component occlusion leaves component coordinates available for region-of-interest selection and anchor filtering but exposes the component pixels to the extractor, which then returns 466 wire segments instead of 666. Component-pair micro-F1 falls from 0.890 to 0.336 (precision 0.798, recall 0.213) and predicted pairs change on all 31 images. This establishes a large measured downstream contribution for the occlusion step on this benchmark. It is a mechanism ablation, not a wire-level extractor score: no validated one-to-one wire-matching scorer was run, and the human wire annotations are attached to the unmasked images, so wire-level F1 is not reported. The occlusion-off arm is not a proposed configuration and is not a replacement estimate for the pipeline's benchmark performance.
-
-For the completion safeguards, the shared-component (self-loop) guard fires on 18 of 31 images and rejects 38 candidate merges. Because the primary metric projects each net to distinct component pairs, disabling the guard leaves the scored pair sets unchanged: the guard's protection against same-device-pin shorts is invisible to this metric and therefore unquantified here. Requiring a wire witness instead of the relaxed distance fallback changes predictions on 6 of 31 images (TP/FP/FN 413/37/71; micro-F1 0.884, macro-F1 0.907). These arms establish activation and paired effects; they do not rank the safeguards by safety.
-
-\begin{table}[htbp]
-\caption{Join strategy and baseline comparison on human-verified net-level ground truth (31 real images, annotated component boxes; detected wires except for the stated perfect-wire reference). Primary metric is micro-averaged (pair-pooled) component-pair F1; macro (mean per-image) F1 is shown for reference.}
-\label{tab:real_join}
-\begin{center}
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Method} & \textbf{F1} & \textbf{Prec} & \textbf{Rec} & \textbf{F1$_{\text{macro}}$} \\
-\midrule
-\multicolumn{5}{l}{\emph{Deterministic joins (ours and ablations)}} \\
-Scale-rel.\ graph + completion (ours) & \textbf{0.890} & 0.919 & 0.864 & \textbf{0.901} \\
-Rescue graph + completion (prior) & 0.829 & 0.789 & 0.874 & 0.853 \\
-Scale-rel.\ graph (base) & 0.816 & 0.929 & 0.727 & 0.838 \\
-Rescue graph (base) & 0.787 & 0.811 & 0.764 & 0.813 \\
-Radius union-find (legacy) & 0.667 & 0.698 & 0.638 & 0.674 \\
-\midrule
-\multicolumn{5}{l}{\emph{Classical deterministic baselines (identical detected wires)}} \\
-Hough + proximity (best) & 0.805 & 0.750 & 0.868 & 0.847 \\
-Connected-components (best) & 0.624 & 0.965 & 0.461 & 0.611 \\
-\midrule
-\multicolumn{5}{l}{\emph{Conditional VLM diagnostic / annotated-wire reference}} \\
-VLM (Claude Opus~4.8) & 0.923 & 0.970 & 0.880 & 0.949 \\
-Scale-rel.\ + completion, perfect wires & 0.890 & 0.913 & 0.868 & 0.916 \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/real_join_comparison.pdf}
-\caption{Micro-averaged connectivity F1 on the 31-image human-verified net-level benchmark (component-pair metric). The scale-relative completion join has the highest score among the evaluated deterministic configurations and classical baselines on these detected wires. The dashed line marks the VLM diagnostic (Claude Opus 4.8). Both methods receive annotated component boxes; the VLM-minus-join difference is $+0.033$ (95\% bootstrap CI $[-0.009,+0.078]$). The interval does not establish equivalence, cost superiority or a global validity guarantee. Error bars are 95\% bootstrap CIs.}
-\label{fig:real_join_fig}
-\end{figure}
-
-This real-image ranking resolves an open question from prior work on this pipeline: against bootstrapped pilot labels the degree-budget completion had \emph{not} consistently beaten its base join; against human-verified ground truth it clearly does (micro-F1 0.829 vs 0.787 for the rescue base alone), and the scale-relative variant is better still. The same ordering holds on the authored synthetic suite (Table~\ref{tab:join_leaderboard}), where the scale-relative completion join also ranks first, providing corroborating evidence on independently authored data without ruling out residual bias in the real benchmark labels.
-
-Several image-to-netlist systems erase component regions and infer nets from the remaining wire pixels using connected components or contours, including SINA~\cite{sina2026} and Peker et al.~\cite{peker2026}. We evaluate a connected-component baseline on our detected wire segments to control the wire input. Its best tested configuration reaches component-pair micro-F1 0.624, versus 0.890 for the endpoint-graph join (Table~\ref{tab:real_join}). Hough line fitting~\cite{duda1972hough} followed by proximity linking reaches 0.805 at its best tested linking tolerance on the same detected wires. These are the best configurations in the reported sweeps, not upper bounds on all implementations of the classical methods. Their ordering is evidence for these configurations and this benchmark, not a direct performance comparison with the cited complete systems.
-
-We additionally attempted to run five public image-to-netlist systems on the hand-drawn benchmark and encountered the following implementation, model-vocabulary and input-domain limitations. The classical printed-schematic interpreter of Kelly and Cole~\cite{kelly2024digitizing} installs and runs, but on hand-drawn scans it over-segments wires into spurious components and recovers almost no connectivity, a domain-transfer failure. Netlistify~\cite{netlistify2025} reproduces on its own printed AMS test data, which we ran end-to-end with the released model, but its active model lacks the diode, inductor, and IC classes our circuits contain and its connectivity model is trained on printed thin-line appearance, limiting its applicability to the device population in this benchmark. Masala-CHAI~\cite{masalachai2024} delegates connectivity to a proprietary LLM behind a paid API, equivalent in spirit to our VLM experiment in Section~\ref{sec:vlm_results}, rather than a deterministic algorithm. SINA's~\cite{sina2026} anonymized code archive was unextractable and CircuitNet~\cite{circuitnet} ships only Colab notebooks without released weights. These observations concern the versions and configurations examined; they do not establish that no prior system can recover hand-drawn connectivity. The CCL and Hough experiments above provide controlled comparisons on the same detected wires.
-
-With annotated component boxes held fixed, replacing detected wires by the dataset's annotated wires changes component-pair micro-F1 from 0.8903 to 0.8898, while macro-F1 increases from 0.901 to 0.916 (Table~\ref{tab:real_join}). The micro scores round to the same displayed value, but are not identical. This comparison concerns wire input conditional on component annotations; it does not establish an autonomous detection bottleneck or exclude compensating changes in recovered connections.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.82\textwidth]{figures/complexity_histogram.pdf}
-\caption{Complexity of the 31-image human-verified benchmark, counting components in the evaluated electrical subset: 15 images have $\leq$5 and 12 have $\geq$10 (median 7, range 3--14). Component-count breadth does not validate dense buses or multilayer crossings; performance on these cases remains untested.}
-\label{fig:complexity_hist}
-\end{figure}
-
-\subsection{Descriptive Per-Drafter Results}
-Table~\ref{tab:per_drafter} reports the scale-relative completion join grouped by CGHD drafter. The published CGHD-1152 dataset file index (version~14) places each of the 31 benchmark image filenames under exactly one \texttt{drafter\_N/images/} path, matching the drafter assignments used here. Thus all 31 assignments are direct matches to the corpus's drafter labels rather than inferences from circuit numbering; the version~13 image-path index agrees. Four groups contain at least four images, with micro-F1 ranging from 0.854 to 0.987. These groups describe within-corpus variation, not evidence of unseen-drafter transfer. No held-out-drafter experiment was performed; the small groups do not support strong statistical separation.
-
-\begin{table}[htbp]
-\caption{Descriptive join micro-F1 (scale-relative completion) by CGHD drafter. Groups with at least four images; overall includes all benchmark images. Drafter identities are direct filename matches to the published CGHD-1152 file index (31/31).}
-\label{tab:per_drafter}
-\centering
-\begin{tabular}{lcccc}
-\hline
-Drafter & $n$ images & micro-F1 & macro-F1 & TP/FP/FN \\
-\hline
-drafter\_1  & 7 & 0.933 & 0.907 & 56/6/2 \\
-drafter\_2  & 5 & 0.854 & 0.874 & 85/14/15 \\
-drafter\_10 & 5 & 0.987 & 0.995 & 37/1/0 \\
-drafter\_12 & 4 & 0.913 & 0.938 & 21/0/4 \\
-\hline
-Overall    & 31 & 0.890 & 0.901 & 418/37/66 \\
-\hline
-\end{tabular}
-\end{table}
-
-\subsection{Per-Circuit Analysis}
-
-Table~\ref{tab:per_circuit} shows the scale-relative completion join's performance across eight representative circuits from the 15-circuit synthetic corpus at L4 (extreme error injection, 16 seeds).
-
-\begin{table}[htbp]
-\caption{Scale-Relative Completion Join Performance per Circuit at L4 (16 seeds)}
+\begin{table}[t]
+\caption{Scale-relative completion join per synthetic circuit at L4 (16 seeds).}
 \label{tab:per_circuit}
-\begin{center}
+\centering
+\footnotesize
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Circuit} & \textbf{Comps} & \textbf{F1} & \textbf{Prec} & \textbf{Sim.\ acc.} \\
@@ -362,68 +214,333 @@ Wheatstone bridge & 6 & 0.82 & 0.85 & 6\% \\
 6-component ring & 6 & 0.95 & 0.92 & 50\% \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
-Precision is at least 0.85 across the reported synthetic circuits at L4. This does not exclude false merges or establish that all errors are fragmentation. The Wheatstone bridge has the lowest reported F1 (0.82) and simulation accuracy of 6\%, illustrating that component-pair connectivity and the separately evaluated synthetic simulation criterion measure different properties.
+\subsection{Wire Detection}
 
-\subsection{VLM Connectivity Experiment}
-\label{sec:vlm_results}
+Table~\ref{tab:wire_benchmark} and Figure~\ref{fig:wire_benchmark} summarize the best of 36 extractor variants on the 134-image wire benchmark. Sauvola binarization with a 16\,px anchor filter reaches F1 0.976 (median per-image F1 1.000; 87\% of images at or above 0.90). Otsu thresholding reaches 0.789 and adaptive Gaussian thresholding 0.845. The configuration in the table deduplicates overlapping segments at $10^{\circ}$/18\,px; the deployed $12^{\circ}$/8\,px setting scores 0.973 with the same anchor filter. The score does not depend on image modality: F1 is 0.967 on the 89 photographs and 0.986 on the 45 stroke maps.
 
-We evaluate Claude Opus~4.8 as an oracle-component-box connectivity diagnostic. Both methods receive the same annotated component boxes; the geometric method uses detected wires. The VLM is given the scanned image with component boxes labelled by index and asked to return JSON sets of component terminals sharing an electrical node. Each image uses a separate model call without shared conversational context. We score the resulting unordered component pairs against the same human-verified benchmark. This is a conditional connectivity comparison, not an autonomous end-to-end comparison.
+\begin{table}[t]
+\caption{Wire detection on 134 images with annotated component boxes. Sauvola rows use $10^{\circ}$/18\,px overlap deduplication.}
+\label{tab:wire_benchmark}
+\centering
+\footnotesize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Configuration} & \textbf{F1} & \textbf{Prec} & \textbf{Rec} \\
+\midrule
+Sauvola + anchor 16\,px (ours) & \textbf{0.976} & 0.973 & 0.978 \\
+Sauvola + anchor 12\,px & 0.973 & 0.974 & 0.972 \\
+Sauvola ($w{=}61$) + anchor 12\,px & 0.959 & 0.944 & 0.974 \\
+Sauvola ($k{=}0.2875$) + anchor 14\,px & 0.950 & 0.921 & 0.980 \\
+Otsu threshold + CCL & 0.789 & 0.796 & 0.783 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-On the 31 real images, the VLM reaches micro-F1 0.923 (precision 0.970, recall 0.880; macro-F1 0.949), versus micro-F1 0.890 for the geometric join, and is exact under the component-pair metric on 21/31 images. The paired VLM-minus-join difference is $+0.033$, with 95\% bootstrap CI $[-0.009,+0.078]$. Inclusion of zero does not establish equivalence. These results do not establish comparative cost superiority or a global guarantee against incorrect merges for either method. Autonomous performance requires separately auditable evaluation; the conditional scores do not certify pin-level or simulation correctness.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/wire_benchmark.pdf}
+\caption{Wire detection F1 across thresholding methods and pipeline variants (134 images, annotated component boxes). The adaptive Gaussian and Triangle bars use skeleton extraction (F1~=~0.845 and 0.758).}
+\label{fig:wire_benchmark}
+\end{figure}
 
-\section{Discussion}
-\label{sec:limitations}
+\subsection{Human-Verified Benchmark}
+\label{sec:real_eval}
 
-The endpoint graph represents wire endpoints and component pins with separate rules for endpoint proximity, component assignment and mid-span contacts. Component-first assignment selects a nearby component by OBB distance and then a pin by Euclidean distance. These geometric choices provide inspectable connectivity candidates, but do not establish that a nearby wire is electrically connected or that a selected pin has the correct device-specific meaning.
-
-Degree-budget completion proposes connections for pins left in single-component nets. Each floating-pin assignment selects at most one recovery target, and the shared-component guard can reject additional merges. Neither mechanism repairs shorts already present in the base graph. Wire-detection F1 does not measure an endpoint-drop rate or establish the causal contribution of missing endpoints to simulation failures.
-
-The human-verified net-level evaluation, while novel for hand-drawn circuits, currently covers 31 images; the 95\% bootstrap confidence intervals on the per-strategy F1 are correspondingly wide ($\pm$0.03--0.05) and overlap between adjacent strategies, so while the top ranking is consistent and corroborated by the independently authored synthetic suite, broader annotation is needed to separate the closely ranked configurations. The net-level labels were bootstrapped by a conservative endpoint-graph join over perfect wires and then human-corrected; we mitigate the residual concern that this favors graph-based methods by validating on synthetic ground truth that is authored from scratch, where the same ranking holds. Annotation was performed by a single human annotator using a purpose-built verification tool, and no per-image timing log was retained, so a per-image annotation-cost figure cannot be reported. A proposed expansion protocol would stratify sampling by component count, drafter, crossing/bus structure and capture conditions, use independent annotation followed by adjudication, and record per-image effort and provenance logs. This is a proposed expansion protocol, not completed annotation. The evaluation draws from a single hand-drawn corpus (CGHD-1152); generalization across other drawing styles, capture conditions, and printed schematics remains to be validated.
-
-Table~\ref{tab:capabilities} distinguishes the evaluated connectivity scope from generic pin guesses and illustrative export. Listing a device group does not establish separately detected model classes: the detector vocabulary merges multiple original classes. Pin construction depends on the component type supplied to the netlist stage; a template for a named complex device does not recover that identity from a merged detector label. Generic pin geometry is not evidence of validated device-specific pin relationships.
+Table~\ref{tab:real_join} reports every join configuration and baseline on the 31-image human-verified benchmark, together with the paired tests. Our join, degree-budget completion on the scale-relative base, reaches micro-F1 0.890 (P 0.919, R 0.864; macro-F1 0.901; TP/FP/FN 418/37/66; 95\% CI [0.855, 0.924]). It beats every deterministic comparator on every test after Holm correction. The margin over the prior default, which applies the same completion to the rescue base, is $+0.061$ [$+0.025$, $+0.100$] with 11 wins, 18 ties and 2 losses. Completion lifts the scale-relative base from 0.816 to 0.890, mostly through recall (0.727 to 0.864). The scale-relative base is also more precise than the rescue base (0.929 versus 0.811), and completion keeps most of that precision (0.919, against 0.789 for completion on the rescue base). Leaving out any one image moves our micro-F1 within 0.885--0.900, and no deletion changes the sign of any comparison. A sweep of the completion reach over $\rho\in[3,5]$ gives macro-F1 0.895--0.903.
 
 \begin{table*}[t]
-\caption{Connectivity evaluation, generic pin construction, and illustrative export are distinct capabilities.}
-\label{tab:capabilities}
+\caption{Component-pair connectivity on the 31-image human-verified benchmark (annotated component boxes; detected wires unless noted). F1, P and R are micro-averaged. $\Delta$ is the micro-F1 of ours minus the comparator with 95\% paired bootstrap CI; Holm-adjusted $p$ values are given for the bootstrap, the permutation test on micro-F1 and the Wilcoxon test on per-image F1; W/T/L counts per-image wins, ties and losses from our side.}
+\label{tab:real_join}
 \centering
-\begin{tabular}{p{0.17\textwidth}p{0.24\textwidth}p{0.24\textwidth}p{0.24\textwidth}}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccccc}
 \toprule
-Device group & Evaluated scope & Pin construction & Export limitation \\
+\textbf{Method} & \textbf{F1} & \textbf{P} & \textbf{R} & \textbf{F1$_{\text{macro}}$} & \textbf{$\Delta$ [95\% CI]} & \textbf{Holm $p$ (boot / perm / Wilcoxon)} & \textbf{W/T/L} \\
 \midrule
-R/C/L/D/Q, voltage sources and ICs & Component-pair connectivity on the benchmark; no universal validation of pin templates & Geometric templates; endpoint clustering for eligible discrete/source types, generic layouts for ICs & Illustrative defaults/substitutions; values and device models require external specification. ICs are skipped because no export model is implemented. \\
-Switches & Absent from the evaluated electrical subset; switch-specific connectivity unvalidated & Two pins from the shorter OBB-edge midpoints; long-axis AABB fallback & Fixed $0.001\,\Omega$ resistor if pins 0 and 1 map to distinct nodes; otherwise no switch line. No switch state or control model is recovered. \\
-Transformers, thyristors, optocouplers and other complex devices & Device-specific connectivity unvalidated & Named transformer type receives a two-pin geometric guess; optocoupler template and unknown-type fallback also exist & These complex types have no implemented export model and are skipped; geometric guesses do not establish winding, control or isolation semantics. \\
-Metric boundary (all evaluated groups) & Component pairs discard terminal identity & F1 does not certify pin assignment or the exact net partition & F1 does not certify absence of shorts or simulation equivalence. \\
+\multicolumn{8}{l}{\emph{Endpoint-graph joins}} \\
+Scale-rel.\ graph + completion (ours) & \textbf{0.890} & 0.919 & 0.864 & 0.901 & -- & -- & -- \\
+Rescue graph + completion & 0.829 & 0.789 & 0.874 & 0.853 & $+0.061$ [$+0.025$, $+0.100$] & $<$0.001 / 0.001 / 0.009 & 11/18/2 \\
+Scale-rel.\ graph (base) & 0.816 & 0.929 & 0.727 & 0.838 & $+0.075$ [$+0.038$, $+0.113$] & $<$0.001 / 0.002 / 0.005 & 14/16/1 \\
+Rescue graph (base) & 0.787 & 0.811 & 0.764 & 0.813 & $+0.103$ [$+0.065$, $+0.142$] & $<$0.001 / $<$0.001 / 0.002 & 17/14/0 \\
+\midrule
+\multicolumn{8}{l}{\emph{Baselines on the same detected wires}} \\
+Radius union-find (legacy) & 0.667 & 0.698 & 0.638 & 0.674 & $+0.224$ [$+0.166$, $+0.281$] & $<$0.001 / $<$0.001 / $<$0.001 & 25/6/0 \\
+Hough + proximity (best) & 0.805 & 0.750 & 0.868 & 0.847 & $+0.086$ [$+0.045$, $+0.127$] & $<$0.001 / 0.002 / 0.030 & 19/8/4 \\
+Connected components (best) & 0.624 & 0.965 & 0.461 & 0.611 & $+0.267$ [$+0.136$, $+0.409$] & $<$0.001 / $<$0.001 / $<$0.001 & 21/8/2 \\
+\midrule
+\multicolumn{8}{l}{\emph{References}} \\
+Ours with annotated wires & 0.890 & 0.913 & 0.868 & 0.916 & -- & -- & -- \\
+VLM (Claude Opus~4.8) & 0.923 & 0.970 & 0.880 & \textbf{0.949} & $-0.033$ [$-0.078$, $+0.008$] & 0.12 / 0.15 / 0.030 & 7/11/13 \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-Component detection has released-checkpoint mAP@0.5 of 89.0\% (the checkpoint embeds 0.88977 at its best-fitness epoch; the previously reported 88.5\% belongs to the final training epoch), with crossover recall of 70.7\%. Geometric edge types 2, 4 and 5 do not consult crossover class labels when joining nearby wire fragments or mid-span contacts, creating a possible false-merge pathway. An audit using annotated component boxes found 13 crossover instances across eight benchmark images. In C242\_D1\_P1, suppressing two crossing-adjacent endpoint--endpoint edges changed component-pair TP/FP/FN from 27/4/0 to 19/0/8. Removing these edges also removes true connections; this is not a demonstrated mitigation gain. To test the detector half of this pathway directly, we ran the trained detector over the 31 benchmark images and compared its crossover outputs with the 13 annotated instances. Every annotated crossover was localized and assigned to the crossover class at a confidence of at least 0.25 (confidence 0.28--0.97, IoU 0.43--0.91); at a 0.50 threshold, 12 of 13 are retained and one falls below threshold. This does not contradict the reported 70.7\% class recall, which is measured on the detector's own validation data at its deployment threshold, and training-split membership for these benchmark images is unknown, so these are not held-out estimates. As a paired counterfactual, deleting the annotated crossover boxes before joining changes the recovered predictions on 6 of 31 images and changes component-pair micro-F1 by $+0.010$, with identical net partitions on 23 of 31 images. These two conditional checks therefore give no evidence that crossover misclassification is the driver of the false pairs observed here. Both are annotated-box, within-benchmark diagnostics: they are not a prevalence estimate, not an end-to-end error rate, and not a validation of crossover-aware suppression, which remains unvalidated.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/real_join_comparison.pdf}
+\caption{Micro-averaged component-pair F1 on the 31-image human-verified benchmark with annotated component boxes and detected wires. Error bars are 95\% bootstrap CIs; the dashed line marks the VLM reference (Claude Opus 4.8).}
+\label{fig:real_join_fig}
+\end{figure}
 
-The VLM comparison uses a single model (Claude Opus~4.8) on 31 images; evaluating additional models and prompting strategies is future work. The component detector was trained on CGHD-1152 after excluding drafter\_0, whose drawing style differed from the retained drafters; performance on that excluded style is not established here. The synthetic error model is an authored approximation rather than a calibrated fit to detector errors. Calibration to measured errors is future work.
+Several image-to-netlist systems erase component regions and read nets from the remaining wire pixels with connected components or contours~\cite{sina2026,peker2026}. On our detected wires, the best connected-component configuration reaches micro-F1 0.624 at precision 0.965: it rarely merges wrongly, but every stroke gap splits a net (recall 0.461). Hough line fitting~\cite{duda1972hough} with proximity linking reaches 0.805 at its best linking tolerance. Both baselines use the best configuration of their sweep on these 31 images, which favours them.
+
+We also tried to run five public image-to-netlist systems on the benchmark. The printed-schematic interpreter of Kelly and Cole~\cite{kelly2024digitizing} runs, but on hand-drawn scans it over-segments wires into spurious components and recovers almost no connectivity. Netlistify~\cite{netlistify2025} reproduces on its own printed AMS test data, but its released model lacks the diode, inductor and IC classes in our circuits, and its connectivity model is trained on printed thin-line drawings. Masala-CHAI~\cite{masalachai2024} delegates connectivity to a proprietary LLM behind a paid API, which our VLM reference (Section~\ref{sec:vlm_results}) covers. The code archive of SINA~\cite{sina2026} could not be extracted, and CircuitNet~\cite{circuitnet} ships notebooks without trained weights. The CCL and Hough baselines therefore stand in for these approaches on identical inputs.
+
+Replacing the detected wires with the annotated wires, with boxes held fixed, changes micro-F1 from 0.8903 to 0.8898 and macro-F1 from 0.901 to 0.916. On this benchmark, the extracted wires are as good as the annotated ones for joining. The join also scores alike on both image modalities: micro-F1 is 0.883 on the 15 photographs and 0.895 on the 16 stroke maps.
+
+\subsection{Independent Held-Out Benchmark}
+\label{sec:cghd_ref}
+
+The 31-image benchmark has three weaknesses: it is small, its labels were bootstrapped from a graph join similar to ours, and our configuration was chosen on it. We therefore built a second benchmark whose labels come from the CGHD authors' own annotations and whose images were not used to develop or tune the join.
+
+\textbf{Reference construction.} CGHD provides binary stroke-segmentation maps and symbol instance polygons for a subset of its images. Extending the dataset's own wire-generation tooling, we subtract the dilated symbol polygons from the stroke map and take the remaining connected components as conductors. A conductor connects every polygon it touches, except text; junction polygons merge the conductors they touch. At a crossover polygon, the arms are paired straight through by their local direction ($180^{\circ}\pm45^{\circ}$), and a crossover that cannot be paired is flagged as ambiguous. Composite outlines (transformers, optocouplers and relays that contain sub-parts) group their parts but take no contacts. Of 257 images, 179 pass all quality checks; the others have an ambiguous crossover (29), an isolated part (17) or an over-connected part (28).
+
+\textbf{Validation.} On the 17 images shared with the human-verified benchmark, the reference agrees with the human nets at micro-F1 0.939 (P 0.993, R 0.891; exact on 11 of 17; 0.964 on the 15 clean images). We inspected every disagreement. Most are pairs the reference misses because of stroke gaps or ambiguous crossings, and seven follow from a convention: the human nets bridge switches. In five pairs, the reference was right and the human labels wrong. The reference mainly under-connects, so it understates the precision of every method. We fixed the quality filter and a junction-handling rule after inspecting these 17 overlaps.
+
+\textbf{Protocol.} The held-out set contains the 164 clean images outside the 31, with 3874 reference pairs from all 24 drafters. The input is the CGHD photograph with its aspect ratio preserved and its long side resized to 1024\,px. We chose this resolution on wire-level labels of the 52 wire-benchmark overlaps, before computing any join score.
+
+\begin{table}[t]
+\caption{Independent held-out benchmark (164 CGHD photographs, 24 drafters, 3874 reference pairs; annotated component boxes). $\Delta$ is ours minus the comparator in micro-F1, with 95\% paired bootstrap CI. Every difference has Holm-adjusted $p=0.0006$, the resolution floor of the tests.}
+\label{tab:cghd_ref}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Method} & \textbf{F1} & \textbf{P} & \textbf{R} & \textbf{$\Delta$ [95\% CI]} & \textbf{W/T/L} \\
+\midrule
+Ours & \textbf{0.711} & 0.766 & 0.664 & -- & -- \\
+Rescue + compl. & 0.659 & 0.622 & 0.699 & $+0.053$ [0.033, 0.074] & 85/44/35 \\
+Scale-rel.\ base & 0.595 & 0.785 & 0.479 & $+0.117$ [0.097, 0.138] & 112/46/6 \\
+Rescue base & 0.592 & 0.631 & 0.558 & $+0.119$ [0.097, 0.142] & 113/31/20 \\
+Radius u-f & 0.518 & 0.478 & 0.565 & $+0.194$ [0.159, 0.229] & 136/13/15 \\
+Hough & 0.480 & 0.328 & 0.895 & $+0.231$ [0.168, 0.282] & 90/22/52 \\
+Conn.\ comp. & 0.594 & 0.798 & 0.473 & $+0.117$ [0.083, 0.156] & 117/12/35 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Results.} Table~\ref{tab:cghd_ref} gives the results. Our join reaches micro-F1 0.711 [0.671, 0.748] (P 0.766, R 0.664; macro-F1 0.724) and beats every comparator, with the same ordering of the endpoint-graph variants as on the human-verified set. Hough linking keeps recall high (0.895) but merges many nets (precision 0.328); the best Hough configuration tuned on this set itself reaches 0.509. The result holds under three changes to the evaluation set: excluding every other photograph of the 31 benchmark drawings (155 images) gives 0.707, scoring all 257 images including the unclean ones gives 0.626, and a reference variant that treats switches as closed gives 0.698. Across the 24 drafters, our micro-F1 ranges from 0.465 to 0.917 (median 0.709, interquartile range 0.658--0.770), and our join is the best of the evaluated methods for 15 drafters.
+
+% TODO-AUDIT: insert the 40-image human audit of the derived reference (agreement with human-corrected nets, per-image annotation time) when the audit is complete.
+A human audit of 40 randomly sampled held-out images [RESULT PENDING].
+
+\textbf{Gap to the human-verified benchmark.} The drop from 0.890 to 0.711 comes mainly from the input images. The held-out photographs belong to the CGHD subset for which the dataset provides stroke maps, and for this subset the 704$\times$704 benchmark copies are mostly those stroke maps (16 of the 17 overlaps). On the photographs, wire F1 falls to about 0.80--0.82, against 0.98 on the benchmark copies. On the 17 overlapping images, our join scores 0.896 on the benchmark copies and 0.728 on the photographs at long side 1024. Re-weighting the held-out images to the circuit-size distribution of the 31 raises our score by about 0.01, and scoring against the human nets instead of the reference changes it by about 0.01. The remaining gap of about 0.16 is due to input quality: on these photographs, wire extraction is the dominant source of error, while the ranking of the joins carries over.
+
+\subsection{Robustness}
+\label{sec:robustness}
+
+\subsubsection{Circuit complexity}
+Table~\ref{tab:strata} splits both benchmarks by the number of electrical components. On the 31 images, F1 falls with complexity for every method, including the VLM: across images, our F1 correlates with component count at Spearman $\rho=-0.53$ ($p=0.002$). Our recall drop from the $\leq$5 to the $\geq$10 stratum, $-0.068$ [$-0.18$, $+0.05$] (permutation $p=0.32$), is not significant. On images with at least ten components, our join beats the rescue-graph completion, the scale-relative base and Hough by $+0.078$ to $+0.106$, with every CI excluding zero, and trails the VLM by $-0.026$ [$-0.087$, $+0.030$]. On the held-out benchmark, micro-F1 falls from 0.845 for at most five components to 0.693 for 20 or more, while Hough falls to 0.347.
+
+\begin{table}[t]
+\caption{Micro-F1 by number of electrical components per image. The VLM was run on the human-verified benchmark only.}
+\label{tab:strata}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Components} & \textbf{Images} & \textbf{Ours} & \textbf{Rescue + compl.} & \textbf{Hough} & \textbf{VLM} \\
+\midrule
+\multicolumn{6}{l}{\emph{Human-verified benchmark (31 images)}} \\
+$\leq$5 & 15 & 0.940 & 0.933 & 0.892 & 0.982 \\
+6--9 & 4 & 0.846 & 0.817 & 0.843 & 0.902 \\
+$\geq$10 & 12 & 0.886 & 0.808 & 0.779 & 0.912 \\
+\midrule
+\multicolumn{6}{l}{\emph{Held-out benchmark (164 images)}} \\
+$\leq$5 & 41 & 0.845 & 0.856 & 0.835 & -- \\
+6--9 & 41 & 0.779 & 0.756 & 0.701 & -- \\
+10--19 & 60 & 0.694 & 0.656 & 0.593 & -- \\
+$\geq$20 & 22 & 0.693 & 0.608 & 0.347 & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Component-size variation within an image}
+A single scale $s$ per image could fail when component sizes vary within a drawing. On the 31 images, the overall dispersion of component sizes is unrelated to F1 ($\rho=+0.18$, $p=0.33$). The ratio of the largest to the smallest electrical-component diagonal correlates with F1 at $\rho=-0.60$, but it also grows with component count ($\rho=0.62$); controlling for count, the partial correlation is $-0.41$ ($p=0.024$) for our join and $-0.34$ for the VLM. The size of the largest component relative to $s$ has partial correlation near zero with F1. The three images that combine an IC with small discrete parts score 0.854 against 0.898 on the other 28.
+
+\subsubsection{Controlled rescaling}
+We resampled all 31 images by factors from 0.35 to 3 and re-projected the annotated boxes and wires (Fig.~\ref{fig:rescale}). With annotated wires, our join stays within $\pm$0.005 of its native score from 0.5$\times$ to 3$\times$, with every CI including zero. It drops only at 0.35$\times$ ($-0.035$ [$-0.061$, $-0.005$]), where the lower pixel clamps bind for every image. With annotated wires, radius union-find with its fixed 30\,px radius falls from 0.690 at native scale to 0.429 at 2$\times$ and 0.153 at 3$\times$. With wires re-extracted from each rescaled image, the full pipeline scores 0.580, 0.690, 0.811, 0.890, 0.877, 0.866 and 0.866 at 0.35, 0.5, 0.75, 1, 1.5, 2 and 3$\times$. Upscaling costs at most 0.024 (CIs include zero). The loss under downscaling comes from wire extraction, whose Sauvola window, minimum component area and occlusion margins are set in pixels: at 0.35$\times$ the extractor finds 241 of 675 annotated segments. Completion recovers much of that loss; the scale-relative base alone scores 0.21 at 0.35$\times$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/rescale_robustness.pdf}
+\caption{Component-pair micro-F1 on the 31 images resampled by factor $f$ (native $f=1$). (a)~Join only, with annotated wires rescaled with the image. (b)~Full pipeline, with wires re-extracted from each rescaled image. Components are annotated boxes in both panels; shaded bands are 95\% bootstrap CIs for our join.}
+\label{fig:rescale}
+\end{figure}
+
+To separate the contribution of the scale-relative tolerances, we ran the same algorithm with fixed pixel tolerances ($\tau_{\text{pin}}$, $\tau_{\text{join}}$, $\tau_t$ of 30, 14 and 10\,px, completion reach 120\,px). It stays within 0.016 of our join between 0.5$\times$ and 2$\times$. The scale-relative version wins only where the fixed values are most mismatched: by $+0.015$ with annotated wires at 0.5$\times$ and by $+0.033$ in the full pipeline at 3$\times$, both with CIs excluding zero. Most of the scale robustness therefore comes from component-relative endpoint assignment and completion; the scalar tolerances $\tau=k\cdot s$ contribute a smaller share. The clamps are tuned to native resolution: $k\cdot s$ falls outside a clamp for 39\% of images at native scale, and removing the clamps costs 0.023 in the full pipeline at native scale.
+
+\subsubsection{Synthetic mixed-size circuits}
+We redrew one component per synthetic circuit at 0.5, 2 or 3 times its size, keeping only geometrically clean variants, and applied the L1--L4 error model. Enlarging one component costs our join about 0.005 in mean F1, and it stays about 0.03 above the fixed-pixel variant. Shrinking one component costs 0.012. The failure case is a Wheatstone bridge with one 40$\times$15\,px arm: in all five variants, the scale-relative methods and radius union-find add one spurious pair even on clean wires, while the fixed-pixel graphs stay exact. A component much smaller than the median is thus the weak point of a median-derived tolerance.
+
+\subsection{Ablations}
+\label{sec:mech_ablation}
+
+Table~\ref{tab:edge_ablation} removes individual edge rules from the base graph, with and without completion. Disabling T-junctions, rail taps or directional preference leaves the aggregate base-graph counts unchanged, so these rules give no measurable gain on this benchmark. Fixed-pixel base tolerances raise base micro-F1 from 0.816 to 0.820. With completion, every row ties at TP/FP/FN 418/37/66. The rescaling and mixed-size experiments (Section~\ref{sec:robustness}) test the tolerance design under conditions that this benchmark does not cover.
+
+\begin{table}[t]
+\caption{Edge-rule ablation on the 31-image benchmark, for the base graph and the full pipeline with completion.}
+\label{tab:edge_ablation}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Base graph}} & \multicolumn{2}{c}{\textbf{Full pipeline}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+\textbf{Configuration} & \textbf{F1} & \textbf{TP/FP/FN} & \textbf{F1} & \textbf{TP/FP/FN} \\
+\midrule
+All edge types (ours) & 0.816 & 352/27/132 & \textbf{0.890} & 418/37/66 \\
+No T-junctions & 0.816 & 352/27/132 & 0.890 & 418/37/66 \\
+No rail taps & 0.816 & 352/27/132 & 0.890 & 418/37/66 \\
+No T-junctions, no rail taps & 0.816 & 352/27/132 & 0.890 & 418/37/66 \\
+No directional preference & 0.816 & 352/27/132 & 0.890 & 418/37/66 \\
+Fixed-pixel base tolerances & 0.820 & 356/28/128 & 0.890 & 418/37/66 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Mechanism ablations on the 31-image benchmark. ``Changed'' counts images whose predicted pairs differ from the reference arm.}
+\label{tab:mech_ablation}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Arm} & \textbf{TP/FP/FN} & \textbf{F1} & \textbf{F1$_{\text{macro}}$} & \textbf{Changed} \\
+\midrule
+Occlusion on (ours) & 418/37/66 & \textbf{0.890} & 0.901 & -- \\
+Occlusion off & 103/26/381 & 0.336 & 0.294 & 31/31 \\
+\midrule
+Guard on (ours) & 418/37/66 & \textbf{0.890} & 0.901 & -- \\
+Guard off & 418/37/66 & 0.890 & 0.901 & 0/31 \\
+Witness required & 413/37/71 & 0.884 & 0.907 & 6/31 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:mech_ablation} tests the remaining mechanisms. Removing only the occlusion step, with cropping and all extractor settings held fixed, exposes component pixels to the extractor, which then returns 466 wire segments instead of 666; micro-F1 falls from 0.890 to 0.336 (P 0.798, R 0.213), and predictions change on all 31 images. The shared-component guard fires on 18 of 31 images and rejects 38 candidate merges. These merges would join two pins of the same component, which the component-pair metric cannot see, so the scores are unchanged. Requiring a wire witness for every completion edge changes six images and lowers micro-F1 to 0.884 while raising macro-F1 to 0.907. The rescaling experiment adds two further arms, fixed-pixel tolerances and unclamped tolerances (Section~\ref{sec:robustness}), and Section~\ref{sec:e2e} decomposes the loss from detected components.
+
+\subsection{End-to-End With Detected Components}
+\label{sec:e2e}
+
+We replaced the annotated boxes with the outputs of our trained component detector, a YOLO26m-OBB model with 16 merged classes that reaches mAP@0.5 of 89.0\% on its validation split, with its lowest class recall (70.7\%) on crossovers. The detector runs on the EXIF-corrected CGHD original at its training size (long side 1024\,px), and its boxes are mapped into the benchmark frame. We use the deployment confidence threshold of 0.5 without tuning. On the electrical components, detection precision, recall and F1 are 0.886, 0.858 and 0.872, and the same when the class must also match. As a check of the scoring path, feeding the annotated boxes through the same mapping and matching code reproduces 418/37/66.
+
+\begin{table}[t]
+\caption{End-to-end joining with detected components on the 31-image benchmark. The lower block replaces annotated boxes with detector output one factor at a time (confidence 0.5); $\Delta$ is the change from the previous row.}
+\label{tab:e2e}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Components} & \textbf{F1} & \textbf{Prec} & \textbf{Rec} & \textbf{TP/FP/FN} \\
+\midrule
+Annotated boxes & 0.890 & 0.919 & 0.864 & 418/37/66 \\
+Detector, conf 0.25 & 0.613 & 0.575 & 0.655 & 317/234/167 \\
+Detector, conf 0.35 & 0.616 & 0.582 & 0.655 & 317/228/167 \\
+Detector, conf 0.50 & 0.627 & 0.603 & 0.653 & 316/208/168 \\
+\midrule
+\textbf{Sequential step} & \textbf{F1} & \textbf{$\Delta$} & & \textbf{TP/FP/FN} \\
+\midrule
+Drop missed components & 0.759 & $-0.131$ & & 329/54/155 \\
+Add spurious detections & 0.687 & $-0.072$ & & 322/131/162 \\
+Use detected geometry & 0.644 & $-0.043$ & & 329/208/155 \\
+Use detected classes & 0.627 & $-0.017$ & & 316/208/168 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:e2e} gives the results. End-to-end micro-F1 is 0.627 [0.519, 0.731] (macro-F1 0.656), a change of $-0.263$ [$-0.366$, $-0.170$] from annotated boxes; the lower thresholds give 0.613 and 0.616. Replacing the annotated boxes one factor at a time attributes $-0.131$ to missed electrical components, $-0.072$ to spurious detections, $-0.043$ to box localization and $-0.017$ to classification; with a sequential decomposition, the shares depend on the order of the steps. Missed components cost the most because every pair involving a missed component becomes a false negative. The detector is sensitive to orientation (its training used rotation augmentation of at most $\pm10^{\circ}$). On the 14 images whose benchmark copy is re-oriented relative to the CGHD file, end-to-end micro-F1 is 0.491, against 0.739 on the other 17.
+
+\subsection{Crossovers}
+\label{sec:crossovers}
+
+Edge types 2, 4 and 5 do not consult crossover labels, so a missed crossover could merge two independent wires. The 31 images contain 13 annotated crossovers in eight images. With annotated boxes, recall on these eight images is 0.834, against 0.884 on the 23 without a crossover ($p=0.51$). In C242\_D1\_P1, suppressing the two endpoint--endpoint edges adjacent to crossings changes TP/FP/FN from 27/4/0 to 19/0/8: the edges that create the false pairs also carry true connections. Deleting the annotated crossover boxes before joining changes predictions on 6 of 31 images, leaves the net partitions identical on 23, and changes micro-F1 by $+0.010$. In the end-to-end run, the detector finds all 13 crossovers and labels each as a crossover at every tested threshold, so none of the false pairs in Table~\ref{tab:e2e} comes from a missed or misclassified crossover. Removing the correctly detected crossovers lowers end-to-end micro-F1 by 0.019. Thirteen instances are too few to test the 70.7\% validation recall.
+
+\subsection{VLM Reference}
+\label{sec:vlm_results}
+
+We ran Claude Opus~4.8 as a reference system. It receives the same annotated component boxes as our join, drawn on the image and numbered, and neither method receives annotated wires. The model returns JSON sets of component terminals that share an electrical node; each image is a separate call with no shared context. We score its output with the same component-pair metric.
+
+The VLM reaches micro-F1 0.923 (P 0.970, R 0.880; macro-F1 0.949) and is exact on 21 of 31 images, against 11 for our join. On pooled pairs, our join trails by $-0.033$ [$-0.078$, $+0.008$], which is not significant (Holm-adjusted bootstrap $p=0.12$, permutation $p=0.15$; Table~\ref{tab:real_join}). Per image, the VLM is better: it wins 13 images, ties 11 and loses 7 (Wilcoxon $p=0.030$). Its errors follow the same complexity trend as ours (Table~\ref{tab:strata}). The two systems differ in what they require: the VLM needs a call to a proprietary API for every image and returns no geometric trace of its decisions, whereas our join runs locally and deterministically without connectivity training data, and every recovered connection maps to a wire segment or a completion edge.
+
+\subsection{Per-Drafter Results}
+
+Table~\ref{tab:per_drafter} groups the 31-image results by CGHD drafter, using the drafter paths of the published CGHD-1152 file index, which place every benchmark filename under exactly one drafter. The four drafters with at least four images range from micro-F1 0.854 to 0.987. The held-out benchmark gives the spread over all 24 drafters (Section~\ref{sec:cghd_ref}).
+
+\begin{table}[t]
+\caption{Micro-F1 of our join by CGHD drafter on the 31-image benchmark (drafters with at least four images).}
+\label{tab:per_drafter}
+\centering
+\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Drafter} & \textbf{Images} & \textbf{F1} & \textbf{F1$_{\text{macro}}$} & \textbf{TP/FP/FN} \\
+\midrule
+drafter\_1  & 7 & 0.933 & 0.907 & 56/6/2 \\
+drafter\_2  & 5 & 0.854 & 0.874 & 85/14/15 \\
+drafter\_10 & 5 & 0.987 & 0.995 & 37/1/0 \\
+drafter\_12 & 4 & 0.913 & 0.938 & 21/0/4 \\
+\midrule
+All         & 31 & 0.890 & 0.901 & 418/37/66 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion}
+\label{sec:discussion}
+
+The endpoint-graph join with completion is the strongest deterministic method on both real benchmarks, and its margins are significant on both, although the benchmarks differ in labels, images and drafters. The held-out benchmark addresses the three main weaknesses of the human-verified set: its labels come from the dataset authors' annotations and not from a join, it covers every drafter, and none of its images was used to develop the method. Completion accounts for most of the gain over the base graphs, and on the high-precision scale-relative base it adds recall while keeping precision above 0.9.
+
+The experiments also locate the remaining errors. With annotated components on clean copies, extracted wires are as good as annotated ones. On difficult photographs, wire extraction limits accuracy; with detected components, missed detections do. Both suggest concrete next steps: an extractor whose pixel parameters follow the component scale, resampling inputs to a nominal component size, and a detector trained with full rotation augmentation. The VLM reference shows that a general model given component boxes can exceed a geometric join per image on this task. The geometric join remains useful where a local, deterministic and inspectable result is required.
+
+\begin{table*}[t]
+\caption{Connectivity evaluation, pin construction and export by device group.}
+\label{tab:capabilities}
+\centering
+\footnotesize
+\begin{tabular}{p{0.17\textwidth}p{0.24\textwidth}p{0.24\textwidth}p{0.24\textwidth}}
+\toprule
+\textbf{Device group} & \textbf{Evaluated scope} & \textbf{Pin construction} & \textbf{Export} \\
+\midrule
+R/C/L/D/Q, voltage sources and ICs & Component-pair connectivity on both benchmarks & Geometric templates; endpoint clustering for discrete and source types, generic layouts for ICs & Placeholder values; ICs are skipped because no export model is implemented. \\
+Switches & Not in the evaluated electrical subset & Two pins at the shorter OBB-edge midpoints; long-axis fallback & A 0.001\,$\Omega$ resistor if the two pins map to distinct nodes; no switch state is recovered. \\
+Transformers, thyristors, optocouplers and other complex devices & Not evaluated & Two-pin geometric guess for transformers; optocoupler template; generic fallback & No export model; skipped. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Scope and Limitations}
+\label{sec:limitations}
+
+\textbf{Task and metric.} The pipeline recovers structural connectivity. It does not read component values or device models, so its SPICE export is illustrative and uses placeholder values; simulation of real scans is not evaluated. The component-pair metric ignores terminal identity: a perfect score does not certify pin assignments, the exact net partition or the absence of shorts between pins of one component. The completion guard blocks new same-component merges but does not repair merges made by the base graph. Table~\ref{tab:capabilities} lists the device groups: pin templates for transformers, optocouplers and other complex devices exist but are not validated, and the detector merges several original classes into one label.
+
+\textbf{Data.} All images come from one corpus. The human-verified nets were bootstrapped from a conservative endpoint-graph join and corrected by a single annotator, which may leave a bias toward graph-based methods; the held-out benchmark, with labels from the dataset's own annotations, shows the same ranking. That reference is not human-verified, mainly misses connections, and its quality filter and a junction rule were fixed after inspecting the 17 overlapping images. The benchmark copies of the 31 images are resized, partly re-oriented, and half stroke maps, which makes them easier than the photographs. The Hough and CCL baselines keep their 31-image settings on the held-out photographs.
+
+\textbf{Scale.} The join tolerances derive from one median scale per image, and their clamps are tuned to native resolution. A component much smaller than the median can create a spurious pair, as in the synthetic Wheatstone case. The extractor's pixel-valued parameters limit accuracy on downscaled inputs. Rescaling tests changes in zoom, not in drawing style, and uses annotated components.
+
+\textbf{Detector.} No manifest of the detector's 85/15 random training split survives. The 31 benchmark drawings come from drafters eligible for training, and about 26 of them would be expected in the training split, so the end-to-end numbers are likely optimistic for detection. The detector excludes drafter\_0, whose drawing style differs from the rest of the corpus, and it is sensitive to orientation.
+
+\textbf{Coverage.} The human-verified benchmark contains 13 annotated crossovers, and we did not evaluate dense multi-track buses or multi-layer crossings. The VLM reference uses one model and one prompt. The synthetic error model is authored and not calibrated to measured detector errors.
+
+\textbf{Expansion.} The derived reference makes a larger human-verified benchmark affordable: its nets can seed the verification tool, which logs a timestamp at every save so that per-image effort can be measured. We plan to sample new images stratified by component count, drafter, crossing and bus structure and capture conditions, have two annotators correct each image independently with adjudication of disagreements, and extend the evaluation to printed schematics and to corpora other than CGHD.
 
 \section{Conclusion}
 
-We present structural circuit-netlist recovery using an occlusion-first wire extractor and endpoint-graph joining with degree-budget completion. On the 31-image within-corpus benchmark with annotated component boxes, component-pair micro-F1 is 0.8903; perfect-wire input gives 0.8898. These scores round alike but do not establish an autonomous detection bottleneck. The component-pair metric does not certify pin identities, exact net partitions, absence of shorts, or simulation equivalence. Synthetic L4 connectivity F1 is 0.95 versus 0.36 for the radius baseline. The VLM comparison is conditional on annotated component boxes and does not establish equivalence or cost superiority. Export remains illustrative: values and device models require external specification, and real-scan simulation equivalence is unvalidated. Broader styles, dense buses, and mixed-scale schematics require future evaluation.
-
-% Funding is declared in the \thanks block of the front matter (this build uses
-% IEEEtran \thanks; paper-access.tex uses the IEEE Access \tfootnote convention).
+We presented a deterministic pipeline for structural netlist recovery from hand-drawn schematics, built on an occlusion-first wire extractor, a typed endpoint-graph join and degree-budget completion. With annotated components, the join reaches component-pair micro-F1 0.890 on 31 human-verified images and 0.711 on 164 held-out photographs with independently derived reference nets, and it beats every deterministic baseline on both with significant paired margins. Its accuracy holds from 0.5$\times$ to 3$\times$ image scale when wires are given, and it reaches 0.627 end to end with a trained detector. A VLM given the same components scores higher per image, at the cost of a proprietary call per image. Better extraction on difficult photographs and better component detection are the most direct routes to higher end-to-end accuracy.
 
 \section*{Acknowledgment}
 The authors used Claude Opus 4.8 (Anthropic) to assist with grammar and language editing of the manuscript and as a programming assistant during development of the pipeline and evaluation code. This assistance is distinct from the VLM connectivity experiment in Section~\ref{sec:vlm_results}, where the same model is an evaluation subject. All methods, experiments, and conclusions are the authors' own, and the authors reviewed and take full responsibility for the entire content of this article.
 
 \section*{Data and Code Availability}
-The pipeline, evaluation scripts, synthetic-circuit generator, the 31-image
-human-verified net-level ground truth (\texttt{ground\_truth/real\_nets\_verified.json}),
-the net-level verification tool used to produce it, the join-strategy and
-connected-component baseline benchmarks, and the Claude-VLM connectivity harness are
-available at
-\url{https://github.com/boscochanam/circuit-digitization}, including the per-image to CGHD drafter mapping used for the per-drafter analysis (Table~\ref{tab:per_drafter}). The component-detection model
-is available at \url{https://huggingface.co/boscochanam/circuit-component-detector}, trained
-on the CGHD-1152 dataset~\cite{bayer2021cghd}.
+The pipeline, the synthetic-circuit generator, the 31-image human-verified net-level ground truth (\texttt{ground\_truth/real\_nets\_verified.json}), the net-level verification tool used to produce it, the CGHD-derived reference nets of the held-out benchmark (\texttt{ground\_truth/cghd\_ref/}), the join-strategy and baseline benchmarks, the Claude-VLM connectivity harness and the evaluation scripts for the paired tests, strata, rescaling, held-out and end-to-end experiments (\texttt{wire\_detection/benchmark/revision2/}) are available at \url{https://github.com/boscochanam/circuit-digitization}, together with the image-to-drafter mapping used in Table~\ref{tab:per_drafter}. The reference nets are derived from the CGHD annotations~\cite{bayer2021cghd}; no CGHD images are redistributed. The component-detection model is available at \url{https://huggingface.co/boscochanam/circuit-component-detector}, trained on the CGHD-1152 dataset~\cite{bayer2021cghd}.
 
 \begin{thebibliography}{00}
 \bibitem{bayer2021cghd} F.~Thoma, J.~Bayer, Y.~Li, and A.~Dengel, ``A public ground-truth dataset for handwritten circuit diagram images,'' in \textit{Proc. Int. Conf. Document Analysis and Recognition (ICDAR)}, 2021, pp.~20--27. [Online]. Available: \url{https://doi.org/10.1007/978-3-030-86198-8_2}
