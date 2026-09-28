@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rebuild the full resubmission package into review_artifacts/submission/:
 #   manuscript-clean.pdf        (paper-access.tex, IEEE Access kit)
-#   manuscript-highlighted.pdf  (word-level highlights vs 33f5e3d, the July submission)
+#   manuscript-highlighted.pdf  (word-level highlights vs the portal-submitted manuscript)
 #   highlight-change-index.pdf
 #   response-to-reviewers.pdf
 #   paper-access-overleaf.zip
@@ -27,9 +27,8 @@ kit_build "$TMP/new"
 if grep -q "undefined" "$TMP/new/paper-access.log"; then echo "WARNING: undefined references" >&2; fi
 cp "$TMP/new/paper-access.pdf" "$PAPER/paper-access.pdf"
 
-# 3. Baseline (July submission) with the same kit
-mkdir "$TMP/base" && git -C "$ROOT" archive 33f5e3d paper/ieee-paper | tar -x -C "$TMP/base"
-B="$TMP/base/paper/ieee-paper"; unzip -qo "$ROOT/paper-access-overleaf-full.zip" -d "$TMP/kit"; cp -rn "$TMP/kit"/* "$B"/
+# 3. Baseline: the manuscript as submitted through the portal (source zip downloaded from it)
+B="$TMP/base"; mkdir "$B" && (cd "$B" && unzip -q "$PAPER/review_artifacts/baseline/submitted_manuscript_portal.zip")
 kit_build "$B"
 
 # 4. Highlighted PDF

@@ -1,4 +1,4 @@
-"""Highlight rendered changes against the July 2026 submitted manuscript (commit 33f5e3d).
+"""Highlight rendered changes against the manuscript as submitted through the portal.
 
 Inputs: output/pdf/paper-access.pdf + .aux (current Access build) and
 output/baseline/snapshot/paper/ieee-paper/paper-access.pdf (33f5e3d built with the same kit)."""
@@ -9,6 +9,8 @@ import json
 import re
 import subprocess
 import unicodedata
+import zipfile
+import difflib as _dl
 import pymupdf as fitz
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
@@ -17,7 +19,8 @@ from xml.sax.saxutils import escape
 PAPER=Path(__file__).resolve().parent
 ROOT=PAPER.parent.parent
 OUT=PAPER/'output/pdf'
-BASE='33f5e3d37a85641b13bffaf7fc34b94eb5d35c47'
+BASE='portal-submission'
+BASEZIP=zipfile.ZipFile(PAPER/'review_artifacts/baseline/submitted_manuscript_portal.zip')
 baseline=ROOT/'output/baseline/snapshot/paper/ieee-paper/paper-access.pdf'
 old=fitz.open(baseline)
 new=fitz.open(OUT/'paper-access.pdf')
@@ -65,8 +68,8 @@ figure_records=[]
 for asset,label in figures.items():
     current=PAPER/'figures'/asset
     try:
-        previous=subprocess.check_output(['git','show',f'{BASE}:paper/ieee-paper/figures/{asset}'],cwd=ROOT,stderr=subprocess.DEVNULL)
-    except subprocess.CalledProcessError: previous=b''
+        previous=BASEZIP.read('figures/'+asset)
+    except KeyError: previous=b''
     if previous==current.read_bytes(): continue
     match=re.search(r'\\newlabel\{'+re.escape(label)+r'\}\{\{.*?\}\{(\d+)\}',aux)
     if not match: raise RuntimeError('Figure page missing: '+label)
@@ -82,18 +85,18 @@ for pno in sorted({r['revised_page']-1 for r in figure_records}):
     annot.set_info(title='Figure / layout revision',content='Updated figure(s) on this page; see highlight-change-index.json for assets. Text highlights are separate.')
     annot.update()
 
-new.set_metadata({**new.metadata,'subject':f'Changes against user-selected latest pre-August-13 revision {BASE}; not portal-confirmed.'})
+new.set_metadata({**new.metadata,'subject':'Changes against the manuscript as submitted through the IEEE Access portal.'})
 new.save(OUT/'paper-access-highlighted.pdf',garbage=4,deflate=True)
 assert [p.get_text() for p in new]==[p.get_text() for p in fitz.open(OUT/'paper-access.pdf')]
-(OUT/'highlight-change-index.json').write_text(json.dumps({'baseline_commit':BASE,'selection':'Latest manuscript before Aug 13, per user instruction; not independently portal-confirmed.',
+(OUT/'highlight-change-index.json').write_text(json.dumps({'baseline_commit':BASE,'selection':'Source zip downloaded from the IEEE Access portal (review_artifacts/baseline/submitted_manuscript_portal.zip).',
  'text_changes':records,'figure_changes':figure_records,'text_identical_to_clean':True},indent=2),encoding='utf-8')
-diff=subprocess.check_output(['git','diff',BASE,'--','paper/ieee-paper/paper-access.tex','paper/ieee-paper/paper-build.tex'],cwd=ROOT,text=True)
+diff=''.join(_dl.unified_diff(BASEZIP.read('paper-access.tex').decode('utf-8').splitlines(True),(PAPER/'paper-access.tex').read_text(encoding='utf-8').splitlines(True),'submitted/paper-access.tex','revised/paper-access.tex'))
 (OUT/'reviewed-baseline-source.diff').write_text(diff,encoding='utf-8')
 
 styles=getSampleStyleSheet()
 styles['BodyText'].fontSize=9;styles['BodyText'].leading=12
 story=[Paragraph('Highlighted Manuscript: Change and Deletion Index',styles['Title']),
- Paragraph('Baseline: '+BASE+'. Selected as the latest manuscript before August 13 under the author\'s instruction. Yellow marks show inserted/replaced rendered words; orange frames identify pages containing changed figure assets. The clean PDF text is unchanged by annotations. Source-only layout/preamble edits are preserved in reviewed-baseline-source.diff. This index records removed text that cannot be highlighted in the revised manuscript.',styles['BodyText'])]
+ Paragraph('Baseline: the manuscript as submitted through the IEEE Access portal. Yellow marks show inserted/replaced rendered words; orange frames identify pages containing changed figure assets. The clean PDF text is unchanged by annotations. Source-only layout/preamble edits are preserved in reviewed-baseline-source.diff. This index records removed text that cannot be highlighted in the revised manuscript.',styles['BodyText'])]
 for r in records:
     story.append(Paragraph(f"Change {r['id']}: {r['kind']} | old pp. {r['baseline_pages']} | new pp. {r['revised_pages']}",styles['Heading3']))
     for label,key in [('Before (including deletions)','before'),('After','after')]:
