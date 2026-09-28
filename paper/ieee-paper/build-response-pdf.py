@@ -1,7 +1,7 @@
 from pathlib import Path
 import markdown
 from weasyprint import HTML
-ART = Path("/home/claw/circuit-digitization/paper/ieee-paper/review_artifacts")
+ART = Path(__file__).resolve().parent / "review_artifacts"
 CSS = """
 @page { size: A4; margin: 18mm 16mm; @bottom-center { content: counter(page) " / " counter(pages); font-size: 8pt; color:#666; } }
 body { font-family:"DejaVu Sans",sans-serif; font-size:9.5pt; line-height:1.45; color:#111; }

@@ -1,123 +1,191 @@
 # Response to Reviewers
 
-Original Manuscript ID: Access-2026-33821
+**Manuscript ID:** Access-2026-33821
 
-Original Article Title: “From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark”
+**Original title:** From Hand-Drawn Schematics to SPICE Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark
 
-Revised Article Title: “From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark”
-
-Port provenance: the reviewer organization originates in fork `10c1b92`; the factual responses and complete concern texts below retain the newer revision at `cefe77b`. The sibling `manuscript_changes.diff` is historical fork provenance, not the diff for this response or the reviewed submission baseline.
-
-Draft for author review. The concern/response/action structure follows the locally supplied IEEE Access response template; template conversion is complete. A rendered PDF of this response now exists (`RESPONSE_TO_REVIEWERS.pdf`, 6 pages). Final PDF page references and submission-package approvals remain pending; this source draft does not certify package readiness.
-
-To: IEEE Access Editor
-
-Re: Response to reviewers
+**Revised title:** From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark
 
 Dear Editor,
 
-Thank you for the opportunity to resubmit our manuscript and address the reviewers’ concerns. We have narrowed the scientific claims, corrected descriptions to match the implementation, and qualified the existing evidence. Per-drafter results describe within-corpus variation. Component-pair scores do not certify pin-level correctness or simulation equivalence. In response to Reviewer 2 concerns 4 and 5 we ran new mechanism ablations and a detector-level crossover audit; both are reported below with their stated limits. The source changes, including the 31/31 published-index drafter verification, and outstanding package checks are recorded in `REVIEW_CHANGES.md`. The intended submission package comprises this point-by-point response, a highlighted revised manuscript and a clean revised manuscript; the clean and highlighted manuscript PDFs have been produced locally, but this draft does not claim that a complete response-PDF package has been assembled or uploaded.
+We thank the editor and both reviewers for their careful reading. The comments identified real weaknesses, and addressing them has changed the paper substantially. The main changes are:
 
-Best regards,
+1. **A second, independent benchmark** (Section V-D, Table 5): 164 held-out photographs from all 24 CGHD drafters. Its reference nets are derived from the CGHD authors' own stroke-segmentation maps and symbol polygons, not from our method, and none of its images was used to develop or tune the join. The reference agrees with our human-verified nets at micro-F1 0.939 on the 17 images the two sets share. [AUDIT RESULT PENDING: human audit of 40 random held-out images.]
+2. **Paired significance testing** on both benchmarks (Section IV-C; Tables 4 and 5): image-level bootstrap, sign-flip permutation and Wilcoxon tests with Holm correction.
+3. **End-to-end evaluation with our trained component detector** (Section V-G, Table 9), with the loss decomposed into missed, spurious, mislocalized and misclassified components.
+4. **Robustness experiments** (Section V-E): complexity strata on both benchmarks (Table 6), within-image component-size analysis, controlled rescaling from 0.35x to 3x (Fig. 8), and a synthetic mixed-size test that exposes one failure case.
+5. **A corrected title and scope**: the paper now claims structural netlists only, and states once, in a single Scope and Limitations subsection (VI-A), what the method and metric do not cover.
 
-[Author signatory pending confirmation] et al.
+During the revision we also found and corrected two errors of our own, both disclosed in the manuscript. First, the image-provenance description was incomplete: the 704×704 benchmark copies are non-aspect-preserving resizes, 14 of the 31 are re-oriented relative to the CGHD files, and 16 of the 31 are CGHD's binary stroke maps rather than photographs (Section IV-A). The results do not depend on modality (Sections V-B and V-C). Second, the component-detection mAP is now reported for the released checkpoint (89.0%); the earlier 88.5% came from the final training epoch.
+
+Section, table and figure numbers below refer to the revised manuscript. A highlighted version marks all changes.
+
+Sincerely,
+
+Bosco Chanam (corresponding author), on behalf of all authors
+
+---
 
 ## Reviewer 1
 
-### Reviewer#1, Concern # 1: Single corpus and benchmark size
+### Comment 1.1: Single corpus and benchmark size
 
-**Reviewer concern:** Single dataset source and an extremely small manually verified benchmark: All experiments are carried out on the CGHD-1152 dataset only. The self-built human-verified benchmark merely contains 31 images with wide confidence intervals and insufficient coverage of sample distributions, which cannot prove that the proposed method can be universally adapted to various hand-drawing styles.
+> Single dataset source and an extremely small manually verified benchmark: All experiments are carried out on the CGHD-1152 dataset only. The self-built human-verified benchmark merely contains 31 images with wide confidence intervals and insufficient coverage of sample distributions, which cannot prove that the proposed method can be universally adapted to various hand-drawing styles.
 
-**Author response:** We agree that 31 images from one corpus do not establish universal or unseen-style generalization. The manuscript now presents the drafter groups as descriptive within-corpus results, discloses filename-verified CGHD-1152 drafter assignments for all 31 images (each filename appears under exactly one drafter's `images/` path in the published v14 index), and explicitly states that no held-out-drafter experiment was performed. The join micro-F1 0.890 has an existing 95% bootstrap CI of [0.855, 0.924]. Human correction and independently authored synthetic data mitigate, but do not eliminate, concern about residual bias in bootstrapped real labels. We describe a future stratified expansion protocol and do not claim that it has been completed.
+**Response.** We agree that 31 images from ten drafters could not support conclusions about drawing styles in general. We have added a second real-image benchmark built to remove the three weaknesses of the first. It is larger (164 images, 3874 reference component pairs), it covers all 24 CGHD drafters, and its reference nets come from the CGHD authors' own annotations rather than from a join like ours. We validated the derived reference against our human-verified nets on the 17 images the two sets share (micro-F1 0.939, precision 0.993). None of the 164 images was used to develop or tune the method.
 
-**Author action:** Revised Abstract, Introduction, “Real-Image Net-Level Evaluation,” “Descriptive Per-Drafter Results” (Table `tab:per_drafter`), Discussion and Conclusion. Added the proposed sampling/annotation protocol and removed unseen-style and label-independence claims.
+On this held-out set, our join reaches micro-F1 0.711 [0.671, 0.748] and beats every deterministic comparator, with Holm-adjusted p < 0.001 for each (Table 5). Its margin over the strongest comparator, the prior completion variant, is +0.053 [+0.033, +0.074]. Per-drafter micro-F1 ranges from 0.465 to 0.917 (median 0.709), and our join is the best evaluated method for 15 of the 24 drafters. The absolute score is lower than on the 31-image set. We traced most of that gap to the input photographs: CGHD provides stroke maps for exactly this subset, and the benchmark copies of these drawings are mostly those clean maps. On the photographs themselves, wire extraction is the main source of error (Section V-D, "Gap to the human-verified benchmark"). The ranking of the joins is the same on both benchmarks.
 
-### Reviewer#1, Concern # 2: Device capabilities
+All images still come from CGHD. The Scope and Limitations subsection states this, and the expansion plan there extends the evaluation to other corpora and to printed schematics.
 
-**Reviewer concern:** The algorithm only supports basic passive and active discrete components: Complex components such as transformers, thyristors and optocouplers can only be located, while their pin connection relationships cannot be extracted, limiting the range of component types supported by netlist generation.
+**Changes.** New Section V-D and Table 5; per-drafter spread in V-D; datasets in IV-A; limitations in VI-A.
 
-**Author response:** We distinguish evaluated component-pair connectivity, geometric pin construction and illustrative export. The benchmark includes R/C/L/D/Q, voltage-source and IC groups, but this does not validate universal device-specific pin templates. The named transformer type receives a two-pin geometric guess; optocoupler templates and unknown-type fallback pins also exist, without validated electrical pin semantics. The detector merges original classes, so these templates do not establish separately detected device identities. Switches are absent from the evaluated electrical subset. For a switch, pin construction uses the shorter OBB-edge midpoints, with a long-axis AABB fallback. Export emits a fixed 0.001-ohm resistor only if pins 0 and 1 map to distinct nodes; otherwise it emits no switch line. It does not recover open/closed state or a control model. ICs and the listed complex devices have no implemented export model and are skipped. Component-pair F1 discards terminal identity and does not certify pin assignment, exact net partition, absence of shorts or simulation equivalence.
+### Comment 1.2: Complex devices
 
-**Author action:** Replaced the blanket “pins not extracted/excluded from emission” statement with the four-column capability table (`tab:capabilities`), including a metric-boundary row. Specified the switch pin geometry, exact export condition and omission case from the implementation. Clarified output and evaluation scope in the Abstract, Pipeline Overview, metric definition and Conclusion.
+> The algorithm only supports basic passive and active discrete components: Complex components such as transformers, thyristors and optocouplers can only be located, while their pin connection relationships cannot be extracted, limiting the range of component types supported by netlist generation.
 
-### Reviewer#1, Concern # 3: Manual thresholds and extreme sizes
+**Response.** The reviewer is correct. Connectivity is evaluated for resistors, capacitors, inductors, diodes, transistors, sources and integrated circuits. For transformers, thyristors and optocouplers, the pipeline has only geometric pin templates, which are not validated, and no export model. Table 11 now states what is evaluated, how pins are constructed and what is exported for each device group, and Section VI-A lists complex devices as a limitation. The component-pair metric does score connections to these devices when they carry a net, but it does not check which terminal is used. Validating device-specific terminal semantics needs pin-level ground truth, which neither CGHD nor our benchmarks provide. We name it as future work rather than claim it.
 
-**Reviewer concern:** Reliance on manual tuning of fixed scale-relative thresholds: Hyperparameters including τ_join, τ_t and α need to be manually configured according to the median diagonal length of circuit components. Without an adaptive parameter learning mechanism, the detection accuracy tends to decline when processing circuits of extreme sizes.
+**Changes.** Table 11 (revised); Section VI-A.
 
-**Author response:** The multipliers are fixed and manually configured, not learned: pin/join/T tolerances use 0.62/0.30/0.20 times the component scale, clamped to 24–60/11–28/8–20 pixels. Directional scoring has alpha 0.35 and is used only in the fallback pin search when no component is assigned; the score is d[1−0.35 max(0, cos(theta))] for nonzero distances above the implementation cutoff. Completion reach is four times the clamped pin scale. Its existing reach-factor sweep from 3 to 5 yields macro-F1 0.895–0.903 on this benchmark. Fixed-pixel base tolerances score 0.820 versus 0.816 for the scale-relative base; completion remains scale-dependent. These results do not establish robustness to extreme image sizes or heterogeneous symbol sizes. Controlled image rescaling was not evaluated.
+### Comment 1.3: Hand-set thresholds and extreme sizes
 
-**Author action:** Rewrote the Endpoint-Graph Join Model and Degree-Budget Completion descriptions from the implementation; corrected the reach unit, sweep range and fixed-pixel interpretation in `tab:edge_ablation` and its discussion. Retained the mixed-size limitation.
+> Reliance on manual tuning of fixed scale-relative thresholds: Hyperparameters including τ_join, τ_t and α need to be manually configured according to the median diagonal length of circuit components. Without an adaptive parameter learning mechanism, the detection accuracy tends to decline when processing circuits of extreme sizes.
 
-### Reviewer#1, Concern # 4: Values and simulation-ready output
+**Response.** Two clarifications, then new evidence. First, the multipliers and clamps are fixed once for all images. No per-image tuning is needed: the scale s is computed automatically from each image's component boxes, and each endpoint is bound to a component within a radius that grows with that component's own diagonal (Section III-B). Second, we have now tested extreme sizes directly. We resampled all 31 images by factors from 0.35 to 3 (Section V-E, Fig. 8).
 
-**Reviewer concern:** Lack of a closed-loop framework for component value recognition: The pipeline only reconstructs topological connections of circuits without integrating OCR to identify parameters of resistors, capacitors and voltage sources, so it cannot directly export complete simulation netlists that can be imported into SPICE.
+- **With annotated wires,** our join stays within ±0.005 of its native micro-F1 from 0.5x to 3x, with every CI including zero. It drops only at 0.35x (−0.035), where the lower pixel clamps bind.
+- **The fixed-radius legacy rule** falls from 0.690 to 0.153 at 3x.
+- **In the full pipeline,** upscaling costs at most 0.024. Downscaling loses accuracy because the extractor's Sauvola window and minimum-area parameters are in pixels; the join is not the cause.
 
-**Author response:** We agree that image-derived values and device models are required for faithful simulation and are outside the evaluated task. The revised title says “Structural Circuit Netlists.” The manuscript describes inferred pin-to-node output and illustrative SPICE export, requiring external values and device models; real-scan simulation equivalence is not validated. Export substitutions and unsupported primitives are disclosed. Component-pair connectivity does not certify a simulator-ready or pin-correct reconstruction. Simulation results for authored synthetic circuits remain separately scoped.
+We also ran the same algorithm with fixed pixel tolerances. It stays within 0.016 of the scale-relative version between 0.5x and 2x. So most of the scale robustness comes from component-relative endpoint assignment and completion, and the paper now credits them accordingly. The paper also states that the clamps are tuned to native resolution. Learning the tolerances would be a different method that needs training data this task does not have. We list resampling inputs to a nominal component size, and scale-aware extraction parameters, as next steps.
 
-**Author action:** Revised title/running heads, Abstract, Introduction, Pipeline Overview, metric definition, capability table, Discussion and Conclusion. Removed the related-work implication that our real scans were validated by LTspice. Corrected the pipeline TikZ output-node text and regenerated the Access pipeline figure PDF and the graphical abstract from source; both now read ``Structural Netlist / Inferred pin-to-node map''. A full Access-format manuscript was compiled locally and visually checked.
+**Changes.** Section III-B (component-relative assignment); new "Controlled rescaling" in V-E and Fig. 8; Section VI-A.
 
-### Reviewer#1, Concern # 5: Dense buses and crossing complexity
+### Comment 1.4: Component values and simulation-ready output
 
-**Reviewer concern:** Inability to handle complex circuits with multi-layer crossings and dense buses: The test samples adopted in this paper are dominated by simple topologies with 3 to 6 components. No dedicated verification is conducted for circuits with high-density multi-track buses and multi-layer crossed wiring, leading to a significant drop in recall on complex circuits.
+> Lack of a closed-loop framework for component value recognition: The pipeline only reconstructs topological connections of circuits without integrating OCR to identify parameters of resistors, capacitors and voltage sources, so it cannot directly export complete simulation netlists that can be imported into SPICE.
 
-**Author response:** The benchmark contains 3–14 components per image in the evaluated electrical subset (median 7): 15 images have at most five and 12 have at least ten. These are electrical-subset counts, not total detected objects or proof of support for all device types. Component-count breadth does not validate dense buses or multilayer crossings; their performance remains untested. The separately reported annotated-box crossover intervention illustrates a joining failure and a precision/recall tradeoff, not dense-bus validation or a safe mitigation.
+**Response.** We agree, and we have narrowed the claim to match the contribution. The title now reads "Structural Circuit Netlists". The introduction states that value and device-model recognition is out of scope. The SPICE export is described as illustrative, using placeholder values, and simulation of real scans is not claimed. Recognizing values with OCR and linking them to components is a separate problem with its own evaluation. Adding an unvalidated OCR stage would add an error source without evidence, so we leave it to future work. The simulation-accuracy results remain, but only for synthetic circuits with authored values (Section V-A).
 
-**Author action:** Replaced the rebuttal-style complexity caption (`fig:complexity_hist`) with descriptive counts and the explicit coverage limitation. Narrowed the crossover Discussion and Conclusion. Preserved the existing histogram asset.
+**Changes.** Title and running heads; Abstract; Section I; Section VI-A.
 
-### Reviewer#1, Concern # 6: Suggested references
+### Comment 1.5: Dense buses and crossing complexity
 
-**Reviewer concern:** It is suggested that the authors cite two papers in the sections related to SPICE simulation of memristive analog circuits: "A Memristor-Based Neural Network Circuit with Classical Conditioning and Fear Generalization" and "Biologically Plausible Memristive Decision-Making Circuit for Adaptive Control in Industrial Autonomous Navigation". Both papers complete full SPICE netlist modeling and simulation verification for memristive circuits, which complement the EDA technical route of converting hand-drawn schematics to SPICE netlists proposed in this paper in application scenarios, and can enrich relevant literature support for digital parsing and simulation deployment of analog memristive circuits.
+> Inability to handle complex circuits with multi-layer crossings and dense buses: The test samples adopted in this paper are dominated by simple topologies with 3 to 6 components. No dedicated verification is conducted for circuits with high-density multi-track buses and multi-layer crossed wiring, leading to a significant drop in recall on complex circuits.
 
-**Author response:** We thank the reviewer for the suggestion and have cited both works in Related Work. We verified both records at abstract level (Gao et al., IEEE Trans. Consumer Electronics, Feb 2026; Gao et al., IEEE Trans. Industrial Informatics, vol. 22, 2026): both report neuromorphic memristive hardware for associative learning and navigation control, cited here as neighboring SPICE-deployment domains. Our comparison, benchmark claims, and narrowed scope are unchanged.
+**Response.** The 3–6 component range applies to the synthetic suite only. The real benchmarks are larger: the 31 human-verified images contain 3–14 electrical components (median 7; 12 images have at least ten), and the held-out benchmark contains circuits with 20 or more. Table 6 now splits both benchmarks by component count.
 
-**Author action:** Cited both works in Related Work with bibliography entries; no comparison or benchmark claim altered.
+- **On the 31 images,** our recall falls from the ≤5 to the ≥10 stratum by −0.068 [−0.18, +0.05], which is not significant (p = 0.32). F1 falls with complexity for every method, including the VLM.
+- **On images with at least ten components,** our join beats the other deterministic methods by +0.078 to +0.106, with CIs excluding zero.
+- **On the held-out benchmark,** our micro-F1 falls from 0.845 (≤5 components) to 0.693 (≥20), while Hough linking falls to 0.347. The margin over every baseline widens as circuits grow.
+
+For crossings, Section V-H analyzes the 13 annotated crossovers, including the end-to-end run with the detector. We did not evaluate dense multi-track buses or multi-layer crossings; neither benchmark contains enough of them, and Section VI-A says so.
+
+**Changes.** New Table 6 and "Circuit complexity" in V-E; Section V-H; Section VI-A.
+
+### Comment 1.6: Suggested references
+
+> It is suggested that the authors cite two papers in the sections related to SPICE simulation of memristive analog circuits: "A Memristor-Based Neural Network Circuit with Classical Conditioning and Fear Generalization" and "Biologically Plausible Memristive Decision-Making Circuit for Adaptive Control in Industrial Autonomous Navigation". [...]
+
+**Response.** We thank the reviewer. Both works are now cited in Related Work, as examples of SPICE-level modeling in neighboring hardware domains.
+
+**Changes.** Section II; references for both works (Gao et al., IEEE Trans. Consumer Electronics, 2026; Gao et al., IEEE Trans. Industrial Informatics, vol. 22, 2026).
+
+---
 
 ## Reviewer 2
 
-### Reviewer#2, Concern # 1: Statistical reliability and expansion
+### Comment 2.1: Statistical reliability, annotation cost and expansion
 
-**Reviewer concern:** The scale of the human-verified benchmark is insufficient, casting doubt on the statistical reliability of the conclusions. The evaluation in this paper covers only 31 images. The authors should explicitly clarify the annotation cost and provide a roadmap for dataset expansion, or alternatively supply additional support through more rigorous statistical testing. If 31 images represent the entirety of currently available data, the wording of the conclusions should be made considerably more conservative.
+> The scale of the human-verified benchmark is insufficient, casting doubt on the statistical reliability of the conclusions. The evaluation in this paper covers only 31 images. The authors should explicitly clarify the annotation cost and provide a roadmap for dataset expansion, or alternatively supply additional support through more rigorous statistical testing. If 31 images represent the entirety of currently available data, the wording of the conclusions should be made considerably more conservative.
 
-**Author response:** We retain the existing bootstrap intervals and explicitly limit conclusions to 31 images from one corpus. Annotation was performed by one human annotator without per-image timing logs, so we cannot report a measured annotation-cost figure. The proposed expansion protocol stratifies by component count, drafter, crossing/bus structure and capture conditions, uses independent annotation followed by adjudication, and records per-image effort and provenance. It is future work, not completed collection. A confidence interval containing zero is not evidence of equivalence, and synthetic corroboration does not exclude residual real-label bias.
+**Response.** We have taken all three routes the reviewer offers.
 
-**Author action:** Revised the Abstract, real-image evaluation, VLM diagnostic, Discussion and Conclusion; added the future expansion protocol without inventing timing or sample-size commitments.
+*More rigorous testing.* Every comparison is now paired over images, with an image-level bootstrap (10,000 resamples), a sign-flip permutation test and a Wilcoxon signed-rank test, all with Holm correction (Section IV-C). On the 31 images, our join beats every deterministic comparator on every test (Table 4). For example, it beats the prior completion variant by +0.061 [+0.025, +0.100] and Hough linking by +0.086 [+0.045, +0.127]. Leaving out any one image keeps our micro-F1 within 0.885–0.900 and changes the sign of no comparison.
 
-### Reviewer#2, Concern # 2: Conditional VLM comparison
+*More data.* The new held-out benchmark (164 images, 24 drafters, Comment 1.1) repeats the comparison on data not used for development. Every margin remains significant there (Table 5).
 
-**Reviewer concern:** There is a fundamental fairness issue in the VLM comparison experiment. The VLM enjoys an "oracle advantage" with respect to critical prior information, whereas the geometric pipeline must bear the burden of detection errors. In the paper, the VLM is provided with ground-truth annotated component bounding boxes; under such conditions, the fact that the VLM still shows no statistically significant difference from the geometric method does not sufficiently support the conclusion that "the geometric method is superior in terms of cost and structural validity."
+*Annotation cost and roadmap.* No timing log was kept for the original 31 images, so we cannot report their cost. For the held-out audit, the verification tool now records a timestamp at every save. [AUDIT RESULT PENDING: measured per-image time over 40 images.] Section VI-A gives the expansion plan:
 
-**Author response:** We correct the experiment's scope and the prior superiority claims. Both methods receive the same annotated component boxes; the geometric method uses detected wires. This is an oracle-component-box connectivity diagnostic, not an autonomous end-to-end comparison. The VLM scores component-pair micro-F1 0.923 versus 0.890, and is exact under that metric on 21/31 images. The paired VLM-minus-join difference is +0.033 with 95% CI [−0.009, +0.078], which does not establish equivalence. We make no comparative cost-superiority or global short-free guarantee. The provisional autonomous numeric paragraph has been removed because its prediction/matching provenance is not sufficiently auditable for this submission draft.
+- sampling stratified by component count, drafter, crossing and bus structure, and capture conditions;
+- two annotators per image, with disagreements adjudicated;
+- other corpora and printed schematics.
 
-**Author action:** Replaced the VLM section and Introduction comparison; revised Abstract, real-join caption (`fig:real_join_fig`), Discussion and Conclusion. Removed cost/token multiples, free-form-output criticism, equivalence language, autonomous bottleneck claims and global structural guarantees.
+The derived reference nets make this cheaper, because they can seed the verification tool.
 
-### Reviewer#2, Concern # 3: Title and measured output
+We also made the conclusions more conservative where the data require it. The VLM comparison is reported as the tests show it, not as a tie (Comment 2.2).
 
-**Reviewer concern:** The paper title claims to generate SPICE netlists, yet the paper explicitly acknowledges that it "makes no attempt to read component values." This implies that the current system outputs a topological netlist rather than a simulatable SPICE netlist, which constitutes a notable discrepancy with the claims made in both the title and the abstract.
+**Changes.** Section IV-C; Tables 4 and 5; Section V-D; Section VI-A.
 
-**Author response:** The title is now “From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark.” We distinguish the pin-to-node representation produced from component-pair connectivity evaluated. The latter discards terminal identity and does not certify exact pin assignments, net partitions, shorts or simulation equivalence. External values and device models are required for illustrative SPICE export, and real-scan simulation equivalence remains unvalidated.
+### Comment 2.2: Fairness of the VLM comparison
 
-**Author action:** Applied the title and both running-head arguments in both manuscript sources. Added the metric boundary to the Abstract, Introduction, Pipeline Overview, metric definition, capability table and Conclusion.
+> There is a fundamental fairness issue in the VLM comparison experiment. The VLM enjoys an "oracle advantage" with respect to critical prior information, whereas the geometric pipeline must bear the burden of detection errors. In the paper, the VLM is provided with ground-truth annotated component bounding boxes; under such conditions, the fact that the VLM still shows no statistically significant difference from the geometric method does not sufficiently support the conclusion that "the geometric method is superior in terms of cost and structural validity."
 
-### Reviewer#2, Concern # 4: Crossover recognition and false merges
+**Response.** We agree that the conclusion the reviewer quotes was not supported, and we have removed it, along with every cost and structural-validity comparison. The input conditions were also unclear in the original text. Both systems receive the same annotated component boxes, and neither receives annotated wires: our join works from its own extracted wires, and the VLM reads the wires from the image. Section V-I now states this at the outset.
 
-**Reviewer concern:** The impact of low recall in a critical component category on netlist correctness has not been sufficiently analyzed. The recall of the crossover class in component detection is only 70.7%, substantially lower than that of other categories. Misclassification of crossovers will introduce systematic errors in electrical connectivity, causing two wire segments that should remain electrically independent to be erroneously merged into the same net.
+The comparison is now reported in full (Section V-I, Table 4):
 
-**Author response:** The 70.7% crossover recall identifies a detector-category weakness, but the join-isolation evaluation uses annotated boxes; the conditional checks below measure detector localization/classification and an annotated-box counterfactual, but do not measure the end-to-end effect of detector misses or misclassifications on autonomous netlists. We therefore provide a conditional joining failure analysis rather than attributing observed false pairs to detector recall. The audit contains 13 annotated crossovers in eight images. In C242_D1_P1, suppressing two crossing-adjacent endpoint–endpoint edges changes TP/FP/FN from 27/4/0 to 19/0/8. Removing the four false pairs also loses eight true pairs; this is not a demonstrated mitigation gain or a prevalence estimate. We also tested the detector half of this pathway directly. Running the trained detector over the 31 benchmark images, all 13 annotated crossovers were localized and assigned to the crossover class at a confidence of at least 0.25 (confidence 0.28–0.97, IoU 0.43–0.91), with 12 of 13 retained at a 0.50 threshold and one falling below it. This does not contradict the reported 70.7% validation recall, and because training-split membership for these benchmark images is unknown these are not held-out estimates. As a paired counterfactual, deleting the annotated crossover boxes before joining changes the recovered predictions on 6 of 31 images and changes component-pair micro-F1 by +0.010, with identical net partitions on 23 of 31 images. These two conditional checks therefore give no evidence that crossover misclassification is the driver of the false pairs observed here, but they are annotated-box, within-benchmark diagnostics: they are not an end-to-end detector-miss error rate and they do not validate crossover-aware suppression.
+- **Pooled pairs:** our join trails the VLM by −0.033 [−0.078, +0.008], which is not significant (Holm-adjusted p = 0.12).
+- **Per image:** the VLM is significantly better (13 wins, 11 ties, 7 losses; Wilcoxon p = 0.030).
 
-**Author action:** Rewrote the crossover passage in the Discussion. Added the detector crossover check and the paired box-removal counterfactual with their annotated-box, non-held-out boundaries, and retained the two-edge tradeoff. No mitigation is claimed; crossover-aware suppression remains unvalidated.
+We present the VLM as a reference system, not as a method we match or surpass. What remains is a factual difference in what the two need. The VLM requires a call to a proprietary model for every image. Our join runs locally and deterministically without connectivity training data, and every connection it reports can be traced to a wire segment or a completion edge.
 
-### Reviewer#2, Concern # 5: Ablation coverage
+To address the detection burden directly, we added an end-to-end evaluation in which our trained detector supplies the components (Section V-G, Table 9). End-to-end micro-F1 is 0.627 [0.519, 0.731], against 0.890 with annotated boxes. Replacing the boxes one factor at a time attributes −0.131 to missed components, −0.072 to spurious detections, −0.043 to box localization and −0.017 to classification. Missed components cost the most because every pair involving a missed component is lost. The benchmark images were probably in the detector's training split, so this estimate is optimistic for detection, and Section VI-A states so.
 
-**Reviewer concern:** The ablation study is severely insufficient.
+**Changes.** Section V-I (rewritten); new Section V-G and Table 9; Abstract; Section VI.
 
-**Author response:** We report the existing base-graph/full-pipeline interventions for T-junctions, rail taps, directional preference and base tolerance scaling. Several base rows tie; fixed-pixel base tolerances score 0.820 versus 0.816. Every full-pipeline row has aggregate TP/FP/FN 418/37/66. These ties neither establish identical recovered connections nor prove that completion masks differences. The baseline comparison improves from 0.816 to 0.890 with completion, but the ablations do not establish that other mechanisms are generally unnecessary. We have now added the two mechanism tests that were previously missing. Removing component occlusion from the extraction path, with the remaining extraction steps held fixed, reduces component-pair micro-F1 from 0.890 to 0.336 (macro-F1 0.294; precision 0.798, recall 0.213; TP/FP/FN 103/26/381; the extractor returns 466 segments instead of 666 and predicted pairs change on all 31 images): a large measured downstream contribution for the occlusion step on this benchmark. It is a mechanism ablation on downstream connectivity, not a wire-level extractor score, and the occlusion-off arm is not a proposed configuration. For completion, the shared-component guard fires on 18/31 images and rejects 38 candidate merges; guard-off leaves the scored pairs unchanged (0/31 changed; TP/FP/FN 418/37/66), while requiring a wire witness instead of the relaxed distance fallback gives TP/FP/FN 413/37/71 (micro-F1 0.884, macro-F1 0.907) and changes predictions on 6/31 images. Because the pair metric is blind to same-device-pin shorts, the guard's safety value remains unquantified by this metric. Removal of scale dependence throughout completion, and extreme-size or mixed-size input conditions, were still not tested. This is bounded ablation evidence, not complete coverage of all proposed modules.
+### Comment 2.3: Title versus output
 
-**Author action:** Corrected `tab:edge_ablation` caption/row label and interpretation; replaced the unsupported earlier occlusion-benefit claim with the measured downstream ablation result. Rewrote the method description to distinguish graph selection, mandatory slot/dummy assignment and guarded application. Added the ``Occlusion Removal and Completion-Safeguard Ablations'' subsection and Table `tab:mech_ablation` reporting the occlusion-removal and completion-safeguard arms with their measured pair-change counts.
+> The paper title claims to generate SPICE netlists, yet the paper explicitly acknowledges that it "makes no attempt to read component values." This implies that the current system outputs a topological netlist rather than a simulatable SPICE netlist, which constitutes a notable discrepancy with the claims made in both the title and the abstract.
 
-### Reviewer#2, Concern # 6: Mixed component sizes
+**Response.** We agree. The title now reads "From Hand-Drawn Schematics to Structural Circuit Netlists", and the abstract, introduction, running heads and pipeline figure describe the output as a structural netlist that maps component pins to electrical nodes. Section IV-B defines the component-pair metric and states that it ignores terminal identity. Section VI-A adds that export is illustrative and that simulation of real scans is not evaluated. The word "SPICE" no longer describes our output.
 
-**Reviewer concern:** The setting of τ = k·s may fail when component sizes within a single schematic vary substantially, and no relevant discussion addressing this limitation is provided.
+**Changes.** Title; running heads; Abstract; Sections I, III-A, IV-B and VI-A; Fig. 1.
 
-**Author response:** We now explicitly state that one scalar per image does not model intra-image size variation, including schematics mixing a large IC with small discrete symbols. Pixel clamps bound tolerances but do not establish adaptation to heterogeneous symbols. The fixed-pixel ablation changes the base graph only; completion retains its clamped scale dependence. A controlled mixed-size or rescaling experiment was not performed.
+### Comment 2.4: Crossover recall and false merges
 
-**Author action:** Retained and clarified the mixed-size limitation in the Endpoint-Graph Join Model, specified completion's scale rule, and scoped the reach sweep and ablation interpretation accordingly.
+> The impact of low recall in a critical component category on netlist correctness has not been sufficiently analyzed. The recall of the crossover class in component detection is only 70.7%, substantially lower than that of other categories. Misclassification of crossovers will introduce systematic errors in electrical connectivity, causing two wire segments that should remain electrically independent to be erroneously merged into the same net.
+
+**Response.** The reviewer describes a real pathway: three of our edge rules do not consult crossover labels, so an undetected crossover can merge two independent wires. We now measure it three ways (Section V-H).
+
+1. **With annotated boxes:**
+   - Images containing crossovers have recall 0.834, against 0.884 without (p = 0.51).
+   - Deleting all crossover annotations before joining changes micro-F1 by only +0.010, and leaves the net partitions identical on 23 of 31 images.
+2. **In one case study (C242_D1_P1),** suppressing the crossing-adjacent edges removes four false pairs but also eight true ones. A simple suppression rule is therefore not a fix.
+3. **In the new end-to-end run,** the trained detector found and correctly labeled all 13 crossovers in the benchmark at every tested threshold. None of the false pairs in Table 9 comes from a missed or misclassified crossover.
+
+Thirteen instances cannot test the 70.7% validation recall. On this benchmark, crossover detection is not the limiting factor; missed electrical components and wire extraction are. We state this scope in Section VI-A and do not claim a mitigation.
+
+**Changes.** Section V-H (rewritten with the end-to-end result); Section VI-A.
+
+### Comment 2.5: Ablations
+
+> The ablation study is severely insufficient.
+
+**Response.** The revision adds the following experiments.
+
+- **Mechanism ablations** (Table 8):
+  - Removing only the occlusion step drops micro-F1 from 0.890 to 0.336, and predictions change on all 31 images.
+  - Requiring a wire witness for every completion edge lowers micro-F1 to 0.884.
+  - The shared-component guard fires on 18 images and rejects 38 merges. Those merges would join two pins of one component, which the pair metric cannot see, so the score is unchanged.
+- **Tolerance design** (Section V-E): the fixed-pixel and unclamped variants are evaluated across seven image scales. They separate the contribution of scale-relative tolerances from that of component-relative assignment and completion.
+- **Mixed component sizes** (Section V-E): a synthetic test that also documents a failure case.
+- **End-to-end decomposition** (Table 9): the cost of each detector error type.
+- **Edge-rule ablation** (Table 7, retained): disabling T-junction, rail-tap or directional rules leaves the counts unchanged, so these rules give no measurable gain on this benchmark. We report this as observed.
+
+**Changes.** Tables 7, 8 and 9; Section V-E; Section V-F.
+
+### Comment 2.6: Mixed component sizes
+
+> The setting of τ = k·s may fail when component sizes within a single schematic vary substantially, and no relevant discussion addressing this limitation is provided.
+
+**Response.** We now analyze this directly (Section V-E, "Component-size variation within an image" and "Synthetic mixed-size circuits").
+
+- **On the 31 real images:** the overall dispersion of component sizes is unrelated to F1 (ρ = +0.18, p = 0.33). The largest-to-smallest size ratio correlates with lower F1, but it also rises with component count. After controlling for count, the partial correlation is −0.41 for our join and −0.34 for the VLM, a similar value.
+- **In synthetic circuits with one component redrawn at 0.5x, 2x or 3x its size,** enlarging a component costs about 0.005 and shrinking one costs 0.012.
+- **The reviewer's concern holds in one case:** a Wheatstone bridge with one very small arm. There, the median-derived tolerances add a spurious pair even on clean wires, while fixed-pixel graphs stay exact.
+
+The component-first assignment already scales with each component's own diagonal (Section III-B), which explains why most cases are unaffected. Section VI-A lists the small-component case as a limitation.
+
+**Changes.** Section III-B; Section V-E (two new parts); Section VI-A.
