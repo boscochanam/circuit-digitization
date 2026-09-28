@@ -203,3 +203,53 @@ closest baseline at 0.721 (+0.054 [+0.041, +0.069]). Per-drafter F1 runs from 0.
 with `python -m wire_detection.benchmark.revision2.cghd_audit_ui`. This reuses `gt_verify_ui.py`
 unchanged, with its paths redirected. The overlay images are grayscale CGHD photos at long side 1600.
 They are local only; to regenerate them, run `cghd_audit_export.py` on claw.
+
+## 7. What causes the absolute drop? (follow-up, input ablation, nothing tuned)
+
+The question is which input change moves F1. Nothing was tuned: the extractor, `scale_completion` and
+our own GT component boxes are all fixed. Inputs (i)–(v):
+- (i) the 704×704 benchmark copy (the paper condition);
+- (ii) the CGHD photo, EXIF-corrected, rotated/flipped to match the copy, stretched to 704×704;
+- (iii) the same photo, aspect preserved, long side 704;
+- (iv) the same photo, aspect preserved, long side 1024 (the §5 input);
+- (v) the CGHD stroke map, oriented the same way, stretched to 704×704.
+
+**Wire-F1, 52 wire-GT overlaps** (data: `cghd_resolution.json`), split by whether the benchmark copy
+is a photo or a stroke map:
+
+| copy is | n | (i) | (ii) | (iii) | (iv) | (v) |
+|---|---|---|---|---|---|---|
+| photo | 7 | 0.979 | 0.966 | 0.940 | 0.956 | — |
+| stroke map | 45 | 0.981 | 0.799 | 0.762 | 0.821 | 0.973 |
+
+**Join micro-F1, 17 net overlaps**: `scale_completion`, our GT boxes, scored against the human nets
+(data: `cghd_ref/cghd_input_ablation.json`). The copy is a stroke map for 16 of the 17.
+
+| input | (i) | (ii) | (iii) | (iv) | (v) |
+|---|---|---|---|---|---|
+| micro-F1 | 0.896 | 0.665 | 0.677 | 0.728 | 0.897 |
+| recall | 0.881 | 0.512 | 0.525 | 0.591 | 0.878 |
+
+**Findings:**
+- **Geometry is not the cause.** Where the copy is a photo, (ii) ≈ (i) and (iv) is close. The pixel
+  parameters therefore do not depend on the stretched-704 geometry.
+- **Photo input is the cause.** Swapping the photo in for the stroke map drops wire-F1 from 0.98 to
+  about 0.8 and join-F1 from 0.90 to 0.67–0.73, whatever the geometry. The stroke map at 704
+  reproduces (i).
+- **The benchmark's own photo stratum does not stand in for these photos.** The benchmark's 98 photo
+  copies score 0.974 wire-F1, and its 15 photo images score 0.883 join-F1. But these are *different*
+  photos from the stroke-map ones. The CGHD-segmentation subset, which is exactly the set the
+  benchmark replaced with stroke maps, contains photos the extractor handles much worse: lined
+  paper, faint pencil, perspective.
+- **No re-run.** Stretched 704 is not better than long side 1024 on the overlaps (join 0.665 vs 0.728;
+  wire 0.799 vs 0.821). So the §5 table stays on long1024. That choice was made only from evidence on
+  the overlaps.
+- **Held-out difficulty is small (about +0.01).** The 164 held-out images are larger: median 9.5
+  electrical components vs 7, and 13% have ≥20 vs 0%. Re-weighting ours to the 31's size
+  distribution moves it only from 0.711 to 0.723.
+- **Reference labels are also a small effect (about +0.01).** On the 17, the same photo-input
+  predictions score 0.714 against the human nets and 0.723 against the reference. The reference's
+  lower recall barely changes the level.
+
+So nearly all of the 0.89 → 0.71 gap comes from running on real photos. A further 0.02 or so comes
+from the larger held-out circuits and the reference labels.
