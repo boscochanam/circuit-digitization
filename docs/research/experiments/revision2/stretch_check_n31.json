@@ -1,0 +1,1335 @@
+{
+  "summary": {
+    "n": 31,
+    "n_found": 31,
+    "best_source_counts": {
+      "image_exif": 15,
+      "seg": 16
+    },
+    "best_transform_counts": {
+      "transpose": 6,
+      "flipud": 2,
+      "id": 17,
+      "fliplr": 2,
+      "rot90ccw": 2,
+      "rot180": 1,
+      "antitranspose": 1
+    },
+    "best_corr_min": 0.8046,
+    "best_corr_median": 0.9984,
+    "best_psnr_min": 19.51,
+    "best_psnr_median": 41.95,
+    "letterbox_corr_median": 0.2238,
+    "n_exif_rotated": 1,
+    "aspect_min": 0.5625,
+    "aspect_max": 2.8986,
+    "aspect_median": 1.3333,
+    "n_non_square": 31,
+    "orig_long_side_median": 1824.0
+  },
+  "per_image": [
+    {
+      "stem": "C84_D2_P1",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_7/images/C84_D2_P1.jpg",
+      "orig_wh": [
+        1161,
+        852
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3627,
+      "image_exif": {
+        "best_transform": "transpose",
+        "corr": 0.8449,
+        "psnr": 25.26,
+        "corr_identity": -0.0694
+      },
+      "image_noexif": {
+        "best_transform": "transpose",
+        "corr": 0.8449,
+        "psnr": 25.26,
+        "corr_identity": -0.0694
+      },
+      "letterbox_control": {
+        "corr": 0.1457,
+        "psnr": 14.94
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "transpose",
+        "corr": 0.8449,
+        "psnr": 25.26
+      }
+    },
+    {
+      "stem": "C22_D2_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_2/images/C22_D2_P3.jpg",
+      "orig_wh": [
+        4160,
+        3120
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3333,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_2/segmentation/C22_D2_P3.jpg",
+      "seg_wh": [
+        4160,
+        3120
+      ],
+      "image_exif": {
+        "best_transform": "flipud",
+        "corr": 0.7442,
+        "psnr": 7.54,
+        "corr_identity": 0.066
+      },
+      "image_noexif": {
+        "best_transform": "flipud",
+        "corr": 0.7442,
+        "psnr": 7.54,
+        "corr_identity": 0.066
+      },
+      "seg": {
+        "best_transform": "flipud",
+        "corr": 0.9989,
+        "psnr": 40.73,
+        "corr_identity": 0.1099
+      },
+      "letterbox_control": {
+        "corr": 0.2431,
+        "psnr": 13.16
+      },
+      "best": {
+        "source": "seg",
+        "transform": "flipud",
+        "corr": 0.9989,
+        "psnr": 40.73
+      }
+    },
+    {
+      "stem": "C29_D2_P4",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_3/images/C29_D2_P4.jpg",
+      "orig_wh": [
+        1600,
+        1229
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3019,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_3/segmentation/C29_D2_P4.jpg",
+      "seg_wh": [
+        1600,
+        1229
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.4032,
+        "psnr": 9.72,
+        "corr_identity": 0.4032
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.4032,
+        "psnr": 9.72,
+        "corr_identity": 0.4032
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9992,
+        "psnr": 41.45,
+        "corr_identity": 0.9992
+      },
+      "letterbox_control": {
+        "corr": 0.2579,
+        "psnr": 12.43
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9992,
+        "psnr": 41.45
+      }
+    },
+    {
+      "stem": "C15_D2_P2",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_2/images/C15_D2_P2.jpg",
+      "orig_wh": [
+        4160,
+        3120
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3333,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_2/segmentation/C15_D2_P2.jpg",
+      "seg_wh": [
+        4160,
+        3120
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.7696,
+        "psnr": 7.23,
+        "corr_identity": 0.7696
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.7696,
+        "psnr": 7.23,
+        "corr_identity": 0.7696
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9989,
+        "psnr": 40.55,
+        "corr_identity": 0.9989
+      },
+      "letterbox_control": {
+        "corr": 0.1994,
+        "psnr": 12.85
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9989,
+        "psnr": 40.55
+      }
+    },
+    {
+      "stem": "C20_D2_P2",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_2/images/C20_D2_P2.jpg",
+      "orig_wh": [
+        4160,
+        3120
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3333,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_2/segmentation/C20_D2_P2.jpg",
+      "seg_wh": [
+        4160,
+        3120
+      ],
+      "image_exif": {
+        "best_transform": "fliplr",
+        "corr": 0.2033,
+        "psnr": 6.84,
+        "corr_identity": -0.018
+      },
+      "image_noexif": {
+        "best_transform": "fliplr",
+        "corr": 0.2033,
+        "psnr": 6.84,
+        "corr_identity": -0.018
+      },
+      "seg": {
+        "best_transform": "fliplr",
+        "corr": 0.999,
+        "psnr": 43.99,
+        "corr_identity": 0.1082
+      },
+      "letterbox_control": {
+        "corr": 0.2691,
+        "psnr": 16.12
+      },
+      "best": {
+        "source": "seg",
+        "transform": "fliplr",
+        "corr": 0.999,
+        "psnr": 43.99
+      }
+    },
+    {
+      "stem": "C138_D1_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_12/images/C138_D1_P3.jpg",
+      "orig_wh": [
+        1824,
+        1368
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 0,
+      "aspect_w_over_h": 1.3333,
+      "image_exif": {
+        "best_transform": "transpose",
+        "corr": 0.9911,
+        "psnr": 31.5,
+        "corr_identity": -0.3295
+      },
+      "image_noexif": {
+        "best_transform": "transpose",
+        "corr": 0.9911,
+        "psnr": 31.5,
+        "corr_identity": -0.3295
+      },
+      "letterbox_control": {
+        "corr": -0.4421,
+        "psnr": 7.87
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "transpose",
+        "corr": 0.9911,
+        "psnr": 31.5
+      }
+    },
+    {
+      "stem": "C109_D2_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_10/images/C109_D2_P3.jpg",
+      "orig_wh": [
+        1392,
+        1042
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3359,
+      "image_exif": {
+        "best_transform": "transpose",
+        "corr": 0.962,
+        "psnr": 30.29,
+        "corr_identity": 0.5065
+      },
+      "image_noexif": {
+        "best_transform": "transpose",
+        "corr": 0.962,
+        "psnr": 30.29,
+        "corr_identity": 0.5065
+      },
+      "letterbox_control": {
+        "corr": 0.4763,
+        "psnr": 14.35
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "transpose",
+        "corr": 0.962,
+        "psnr": 30.29
+      }
+    },
+    {
+      "stem": "C21_D1_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_2/images/C21_D1_P3.jpg",
+      "orig_wh": [
+        4160,
+        3120
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3333,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_2/segmentation/C21_D1_P3.jpg",
+      "seg_wh": [
+        4160,
+        3120
+      ],
+      "image_exif": {
+        "best_transform": "rot90ccw",
+        "corr": 0.2721,
+        "psnr": 7.11,
+        "corr_identity": -0.01
+      },
+      "image_noexif": {
+        "best_transform": "rot90ccw",
+        "corr": 0.2721,
+        "psnr": 7.11,
+        "corr_identity": -0.01
+      },
+      "seg": {
+        "best_transform": "rot90ccw",
+        "corr": 0.815,
+        "psnr": 20.12,
+        "corr_identity": 0.0136
+      },
+      "letterbox_control": {
+        "corr": 0.156,
+        "psnr": 14.1
+      },
+      "best": {
+        "source": "seg",
+        "transform": "rot90ccw",
+        "corr": 0.815,
+        "psnr": 20.12
+      }
+    },
+    {
+      "stem": "C28_D1_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_3/images/C28_D1_P3.jpg",
+      "orig_wh": [
+        1600,
+        899
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.7798,
+      "image_exif": {
+        "best_transform": "rot180",
+        "corr": 0.9946,
+        "psnr": 43.35,
+        "corr_identity": -0.1413
+      },
+      "image_noexif": {
+        "best_transform": "rot180",
+        "corr": 0.9946,
+        "psnr": 43.35,
+        "corr_identity": -0.1413
+      },
+      "letterbox_control": {
+        "corr": 0.1151,
+        "psnr": 10.83
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "rot180",
+        "corr": 0.9946,
+        "psnr": 43.35
+      }
+    },
+    {
+      "stem": "C113_D2_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_10/images/C113_D2_P3.jpg",
+      "orig_wh": [
+        1392,
+        1042
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3359,
+      "image_exif": {
+        "best_transform": "transpose",
+        "corr": 0.8844,
+        "psnr": 29.07,
+        "corr_identity": 0.1887
+      },
+      "image_noexif": {
+        "best_transform": "transpose",
+        "corr": 0.8844,
+        "psnr": 29.07,
+        "corr_identity": 0.1887
+      },
+      "letterbox_control": {
+        "corr": -0.0118,
+        "psnr": 14.92
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "transpose",
+        "corr": 0.8844,
+        "psnr": 29.07
+      }
+    },
+    {
+      "stem": "C5_D1_P1",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_1/images/C5_D1_P1.jpg",
+      "orig_wh": [
+        960,
+        1280
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 0.75,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_1/segmentation/C5_D1_P1.jpg",
+      "seg_wh": [
+        960,
+        1280
+      ],
+      "image_exif": {
+        "best_transform": "flipud",
+        "corr": 0.3391,
+        "psnr": 11.95,
+        "corr_identity": -0.0055
+      },
+      "image_noexif": {
+        "best_transform": "flipud",
+        "corr": 0.3391,
+        "psnr": 11.95,
+        "corr_identity": -0.0055
+      },
+      "seg": {
+        "best_transform": "flipud",
+        "corr": 0.9989,
+        "psnr": 44.71,
+        "corr_identity": 0.1175
+      },
+      "letterbox_control": {
+        "corr": 0.2084,
+        "psnr": 16.81
+      },
+      "best": {
+        "source": "seg",
+        "transform": "flipud",
+        "corr": 0.9989,
+        "psnr": 44.71
+      }
+    },
+    {
+      "stem": "C10_D2_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_1/images/C10_D2_P3.jpg",
+      "orig_wh": [
+        3024,
+        4032
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 6,
+      "aspect_w_over_h": 0.75,
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.9988,
+        "psnr": 46.15,
+        "corr_identity": 0.9988
+      },
+      "image_noexif": {
+        "best_transform": "rot90cw",
+        "corr": 0.9988,
+        "psnr": 46.15,
+        "corr_identity": 0.0103
+      },
+      "letterbox_control": {
+        "corr": 0.5375,
+        "psnr": 16.35
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "id",
+        "corr": 0.9988,
+        "psnr": 46.15
+      }
+    },
+    {
+      "stem": "C115_D2_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_10/images/C115_D2_P3.jpg",
+      "orig_wh": [
+        1392,
+        1042
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3359,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_10/segmentation/C115_D2_P3.jpg",
+      "seg_wh": [
+        1392,
+        1042
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.1779,
+        "psnr": 8.33,
+        "corr_identity": 0.1779
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.1779,
+        "psnr": 8.33,
+        "corr_identity": 0.1779
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9983,
+        "psnr": 45.92,
+        "corr_identity": 0.9983
+      },
+      "letterbox_control": {
+        "corr": 0.1544,
+        "psnr": 19.78
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9983,
+        "psnr": 45.92
+      }
+    },
+    {
+      "stem": "C134_D2_P2",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_12/images/C134_D2_P2.jpg",
+      "orig_wh": [
+        1824,
+        1368
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 0,
+      "aspect_w_over_h": 1.3333,
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.9992,
+        "psnr": 46.75,
+        "corr_identity": 0.9992
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.9992,
+        "psnr": 46.75,
+        "corr_identity": 0.9992
+      },
+      "letterbox_control": {
+        "corr": 0.2546,
+        "psnr": 11.73
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "id",
+        "corr": 0.9992,
+        "psnr": 46.75
+      }
+    },
+    {
+      "stem": "C134_D2_P4",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_12/images/C134_D2_P4.jpg",
+      "orig_wh": [
+        1824,
+        1199
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.5213,
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.9984,
+        "psnr": 46.22,
+        "corr_identity": 0.9984
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.9984,
+        "psnr": 46.22,
+        "corr_identity": 0.9984
+      },
+      "letterbox_control": {
+        "corr": 0.0259,
+        "psnr": 11.74
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "id",
+        "corr": 0.9984,
+        "psnr": 46.22
+      }
+    },
+    {
+      "stem": "C4_D2_P4",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_1/images/C4_D2_P4.jpg",
+      "orig_wh": [
+        3018,
+        2263
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 0,
+      "aspect_w_over_h": 1.3336,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_1/segmentation/C4_D2_P4.jpg",
+      "seg_wh": [
+        3018,
+        2263
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.7605,
+        "psnr": 13.03,
+        "corr_identity": 0.7605
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.7605,
+        "psnr": 13.03,
+        "corr_identity": 0.7605
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9993,
+        "psnr": 42.96,
+        "corr_identity": 0.9993
+      },
+      "letterbox_control": {
+        "corr": 0.3496,
+        "psnr": 14.32
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9993,
+        "psnr": 42.96
+      }
+    },
+    {
+      "stem": "C111_D1_P1",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_10/images/C111_D1_P1.jpg",
+      "orig_wh": [
+        1392,
+        1042
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3359,
+      "image_exif": {
+        "best_transform": "fliplr",
+        "corr": 0.999,
+        "psnr": 45.55,
+        "corr_identity": 0.6469
+      },
+      "image_noexif": {
+        "best_transform": "fliplr",
+        "corr": 0.999,
+        "psnr": 45.55,
+        "corr_identity": 0.6469
+      },
+      "letterbox_control": {
+        "corr": 0.3184,
+        "psnr": 13.28
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "fliplr",
+        "corr": 0.999,
+        "psnr": 45.55
+      }
+    },
+    {
+      "stem": "C137_D1_P2",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_12/images/C137_D1_P2.jpg",
+      "orig_wh": [
+        1824,
+        1086
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.6796,
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.9993,
+        "psnr": 45.87,
+        "corr_identity": 0.9993
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.9993,
+        "psnr": 45.87,
+        "corr_identity": 0.9993
+      },
+      "letterbox_control": {
+        "corr": 0.3203,
+        "psnr": 10.49
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "id",
+        "corr": 0.9993,
+        "psnr": 45.87
+      }
+    },
+    {
+      "stem": "C9_D1_P1",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_1/images/C9_D1_P1.jpg",
+      "orig_wh": [
+        4032,
+        3024
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3333,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_1/segmentation/C9_D1_P1.jpg",
+      "seg_wh": [
+        4032,
+        3024
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.9941,
+        "psnr": 41.54,
+        "corr_identity": 0.9941
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.9941,
+        "psnr": 41.54,
+        "corr_identity": 0.9941
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.7816,
+        "psnr": 13.06,
+        "corr_identity": 0.7816
+      },
+      "letterbox_control": {
+        "corr": 0.0311,
+        "psnr": 16.54
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "id",
+        "corr": 0.9941,
+        "psnr": 41.54
+      }
+    },
+    {
+      "stem": "C9_D1_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_1/images/C9_D1_P3.jpg",
+      "orig_wh": [
+        4032,
+        3024
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3333,
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.998,
+        "psnr": 43.71,
+        "corr_identity": 0.998
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.998,
+        "psnr": 43.71,
+        "corr_identity": 0.998
+      },
+      "letterbox_control": {
+        "corr": -0.0985,
+        "psnr": 14.5
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "id",
+        "corr": 0.998,
+        "psnr": 43.71
+      }
+    },
+    {
+      "stem": "C9_D2_P3",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_1/images/C9_D2_P3.jpg",
+      "orig_wh": [
+        3024,
+        2755
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 0,
+      "aspect_w_over_h": 1.0976,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_1/segmentation/C9_D2_P3.jpg",
+      "seg_wh": [
+        3024,
+        2755
+      ],
+      "image_exif": {
+        "best_transform": "antitranspose",
+        "corr": 0.1713,
+        "psnr": 8.11,
+        "corr_identity": -0.0701
+      },
+      "image_noexif": {
+        "best_transform": "antitranspose",
+        "corr": 0.1713,
+        "psnr": 8.11,
+        "corr_identity": -0.0701
+      },
+      "seg": {
+        "best_transform": "antitranspose",
+        "corr": 0.8879,
+        "psnr": 23.28,
+        "corr_identity": 0.0255
+      },
+      "letterbox_control": {
+        "corr": 0.4161,
+        "psnr": 16.32
+      },
+      "best": {
+        "source": "seg",
+        "transform": "antitranspose",
+        "corr": 0.8879,
+        "psnr": 23.28
+      }
+    },
+    {
+      "stem": "C103_D2_P1",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_9/images/C103_D2_P1.jpg",
+      "orig_wh": [
+        1134,
+        2016
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 0.5625,
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.9934,
+        "psnr": 44.71,
+        "corr_identity": 0.9934
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.9934,
+        "psnr": 44.71,
+        "corr_identity": 0.9934
+      },
+      "letterbox_control": {
+        "corr": 0.2266,
+        "psnr": 15.06
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "id",
+        "corr": 0.9934,
+        "psnr": 44.71
+      }
+    },
+    {
+      "stem": "C112_D1_P1",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_10/images/C112_D1_P1.jpg",
+      "orig_wh": [
+        1392,
+        1042
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3359,
+      "image_exif": {
+        "best_transform": "transpose",
+        "corr": 0.9611,
+        "psnr": 28.81,
+        "corr_identity": -0.1908
+      },
+      "image_noexif": {
+        "best_transform": "transpose",
+        "corr": 0.9611,
+        "psnr": 28.81,
+        "corr_identity": -0.1908
+      },
+      "letterbox_control": {
+        "corr": 0.3566,
+        "psnr": 12.97
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "transpose",
+        "corr": 0.9611,
+        "psnr": 28.81
+      }
+    },
+    {
+      "stem": "C19_D1_P2",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_2/images/C19_D1_P2.jpg",
+      "orig_wh": [
+        4160,
+        3120
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3333,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_2/segmentation/C19_D1_P2.jpg",
+      "seg_wh": [
+        4160,
+        3120
+      ],
+      "image_exif": {
+        "best_transform": "rot90ccw",
+        "corr": 0.5075,
+        "psnr": 7.33,
+        "corr_identity": -0.0081
+      },
+      "image_noexif": {
+        "best_transform": "rot90ccw",
+        "corr": 0.5075,
+        "psnr": 7.33,
+        "corr_identity": -0.0081
+      },
+      "seg": {
+        "best_transform": "rot90ccw",
+        "corr": 0.8121,
+        "psnr": 19.51,
+        "corr_identity": 0.0111
+      },
+      "letterbox_control": {
+        "corr": 0.2238,
+        "psnr": 13.92
+      },
+      "best": {
+        "source": "seg",
+        "transform": "rot90ccw",
+        "corr": 0.8121,
+        "psnr": 19.51
+      }
+    },
+    {
+      "stem": "C242_D1_P1",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_21/images/C242_D1_P1.jpg",
+      "orig_wh": [
+        4608,
+        3456
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 0,
+      "aspect_w_over_h": 1.3333,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_21/segmentation/C242_D1_P1.jpg",
+      "seg_wh": [
+        4608,
+        3456
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.6597,
+        "psnr": 8.31,
+        "corr_identity": 0.6597
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.6597,
+        "psnr": 8.31,
+        "corr_identity": 0.6597
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9984,
+        "psnr": 41.21,
+        "corr_identity": 0.9984
+      },
+      "letterbox_control": {
+        "corr": 0.2576,
+        "psnr": 15.33
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9984,
+        "psnr": 41.21
+      }
+    },
+    {
+      "stem": "C2_D2_P1",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_1/images/C2_D2_P1.jpg",
+      "orig_wh": [
+        960,
+        1280
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 0.75,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_1/segmentation/C2_D2_P1.jpg",
+      "seg_wh": [
+        960,
+        1280
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.6999,
+        "psnr": 14.15,
+        "corr_identity": 0.6999
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.6999,
+        "psnr": 14.15,
+        "corr_identity": 0.6999
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9988,
+        "psnr": 42.43,
+        "corr_identity": 0.9988
+      },
+      "letterbox_control": {
+        "corr": 0.2132,
+        "psnr": 15.04
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9988,
+        "psnr": 42.43
+      }
+    },
+    {
+      "stem": "C33_D2_P2",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_3/images/C33_D2_P2.jpg",
+      "orig_wh": [
+        1600,
+        552
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 2.8986,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_3/segmentation/C33_D2_P2.jpg",
+      "seg_wh": [
+        1600,
+        552
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.871,
+        "psnr": 7.83,
+        "corr_identity": 0.871
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.871,
+        "psnr": 7.83,
+        "corr_identity": 0.871
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9991,
+        "psnr": 40.75,
+        "corr_identity": 0.9991
+      },
+      "letterbox_control": {
+        "corr": 0.0701,
+        "psnr": 12.44
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9991,
+        "psnr": 40.75
+      }
+    },
+    {
+      "stem": "C37_D2_P4",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_4/images/C37_D2_P4.jpg",
+      "orig_wh": [
+        2000,
+        1500
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3333,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_4/segmentation/C37_D2_P4.jpg",
+      "seg_wh": [
+        2000,
+        1500
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.3125,
+        "psnr": 7.12,
+        "corr_identity": 0.3125
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.3125,
+        "psnr": 7.12,
+        "corr_identity": 0.3125
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9991,
+        "psnr": 42.42,
+        "corr_identity": 0.9991
+      },
+      "letterbox_control": {
+        "corr": 0.262,
+        "psnr": 13.87
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9991,
+        "psnr": 42.42
+      }
+    },
+    {
+      "stem": "C66_D2_P4",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_6/images/C66_D2_P4.jpg",
+      "orig_wh": [
+        1080,
+        810
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.3333,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_6/segmentation/C66_D2_P4.jpg",
+      "seg_wh": [
+        1080,
+        810
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.0161,
+        "psnr": 4.98,
+        "corr_identity": 0.0161
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.0161,
+        "psnr": 4.98,
+        "corr_identity": 0.0161
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9983,
+        "psnr": 42.23,
+        "corr_identity": 0.9983
+      },
+      "letterbox_control": {
+        "corr": 0.2904,
+        "psnr": 16.62
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9983,
+        "psnr": 42.23
+      }
+    },
+    {
+      "stem": "C83_D2_P4",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_7/images/C83_D2_P4.jpg",
+      "orig_wh": [
+        1368,
+        1073
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 1.2749,
+      "seg_path": "/home/claw/cghd_orig/cghd/drafter_7/segmentation/C83_D2_P4.jpg",
+      "seg_wh": [
+        1368,
+        1073
+      ],
+      "image_exif": {
+        "best_transform": "id",
+        "corr": 0.4104,
+        "psnr": 6.6,
+        "corr_identity": 0.4104
+      },
+      "image_noexif": {
+        "best_transform": "id",
+        "corr": 0.4104,
+        "psnr": 6.6,
+        "corr_identity": 0.4104
+      },
+      "seg": {
+        "best_transform": "id",
+        "corr": 0.9987,
+        "psnr": 41.95,
+        "corr_identity": 0.9987
+      },
+      "letterbox_control": {
+        "corr": 0.2151,
+        "psnr": 14.78
+      },
+      "best": {
+        "source": "seg",
+        "transform": "id",
+        "corr": 0.9987,
+        "psnr": 41.95
+      }
+    },
+    {
+      "stem": "C77_D2_P2",
+      "orig_path": "/home/claw/cghd_orig/cghd/drafter_7/images/C77_D2_P2.jpg",
+      "orig_wh": [
+        1536,
+        714
+      ],
+      "bench_wh": [
+        704,
+        704
+      ],
+      "exif_orientation": 1,
+      "aspect_w_over_h": 2.1513,
+      "image_exif": {
+        "best_transform": "transpose",
+        "corr": 0.8046,
+        "psnr": 26.69,
+        "corr_identity": 0.2617
+      },
+      "image_noexif": {
+        "best_transform": "transpose",
+        "corr": 0.8046,
+        "psnr": 26.69,
+        "corr_identity": 0.2617
+      },
+      "letterbox_control": {
+        "corr": 0.0876,
+        "psnr": 10.1
+      },
+      "best": {
+        "source": "image_exif",
+        "transform": "transpose",
+        "corr": 0.8046,
+        "psnr": 26.69
+      }
+    }
+  ]
+}

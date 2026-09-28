@@ -1,0 +1,961 @@
+{
+  "strategies": [
+    "scale_completion",
+    "scale_completion_w"
+  ],
+  "micro": {
+    "scale_completion": {
+      "f1": 0.5037674919268029,
+      "p": 0.5258426966292135,
+      "r": 0.4834710743801653,
+      "tp": 234,
+      "fp": 211,
+      "fn": 250
+    },
+    "scale_completion_w": {
+      "f1": 0.4978448275862069,
+      "p": 0.5202702702702703,
+      "r": 0.4772727272727273,
+      "tp": 231,
+      "fp": 213,
+      "fn": 253
+    }
+  },
+  "macro_f1": {
+    "scale_completion": 0.5226451612903226,
+    "scale_completion_w": 0.5171290322580645
+  },
+  "component_detection": {
+    "electrical_gt": 226,
+    "electrical_detected": 209,
+    "electrical_matched": 169,
+    "precision": 0.8086124401913876,
+    "recall": 0.7477876106194691,
+    "f1": 0.7770114942528735,
+    "iou_thresh": 0.3
+  },
+  "runtime_sec": 39.7652530670166,
+  "n_images": 31,
+  "per_image": {
+    "C84_D2_P1_jpg": {
+      "gt_comps": 44,
+      "det_comps": 40,
+      "gt_electrical": 12,
+      "det_electrical": 11,
+      "matched_electrical": 11,
+      "wires": 45,
+      "scale_completion": {
+        "f1": 0.716,
+        "p": 0.706,
+        "r": 0.727,
+        "tp": 24,
+        "fp": 10,
+        "fn": 9
+      },
+      "scale_completion_w": {
+        "f1": 0.716,
+        "p": 0.706,
+        "r": 0.727,
+        "tp": 24,
+        "fp": 10,
+        "fn": 9
+      }
+    },
+    "C22_D2_P3_jpg": {
+      "gt_comps": 35,
+      "det_comps": 35,
+      "gt_electrical": 10,
+      "det_electrical": 10,
+      "matched_electrical": 7,
+      "wires": 27,
+      "scale_completion": {
+        "f1": 0.333,
+        "p": 0.281,
+        "r": 0.409,
+        "tp": 9,
+        "fp": 23,
+        "fn": 13
+      },
+      "scale_completion_w": {
+        "f1": 0.333,
+        "p": 0.281,
+        "r": 0.409,
+        "tp": 9,
+        "fp": 23,
+        "fn": 13
+      }
+    },
+    "C29_D2_P4_jpg": {
+      "gt_comps": 22,
+      "det_comps": 22,
+      "gt_electrical": 7,
+      "det_electrical": 7,
+      "matched_electrical": 7,
+      "wires": 27,
+      "scale_completion": {
+        "f1": 0.643,
+        "p": 0.818,
+        "r": 0.529,
+        "tp": 9,
+        "fp": 2,
+        "fn": 8
+      },
+      "scale_completion_w": {
+        "f1": 0.643,
+        "p": 0.818,
+        "r": 0.529,
+        "tp": 9,
+        "fp": 2,
+        "fn": 8
+      }
+    },
+    "C15_D2_P2_jpg": {
+      "gt_comps": 39,
+      "det_comps": 38,
+      "gt_electrical": 7,
+      "det_electrical": 7,
+      "matched_electrical": 4,
+      "wires": 34,
+      "scale_completion": {
+        "f1": 0.256,
+        "p": 0.238,
+        "r": 0.278,
+        "tp": 5,
+        "fp": 16,
+        "fn": 13
+      },
+      "scale_completion_w": {
+        "f1": 0.256,
+        "p": 0.238,
+        "r": 0.278,
+        "tp": 5,
+        "fp": 16,
+        "fn": 13
+      }
+    },
+    "C20_D2_P2_jpg": {
+      "gt_comps": 13,
+      "det_comps": 13,
+      "gt_electrical": 4,
+      "det_electrical": 4,
+      "matched_electrical": 3,
+      "wires": 11,
+      "scale_completion": {
+        "f1": 0.5,
+        "p": 0.5,
+        "r": 0.5,
+        "tp": 3,
+        "fp": 3,
+        "fn": 3
+      },
+      "scale_completion_w": {
+        "f1": 0.5,
+        "p": 0.5,
+        "r": 0.5,
+        "tp": 3,
+        "fp": 3,
+        "fn": 3
+      }
+    },
+    "C138_D1_P3_jpg": {
+      "gt_comps": 21,
+      "det_comps": 19,
+      "gt_electrical": 5,
+      "det_electrical": 5,
+      "matched_electrical": 4,
+      "wires": 26,
+      "scale_completion": {
+        "f1": 0.308,
+        "p": 0.667,
+        "r": 0.2,
+        "tp": 2,
+        "fp": 1,
+        "fn": 8
+      },
+      "scale_completion_w": {
+        "f1": 0.308,
+        "p": 0.667,
+        "r": 0.2,
+        "tp": 2,
+        "fp": 1,
+        "fn": 8
+      }
+    },
+    "C109_D2_P3_jpg": {
+      "gt_comps": 10,
+      "det_comps": 9,
+      "gt_electrical": 3,
+      "det_electrical": 3,
+      "matched_electrical": 3,
+      "wires": 8,
+      "scale_completion": {
+        "f1": 1.0,
+        "p": 1.0,
+        "r": 1.0,
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "scale_completion_w": {
+        "f1": 1.0,
+        "p": 1.0,
+        "r": 1.0,
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "C21_D1_P3_jpg": {
+      "gt_comps": 44,
+      "det_comps": 42,
+      "gt_electrical": 10,
+      "det_electrical": 10,
+      "matched_electrical": 10,
+      "wires": 45,
+      "scale_completion": {
+        "f1": 0.757,
+        "p": 0.933,
+        "r": 0.636,
+        "tp": 14,
+        "fp": 1,
+        "fn": 8
+      },
+      "scale_completion_w": {
+        "f1": 0.757,
+        "p": 0.933,
+        "r": 0.636,
+        "tp": 14,
+        "fp": 1,
+        "fn": 8
+      }
+    },
+    "C28_D1_P3_jpg": {
+      "gt_comps": 57,
+      "det_comps": 34,
+      "gt_electrical": 14,
+      "det_electrical": 9,
+      "matched_electrical": 5,
+      "wires": 17,
+      "scale_completion": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 5,
+        "fn": 26
+      },
+      "scale_completion_w": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 5,
+        "fn": 26
+      }
+    },
+    "C113_D2_P3_jpg": {
+      "gt_comps": 10,
+      "det_comps": 9,
+      "gt_electrical": 3,
+      "det_electrical": 3,
+      "matched_electrical": 3,
+      "wires": 8,
+      "scale_completion": {
+        "f1": 1.0,
+        "p": 1.0,
+        "r": 1.0,
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      },
+      "scale_completion_w": {
+        "f1": 1.0,
+        "p": 1.0,
+        "r": 1.0,
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "C5_D1_P1_jpg": {
+      "gt_comps": 10,
+      "det_comps": 4,
+      "gt_electrical": 3,
+      "det_electrical": 1,
+      "matched_electrical": 1,
+      "wires": 4,
+      "scale_completion": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "scale_completion_w": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      }
+    },
+    "C10_D2_P3_jpg": {
+      "gt_comps": 12,
+      "det_comps": 2,
+      "gt_electrical": 4,
+      "det_electrical": 0,
+      "matched_electrical": 0,
+      "wires": 0,
+      "scale_completion": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 4
+      },
+      "scale_completion_w": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 4
+      }
+    },
+    "C115_D2_P3_jpg": {
+      "gt_comps": 11,
+      "det_comps": 11,
+      "gt_electrical": 4,
+      "det_electrical": 4,
+      "matched_electrical": 4,
+      "wires": 9,
+      "scale_completion": {
+        "f1": 1.0,
+        "p": 1.0,
+        "r": 1.0,
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "scale_completion_w": {
+        "f1": 1.0,
+        "p": 1.0,
+        "r": 1.0,
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "C134_D2_P2_jpg": {
+      "gt_comps": 13,
+      "det_comps": 13,
+      "gt_electrical": 4,
+      "det_electrical": 4,
+      "matched_electrical": 4,
+      "wires": 8,
+      "scale_completion": {
+        "f1": 0.889,
+        "p": 0.8,
+        "r": 1.0,
+        "tp": 4,
+        "fp": 1,
+        "fn": 0
+      },
+      "scale_completion_w": {
+        "f1": 0.889,
+        "p": 0.8,
+        "r": 1.0,
+        "tp": 4,
+        "fp": 1,
+        "fn": 0
+      }
+    },
+    "C134_D2_P4_jpg": {
+      "gt_comps": 13,
+      "det_comps": 13,
+      "gt_electrical": 4,
+      "det_electrical": 4,
+      "matched_electrical": 4,
+      "wires": 8,
+      "scale_completion": {
+        "f1": 1.0,
+        "p": 1.0,
+        "r": 1.0,
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "scale_completion_w": {
+        "f1": 1.0,
+        "p": 1.0,
+        "r": 1.0,
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "C4_D2_P4_jpg": {
+      "gt_comps": 16,
+      "det_comps": 16,
+      "gt_electrical": 4,
+      "det_electrical": 4,
+      "matched_electrical": 1,
+      "wires": 14,
+      "scale_completion": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 6,
+        "fn": 6
+      },
+      "scale_completion_w": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 6,
+        "fn": 6
+      }
+    },
+    "C111_D1_P1_jpg": {
+      "gt_comps": 17,
+      "det_comps": 18,
+      "gt_electrical": 5,
+      "det_electrical": 5,
+      "matched_electrical": 3,
+      "wires": 15,
+      "scale_completion": {
+        "f1": 0.235,
+        "p": 0.2,
+        "r": 0.286,
+        "tp": 2,
+        "fp": 8,
+        "fn": 5
+      },
+      "scale_completion_w": {
+        "f1": 0.235,
+        "p": 0.2,
+        "r": 0.286,
+        "tp": 2,
+        "fp": 8,
+        "fn": 5
+      }
+    },
+    "C137_D1_P2_jpg": {
+      "gt_comps": 16,
+      "det_comps": 16,
+      "gt_electrical": 5,
+      "det_electrical": 6,
+      "matched_electrical": 3,
+      "wires": 13,
+      "scale_completion": {
+        "f1": 0.211,
+        "p": 0.167,
+        "r": 0.286,
+        "tp": 2,
+        "fp": 10,
+        "fn": 5
+      },
+      "scale_completion_w": {
+        "f1": 0.211,
+        "p": 0.167,
+        "r": 0.286,
+        "tp": 2,
+        "fp": 10,
+        "fn": 5
+      }
+    },
+    "C9_D1_P1_jpg": {
+      "gt_comps": 15,
+      "det_comps": 15,
+      "gt_electrical": 5,
+      "det_electrical": 5,
+      "matched_electrical": 5,
+      "wires": 14,
+      "scale_completion": {
+        "f1": 0.875,
+        "p": 0.875,
+        "r": 0.875,
+        "tp": 7,
+        "fp": 1,
+        "fn": 1
+      },
+      "scale_completion_w": {
+        "f1": 0.875,
+        "p": 0.875,
+        "r": 0.875,
+        "tp": 7,
+        "fp": 1,
+        "fn": 1
+      }
+    },
+    "C9_D1_P3_jpg": {
+      "gt_comps": 15,
+      "det_comps": 15,
+      "gt_electrical": 5,
+      "det_electrical": 5,
+      "matched_electrical": 5,
+      "wires": 15,
+      "scale_completion": {
+        "f1": 0.875,
+        "p": 0.875,
+        "r": 0.875,
+        "tp": 7,
+        "fp": 1,
+        "fn": 1
+      },
+      "scale_completion_w": {
+        "f1": 0.875,
+        "p": 0.875,
+        "r": 0.875,
+        "tp": 7,
+        "fp": 1,
+        "fn": 1
+      }
+    },
+    "C9_D2_P3_jpg": {
+      "gt_comps": 15,
+      "det_comps": 13,
+      "gt_electrical": 5,
+      "det_electrical": 5,
+      "matched_electrical": 5,
+      "wires": 15,
+      "scale_completion": {
+        "f1": 0.941,
+        "p": 0.889,
+        "r": 1.0,
+        "tp": 8,
+        "fp": 1,
+        "fn": 0
+      },
+      "scale_completion_w": {
+        "f1": 0.941,
+        "p": 0.889,
+        "r": 1.0,
+        "tp": 8,
+        "fp": 1,
+        "fn": 0
+      }
+    },
+    "C103_D2_P1_jpg": {
+      "gt_comps": 29,
+      "det_comps": 28,
+      "gt_electrical": 7,
+      "det_electrical": 7,
+      "matched_electrical": 5,
+      "wires": 4,
+      "scale_completion": {
+        "f1": 0.267,
+        "p": 0.5,
+        "r": 0.182,
+        "tp": 2,
+        "fp": 2,
+        "fn": 9
+      },
+      "scale_completion_w": {
+        "f1": 0.143,
+        "p": 0.333,
+        "r": 0.091,
+        "tp": 1,
+        "fp": 2,
+        "fn": 10
+      }
+    },
+    "C112_D1_P1_jpg": {
+      "gt_comps": 28,
+      "det_comps": 29,
+      "gt_electrical": 7,
+      "det_electrical": 9,
+      "matched_electrical": 7,
+      "wires": 25,
+      "scale_completion": {
+        "f1": 0.609,
+        "p": 0.538,
+        "r": 0.7,
+        "tp": 14,
+        "fp": 12,
+        "fn": 6
+      },
+      "scale_completion_w": {
+        "f1": 0.609,
+        "p": 0.538,
+        "r": 0.7,
+        "tp": 14,
+        "fp": 12,
+        "fn": 6
+      }
+    },
+    "C19_D1_P2_jpg": {
+      "gt_comps": 46,
+      "det_comps": 42,
+      "gt_electrical": 10,
+      "det_electrical": 10,
+      "matched_electrical": 10,
+      "wires": 42,
+      "scale_completion": {
+        "f1": 0.951,
+        "p": 1.0,
+        "r": 0.906,
+        "tp": 29,
+        "fp": 0,
+        "fn": 3
+      },
+      "scale_completion_w": {
+        "f1": 0.951,
+        "p": 1.0,
+        "r": 0.906,
+        "tp": 29,
+        "fp": 0,
+        "fn": 3
+      }
+    },
+    "C242_D1_P1_jpg": {
+      "gt_comps": 95,
+      "det_comps": 95,
+      "gt_electrical": 10,
+      "det_electrical": 10,
+      "matched_electrical": 9,
+      "wires": 56,
+      "scale_completion": {
+        "f1": 0.679,
+        "p": 0.655,
+        "r": 0.704,
+        "tp": 19,
+        "fp": 10,
+        "fn": 8
+      },
+      "scale_completion_w": {
+        "f1": 0.679,
+        "p": 0.655,
+        "r": 0.704,
+        "tp": 19,
+        "fp": 10,
+        "fn": 8
+      }
+    },
+    "C2_D2_P1_jpg": {
+      "gt_comps": 30,
+      "det_comps": 24,
+      "gt_electrical": 10,
+      "det_electrical": 8,
+      "matched_electrical": 8,
+      "wires": 27,
+      "scale_completion": {
+        "f1": 0.571,
+        "p": 0.5,
+        "r": 0.667,
+        "tp": 14,
+        "fp": 14,
+        "fn": 7
+      },
+      "scale_completion_w": {
+        "f1": 0.571,
+        "p": 0.5,
+        "r": 0.667,
+        "tp": 14,
+        "fp": 14,
+        "fn": 7
+      }
+    },
+    "C33_D2_P2_jpg": {
+      "gt_comps": 28,
+      "det_comps": 20,
+      "gt_electrical": 10,
+      "det_electrical": 7,
+      "matched_electrical": 6,
+      "wires": 8,
+      "scale_completion": {
+        "f1": 0.143,
+        "p": 0.4,
+        "r": 0.087,
+        "tp": 2,
+        "fp": 3,
+        "fn": 21
+      },
+      "scale_completion_w": {
+        "f1": 0.194,
+        "p": 0.375,
+        "r": 0.13,
+        "tp": 3,
+        "fp": 5,
+        "fn": 20
+      }
+    },
+    "C37_D2_P4_jpg": {
+      "gt_comps": 37,
+      "det_comps": 34,
+      "gt_electrical": 11,
+      "det_electrical": 9,
+      "matched_electrical": 5,
+      "wires": 33,
+      "scale_completion": {
+        "f1": 0.169,
+        "p": 0.139,
+        "r": 0.217,
+        "tp": 5,
+        "fp": 31,
+        "fn": 18
+      },
+      "scale_completion_w": {
+        "f1": 0.169,
+        "p": 0.139,
+        "r": 0.217,
+        "tp": 5,
+        "fp": 31,
+        "fn": 18
+      }
+    },
+    "C66_D2_P4_jpg": {
+      "gt_comps": 76,
+      "det_comps": 76,
+      "gt_electrical": 12,
+      "det_electrical": 12,
+      "matched_electrical": 9,
+      "wires": 51,
+      "scale_completion": {
+        "f1": 0.386,
+        "p": 0.362,
+        "r": 0.415,
+        "tp": 17,
+        "fp": 30,
+        "fn": 24
+      },
+      "scale_completion_w": {
+        "f1": 0.386,
+        "p": 0.362,
+        "r": 0.415,
+        "tp": 17,
+        "fp": 30,
+        "fn": 24
+      }
+    },
+    "C83_D2_P4_jpg": {
+      "gt_comps": 35,
+      "det_comps": 35,
+      "gt_electrical": 12,
+      "det_electrical": 12,
+      "matched_electrical": 10,
+      "wires": 36,
+      "scale_completion": {
+        "f1": 0.681,
+        "p": 0.64,
+        "r": 0.727,
+        "tp": 16,
+        "fp": 9,
+        "fn": 6
+      },
+      "scale_completion_w": {
+        "f1": 0.681,
+        "p": 0.64,
+        "r": 0.727,
+        "tp": 16,
+        "fp": 9,
+        "fn": 6
+      }
+    },
+    "C77_D2_P2_jpg": {
+      "gt_comps": 48,
+      "det_comps": 34,
+      "gt_electrical": 14,
+      "det_electrical": 13,
+      "matched_electrical": 8,
+      "wires": 34,
+      "scale_completion": {
+        "f1": 0.207,
+        "p": 0.353,
+        "r": 0.146,
+        "tp": 6,
+        "fp": 11,
+        "fn": 35
+      },
+      "scale_completion_w": {
+        "f1": 0.109,
+        "p": 0.214,
+        "r": 0.073,
+        "tp": 3,
+        "fp": 11,
+        "fn": 38
+      }
+    }
+  },
+  "per_image_worst": [
+    {
+      "image": "C28_D1_P3_jpg",
+      "scale_completion": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 5,
+        "fn": 26
+      },
+      "scale_completion_w": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 5,
+        "fn": 26
+      },
+      "gt_electrical": 14,
+      "det_electrical": 9
+    },
+    {
+      "image": "C5_D1_P1_jpg",
+      "scale_completion": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "scale_completion_w": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 3
+      },
+      "gt_electrical": 3,
+      "det_electrical": 1
+    },
+    {
+      "image": "C10_D2_P3_jpg",
+      "scale_completion": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 4
+      },
+      "scale_completion_w": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 4
+      },
+      "gt_electrical": 4,
+      "det_electrical": 0
+    },
+    {
+      "image": "C4_D2_P4_jpg",
+      "scale_completion": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 6,
+        "fn": 6
+      },
+      "scale_completion_w": {
+        "f1": 0.0,
+        "p": 0.0,
+        "r": 0.0,
+        "tp": 0,
+        "fp": 6,
+        "fn": 6
+      },
+      "gt_electrical": 4,
+      "det_electrical": 4
+    },
+    {
+      "image": "C33_D2_P2_jpg",
+      "scale_completion": {
+        "f1": 0.143,
+        "p": 0.4,
+        "r": 0.087,
+        "tp": 2,
+        "fp": 3,
+        "fn": 21
+      },
+      "scale_completion_w": {
+        "f1": 0.194,
+        "p": 0.375,
+        "r": 0.13,
+        "tp": 3,
+        "fp": 5,
+        "fn": 20
+      },
+      "gt_electrical": 10,
+      "det_electrical": 7
+    },
+    {
+      "image": "C37_D2_P4_jpg",
+      "scale_completion": {
+        "f1": 0.169,
+        "p": 0.139,
+        "r": 0.217,
+        "tp": 5,
+        "fp": 31,
+        "fn": 18
+      },
+      "scale_completion_w": {
+        "f1": 0.169,
+        "p": 0.139,
+        "r": 0.217,
+        "tp": 5,
+        "fp": 31,
+        "fn": 18
+      },
+      "gt_electrical": 11,
+      "det_electrical": 9
+    },
+    {
+      "image": "C77_D2_P2_jpg",
+      "scale_completion": {
+        "f1": 0.207,
+        "p": 0.353,
+        "r": 0.146,
+        "tp": 6,
+        "fp": 11,
+        "fn": 35
+      },
+      "scale_completion_w": {
+        "f1": 0.109,
+        "p": 0.214,
+        "r": 0.073,
+        "tp": 3,
+        "fp": 11,
+        "fn": 38
+      },
+      "gt_electrical": 14,
+      "det_electrical": 13
+    },
+    {
+      "image": "C137_D1_P2_jpg",
+      "scale_completion": {
+        "f1": 0.211,
+        "p": 0.167,
+        "r": 0.286,
+        "tp": 2,
+        "fp": 10,
+        "fn": 5
+      },
+      "scale_completion_w": {
+        "f1": 0.211,
+        "p": 0.167,
+        "r": 0.286,
+        "tp": 2,
+        "fp": 10,
+        "fn": 5
+      },
+      "gt_electrical": 5,
+      "det_electrical": 6
+    }
+  ],
+  "micro_f1": 0.5037674919268029,
+  "micro_p": 0.5258426966292135,
+  "micro_r": 0.4834710743801653,
+  "macro_f1_primary": 0.5226451612903226,
+  "n_components_gt": 226,
+  "n_components_detected": 209
+}
