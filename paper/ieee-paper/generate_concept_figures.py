@@ -224,7 +224,9 @@ def pipeline_overview():
 def wire_benchmark():
     # (label, F1, group) — values from the 134-image wire-detection benchmark
     rows = [
-        ("Sauvola, anchor 16px (ours)", 0.976, "ours"),
+        ("Sauvola, anchor 16px, 10°/18px (best)", 0.976, "ours"),
+        # Deployed extractor, rerun: docs/research/experiments/revision2/wire_rerun_deployed.json (a16)
+        ("Sauvola, anchor 16px, 12°/8px (deployed)", 0.973, "deployed"),
         ("Sauvola, anchor 12px", 0.973, "ours"),
         ("Sauvola (w=61)", 0.959, "ours"),
         ("Sauvola (k=0.2875)", 0.950, "ours"),
@@ -235,16 +237,15 @@ def wire_benchmark():
         ("Triangle (skeleton)", 0.7582635186595582, "bad"),
     ]
     rows = rows[::-1]  # worst at bottom, best at top
-    fig, ax = plt.subplots(figsize=(4.6, 3.0))
-    colors = {"ours": "#1f77b4", "alt": "#ff7f0e", "bad": "#d62728"}
+    fig, ax = plt.subplots(figsize=(4.8, 3.2))
+    # deployed extractor (used in every other experiment) highlighted green
+    colors = {"ours": "#1f77b4", "deployed": "#2ca02c", "alt": "#ff7f0e", "bad": "#d62728"}
     ys = range(len(rows))
     ax.barh(list(ys), [r[1] for r in rows],
             color=[colors[r[2]] for r in rows], edgecolor="black", lw=0.5, zorder=2)
-    # highlight ours (top bar) green
-    ax.barh([len(rows) - 1], [rows[-1][1]], color="#2ca02c", edgecolor="black", lw=0.5, zorder=3)
     for i, r in enumerate(rows):
         ax.text(r[1] + 0.004, i, f"{r[1]:.3f}", va="center", ha="left", fontsize=8.5)
-    ax.axvline(0.976, color="#2ca02c", ls="--", lw=1.0, alpha=0.7, zorder=1)
+    ax.axvline(0.973, color="#2ca02c", ls="--", lw=1.0, alpha=0.7, zorder=1)
     ax.set_yticks(list(ys))
     ax.set_yticklabels([r[0] for r in rows], fontsize=8.5)
     ax.set_xlabel("Wire detection F1 (134 images)")

@@ -5,9 +5,11 @@ This directory contains material under three different licenses. Read all
 sections before redistributing any part of it.
 
   Section 1  CC BY 4.0     net_gt_ui_overlays/*.png       (CGHD images)
-  Section 2  MIT           *.json, wire_labels/*.txt       (our annotations)
+  Section 2  MIT           top-level *.json, wire_labels/*.txt,
+                           cghd_ref_audit/timing_log.jsonl (our annotations)
   Section 3  CC BY 4.0     component_labels/*.txt          (CGHD annotations)
-  Section 4  CC BY-SA 4.0  cghd_ref/, cghd_ref_audit/*.json (derived from CGHD v12)
+  Section 4  CC BY-SA 4.0  cghd_ref/*.json, cghd_ref_audit/*.json
+                           (derived from CGHD v12)
 
 
 1. IMAGES — CC BY 4.0 (derived from CGHD-1152)
@@ -56,7 +58,13 @@ No warranty is given by the original creators. CC BY 4.0 is offered
 
 Applies to: `real_nets_verified.json`, `real_nets_working.json`,
             `real_nets_vlm9.json`, `net_gt_ui_meta.json`,
-            `chris_ground_truth/*.zip`, `wire_labels/*.txt`
+            `chris_ground_truth/*.zip`, `wire_labels/*.txt`,
+            `cghd_ref_audit/timing_log.jsonl`
+
+The four JSON names above refer to the files at the top level of
+`ground_truth/` only. The files of the same names inside
+`cghd_ref_audit/` are covered by Section 4. The timing log holds only
+save timestamps, image names, save status and net counts.
 
 These are original work by the authors of this repository (see
 `../LICENSE.txt`) and are released under the MIT License.
@@ -116,14 +124,20 @@ those conditions; carry it with the files.
 4. HELD-OUT REFERENCE NETS — CC BY-SA 4.0 (derived from CGHD v12)
 ------------------------------------------------------------------
 
-Applies to: `cghd_ref/cghd_ref_nets.json` and the JSON files in
-            `cghd_ref_audit/` (reference nets and their human audit)
+Applies to: `cghd_ref/cghd_ref_nets.json` and
+            `cghd_ref_audit/real_nets_working.json` (audited nets),
+            `cghd_ref_audit/net_gt_ui_meta.json` (audit tool metadata),
+            `cghd_ref_audit/model_check.json` (model pre-screen record),
+            `cghd_ref_audit/sample.json` (the 40 audit draws)
 
 These nets are computed from the instance polygons and binary stroke maps of
 CGHD v12 (F. Thoma, J. Bayer, Y. Li, A. Dengel, et al., DFKI;
 https://doi.org/10.5281/zenodo.10056817) by
-`wire_detection/benchmark/revision2/cghd_ref.py`, and corrected by a human
-annotator for the audited images.
+`wire_detection/benchmark/revision2/cghd_ref.py`. For the audit, the nets
+of 23 images were checked and corrected by a human annotator, and those of
+14 images were settled with a blind model pre-screen (Claude Opus 5.5): on
+11 its trace matched the derived nets, and on 3 the model set the final
+nets after re-examining the disputed contacts, without a human check.
 
 Licence choice: the Zenodo record lists CC BY 4.0, while the README bundled
 in the same archive states Creative Commons Attribution-ShareAlike 3.0. We
