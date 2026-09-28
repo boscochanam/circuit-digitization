@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import sys
 import time
+from pathlib import Path
 from http.server import ThreadingHTTPServer
 
 from wire_detection.benchmark import gt_verify_ui as ui
@@ -43,9 +44,38 @@ def _timed_save(img_id, nets, verified, excluded=False):
 
 ui.save = _timed_save
 
+# Toggle between overlays with gray context boxes (overlays/) and plain photos
+# (overlays_plain/), so the labels never hide wires. Button or key "g".
+PLAIN = AUDIT / "overlays_plain"
+_TOGGLE_JS = r"""
+<script>
+let showParts=true;
+const _origLoad=load;
+load=function(i){_origLoad(i);if(!showParts)im.src='/plain/'+D().name+'.png';};
+function togglePartBoxes(){showParts=!showParts;
+  document.getElementById('ptog').textContent=showParts?'hide gray labels':'show gray labels';
+  im.onload=()=>{redraw();};im.src=(showParts?'/clean/':'/plain/')+D().name+'.png';}
+document.getElementById('ptog').onclick=togglePartBoxes;
+window.addEventListener('keydown',e=>{if(e.target.tagName=='INPUT')return;if(e.key=='g')togglePartBoxes();});
+</script>"""
+ui.HTML = ui.HTML.replace("<button id=fit>reset view</button>",
+                          "<button id=fit>reset view</button> <button id=ptog>hide gray labels</button>", 1)
+ui.HTML = ui.HTML.replace("</body>", _TOGGLE_JS + "</body>", 1) if "</body>" in ui.HTML else ui.HTML + _TOGGLE_JS
+
+
+class H(ui.H):
+    def do_GET(self):
+        p = self.path.split("?")[0]
+        if p.startswith("/plain/"):
+            f = PLAIN / Path(p[len("/plain/"):]).name
+            if f.exists():
+                return self._send(200, f.read_bytes(), "image/png")
+            return self._send(404, b"no img", "text/plain")
+        return super().do_GET()
+
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8766
     if not ui.CLEAN.is_dir():
         raise SystemExit(f"missing {ui.CLEAN}: stage it with cghd_audit_export.py (images are not in git)")
     print(f"CGHD-reference audit UI -> http://127.0.0.1:{port}/   (editing {ui.GT})")
-    ThreadingHTTPServer(("127.0.0.1", port), ui.H).serve_forever()
+    ThreadingHTTPServer(("127.0.0.1", port), H).serve_forever()

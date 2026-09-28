@@ -40,6 +40,8 @@ def main():
         H0, W0 = g.shape[:2]
         sc = 1600 / max(W0, H0)
         g = cv2.resize(g, (int(round(W0 * sc)), int(round(H0 * sc))), interpolation=cv2.INTER_AREA)
+        (audit / "overlays_plain").mkdir(exist_ok=True)
+        cv2.imwrite(str(audit / "overlays_plain" / f"{s}.png"), g)
         img = cv2.cvtColor(g, cv2.COLOR_GRAY2BGR)
         for sh in shapes:
             lab = sh["label"]
