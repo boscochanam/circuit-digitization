@@ -1,4 +1,7 @@
-"""Highlight rendered changes against the user-selected pre-August-13 baseline."""
+"""Highlight rendered changes against the July 2026 submitted manuscript (commit 33f5e3d).
+
+Inputs: output/pdf/paper-access.pdf + .aux (current Access build) and
+output/baseline/snapshot/paper/ieee-paper/paper-access.pdf (33f5e3d built with the same kit)."""
 from pathlib import Path
 import difflib
 import hashlib
@@ -52,7 +55,8 @@ figures={
  'completion.pdf':'fig:completion',
  'wire_benchmark.pdf':'fig:wire_benchmark',
  'real_join_comparison.pdf':'fig:real_join_fig',
- 'complexity_histogram.pdf':'fig:complexity_hist',
+ 'rescale_robustness.pdf':'fig:rescale',
+ 'join_comparison.pdf':'fig:join_comparison',
  'pipeline_examples/C37-D2-P4-jpg.png':'fig:pipeline_examples',
  'pipeline_examples/C111-D1-P1-jpg.png':'fig:pipeline_examples',
 }
