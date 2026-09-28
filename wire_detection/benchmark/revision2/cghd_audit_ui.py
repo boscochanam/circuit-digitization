@@ -45,7 +45,8 @@ def _timed_save(img_id, nets, verified, excluded=False):
 ui.save = _timed_save
 
 # Toggle between overlays with gray context boxes (overlays/) and plain photos
-# (overlays_plain/), so the labels never hide wires. Button or key "g".
+# (overlays_plain/), also hiding the canvas (blue boxes, net lines), so nothing hides the
+# wires. Button or key "g".
 PLAIN = AUDIT / "overlays_plain"
 _TOGGLE_JS = r"""
 <script>
@@ -53,13 +54,14 @@ let showParts=true;
 const _origLoad=load;
 load=function(i){_origLoad(i);if(!showParts)im.src='/plain/'+D().name+'.png';};
 function togglePartBoxes(){showParts=!showParts;
-  document.getElementById('ptog').textContent=showParts?'hide gray labels':'show gray labels';
+  document.getElementById('ptog').textContent=showParts?'hide all overlays':'show overlays';
+  cv.style.visibility=showParts?'visible':'hidden';
   im.onload=()=>{redraw();};im.src=(showParts?'/clean/':'/plain/')+D().name+'.png';}
 document.getElementById('ptog').onclick=togglePartBoxes;
 window.addEventListener('keydown',e=>{if(e.target.tagName=='INPUT')return;if(e.key=='g')togglePartBoxes();});
 </script>"""
 ui.HTML = ui.HTML.replace("<button id=fit>reset view</button>",
-                          "<button id=fit>reset view</button> <button id=ptog>hide gray labels</button>", 1)
+                          "<button id=fit>reset view</button> <button id=ptog>hide all overlays</button>", 1)
 ui.HTML = ui.HTML.replace("</body>", _TOGGLE_JS + "</body>", 1) if "</body>" in ui.HTML else ui.HTML + _TOGGLE_JS
 
 
