@@ -38,6 +38,11 @@ def main():
     w = json.load(open(AUD / "real_nets_working.json"))
     im = json.load(open(EVAL))["images"]
     ver = sorted(k for k, e in w.items() if "human-verified" in e.get("source", ""))
+    mc = json.load(open(AUD / "model_check.json"))["images"] if (AUD / "model_check.json").exists() else {}
+    model_agree = sorted(k for k, e in w.items() if k not in ver and not e.get("excluded")
+                         and mc.get(k, {}).get("status") == "agree")
+    model_adj = sorted(k for k, e in w.items() if "model-adjudicated" in e.get("source", ""))
+    excluded = sorted(k for k, e in w.items() if e.get("excluded"))
     cnt = lambda g, p: (len(g & p), len(p - g), len(g - p))
     H, Rf = {}, {}
     for k in ver:
@@ -68,6 +73,37 @@ def main():
     gaps = [b["t"] - a["t"] for a, b in zip(t, t[1:]) if b["t"] - a["t"] < 900]
     out["timing"] = {"n_intervals": len(gaps), "median_s": statistics.median(gaps), "mean_s": statistics.mean(gaps),
                      "note": "save-to-save gaps; >15 min excluded as breaks; the first image has no start time"}
+    # All audited draws: human-verified labels, model-agreed images (labels = reference, confirmed by a
+    # blind model trace) and model-adjudicated images (labels corrected by the model, not human-checked).
+    allk = ver + model_agree + model_adj
+    Hall = {}
+    for k in allk:
+        keep = set(w[k]["electrical_idxs"])
+        Hall[k] = pairs(w[k]["nets"], keep)
+        Rf.setdefault(k, pairs(w[k].get("_nets_original", w[k]["nets"]), keep))
+    Pall = {n: {k: {tuple(sorted(x)) for x in im[k[:-4]]["pred_pairs"][m]} for k in allk} for n, m in METHODS.items()}
+    out["composition"] = {"human_verified": len(ver), "model_agreed": len(model_agree),
+                          "model_adjudicated_not_human_checked": len(model_adj), "excluded_too_dense": len(excluded),
+                          "model_adjudicated": model_adj, "excluded": excluded,
+                          "model_prescreen": {k: v["status"] for k, v in mc.items()}}
+    out["all_audited"] = {"n": len(allk),
+                          "reference_vs_final": prf([cnt(Hall[k], Rf[k]) for k in allk]),
+                          "exact_images": sum(Hall[k] == Rf[k] for k in allk),
+                          "methods_vs_final": {n: prf([cnt(Hall[k], Pall[n][k]) for k in allk]) for n in METHODS},
+                          "paired_vs_ours": {}}
+    for n in METHODS:
+        if n == "ours":
+            continue
+        d = []
+        for _ in range(10000):
+            s_ = [rng.choice(allk) for _ in allk]
+            d.append(prf([cnt(Hall[k], Pall["ours"][k]) for k in s_])["f1"] - prf([cnt(Hall[k], Pall[n][k]) for k in s_])["f1"])
+        d.sort()
+        out["all_audited"]["paired_vs_ours"][n] = {"diff": out["all_audited"]["methods_vs_final"]["ours"]["f1"] - out["all_audited"]["methods_vs_final"][n]["f1"], "ci95": [d[250], d[9750]]}
+    ncomp = {k: len(w[k]["electrical_idxs"]) for k in w}
+    import statistics as _st
+    out["size"] = {"human_verified_median": _st.median(ncomp[k] for k in ver), "all_audited_median": _st.median(ncomp[k] for k in allk),
+                   "excluded": {k: ncomp[k] for k in excluded}, "all_40_median": _st.median(ncomp.values())}
     OUT.write_text(json.dumps(out, indent=1))
     print(json.dumps({k: out[k] for k in ("n_verified", "reference_vs_human", "exact_images", "timing")}, indent=1))
 
