@@ -21,7 +21,9 @@ import cv2
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cghd_common import is_electrical, list_samples, load_gray, load_shapes  # noqa
 
-CONTEXT_SKIP = {"junction", "terminal", "gnd", "crossover", "text", "vss", "vdd", "antenna"}
+CONTEXT_SKIP = {"junction", "terminal", "crossover", "text", "antenna"}
+# Supply symbols get their own note: they connect only through drawn wires in this benchmark.
+SUPPLY = {"gnd", "vss", "vdd"}
 
 
 def main():
@@ -47,7 +49,7 @@ def main():
             x1, y1 = int(p[:, 0].min() * sc), int(p[:, 1].min() * sc)
             x2, y2 = int(p[:, 0].max() * sc), int(p[:, 1].max() * sc)
             cv2.rectangle(img, (x1, y1), (x2, y2), (150, 150, 150), 2)
-            txt = f"{lab} (not scored)"
+            txt = f"{lab} (wires only)" if lab in SUPPLY else f"{lab} (not scored)"
             (tw, th), _ = cv2.getTextSize(txt, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
             ty = max(th + 4, y1 - 5)
             cv2.rectangle(img, (x1, ty - th - 4), (x1 + tw + 4, ty + 3), (255, 255, 255), -1)
