@@ -1,6 +1,6 @@
 {
  "_provenance": {
-  "source": "CGHD v12 (Thoma, Bayer et al., DFKI), Zenodo 10056817; instance polygons + binary stroke maps. Licence: see caveats (Zenodo record CC BY 4.0; bundled README states CC BY-SA 3.0).",
+  "source": "CGHD v12 (Thoma, Bayer et al., DFKI), Zenodo 10056817; instance polygons + binary stroke maps.",
   "method": "wire_detection/benchmark/revision2/cghd_ref.py (stroke map minus symbol polygons; conductor CCs; junction merge; crossover straight-through pairing)",
   "params": {
    "erase_k": 0.5,
@@ -15,7 +15,8 @@
    "switch_closed": false
   },
   "variant": "v2",
-  "component_index_space": "order of shapes in instances/<stem>.json (polygons with >=3 points)"
+  "component_index_space": "order of shapes in instances/<stem>.json (polygons with >=3 points)",
+  "license": "CC BY-SA 4.0 (satisfies both the Zenodo record, CC BY 4.0, and the bundled README, CC BY-SA 3.0); see ground_truth/LICENSE section 4"
  },
  "C10_D2_P1": {
   "nets": [

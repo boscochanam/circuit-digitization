@@ -1,12 +1,13 @@
 LICENSE AND ATTRIBUTION FOR ground_truth/
 =========================================
 
-This directory contains material under two different licenses. Read all
-three sections before redistributing any part of it.
+This directory contains material under three different licenses. Read all
+sections before redistributing any part of it.
 
-  Section 1  CC BY 4.0   net_gt_ui_overlays/*.png       (CGHD images)
-  Section 2  MIT         *.json, wire_labels/*.txt       (our annotations)
-  Section 3  CC BY 4.0   component_labels/*.txt          (CGHD annotations)
+  Section 1  CC BY 4.0     net_gt_ui_overlays/*.png       (CGHD images)
+  Section 2  MIT           *.json, wire_labels/*.txt       (our annotations)
+  Section 3  CC BY 4.0     component_labels/*.txt          (CGHD annotations)
+  Section 4  CC BY-SA 4.0  cghd_ref/, cghd_ref_audit/*.json (derived from CGHD v12)
 
 
 1. IMAGES — CC BY 4.0 (derived from CGHD-1152)
@@ -112,7 +113,33 @@ the license, and indicating that changes were made. This notice satisfies
 those conditions; carry it with the files.
 
 
-4. IF YOU USE THIS BENCHMARK
+4. HELD-OUT REFERENCE NETS — CC BY-SA 4.0 (derived from CGHD v12)
+------------------------------------------------------------------
+
+Applies to: `cghd_ref/cghd_ref_nets.json` and the JSON files in
+            `cghd_ref_audit/` (reference nets and their human audit)
+
+These nets are computed from the instance polygons and binary stroke maps of
+CGHD v12 (F. Thoma, J. Bayer, Y. Li, A. Dengel, et al., DFKI;
+https://doi.org/10.5281/zenodo.10056817) by
+`wire_detection/benchmark/revision2/cghd_ref.py`, and corrected by a human
+annotator for the audited images.
+
+Licence choice: the Zenodo record lists CC BY 4.0, while the README bundled
+in the same archive states Creative Commons Attribution-ShareAlike 3.0. We
+release this derived material under CC BY-SA 4.0
+(https://creativecommons.org/licenses/by-sa/4.0/), which satisfies both:
+CC BY 4.0 permits adaptations under any terms with attribution, and
+CC BY-SA 3.0 permits adaptations under a later version of the same licence.
+
+STATEMENT OF MODIFICATIONS: symbol polygons subtracted from the stroke maps;
+remaining strokes grouped into conductors; conductors linked to the symbols
+they touch; junctions merged; crossovers paired straight through; results
+expressed as component-level nets in our JSON schema. No CGHD image data is
+included (the audit overlays are local-only and git-ignored).
+
+
+5. IF YOU USE THIS BENCHMARK
 ----------------------------
 
 Cite both the source dataset and this work:
