@@ -66,6 +66,9 @@ contributions and evidence.
 
 ## Verified numbers
 
+> Superseded in places by later fixes (see git log after 0d961d7): 45/134 stroke maps (not 36), wire F1 photo 0.967 / stroke map 0.986, deployed wire F1 0.973, audit = 37 of 40 draws (cghd_audit_results.json). The manuscript is the authority.
+
+
 ### Benchmark 1: human-verified N=31 (annotated component boxes, detected wires)
 - scale_completion micro-F1 0.890 (P 0.919, R 0.864; macro 0.901; TP/FP/FN 418/37/66;
   95% bootstrap CI [0.855, 0.924]). Leave-one-image-out range 0.885–0.900.

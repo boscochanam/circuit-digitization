@@ -1,18 +1,16 @@
-# Open points — IEEE Access resubmission 33821 (updated 2026-09-29)
+# Open points — IEEE Access resubmission 33821 (updated 2026-09-29, final)
 
 Submission set: `review_artifacts/submission/` (clean + highlighted manuscript vs 33f5e3d, change index,
 response PDF, Overleaf zip). Sources: `paper-access.tex` / `paper-build.tex` (bodies in sync).
 Numbers: `REWRITE_SPEC_R2.md` → `docs/research/experiments/revision2/`.
 
 ## Before upload (author actions)
-- [x] **Audit**: 22 held-out images verified (reference F1 0.998, 21/22 exact; median 77 s/image). More are optional: rerun `python -m wire_detection.benchmark.revision2.cghd_audit_score`, update Sec. V-D numbers, run `rebuild_submission.sh`.
-- [ ] **CGHD licence**: Zenodo record 10056817 says CC BY 4.0; the README bundled in the archive says
-      CC BY-SA 3.0. Decide the licence for `ground_truth/cghd_ref/` and `component_labels/` before release.
-- [ ] **Baseline confirmation**: highlighted PDF diffs against 33f5e3d (July, 10 pp). Confirm this is the
-      version the portal received.
+- [x] **Audit**: final, 37 of 40 random held-out draws (23 human-verified, 11 blind-model-matched, 3 model-adjudicated, 3 densest excluded). Reference F1 0.988, no false pairs; median 85 s per human check. Scored by `python -m wire_detection.benchmark.revision2.cghd_audit_score`.
+- [x] **CGHD licence**: decided. CGHD-1152-derived labels CC BY 4.0; CGHD v12-derived reference nets and audit labels CC BY-SA 4.0 (ground_truth/LICENSE §4).
+- [x] **Baseline**: the portal-submitted source is stored at `review_artifacts/baseline/submitted_manuscript_portal.zip`; the highlighted PDF diffs against it.
 - [ ] **Signatory** of the response letter (currently Bosco Chanam on behalf of all authors) and coauthor
       consent to the revised manuscript.
-- [ ] **Overleaf render** of `paper-access-overleaf.zip` (local build: 13 pp, no blank pages).
+- [x] **Overleaf**: not needed; local build uses the official IEEE Access kit.
 - [ ] Portal upload.
 
 ## Resolved in this round
