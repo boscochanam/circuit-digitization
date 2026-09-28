@@ -1,0 +1,1221 @@
+{
+ "provenance": "Computed on claw with CGHD v12 instance files (cghd_common.load_shapes) for the 164 held-out stems (clean in cghd_ref/cghd_eval_photo.json, not among the 31 in ground_truth/real_nets_verified.json). Script: heldout_unscored.py (run from /home/claw/rev2_scratch_cghd with PYTHONPATH=rev2_scratch_cghd:circuit-digitization).",
+ "definition": "images containing any CGHD instance label (load_shapes, >=3 points) that is neither structural (junction, terminal, gnd, vss, vdd, crossover, text, antenna, probe*) nor cghd_common.is_electrical",
+ "n_images": 164,
+ "n_images_with_unscored_part": 94,
+ "n_images_with_logic_gate": 10,
+ "by_type": {
+  "switch": {
+   "instances": 52,
+   "images": 30
+  },
+  "resistor.adjustable": {
+   "instances": 35,
+   "images": 30
+  },
+  "speaker": {
+   "instances": 26,
+   "images": 21
+  },
+  "transformer": {
+   "instances": 18,
+   "images": 16
+  },
+  "thyristor": {
+   "instances": 23,
+   "images": 13
+  },
+  "magnetic": {
+   "instances": 13,
+   "images": 12
+  },
+  "varistor": {
+   "instances": 8,
+   "images": 7
+  },
+  "not": {
+   "instances": 23,
+   "images": 6
+  },
+  "optocoupler": {
+   "instances": 6,
+   "images": 6
+  },
+  "socket": {
+   "instances": 7,
+   "images": 6
+  },
+  "microphone": {
+   "instances": 5,
+   "images": 5
+  },
+  "fuse": {
+   "instances": 6,
+   "images": 5
+  },
+  "crystal": {
+   "instances": 5,
+   "images": 5
+  },
+  "lamp": {
+   "instances": 7,
+   "images": 5
+  },
+  "transistor.photo": {
+   "instances": 4,
+   "images": 4
+  },
+  "resistor.photo": {
+   "instances": 3,
+   "images": 3
+  },
+  "nand": {
+   "instances": 10,
+   "images": 3
+  },
+  "relay": {
+   "instances": 3,
+   "images": 3
+  },
+  "unknown": {
+   "instances": 2,
+   "images": 2
+  },
+  "triac": {
+   "instances": 2,
+   "images": 2
+  },
+  "xor": {
+   "instances": 1,
+   "images": 1
+  },
+  "and": {
+   "instances": 4,
+   "images": 1
+  },
+  "motor": {
+   "instances": 1,
+   "images": 1
+  },
+  "mechanical": {
+   "instances": 1,
+   "images": 1
+  },
+  "optical": {
+   "instances": 1,
+   "images": 1
+  }
+ },
+ "per_image": {
+  "C104_D2_P4": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C124_D2_P4": [
+   [
+    "speaker",
+    2
+   ],
+   [
+    "switch",
+    2
+   ]
+  ],
+  "C126_D1_P4": [
+   [
+    "magnetic",
+    2
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C127_D2_P2": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "switch",
+    1
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C129_D1_P2": [
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C130_D1_P2": [
+   [
+    "microphone",
+    1
+   ]
+  ],
+  "C130_D2_P2": [
+   [
+    "microphone",
+    1
+   ]
+  ],
+  "C132_D2_P4": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C138_D1_P2": [
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C13_D1_P2": [
+   [
+    "switch",
+    4
+   ]
+  ],
+  "C148_D1_P1": [
+   [
+    "speaker",
+    3
+   ]
+  ],
+  "C150_D2_P1": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C153_D1_P1": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "thyristor",
+    1
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C154_D1_P1": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C155_D2_P1": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C156_D1_P1": [
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "resistor.photo",
+    1
+   ]
+  ],
+  "C156_D2_P1": [
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "resistor.photo",
+    1
+   ]
+  ],
+  "C158_D1_P1": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C160_D2_P4": [
+   [
+    "fuse",
+    2
+   ],
+   [
+    "varistor",
+    1
+   ]
+  ],
+  "C162_D2_P1": [
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "speaker",
+    1
+   ],
+   [
+    "switch",
+    1
+   ],
+   [
+    "transistor.photo",
+    1
+   ]
+  ],
+  "C165_D1_P2": [
+   [
+    "transistor.photo",
+    1
+   ]
+  ],
+  "C168_D1_P1": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "resistor.adjustable",
+    2
+   ],
+   [
+    "thyristor",
+    2
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C169_D1_P1": [
+   [
+    "not",
+    6
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C169_D2_P1": [
+   [
+    "not",
+    6
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C16_D2_P4": [
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C170_D1_P1": [
+   [
+    "speaker",
+    1
+   ],
+   [
+    "switch",
+    1
+   ],
+   [
+    "thyristor",
+    1
+   ]
+  ],
+  "C171_D1_P1": [
+   [
+    "microphone",
+    1
+   ]
+  ],
+  "C172_D1_P4": [
+   [
+    "resistor.adjustable",
+    2
+   ]
+  ],
+  "C173_D1_P2": [
+   [
+    "fuse",
+    1
+   ],
+   [
+    "optocoupler",
+    1
+   ],
+   [
+    "thyristor",
+    1
+   ],
+   [
+    "transformer",
+    3
+   ]
+  ],
+  "C175_D2_P1": [
+   [
+    "fuse",
+    1
+   ],
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "unknown",
+    1
+   ]
+  ],
+  "C184_D2_P2": [
+   [
+    "crystal",
+    1
+   ],
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "speaker",
+    1
+   ]
+  ],
+  "C187_D1_P4": [
+   [
+    "switch",
+    2
+   ]
+  ],
+  "C191_D1_P1": [
+   [
+    "nand",
+    2
+   ],
+   [
+    "speaker",
+    1
+   ]
+  ],
+  "C192_D2_P2": [
+   [
+    "not",
+    1
+   ],
+   [
+    "switch",
+    4
+   ]
+  ],
+  "C193_D1_P3": [
+   [
+    "microphone",
+    1
+   ],
+   [
+    "optocoupler",
+    1
+   ],
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C198_D2_P1": [
+   [
+    "speaker",
+    1
+   ],
+   [
+    "switch",
+    3
+   ]
+  ],
+  "C199_D1_P1": [
+   [
+    "speaker",
+    1
+   ],
+   [
+    "switch",
+    2
+   ]
+  ],
+  "C200_D1_P3": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C203_D1_P3": [
+   [
+    "socket",
+    2
+   ],
+   [
+    "switch",
+    4
+   ]
+  ],
+  "C204_D2_P2": [
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C217_D2_P3": [
+   [
+    "xor",
+    1
+   ]
+  ],
+  "C220_D2_P3": [
+   [
+    "and",
+    4
+   ],
+   [
+    "not",
+    3
+   ]
+  ],
+  "C232_D2_P3": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C238_D2_P3": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C244_D2_P1": [
+   [
+    "crystal",
+    1
+   ],
+   [
+    "motor",
+    1
+   ],
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C246_D2_P3": [
+   [
+    "crystal",
+    1
+   ]
+  ],
+  "C24_D1_P4": [
+   [
+    "speaker",
+    1
+   ]
+  ],
+  "C250_D2_P4": [
+   [
+    "mechanical",
+    1
+   ],
+   [
+    "relay",
+    1
+   ],
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "speaker",
+    1
+   ],
+   [
+    "switch",
+    5
+   ]
+  ],
+  "C251_D2_P2": [
+   [
+    "crystal",
+    1
+   ],
+   [
+    "nand",
+    4
+   ],
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C252_D2_P3": [
+   [
+    "nand",
+    4
+   ],
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C258_D1_P1": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C267_D2_P2": [
+   [
+    "speaker",
+    1
+   ],
+   [
+    "switch",
+    1
+   ],
+   [
+    "thyristor",
+    1
+   ]
+  ],
+  "C268_D1_P2": [
+   [
+    "not",
+    6
+   ],
+   [
+    "speaker",
+    1
+   ]
+  ],
+  "C269_D1_P4": [
+   [
+    "speaker",
+    1
+   ],
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C270_D1_P3": [
+   [
+    "speaker",
+    1
+   ],
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C272_D2_P2": [
+   [
+    "crystal",
+    1
+   ],
+   [
+    "not",
+    1
+   ],
+   [
+    "unknown",
+    1
+   ]
+  ],
+  "C273_D1_P2": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C274_D1_P2": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C275_D1_P2": [
+   [
+    "resistor.adjustable",
+    4
+   ]
+  ],
+  "C279_D2_P4": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C28_D1_P1": [
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C29_D1_P1": [
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C31_D2_P1": [
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C32_D2_P4": [
+   [
+    "speaker",
+    1
+   ],
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C34_D2_P3": [
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C35_D1_P1": [
+   [
+    "speaker",
+    2
+   ]
+  ],
+  "C36_D1_P4": [
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "transistor.photo",
+    1
+   ]
+  ],
+  "C38_D2_P4": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "socket",
+    1
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C39_D2_P1": [
+   [
+    "speaker",
+    1
+   ]
+  ],
+  "C40_D1_P4": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "optocoupler",
+    1
+   ],
+   [
+    "socket",
+    1
+   ],
+   [
+    "speaker",
+    2
+   ],
+   [
+    "switch",
+    1
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C41_D2_P3": [
+   [
+    "socket",
+    1
+   ]
+  ],
+  "C43_D1_P1": [
+   [
+    "resistor.adjustable",
+    1
+   ]
+  ],
+  "C44_D2_P3": [
+   [
+    "optocoupler",
+    1
+   ],
+   [
+    "socket",
+    1
+   ],
+   [
+    "speaker",
+    1
+   ]
+  ],
+  "C45_D2_P1": [
+   [
+    "lamp",
+    1
+   ],
+   [
+    "socket",
+    1
+   ]
+  ],
+  "C47_D2_P4": [
+   [
+    "lamp",
+    1
+   ],
+   [
+    "varistor",
+    1
+   ]
+  ],
+  "C51_D1_P2": [
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "transformer",
+    1
+   ]
+  ],
+  "C53_D1_P4": [
+   [
+    "lamp",
+    1
+   ],
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "thyristor",
+    1
+   ]
+  ],
+  "C54_D1_P3": [
+   [
+    "switch",
+    2
+   ],
+   [
+    "thyristor",
+    1
+   ]
+  ],
+  "C54_D2_P2": [
+   [
+    "switch",
+    2
+   ],
+   [
+    "thyristor",
+    1
+   ]
+  ],
+  "C62_D1_P1": [
+   [
+    "switch",
+    2
+   ]
+  ],
+  "C67_D2_P2": [
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "resistor.photo",
+    1
+   ],
+   [
+    "speaker",
+    1
+   ]
+  ],
+  "C70_D2_P1": [
+   [
+    "lamp",
+    2
+   ],
+   [
+    "magnetic",
+    1
+   ],
+   [
+    "relay",
+    1
+   ],
+   [
+    "switch",
+    2
+   ]
+  ],
+  "C70_D2_P4": [
+   [
+    "lamp",
+    2
+   ],
+   [
+    "relay",
+    1
+   ],
+   [
+    "switch",
+    1
+   ]
+  ],
+  "C71_D2_P1": [
+   [
+    "microphone",
+    1
+   ],
+   [
+    "speaker",
+    1
+   ]
+  ],
+  "C88_D1_P1": [
+   [
+    "thyristor",
+    4
+   ],
+   [
+    "varistor",
+    1
+   ]
+  ],
+  "C88_D2_P2": [
+   [
+    "thyristor",
+    4
+   ],
+   [
+    "varistor",
+    1
+   ]
+  ],
+  "C91_D2_P3": [
+   [
+    "thyristor",
+    4
+   ],
+   [
+    "varistor",
+    2
+   ]
+  ],
+  "C92_D1_P3": [
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "varistor",
+    1
+   ]
+  ],
+  "C92_D1_P4": [
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "varistor",
+    1
+   ]
+  ],
+  "C93_D1_P1": [
+   [
+    "fuse",
+    1
+   ],
+   [
+    "thyristor",
+    1
+   ]
+  ],
+  "C93_D2_P1": [
+   [
+    "fuse",
+    1
+   ],
+   [
+    "thyristor",
+    1
+   ]
+  ],
+  "C96_D1_P1": [
+   [
+    "optical",
+    1
+   ],
+   [
+    "optocoupler",
+    1
+   ],
+   [
+    "transistor.photo",
+    1
+   ],
+   [
+    "triac",
+    1
+   ]
+  ],
+  "C96_D2_P4": [
+   [
+    "optocoupler",
+    1
+   ],
+   [
+    "triac",
+    1
+   ]
+  ],
+  "C97_D2_P2": [
+   [
+    "resistor.adjustable",
+    1
+   ],
+   [
+    "switch",
+    1
+   ]
+  ]
+ },
+ "stems": [
+  "C103_D1_P1",
+  "C104_D2_P4",
+  "C105_D2_P4",
+  "C10_D2_P1",
+  "C111_D2_P4",
+  "C112_D1_P3",
+  "C113_D1_P2",
+  "C114_D2_P4",
+  "C115_D2_P1",
+  "C11_D1_P4",
+  "C122_D1_P1",
+  "C122_D2_P3",
+  "C123_D1_P2",
+  "C124_D2_P4",
+  "C126_D1_P4",
+  "C127_D2_P2",
+  "C129_D1_P2",
+  "C130_D1_P2",
+  "C130_D2_P2",
+  "C132_D2_P4",
+  "C135_D1_P1",
+  "C137_D1_P1",
+  "C138_D1_P2",
+  "C13_D1_P2",
+  "C147_D1_P1",
+  "C148_D1_P1",
+  "C14_D1_P1",
+  "C150_D2_P1",
+  "C153_D1_P1",
+  "C154_D1_P1",
+  "C155_D2_P1",
+  "C156_D1_P1",
+  "C156_D2_P1",
+  "C158_D1_P1",
+  "C160_D2_P4",
+  "C162_D2_P1",
+  "C165_D1_P2",
+  "C166_D1_P1",
+  "C167_D2_P1",
+  "C168_D1_P1",
+  "C169_D1_P1",
+  "C169_D2_P1",
+  "C16_D2_P4",
+  "C170_D1_P1",
+  "C171_D1_P1",
+  "C172_D1_P4",
+  "C173_D1_P2",
+  "C174_D1_P3",
+  "C175_D2_P1",
+  "C184_D2_P2",
+  "C187_D1_P4",
+  "C189_D2_P2",
+  "C191_D1_P1",
+  "C192_D2_P2",
+  "C193_D1_P3",
+  "C194_D1_P2",
+  "C196_D2_P4",
+  "C197_D2_P3",
+  "C198_D2_P1",
+  "C199_D1_P1",
+  "C1_D2_P1",
+  "C200_D1_P3",
+  "C203_D1_P3",
+  "C204_D2_P2",
+  "C206_D1_P4",
+  "C20_D1_P1",
+  "C217_D2_P3",
+  "C21_D2_P1",
+  "C220_D2_P3",
+  "C226_D2_P3",
+  "C229_D2_P2",
+  "C230_D2_P2",
+  "C231_D2_P1",
+  "C232_D2_P3",
+  "C234_D1_P4",
+  "C238_D2_P3",
+  "C239_D2_P2",
+  "C23_D1_P2",
+  "C244_D2_P1",
+  "C246_D2_P3",
+  "C24_D1_P4",
+  "C250_D2_P4",
+  "C251_D2_P2",
+  "C252_D2_P3",
+  "C258_D1_P1",
+  "C25_D1_P3",
+  "C267_D2_P2",
+  "C268_D1_P2",
+  "C269_D1_P4",
+  "C26_D1_P2",
+  "C270_D1_P3",
+  "C271_D2_P2",
+  "C272_D2_P2",
+  "C273_D1_P2",
+  "C274_D1_P2",
+  "C275_D1_P2",
+  "C278_D1_P4",
+  "C279_D2_P4",
+  "C27_D1_P3",
+  "C280_D2_P4",
+  "C281_D1_P2",
+  "C282_D1_P4",
+  "C285_D1_P1",
+  "C28_D1_P1",
+  "C29_D1_P1",
+  "C31_D2_P1",
+  "C32_D2_P4",
+  "C34_D2_P3",
+  "C35_D1_P1",
+  "C36_D1_P4",
+  "C38_D2_P4",
+  "C39_D2_P1",
+  "C3_D2_P1",
+  "C3_D2_P4",
+  "C40_D1_P4",
+  "C41_D2_P3",
+  "C42_D2_P1",
+  "C43_D1_P1",
+  "C44_D2_P3",
+  "C45_D2_P1",
+  "C47_D2_P4",
+  "C49_D1_P4",
+  "C50_D2_P4",
+  "C51_D1_P2",
+  "C52_D1_P3",
+  "C53_D1_P4",
+  "C54_D1_P3",
+  "C54_D2_P2",
+  "C55_D1_P2",
+  "C56_D1_P4",
+  "C56_D2_P1",
+  "C59_D1_P3",
+  "C59_D2_P4",
+  "C5_D1_P2",
+  "C5_D1_P3",
+  "C60_D1_P3",
+  "C60_D2_P1",
+  "C60_D2_P3",
+  "C62_D1_P1",
+  "C64_D1_P3",
+  "C65_D1_P3",
+  "C66_D1_P3",
+  "C67_D2_P2",
+  "C68_D1_P1",
+  "C70_D2_P1",
+  "C70_D2_P4",
+  "C71_D2_P1",
+  "C73_D1_P1",
+  "C74_D2_P1",
+  "C78_D1_P2",
+  "C83_D2_P2",
+  "C84_D1_P2",
+  "C88_D1_P1",
+  "C88_D2_P2",
+  "C8_D1_P1",
+  "C91_D2_P3",
+  "C92_D1_P3",
+  "C92_D1_P4",
+  "C93_D1_P1",
+  "C93_D2_P1",
+  "C96_D1_P1",
+  "C96_D2_P4",
+  "C97_D2_P2",
+  "C98_D2_P4"
+ ]
+}

@@ -1,5 +1,5 @@
 % Concept: degree-budget completion. Before = R3 left pin floating; after = a
-% min-cost b-matching edge merges it into Net A, with the self-loop guard noted.
+% min-cost b-matching edge merges it into Net A, with the shared-component guard noted.
 \definecolor{cComp}{HTML}{CFE0F3}
 \definecolor{cBody}{HTML}{1F77B4}
 \definecolor{cPin}{HTML}{2CA02C}
@@ -32,7 +32,7 @@
       \node[cEE, font=\itshape\footnotesize, align=center] at (2.20,2.02)
            {completion edge\\(min-cost b-matching)};
       \node[cGuard, font=\footnotesize, align=center] at (2.15,0.38)
-           {self-loop guard: a component's own two\\terminals are never matched together};
+           {guard: no merge between nets that\\already share a component};
     \else
       \filldraw[cBad, draw=white, line width=0.8pt] (3.15,1.30) circle (0.08);
       \node[cBad, font=\itshape\footnotesize] at (3.2,1.95) {floating pin};
