@@ -1,6 +1,6 @@
 # Open points — IEEE Access resubmission 33821 (updated 2026-09-29, final)
 
-Submission set: `review_artifacts/submission/` (clean + highlighted manuscript vs 33f5e3d, change index,
+Submission set: `review_artifacts/submission/` (clean + highlighted manuscript vs the portal-submitted version, change index,
 response PDF, Overleaf zip). Sources: `paper-access.tex` / `paper-build.tex` (bodies in sync).
 Numbers: `REWRITE_SPEC_R2.md` → `docs/research/experiments/revision2/`.
 
