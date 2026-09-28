@@ -21,9 +21,9 @@ import cv2
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cghd_common import is_electrical, list_samples, load_gray, load_shapes  # noqa
 
-CONTEXT_SKIP = {"junction", "terminal", "crossover", "text", "antenna"}
+CONTEXT_SKIP = {"junction", "crossover", "text", "antenna"}
 # Supply symbols get their own note: they connect only through drawn wires in this benchmark.
-SUPPLY = {"gnd", "vss", "vdd"}
+SUPPLY = {"gnd", "vss", "vdd", "terminal"}
 
 
 def main():
