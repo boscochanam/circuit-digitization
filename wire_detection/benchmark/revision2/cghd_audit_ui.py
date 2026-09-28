@@ -65,6 +65,24 @@ ui.HTML = ui.HTML.replace("<button id=fit>reset view</button>",
 ui.HTML = ui.HTML.replace("</body>", _TOGGLE_JS + "</body>", 1) if "</body>" in ui.HTML else ui.HTML + _TOGGLE_JS
 
 
+# Blind model pre-screen: images where the model's trace agrees with the proposal are hidden
+# from the to-do list (they stay in the JSON, unverified); disagreements and untraced images
+# show the model's note in the side panel.
+MODEL = AUDIT / "model_check.json"
+if MODEL.exists():
+    _mc = json.loads(MODEL.read_text())["images"]
+    ui.FLAGS = {k: ("MODEL CHECK: " + v["note"]) for k, v in _mc.items() if v["status"] != "agree"}
+    _orig_state = ui.state
+
+    def _state():
+        st = _orig_state()
+        st["images"] = [x for x in st["images"]
+                        if x["verified"] or x["excluded"] or _mc.get(x["id"], {}).get("status") != "agree"]
+        return st
+
+    ui.state = _state
+
+
 class H(ui.H):
     def do_GET(self):
         p = self.path.split("?")[0]

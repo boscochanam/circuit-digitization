@@ -1,0 +1,695 @@
+{
+ "_about": "Blind model pre-screen of the unaudited audit images (Claude, used as an annotation aid; it saw only the photo with numbered electrical-component boxes, never the proposed nets). status: agree = model trace identical to the proposed nets at component-pair level; disagree / untraced = needs human review. Human adjudication is recorded in real_nets_working.json.",
+ "images": {
+  "C122_D1_P1_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     37,
+     31,
+     39,
+     34
+    ],
+    [
+     39,
+     34,
+     40,
+     30,
+     33
+    ],
+    [
+     40,
+     30,
+     31,
+     37,
+     26,
+     36
+    ],
+    [
+     33,
+     32
+    ],
+    [
+     32,
+     26,
+     36
+    ]
+   ],
+   "note": ""
+  },
+  "C148_D1_P1_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     10,
+     7,
+     14
+    ],
+    [
+     10,
+     9,
+     3,
+     5,
+     15,
+     16
+    ],
+    [
+     9,
+     3,
+     4,
+     11
+    ],
+    [
+     5,
+     15,
+     6,
+     12
+    ],
+    [
+     7,
+     14,
+     8,
+     13
+    ],
+    [
+     16,
+     6,
+     12,
+     8,
+     13,
+     4,
+     11
+    ]
+   ],
+   "note": "Tweeter return riser (x~712) read as crossing the midrange line without connecting (no dot)."
+  },
+  "C171_D1_P1_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     35,
+     19,
+     41,
+     29
+    ],
+    [
+     19,
+     8,
+     47,
+     44,
+     46
+    ],
+    [
+     29,
+     43
+    ],
+    [
+     43,
+     38,
+     37,
+     51
+    ],
+    [
+     38,
+     47,
+     51,
+     42,
+     46
+    ],
+    [
+     44,
+     42
+    ],
+    [
+     51,
+     33
+    ],
+    [
+     35,
+     41,
+     37,
+     33,
+     28
+    ],
+    [
+     46,
+     49,
+     28
+    ],
+    [
+     49,
+     50
+    ]
+   ],
+   "note": ""
+  },
+  "C192_D2_P2_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     3,
+     63,
+     1
+    ],
+    [
+     63,
+     67,
+     1
+    ],
+    [
+     67,
+     50,
+     10
+    ],
+    [
+     50,
+     42
+    ],
+    [
+     1,
+     62
+    ],
+    [
+     1,
+     28,
+     32
+    ],
+    [
+     71,
+     28
+    ],
+    [
+     32,
+     1,
+     27
+    ],
+    [
+     27,
+     42,
+     10
+    ],
+    [
+     54,
+     59
+    ]
+   ],
+   "note": "Right half is a switch network (unscored); only C1-C2 share a scored node there. C3-C4 midpoint ties to a ground symbol."
+  },
+  "C194_D1_P2_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     8,
+     53,
+     12
+    ],
+    [
+     12,
+     34,
+     83,
+     55
+    ],
+    [
+     18,
+     11,
+     50,
+     34,
+     83
+    ],
+    [
+     53,
+     18,
+     17
+    ],
+    [
+     17,
+     53,
+     2
+    ],
+    [
+     53,
+     11
+    ],
+    [
+     53,
+     50
+    ],
+    [
+     2,
+     55,
+     15,
+     69
+    ],
+    [
+     82,
+     10
+    ],
+    [
+     82,
+     29,
+     81
+    ],
+    [
+     81,
+     13,
+     77
+    ],
+    [
+     77,
+     4,
+     69
+    ],
+    [
+     10,
+     29,
+     13,
+     4,
+     15,
+     55,
+     0
+    ]
+   ],
+   "note": ""
+  },
+  "C197_D2_P3_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     30,
+     39,
+     1,
+     14,
+     24
+    ],
+    [
+     30,
+     39,
+     26,
+     12
+    ],
+    [
+     12,
+     26,
+     25
+    ],
+    [
+     26,
+     7,
+     1,
+     9
+    ],
+    [
+     25,
+     7,
+     9,
+     14,
+     24
+    ]
+   ],
+   "note": ""
+  },
+  "C270_D1_P3_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     20,
+     36
+    ],
+    [
+     17,
+     20,
+     33
+    ],
+    [
+     33,
+     37
+    ],
+    [
+     18,
+     36,
+     37
+    ],
+    [
+     20,
+     24,
+     32
+    ],
+    [
+     18,
+     24
+    ],
+    [
+     18,
+     32,
+     34
+    ]
+   ],
+   "note": ""
+  },
+  "C272_D2_P2_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     49,
+     50
+    ],
+    [
+     50,
+     49
+    ],
+    [
+     49,
+     54,
+     62,
+     67
+    ],
+    [
+     62,
+     79,
+     63
+    ],
+    [
+     79,
+     62
+    ],
+    [
+     78,
+     75
+    ],
+    [
+     62,
+     25,
+     63,
+     56
+    ],
+    [
+     56,
+     78,
+     75,
+     70,
+     15
+    ],
+    [
+     15,
+     71
+    ]
+   ],
+   "note": "Separate ground symbols not merged (wires-only rule)."
+  },
+  "C41_D2_P3_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     16,
+     68,
+     71
+    ],
+    [
+     10,
+     69,
+     70
+    ],
+    [
+     68,
+     69
+    ],
+    [
+     71,
+     70,
+     5,
+     4,
+     15,
+     7
+    ],
+    [
+     15,
+     11,
+     7,
+     14
+    ],
+    [
+     14,
+     7,
+     2,
+     1,
+     13
+    ],
+    [
+     2,
+     7,
+     12,
+     48
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     13,
+     0
+    ]
+   ],
+   "note": "Op-amp supply drawn as one straight line through the op-amp (rail above, ground below); read as two terminals."
+  },
+  "C71_D2_P1_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     0,
+     1,
+     6
+    ],
+    [
+     0,
+     9
+    ],
+    [
+     9,
+     1,
+     2,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     63,
+     3
+    ],
+    [
+     4,
+     6,
+     10
+    ],
+    [
+     2,
+     63,
+     3,
+     10,
+     6,
+     32
+    ],
+    [
+     6,
+     31,
+     4
+    ],
+    [
+     31,
+     32
+    ]
+   ],
+   "note": "Line from R4 top to C31 read as crossing the pin-8/pin-4 risers without connecting (no dots); it ties R4 to the output, a standard 555 layout."
+  },
+  "C97_D2_P2_jpg": {
+   "status": "agree",
+   "model_nets": [
+    [
+     34,
+     59,
+     54
+    ],
+    [
+     37,
+     36
+    ],
+    [
+     36,
+     59
+    ],
+    [
+     59,
+     43
+    ],
+    [
+     37,
+     43,
+     59,
+     45
+    ],
+    [
+     59,
+     51,
+     52
+    ],
+    [
+     51,
+     53
+    ],
+    [
+     54,
+     53
+    ],
+    [
+     52,
+     44
+    ],
+    [
+     44,
+     45
+    ]
+   ],
+   "note": "Box 36 initially misread as 38 (overlapping digits); corrected before comparison."
+  },
+  "C24_D1_P4_jpg": {
+   "status": "disagree",
+   "model_nets": [
+    [
+     0,
+     5,
+     6,
+     7,
+     8,
+     11,
+     12
+    ],
+    [
+     5,
+     17,
+     1
+    ],
+    [
+     17,
+     6,
+     2
+    ],
+    [
+     1,
+     7,
+     18
+    ],
+    [
+     18,
+     8,
+     9,
+     2
+    ],
+    [
+     0,
+     1,
+     2,
+     19,
+     3,
+     4
+    ],
+    [
+     9,
+     19,
+     10
+    ],
+    [
+     10,
+     14,
+     4
+    ],
+    [
+     11,
+     14,
+     3
+    ],
+    [
+     3,
+     12,
+     15
+    ],
+    [
+     15,
+     4,
+     13
+    ]
+   ],
+   "note": "Proposal splits the bottom (ground) rail in two: the battery (-) and Q1 emitter on one side, Q2-Q4 emitters and C19 on the other (8 pairs). The model reads the rail as continuous. Check whether the bottom rail is broken between Q1 and Q2."
+  },
+  "C64_D1_P3_jpg": {
+   "status": "disagree",
+   "model_nets": [
+    [
+     0,
+     8,
+     18
+    ],
+    [
+     0,
+     9,
+     2
+    ],
+    [
+     8,
+     18,
+     9
+    ],
+    [
+     18,
+     1
+    ],
+    [
+     2,
+     1,
+     46
+    ],
+    [
+     46,
+     0,
+     6
+    ],
+    [
+     6,
+     0,
+     7
+    ],
+    [
+     7,
+     0
+    ]
+   ],
+   "note": "(1) Proposal joins R7 top to the output node (R9, LED2), treating a plain crossing with the pin-8 riser as a connection; the model reads it as a crossing without a dot. (2) Proposal leaves R46 bottom off the 0V rail; the model reads R46 as tied to 0V (with the 555 pin 1 and C6)."
+  },
+  "C204_D2_P2_jpg": {
+   "status": "untraced",
+   "model_nets": null,
+   "note": "Too dense for a reliable blind trace; please verify as usual."
+  },
+  "C275_D1_P2_jpg": {
+   "status": "untraced",
+   "model_nets": null,
+   "note": "Too dense for a reliable blind trace; please verify as usual."
+  },
+  "C220_D2_P3_jpg": {
+   "status": "untraced",
+   "model_nets": null,
+   "note": "Too dense for a reliable blind trace; please verify as usual."
+  },
+  "C169_D1_P1_jpg": {
+   "status": "untraced",
+   "model_nets": null,
+   "note": "Too dense for a reliable blind trace; please verify as usual."
+  },
+  "C169_D2_P1_jpg": {
+   "status": "untraced",
+   "model_nets": null,
+   "note": "Too dense for a reliable blind trace; please verify as usual."
+  }
+ }
+}
