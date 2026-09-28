@@ -276,7 +276,7 @@ Otsu threshold + CCL & 0.789 & 0.796 & 0.783 \\
 Table~\ref{tab:real_join} reports every join configuration and baseline on the 31-image human-verified benchmark, together with the paired tests, and Fig.~\ref{fig:real_join_fig} plots the micro-F1 values with their CIs. Our join, degree-budget completion on the scale-relative base, reaches micro-F1 0.890 (P 0.919, R 0.864; macro-F1 0.901; TP/FP/FN 418/37/66; 95\% CI [0.855, 0.924]). It beats every deterministic comparator on every test after Holm correction. The margin over the prior default, which applies the same completion to the rescue base, is $+0.061$ [$+0.025$, $+0.100$] with 11 wins, 18 ties and 2 losses. Completion lifts the scale-relative base from 0.816 to 0.890, mostly through recall (0.727 to 0.864). The scale-relative base is also more precise than the rescue base (0.929 versus 0.811), and completion keeps most of that precision (0.919, against 0.789 for completion on the rescue base). Leaving out any one image moves our micro-F1 within 0.885--0.900, and no deletion changes the sign of any comparison. A sweep of the completion reach over $\rho\in[3,5]$ gives macro-F1 0.895--0.903.
 
 \begin{table*}[t]
-\caption{Component-pair connectivity on the 31-image human-verified benchmark (annotated component boxes; detected wires unless noted). F1, P and R are micro-averaged. $\Delta$ is the micro-F1 of ours minus the comparator with 95\% paired bootstrap CI; Holm-adjusted $p$ values are given for the bootstrap, the permutation test on micro-F1 and the Wilcoxon test on per-image F1; W/T/L counts per-image wins, ties and losses from our side.}
+\caption{Component-pair connectivity on the 31-image human-verified benchmark (annotated component boxes; detected wires unless noted). F1, P and R are micro-averaged. {\mathversion{normal}$\Delta$} is the micro-F1 of ours minus the comparator with 95\% paired bootstrap CI; Holm-adjusted $p$ values are given for the bootstrap, the permutation test on micro-F1 and the Wilcoxon test on per-image F1; W/T/L counts per-image wins, ties and losses from our side.}
 \label{tab:real_join}
 \centering
 \footnotesize
@@ -328,7 +328,7 @@ The 31-image benchmark has three weaknesses: it is small, its labels were bootst
 \textbf{Protocol.} The held-out set contains the 164 clean images outside the 31, with 3874 reference pairs from 24 drafters (all except drafter\_0, which the detector's training also excluded). The input is the CGHD photograph with its aspect ratio preserved and its long side resized to 1024\,px. Component boxes are the CGHD symbol annotations, the same annotations the reference uses. We chose this resolution on wire-level labels of the 52 wire-benchmark overlaps, before computing any join score. Unlike the 31-image benchmark, which kept only circuits whose parts all belong to the scored device types, the held-out set also contains parts outside the scored types, most often switches and potentiometers (30 images each), speakers (21), transformers (16), thyristors (13) and logic gates (10); 94 of the 164 images contain at least one. These parts take part in the topology but are not scored.
 
 \begin{table}[t]
-\caption{Independent held-out benchmark (164 CGHD photographs, 24 drafters, 3874 reference pairs; annotated component boxes). $\Delta$ is ours minus the comparator in micro-F1, with 95\% paired bootstrap CI. Every difference has Holm-adjusted $p=0.0006$, the resolution floor of the tests.}
+\caption{Independent held-out benchmark (164 CGHD photographs, 24 drafters, 3874 reference pairs; annotated component boxes). {\mathversion{normal}$\Delta$} is ours minus the comparator in micro-F1, with 95\% paired bootstrap CI. Every difference has Holm-adjusted $p=0.0006$, the resolution floor of the tests.}
 \label{tab:cghd_ref}
 \centering
 \footnotesize
@@ -460,7 +460,7 @@ Table~\ref{tab:mech_ablation} tests the remaining mechanisms. Removing only the 
 We replaced the annotated boxes with the outputs of our trained component detector, a YOLO26m-OBB model with 16 merged classes that reaches a mean average precision (mAP@0.5) of 89.0\% on its validation split, with its lowest class recall (70.7\%) on crossovers. The detector runs on the CGHD original, corrected for its Exchangeable Image File Format (EXIF) orientation tag, at its training size (long side 1024\,px), and its boxes are mapped into the benchmark frame. We use the deployment confidence threshold of 0.5 without tuning. On the electrical components, detection precision, recall and F1 are 0.886, 0.858 and 0.872, and the same when the class must also match. As a check of the scoring path, feeding the annotated boxes through the same mapping and matching code reproduces 418/37/66.
 
 \begin{table}[t]
-\caption{End-to-end joining with detected components on the 31-image benchmark. The lower block replaces annotated boxes with detector output one factor at a time (confidence 0.5); $\Delta$ is the change from the previous row.}
+\caption{End-to-end joining with detected components on the 31-image benchmark. The lower block replaces annotated boxes with detector output one factor at a time (confidence 0.5); {\mathversion{normal}$\Delta$} is the change from the previous row.}
 \label{tab:e2e}
 \centering
 \footnotesize
