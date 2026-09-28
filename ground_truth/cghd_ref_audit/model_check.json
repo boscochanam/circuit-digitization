@@ -682,14 +682,174 @@
    "note": "Too dense for a reliable blind trace; please verify as usual."
   },
   "C169_D1_P1_jpg": {
-   "status": "untraced",
-   "model_nets": null,
-   "note": "Too dense for a reliable blind trace; please verify as usual."
+   "status": "disagree",
+   "model_nets": [
+    [
+     48,
+     43,
+     54
+    ],
+    [
+     43,
+     34,
+     53
+    ],
+    [
+     34,
+     48,
+     65
+    ],
+    [
+     53,
+     54
+    ],
+    [
+     65,
+     41,
+     33,
+     37,
+     78
+    ],
+    [
+     41,
+     32
+    ],
+    [
+     33,
+     32
+    ],
+    [
+     47,
+     26,
+     35,
+     128
+    ],
+    [
+     52,
+     26,
+     47,
+     36,
+     69,
+     49
+    ],
+    [
+     26,
+     45
+    ],
+    [
+     45,
+     103,
+     44
+    ],
+    [
+     44,
+     69
+    ],
+    [
+     69,
+     49
+    ],
+    [
+     103,
+     129
+    ],
+    [
+     78,
+     30,
+     99
+    ],
+    [
+     30,
+     40,
+     99
+    ]
+   ],
+   "note": "One difference: the model connects R44 to the PNP Q69 emitter (the resistor end touches the emitter arrow directly, no wire between them); the proposal leaves them unconnected. Everything else matches."
   },
   "C169_D2_P1_jpg": {
-   "status": "untraced",
-   "model_nets": null,
-   "note": "Too dense for a reliable blind trace; please verify as usual."
+   "status": "disagree",
+   "model_nets": [
+    [
+     60,
+     41,
+     35
+    ],
+    [
+     41,
+     46,
+     86
+    ],
+    [
+     46,
+     60,
+     100
+    ],
+    [
+     86,
+     35
+    ],
+    [
+     100,
+     53,
+     126,
+     36,
+     57
+    ],
+    [
+     53,
+     50
+    ],
+    [
+     126,
+     50
+    ],
+    [
+     125,
+     70,
+     32,
+     129
+    ],
+    [
+     69,
+     70,
+     125,
+     98,
+     89,
+     39
+    ],
+    [
+     70,
+     34
+    ],
+    [
+     34,
+     102,
+     118
+    ],
+    [
+     118,
+     89
+    ],
+    [
+     89,
+     39
+    ],
+    [
+     102,
+     128
+    ],
+    [
+     57,
+     31,
+     92
+    ],
+    [
+     31,
+     28,
+     92
+    ]
+   ],
+   "note": "Five pairs the proposal misses, checked on this image: NPN Q70 emitter touches R34 directly; PNP Q89 emitter touches R118 directly; R34 right and R118 right both run to the dot on C102 (+); R35 bottom and D86 bottom meet on one line. Everything else matches."
   }
  }
 }
