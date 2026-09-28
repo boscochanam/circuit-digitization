@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from http.server import ThreadingHTTPServer
 
 from wire_detection.benchmark import gt_verify_ui as ui
@@ -25,6 +26,22 @@ ui.FLAGS = {}
 ui.TYPE_ABBR = {**ui.TYPE_ABBR, "inductor-ferrite": "L", "diode-zener": "D", "diode-thyrector": "D",
                 "transistor-FET": "Q", "IC": "U", "IC-voltage-reg": "U", "opamp": "U",
                 "opamp-schmitt": "U"}
+
+# Annotation-cost log: one line per save with a wall-clock timestamp. Per-image effort is
+# the gap between consecutive saves within a session (gaps over 15 min count as breaks).
+TIMING = AUDIT / "timing_log.jsonl"
+_orig_save = ui.save
+
+
+def _timed_save(img_id, nets, verified, excluded=False):
+    ok = _orig_save(img_id, nets, verified, excluded)
+    with TIMING.open("a") as f:
+        f.write(json.dumps({"t": time.time(), "id": img_id, "verified": bool(verified),
+                            "excluded": bool(excluded), "n_nets": len(nets)}) + "\n")
+    return ok
+
+
+ui.save = _timed_save
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8766
