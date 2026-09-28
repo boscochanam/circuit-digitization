@@ -10,8 +10,8 @@ Dear Editor,
 
 We thank the editor and both reviewers for their careful reading. The comments identified real weaknesses, and addressing them has changed the paper substantially. The main changes are:
 
-1. **A second, independent benchmark** (Section V-D, Table 5): 164 held-out photographs from all 24 CGHD drafters. Its reference nets are derived from the CGHD authors' own stroke-segmentation maps and symbol polygons, not from our method, and none of its images was used to develop or tune the join. The reference agrees with our human-verified nets at micro-F1 0.939 on the 17 images the two sets share. [AUDIT RESULT PENDING: human audit of 40 random held-out images.]
-2. **Paired significance testing** on both benchmarks (Section IV-C; Tables 4 and 5): image-level bootstrap, sign-flip permutation and Wilcoxon tests with Holm correction.
+1. **A second, independent benchmark** (Section V-D, Table 5): 164 held-out photographs from 24 of the 25 CGHD drafters. Its reference nets are derived from the CGHD authors' own stroke-segmentation maps and symbol polygons, not from our method, and its images were not used to develop or tune the join. The reference agrees with our human-verified nets at micro-F1 0.939 on the 17 images the two sets share. [AUDIT RESULT PENDING: human audit of 40 random held-out images.]
+2. **Paired significance testing** (Section IV-C; Tables 4 and 5): image-level bootstrap and sign-flip permutation tests on both benchmarks, plus Wilcoxon tests on the human-verified set, all with Holm correction.
 3. **End-to-end evaluation with our trained component detector** (Section V-G, Table 9), with the loss decomposed into missed, spurious, mislocalized and misclassified components.
 4. **Robustness experiments** (Section V-E): complexity strata on both benchmarks (Table 6), within-image component-size analysis, controlled rescaling from 0.35x to 3x (Fig. 8), and a synthetic mixed-size test that exposes one failure case.
 5. **A corrected title and scope**: the paper now claims structural netlists only, and states once, in a single Scope and Limitations subsection (VI-A), what the method and metric do not cover.
@@ -32,9 +32,9 @@ Bosco Chanam (corresponding author), on behalf of all authors
 
 > Single dataset source and an extremely small manually verified benchmark: All experiments are carried out on the CGHD-1152 dataset only. The self-built human-verified benchmark merely contains 31 images with wide confidence intervals and insufficient coverage of sample distributions, which cannot prove that the proposed method can be universally adapted to various hand-drawing styles.
 
-**Response.** We agree that 31 images from ten drafters could not support conclusions about drawing styles in general. We have added a second real-image benchmark built to remove the three weaknesses of the first. It is larger (164 images, 3874 reference component pairs), it covers all 24 CGHD drafters, and its reference nets come from the CGHD authors' own annotations rather than from a join like ours. We validated the derived reference against our human-verified nets on the 17 images the two sets share (micro-F1 0.939, precision 0.993). None of the 164 images was used to develop or tune the method.
+**Response.** We agree that 31 images from ten drafters could not support conclusions about drawing styles in general. We have added a second real-image benchmark built to remove the three weaknesses of the first. It is larger (164 images, 3874 reference component pairs), it covers 24 of the 25 CGHD drafters, and its reference nets come from the CGHD authors' own annotations rather than from a join like ours. We validated the derived reference against our human-verified nets on the 17 images the two sets share (micro-F1 0.939, precision 0.993). The join was not developed or tuned on these images. The extractor settings were chosen earlier on the wire benchmark, which includes resized copies of 25 of the held-out drawings; excluding those 25 gives 0.709 [0.663, 0.750], and every margin below still has a CI above zero.
 
-On this held-out set, our join reaches micro-F1 0.711 [0.671, 0.748] and beats every deterministic comparator, with Holm-adjusted p < 0.001 for each (Table 5). Its margin over the strongest comparator, the prior completion variant, is +0.053 [+0.033, +0.074]. Per-drafter micro-F1 ranges from 0.465 to 0.917 (median 0.709), and our join is the best evaluated method for 15 of the 24 drafters. The absolute score is lower than on the 31-image set. We traced most of that gap to the input photographs: CGHD provides stroke maps for exactly this subset, and the benchmark copies of these drawings are mostly those clean maps. On the photographs themselves, wire extraction is the main source of error (Section V-D, "Gap to the human-verified benchmark"). The ranking of the joins is the same on both benchmarks.
+On this held-out set, our join reaches micro-F1 0.711 [0.671, 0.748] and beats every deterministic comparator, with Holm-adjusted p < 0.001 for each (Table 5). Its margin over the strongest comparator, the prior completion variant, is +0.053 [+0.033, +0.074]. Per-drafter micro-F1 ranges from 0.465 to 0.917 (median 0.709), and our join is the best evaluated method for 15 of the 24 drafters. The absolute score is lower than on the 31-image set. We traced most of that gap to the input photographs: CGHD provides stroke maps for exactly this subset, and the benchmark copies of these drawings are mostly those clean maps. On the photographs themselves, wire extraction is the main source of error. Input quality does not explain the whole gap: with stroke maps as input, our held-out score is 0.775, and we attribute part of the residual to having selected our configuration on the 31 images (Section V-D, "Gap to the human-verified benchmark"). On both benchmarks our join ranks first and the endpoint-graph variants keep their order.
 
 All images still come from CGHD. The Scope and Limitations subsection states this, and the expansion plan there extends the evaluation to other corpora and to printed schematics.
 
@@ -77,8 +77,8 @@ We also ran the same algorithm with fixed pixel tolerances. It stays within 0.01
 **Response.** The 3–6 component range applies to the synthetic suite only. The real benchmarks are larger: the 31 human-verified images contain 3–14 electrical components (median 7; 12 images have at least ten), and the held-out benchmark contains circuits with 20 or more. Table 6 now splits both benchmarks by component count.
 
 - **On the 31 images,** our recall falls from the ≤5 to the ≥10 stratum by −0.068 [−0.18, +0.05], which is not significant (p = 0.32). F1 falls with complexity for every method, including the VLM.
-- **On images with at least ten components,** our join beats the other deterministic methods by +0.078 to +0.106, with CIs excluding zero.
-- **On the held-out benchmark,** our micro-F1 falls from 0.845 (≤5 components) to 0.693 (≥20), while Hough linking falls to 0.347. The margin over every baseline widens as circuits grow.
+- **On images with at least ten components,** our join beats the prior completion variant, the scale-relative base and Hough linking by +0.078 to +0.106, with CIs excluding zero.
+- **On the held-out benchmark,** our micro-F1 falls from 0.845 (≤5 components) to 0.693 (≥20). On the smallest circuits the prior completion variant is slightly ahead (0.856), but on circuits with 20 or more components our join leads it by 0.085, and Hough linking falls to 0.347.
 
 For crossings, Section V-H analyzes the 13 annotated crossovers, including the end-to-end run with the detector. We did not evaluate dense multi-track buses or multi-layer crossings; neither benchmark contains enough of them, and Section VI-A says so.
 
@@ -122,14 +122,14 @@ We also made the conclusions more conservative where the data require it. The VL
 
 > There is a fundamental fairness issue in the VLM comparison experiment. The VLM enjoys an "oracle advantage" with respect to critical prior information, whereas the geometric pipeline must bear the burden of detection errors. In the paper, the VLM is provided with ground-truth annotated component bounding boxes; under such conditions, the fact that the VLM still shows no statistically significant difference from the geometric method does not sufficiently support the conclusion that "the geometric method is superior in terms of cost and structural validity."
 
-**Response.** We agree that the conclusion the reviewer quotes was not supported, and we have removed it, along with every cost and structural-validity comparison. The input conditions were also unclear in the original text. Both systems receive the same annotated component boxes, and neither receives annotated wires: our join works from its own extracted wires, and the VLM reads the wires from the image. Section V-I now states this at the outset.
+**Response.** We agree that the conclusion the reviewer quotes was not supported, and we have removed it, along with every cost and structural-validity comparison. The input conditions were also unclear in the original text. Both systems receive the same annotated component boxes (the VLM as numbered boxes without class labels), and neither receives annotated wires: our join works from its own extracted wires, and the VLM reads the wires from the image. The VLM was run on the human-verified benchmark only. Section V-I now states this at the outset.
 
 The comparison is now reported in full (Section V-I, Table 4):
 
 - **Pooled pairs:** our join trails the VLM by −0.033 [−0.078, +0.008], which is not significant (Holm-adjusted p = 0.12).
 - **Per image:** the VLM is significantly better (13 wins, 11 ties, 7 losses; Wilcoxon p = 0.030).
 
-We present the VLM as a reference system, not as a method we match or surpass. What remains is a factual difference in what the two need. The VLM requires a call to a proprietary model for every image. Our join runs locally and deterministically without connectivity training data, and every connection it reports can be traced to a wire segment or a completion edge.
+We present the VLM as a reference system, not as a method we match or surpass. The two systems also differ in their requirements. The VLM requires a call to a proprietary model for every image. Our join runs locally and deterministically without connectivity training data, and every connection it reports can be traced to a wire segment or a completion edge.
 
 To address the detection burden directly, we added an end-to-end evaluation in which our trained detector supplies the components (Section V-G, Table 9). End-to-end micro-F1 is 0.627 [0.519, 0.731], against 0.890 with annotated boxes. Replacing the boxes one factor at a time attributes −0.131 to missed components, −0.072 to spurious detections, −0.043 to box localization and −0.017 to classification. Missed components cost the most because every pair involving a missed component is lost. The benchmark images were probably in the detector's training split, so this estimate is optimistic for detection, and Section VI-A states so.
 
@@ -151,9 +151,9 @@ To address the detection burden directly, we added an end-to-end evaluation in w
 
 1. **With annotated boxes:**
    - Images containing crossovers have recall 0.834, against 0.884 without (p = 0.51).
-   - Deleting all crossover annotations before joining changes micro-F1 by only +0.010, and leaves the net partitions identical on 23 of 31 images.
+   - Deleting all crossover annotations before joining changes predictions on 6 of the 8 crossover images and raises micro-F1 slightly (+0.010).
 2. **In one case study (C242_D1_P1),** suppressing the crossing-adjacent edges removes four false pairs but also eight true ones. A simple suppression rule is therefore not a fix.
-3. **In the new end-to-end run,** the trained detector found and correctly labeled all 13 crossovers in the benchmark at every tested threshold. None of the false pairs in Table 9 comes from a missed or misclassified crossover.
+3. **In the new end-to-end run,** the trained detector found and correctly labeled all 13 crossovers in the benchmark at every tested threshold, so none of the false pairs in Table 9 comes from a missed or misclassified crossover. These images were probably in the detector's training split, so this is not a held-out estimate of crossover recall.
 
 Thirteen instances cannot test the 70.7% validation recall. On this benchmark, crossover detection is not the limiting factor; missed electrical components and wire extraction are. We state this scope in Section VI-A and do not claim a mitigation.
 
@@ -172,7 +172,7 @@ Thirteen instances cannot test the 70.7% validation recall. On this benchmark, c
 - **Tolerance design** (Section V-E): the fixed-pixel and unclamped variants are evaluated across seven image scales. They separate the contribution of scale-relative tolerances from that of component-relative assignment and completion.
 - **Mixed component sizes** (Section V-E): a synthetic test that also documents a failure case.
 - **End-to-end decomposition** (Table 9): the cost of each detector error type.
-- **Edge-rule ablation** (Table 7, retained): disabling T-junction, rail-tap or directional rules leaves the counts unchanged, so these rules give no measurable gain on this benchmark. We report this as observed.
+- **Edge-rule ablation** (Table 7, retained): disabling T-junction, rail-tap or directional rules leaves the counts unchanged, so these rules give no measurable gain on this benchmark.
 
 **Changes.** Tables 7, 8 and 9; Section V-E; Section V-F.
 
@@ -182,7 +182,7 @@ Thirteen instances cannot test the 70.7% validation recall. On this benchmark, c
 
 **Response.** We now analyze this directly (Section V-E, "Component-size variation within an image" and "Synthetic mixed-size circuits").
 
-- **On the 31 real images:** the overall dispersion of component sizes is unrelated to F1 (ρ = +0.18, p = 0.33). The largest-to-smallest size ratio correlates with lower F1, but it also rises with component count. After controlling for count, the partial correlation is −0.41 for our join and −0.34 for the VLM, a similar value.
+- **On the 31 real images:** the overall dispersion of component sizes is unrelated to F1 (ρ = +0.18, p = 0.33). The largest-to-smallest size ratio correlates with lower F1, but it also rises with component count. After controlling for count, the partial correlation is −0.41 (p = 0.024) for our join, a significant effect, and −0.34 for the VLM. Size heterogeneity therefore does lower accuracy somewhat, for the VLM as well, while the size of the largest component relative to s shows no effect.
 - **In synthetic circuits with one component redrawn at 0.5x, 2x or 3x its size,** enlarging a component costs about 0.005 and shrinking one costs 0.012.
 - **The reviewer's concern holds in one case:** a Wheatstone bridge with one very small arm. There, the median-derived tolerances add a spurious pair even on clean wires, while fixed-pixel graphs stay exact.
 
