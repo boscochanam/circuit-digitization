@@ -620,7 +620,7 @@
      13
     ]
    ],
-   "note": "Proposal splits the bottom (ground) rail in two: the battery (-) and Q1 emitter on one side, Q2-Q4 emitters and C19 on the other (8 pairs). The model reads the rail as continuous. Check whether the bottom rail is broken between Q1 and Q2."
+   "note": "Model-adjudicated: the bottom ground rail is continuous; the two X crossings between Q1/Q2 and Q3/Q4 are plain crossings (not connected), as CGHD annotates them."
   },
   "C64_D1_P3_jpg": {
    "status": "disagree",
@@ -664,22 +664,22 @@
      0
     ]
    ],
-   "note": "(1) Proposal joins R7 top to the output node (R9, LED2), treating a plain crossing with the pin-8 riser as a connection; the model reads it as a crossing without a dot. (2) Proposal leaves R46 bottom off the 0V rail; the model reads R46 as tied to 0V (with the 555 pin 1 and C6)."
+   "note": "Model-adjudicated: R46 tied to 0 V (with the 555 and C6); R7 stays on the output node (R9, LED2) and is NOT joined to the +6 V rail where its wire crosses the pin-8 riser without a dot. (The model initially misread R7; corrected.)"
   },
   "C204_D2_P2_jpg": {
    "status": "untraced",
    "model_nets": null,
-   "note": "Too dense for a reliable blind trace; please verify as usual."
+   "note": "Excluded from the audit: too dense to verify reliably by hand."
   },
   "C275_D1_P2_jpg": {
    "status": "untraced",
    "model_nets": null,
-   "note": "Too dense for a reliable blind trace; please verify as usual."
+   "note": "Excluded from the audit: too dense to verify reliably by hand."
   },
   "C220_D2_P3_jpg": {
    "status": "untraced",
    "model_nets": null,
-   "note": "Too dense for a reliable blind trace; please verify as usual."
+   "note": "Excluded from the audit: too dense to verify reliably by hand."
   },
   "C169_D1_P1_jpg": {
    "status": "disagree",
