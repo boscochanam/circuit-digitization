@@ -1,59 +1,73 @@
 # Circuit Digitization: Hand-Drawn Schematics to Structural Circuit Netlists
 
-A deterministic pipeline that converts scanned, hand-drawn circuit schematics into
-structural circuit netlists (topological pin connectivity — component values and device
-models require external specification, and simulation equivalence is not validated). The pipeline runs component detection, an occlusion-first
-wire extractor, an endpoint-graph join that resolves which terminals are electrically the same
-net, and netlist emission — no learned connectivity model in the loop. Alongside the pipeline,
-this repository publishes the first human-verified, net-level connectivity benchmark for
-hand-drawn circuits (31 images from CGHD-1152), so connectivity accuracy can be measured
-directly rather than inferred from downstream tasks.
+A deterministic pipeline that recovers **structural** netlists (which component terminals share
+an electrical node) from hand-drawn circuit schematics. It does not read component values or
+device models; the SPICE-syntax export uses placeholder values and simulation of real scans is
+not evaluated. The pipeline chains an OBB component detector, an occlusion-first wire extractor
+that returns segments with explicit endpoints, a typed endpoint-graph join with scale-relative
+tolerances, and degree-budget completion of floating pins. No learned connectivity model is in
+the loop.
+
+With annotated component boxes, the join reaches component-pair micro-F1 **0.890** on 31
+CGHD-1152 images with human-verified nets (where its configuration was selected) and **0.711** on
+164 held-out CGHD photographs from 24 of the corpus's 25 drafters, whose reference nets are
+derived from the dataset's own stroke maps and symbol polygons. On both benchmarks it beats every
+deterministic baseline in paired tests with Holm correction. End to end with the trained
+component detector it scores **0.627**, and the largest share of that loss comes from missed components.
 
 ![Pipeline and results overview](paper/ieee-paper/figures/graphical_abstract.jpg)
 
 ## Paper
 
-This repository contains the code and benchmark for:
+> **From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with
+> Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark.**
+> B. Chanam, C. Dcosta, P. K. Talupuri, S. Chiwhane, A. K. Singh, A. Das.
+> Revised manuscript, IEEE Access (Access-2026-33821), 2026.
 
-> **From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline with Endpoint-Graph
-> Wire Joining and a Human-Verified Connectivity Benchmark.**
-> Under revision for resubmission to IEEE Access (2026).
-
-### How to cite
-
-```bibtex
-@article{chanam2026handdrawn,
-  title   = {From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline
-             with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark},
-  author  = {Chanam, Bosco and Dcosta, Chris and Talupuri, Pranavesh Kumar and
-             Chiwhane, Shwetambari and Singh, Ashay Kumar and Das, Arghadeep},
-  year    = {2026},
-  note    = {Under revision for resubmission to IEEE Access}
-}
-```
+Source: [`paper/ieee-paper/paper-access.tex`](paper/ieee-paper/paper-access.tex). The resubmission
+package (clean and highlighted PDFs, change index, response to reviewers, Overleaf zip) is in
+`paper/ieee-paper/review_artifacts/submission/`.
 
 ## Headline results
 
-All connectivity numbers are micro-F1 on the 31-image human-verified net-level benchmark
-(`ground_truth/real_nets_verified.json`), over identical detected wires unless noted. Full
-provenance for every figure is in [`docs/research/experiments/SUMMARY.md`](docs/research/experiments/SUMMARY.md).
+Connectivity is component-pair micro-F1 (pairs of electrical components sharing a net, pooled
+over images; macro-F1 reported alongside), with annotated component boxes and the pipeline's own
+detected wires unless noted. Provenance for every number:
+[`docs/research/experiments/SUMMARY.md`](docs/research/experiments/SUMMARY.md).
 
-| Measurement | Score |
-|---|---|
-| Wire-detection F1 (134 CGHD scans) | 0.976 |
-| Connectivity micro-F1 — ours (scale-relative base + completion) | 0.890 |
-| Connectivity micro-F1 — prior completion default | 0.829 |
-| Connectivity micro-F1 — Hough + proximity | 0.805 |
-| Connectivity micro-F1 — radius union-find | 0.667 |
-| Connectivity micro-F1 — connected-components net tracing | 0.624 |
-| Connectivity micro-F1 — frontier VLM reference | 0.923 |
-| Synthetic suite at maximum severity — ours vs. radius baseline | 0.95 vs. 0.36 |
+| Measurement | Human-verified (31) | Held-out (164) |
+|---|---|---|
+| **Ours** (scale-relative graph + completion) | **0.890** (P 0.919 / R 0.864) | **0.711** (P 0.766 / R 0.664) |
+| Rescue graph + completion (prior default) | 0.829 | 0.659 |
+| Scale-relative graph (base) | 0.816 | 0.595 |
+| Hough + proximity | 0.805 | 0.480 |
+| Radius union-find (legacy) | 0.667 | 0.518 |
+| Connected components on detected wires | 0.624 | 0.594 |
+| VLM reference (Claude Opus 4.8, same electrical boxes) | 0.923 | not run |
 
-The VLM reference (0.923) is an oracle-component-box diagnostic, not an end-to-end comparison:
-both methods receive annotated component boxes, and the paired difference (+0.033, bootstrap
-95% CI [−0.009, +0.078]) is nonsignificant, which establishes neither equivalence nor
-superiority. Running the join on perfect wire labels leaves micro-F1 essentially unchanged
-at 0.890, conditional on annotated boxes — not proof about the autonomous bottleneck.
+- **Significance.** Every margin over a deterministic baseline is significant after Holm
+  correction on both benchmarks. Against the VLM the pooled difference (−0.033, 95% CI
+  [−0.078, +0.008]) is not significant; per image the VLM is better (13 wins vs 7, Wilcoxon
+  Holm p = 0.030).
+- **Held-out robustness.** Dropping the 25 images that overlap the wire benchmark gives 0.709
+  (139 images). Under extended scoring conventions (more device types scored, switches closed,
+  grounds merged) ours stays first (0.676–0.712).
+- **Reference audit.** 40 held-out images drawn at random: 37 scored (23 checked by a human, 11
+  matched by a blind model pre-screen, 3 model-adjudicated; the 3 densest excluded). The derived
+  reference scores micro-F1 0.988 against the audited nets, with no false pairs.
+- **End to end** with the trained detector (conf 0.5): 0.627. An earlier figure of 0.247 came
+  from a class-index mapping bug in an old script.
+- **Rescaling.** With annotated wires the join stays within 0.005 of native from 0.5× to 3×; it
+  drops 0.035 at 0.35×. With re-extracted wires, downscaling costs more because the extractor's
+  parameters are in pixels.
+- **Wire extraction.** F1 0.976 (best of 36 variants) and 0.973 (deployed setting) on 134
+  images. **Component detector:** mAP@0.5 89.0% on its validation split (crossover recall 70.7%).
+- **Synthetic suite** at the highest error level: 0.95 for ours vs 0.36 for radius union-find.
+
+**Image provenance.** The 134- and 31-image benchmark copies are 704×704 Roboflow resizes that
+do not preserve aspect ratio; 14 of the 31 are also flipped or rotated, and 16 of 31 (45 of 134)
+are CGHD binary stroke maps, not photographs. The held-out benchmark uses the original CGHD
+photographs, and most of the 0.890 → 0.711 drop comes from that change of input.
 
 ## Quickstart
 
@@ -84,15 +98,33 @@ Real-image evaluation additionally needs the CGHD-1152 dataset from Kaggle:
 
 ## Reproducing the paper
 
-See [`docs/reproducing-the-paper.md`](docs/reproducing-the-paper.md) for the full walkthrough.
-The key artifacts are:
+[`docs/reproducing-the-paper.md`](docs/reproducing-the-paper.md) maps every table to its script,
+committed result JSON and data requirement. Key artifacts:
 
-- `ground_truth/real_nets_verified.json` — the 31-image human-verified net-level ground truth.
-- `wire_detection/benchmark/` — evaluation scripts, including the join-strategy benchmarks,
-  connected-component and Hough baselines, the detection ceiling, and bootstrap confidence
-  intervals.
-- `docs/research/experiments/*.json` — the committed result artifacts backing every headline
-  number, indexed by [`docs/research/experiments/SUMMARY.md`](docs/research/experiments/SUMMARY.md).
+- `ground_truth/real_nets_verified.json`: the 31-image human-verified nets.
+- `ground_truth/cghd_ref/cghd_ref_nets.json`: derived reference nets for the held-out benchmark;
+  `ground_truth/cghd_ref_audit/`: the 37 audited nets, timing log and model pre-screen record.
+- `wire_detection/benchmark/`: join and baseline evaluations; `wire_detection/benchmark/revision2/`:
+  the paired tests, strata, rescaling, held-out, audit and end-to-end scripts.
+- `docs/research/experiments/` (and `revision2/`): committed result JSONs behind every number.
+
+The statistics scripts run on a clean checkout from committed JSONs. Regenerating predictions needs
+CGHD-1152 (wire and 31-image benchmarks), CGHD v12 from Zenodo
+([10.5281/zenodo.10056817](https://doi.org/10.5281/zenodo.10056817); held-out benchmark) and the
+detector weights.
+
+## Data and licences
+
+- **Code** and **our own annotations** (human-verified nets, wire labels): MIT
+  ([`LICENSE.txt`](LICENSE.txt)).
+- **CGHD-1152-derived material** (overlay images, component labels): CC BY 4.0.
+- **CGHD v12-derived reference and audit nets** (`ground_truth/cghd_ref/`,
+  `ground_truth/cghd_ref_audit/*.json`): CC BY-SA 4.0.
+- The raw CGHD images are not redistributed; obtain them from the dataset authors. Full terms and
+  statements of modification: [`ground_truth/LICENSE`](ground_truth/LICENSE).
+- The v1.0.1 release (before the revision experiments) is archived at Zenodo,
+  doi:10.5281/zenodo.21274159. Detector weights:
+  [huggingface.co/boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector).
 
 ## Command-line tools
 
@@ -115,7 +147,7 @@ Pass `--help` to any command for its arguments.
 ## Interactive tuner
 
 A FastAPI backend plus a Next.js UI for stepping through images, inspecting detected topology,
-hand-editing wire connections, and watching edits propagate into the netlist and simulation.
+hand-editing wire connections, and watching edits propagate into the netlist.
 
 ```bash
 uv run wire-tune                  # backend API
@@ -136,7 +168,7 @@ wire_detection/     Python backend
   vlm/              VLM quality classifier
   api/              FastAPI routes
 ui/                 Next.js tuner UI
-ground_truth/       Human-verified net-level GT
+ground_truth/       Net-level GT (human-verified and CGHD-derived), wire/component labels
 models/             Component-detection weights (downloaded, gitignored)
 docs/               MkDocs documentation and research logs
 paper/ieee-paper/   IEEE Access manuscript source
@@ -159,9 +191,23 @@ this README is archived in [`docs/research/readme-archive.md`](docs/research/rea
 uv run pytest wire_detection/tests/ -q
 ```
 
-## License
+## Citation
 
-MIT — see [`LICENSE.txt`](LICENSE.txt).
+See [`CITATION.cff`](CITATION.cff). BibTeX:
+
+```bibtex
+@article{chanam2026handdrawn,
+  title   = {From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline
+             with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark},
+  author  = {Chanam, Bosco and Dcosta, Chris and Talupuri, Pranavesh Kumar and
+             Chiwhane, Shwetambari and Singh, Ashay Kumar and Das, Arghadeep},
+  journal = {IEEE Access},
+  year    = {2026},
+  note    = {Under review}
+}
+```
+
+Please also cite CGHD (Thoma, Bayer, Li and Dengel, ICDAR 2021) when you use the benchmarks.
 
 ## Contact
 

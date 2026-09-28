@@ -87,7 +87,12 @@ components = load_components(image_path, source="ground_truth")
 ## Expanded Benchmark (134 images, all 36 configs)
 Run: `uv run python wire_detection/benchmark/expanded_benchmark.py`
 
-### Top Configs (Jun 2026, corrected eval — exact-match labels on original images)
+### Top Configs (Jun 2026, corrected eval — exact-match labels on the 704×704 Roboflow identity copies)
+The benchmark images are non-aspect-preserving 704×704 resizes, not full-resolution originals; 45 of
+the 134 are CGHD binary stroke maps. a16 below uses 10°/18 px dedup; the **deployed** setting
+(12°/8 px, the Pipeline Params above, used in every other experiment) scores **0.973**
+(`docs/research/experiments/revision2/wire_rerun_deployed.json`). The paper reports 0.976 (best
+variant) and 0.973 (deployed).
 | Rank | Config | F1 | Precision | Recall | FP | FN |
 |---|---|---|---|---|---|---|
 | 1 | **a16** (anchor_endpoint_dist=16) | **0.9755** | 0.9729 | 0.9781 | 47 | 77 |
@@ -137,11 +142,15 @@ Verified visually — clean wire detection, correct joins, good complexity range
 ### Performance (Best: Run 2)
 | Metric | Value |
 |--------|-------|
-| mAP50 | **88.5%** |
-| mAP50-95 | 78.3% |
-| Precision | 95.6% |
+| mAP50 | **89.0%** |
+| mAP50-95 | 78.5% |
+| Precision | 95.8% |
 | Recall | 88.6% |
-| Epochs | 200 |
+| Epochs | 200 (released `best.pt` = best-fitness epoch 121) |
+
+The final epoch (`last.pt`, not distributed) scores 88.5 / 78.3 / 95.6 / 88.6; the paper and
+model card report the released checkpoint (89.0%). Source of record:
+`docs/research/experiments/detector/README.md`.
 
 ### Per-Class Recall
 - **Perfect:** operational_amplifier (100%)
@@ -155,7 +164,7 @@ Verified visually — clean wire detection, correct joins, good complexity range
 - Image size: 1024, Batch: 17
 
 ### Key Learnings
-1. **Class merging:** 61→16 classes improved mAP from ~50% to 85%
+1. **Class merging:** 61→16 classes improved mAP from ~50% to 85% (confounded with model size, schedule and batch; not cited in the paper)
 2. **Augmentations:** +3.5% mAP over no-augmentation baseline
 3. **M model > L model:** Smaller model generalizes better on this dataset size with augmentations
 4. **Crossover remains hardest:** Two crossing wires look identical to regular wires
@@ -240,8 +249,12 @@ macro 0.901) on the 31-image human-verified net-GT, vs micro 0.829 for the prior
 `degree_budget` default (completion on the graph_rescue base), 0.816 graph_scale, 0.787
 graph_rescue, 0.667 production, and 0.624 for connected-component net tracing on identical
 detected wires (Hough+proximity 0.805).
-Validated on independent synthetic GT too (rules out bootstrap bias); detection is not the
-bottleneck (on perfect GT wires **micro-F1 is unchanged at 0.890**, macro +0.015 to 0.916).
+On the independent 164-image held-out benchmark (CGHD photographs, reference nets derived from
+CGHD v12 annotations) it scores **0.711** and again beats every baseline; end to end with the
+trained detector on the 31 images it scores **0.627** (missed components cost most). With
+annotated boxes, annotated wires give the same micro-F1 as detected wires (0.890; macro 0.916) on
+the 31 clean benchmark copies. That is conditional on annotated boxes and clean copies: on the
+held-out photographs wire extraction is the main error source.
 `degree_budget`/`graph_rescue` remain as fallbacks.
 Eval tooling under `wire_detection/benchmark/` (join_eval_real_f1, join_variant_search,
 cc_baseline, cc_baseline_detected, detection_ceiling, build_verified_gt); results in
@@ -286,50 +299,34 @@ registry-based. `DEFAULT_STRATEGY = "scale_completion"` (promoted Jun 2026; was
 
 Full details: `docs/research/join-verification.md`
 
-## IEEE resubmission — active work (Sept 2026, read before touching the manuscript)
+## IEEE Access resubmission (Access-2026-33821) — current state
 
-- **Work line:** `revision/access-2026-33821` — all T1–T8 edits land here.
-- **Plan:** `IMPLEMENTATION_PLAN.md` on branch `audit/access-2026-33821`
-  (D1–D4 verdicts, per-comment specs, OPEN items). Team brief: `TEAM_REPORT_20260907.pdf`.
-- **Fork source:** `tkprnv/review/ieee-access-revision-2026-09` (`10c1b92`). Shares NO git
-  history with this line — hand-port prose/artifacts file by file; never merge or rebase.
-- **Issues #81–88** track T1–T8 + closeout with acceptance checks.
-- **Paper agent notes** (`paper/ieee-paper/AGENTS.md`) carry the resubmission framing and
-  banned claims — obey them over the older sections below where they conflict.
-- **Banned until human sign-off:** author/funding/bio edits, pushes off the merge line,
-  email, PDF judgments beyond mechanical checks.
+Read `paper/ieee-paper/AGENTS.md` before touching the manuscript.
 
-## IEEE Paper (current state)
-
-- **Venue:** IEEE Access submission. **Title:** "From Hand-Drawn Schematics to SPICE Netlists:
-  A Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified Connectivity
-  Benchmark".
-- **Two synchronized LaTeX sources — keep in sync:** `paper/ieee-paper/paper-build.tex` (local
-  IEEEtran build, compiles with stock TeX Live) and `paper/ieee-paper/paper-access.tex` (Overleaf
-  "IEEE Access" template, needs `ieeeaccess.cls`).
-- **Figures:** the three concept figures are native TikZ
-  (`paper/ieee-paper/figures/{pipeline_overview,endpoint_graph,completion}_tikz.tex`, `\input` from
-  both `.tex`). Data bar charts are matplotlib: `generate_concept_figures.py` (wire_benchmark.pdf)
-  and `generate_join_comparison.py` (join_comparison.pdf). Fig 2 pipeline-examples (C37, C111) via
-  `generate_pipeline_examples.py`.
-- **Strategy naming in the paper is descriptive** (`scale_completion` → "scale-relative graph +
-  completion", `degree_budget` → "rescue graph + completion", `graph_scale`/`graph_rescue` →
-  "...graph (base)", `production` → "radius union-find (legacy)"); the code keeps the identifiers.
-- **Contribution framing:** full deterministic pipeline (occlusion-first wire extractor producing an
-  endpoint representation + endpoint-graph join + degree-budget completion) plus the first
-  human-verified net-level connectivity benchmark; the join is primary metric (micro-F1) with macro
-  reported alongside.
-- **Verified numbers (all re-run this session on claw + recomputed from result JSONs):** wire
-  detection F1 0.976 (a16); join scale_completion micro-F1 0.890 (P 0.919 / R 0.864, macro 0.901);
-  VLM Claude Opus 4.8 micro-F1 0.923 (exact on 21/31 images), paired VLM−ours diff +0.033, 95% CI
-  [−0.009, +0.078] (includes zero); component detection 88.5% mAP@0.5 (crossover recall 70.7%, the
-  weakest class). Synthetic L4 leaderboard scale_completion 0.95.
-- **claw verification:** `ssh claw@192.168.1.22` (intermittent), repo at `~/circuit-digitization`,
-  venv `./.venv/bin/python` (NOT uv); has CGHD data + YOLO model. Scripts:
-  `wire_detection/benchmark/{join_eval_real_f1,cc_baseline_detected,hough_baseline,detection_ceiling}.py`
-  and `wire_detection.synthgt`. Result JSONs in `docs/research/experiments/`.
-- **Remaining open items are author-only:** ORCIDs, author bios, funding line, publication dates, and
-  the exact `ieeeaccess.cls` render on Overleaf.
+- **Work line:** `main` (tags hold frozen records; see `BRANCHES.md`).
+- **Title:** "From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline
+  with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark". Output is a
+  structural netlist; no component values or device models.
+- **Sources:** `paper/ieee-paper/paper-access.tex` (submission) and `paper-build.tex` (local
+  IEEEtran); keep bodies in sync.
+- **Package:** `paper/ieee-paper/review_artifacts/submission/`, rebuilt by
+  `bash paper/ieee-paper/rebuild_submission.sh`. The highlighted PDF diffs against the
+  portal-submitted source `paper/ieee-paper/review_artifacts/baseline/submitted_manuscript_portal.zip`.
+- **Conventions:** component-pair micro-F1 is primary (macro alongside); connectivity is read from
+  drawn wires only (terminals and supply symbols are wire ends).
+- **Verified key numbers:** join micro-F1 0.890 on 31 human-verified images (Holm-significant vs
+  every deterministic baseline); 0.711 on 164 held-out CGHD photographs from 24 drafters (0.709 on
+  the 139 without wire-benchmark overlap); reference audit 37/40 draws scored, reference micro-F1
+  0.988, no false pairs; end to end 0.627 (old 0.247 was a class-index bug); rescaling 0.35–3×;
+  VLM 0.923, pooled difference not significant, VLM better per image; wire F1 0.976 best / 0.973
+  deployed; detector mAP@0.5 89.0%. Details: `docs/research/experiments/SUMMARY.md` (Revision 2).
+- **Licences:** code + own annotations MIT; CGHD-1152-derived CC BY 4.0; CGHD v12-derived
+  reference/audit nets CC BY-SA 4.0 (`ground_truth/LICENSE`).
+- **Remaining (author-only):** portal upload; response-letter signatory and coauthor consent.
+- **claw** (`ssh claw@192.168.1.22`, intermittent): repo at `~/circuit-digitization`, venv
+  `./.venv/bin/python` (not uv); has CGHD-1152, CGHD v12 (`~/cghd_orig/cghd`) and the YOLO model.
+  Revision-2 scripts: `wire_detection/benchmark/revision2/`; how to run them:
+  `docs/reproducing-the-paper.md` §5.
 
 ## Shared Component-Assignment Logic (MANDATORY)
 

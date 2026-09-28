@@ -3,7 +3,7 @@ message: >-
   If you use this software or benchmark, please cite both the software
   (this repository) and the paper (the preferred citation below).
 title: >-
-  Circuit Digitization: a deterministic hand-drawn-schematic-to-SPICE
+  Circuit Digitization: a deterministic hand-drawn-schematic-to-structural-netlist
   pipeline with an endpoint-graph wire join and a human-verified
   connectivity benchmark
 type: software
@@ -49,8 +49,8 @@ keywords:
 preferred-citation:
   type: article
   title: >-
-    From Hand-Drawn Schematics to SPICE Netlists: A Deterministic
-    Pipeline with Endpoint-Graph Wire Joining and a Human-Verified
+    From Hand-Drawn Schematics to Structural Circuit Netlists: A
+    Deterministic Pipeline with Endpoint-Graph Wire Joining and a Human-Verified
     Connectivity Benchmark
   authors:
     - given-names: Bosco

@@ -3,7 +3,11 @@
 > **Archived snapshot, not current instructions or metrics.** The released detector checkpoint
 > has mAP@0.5 = 89.0%, not the 88.5% final-epoch figure below. The Access PDF now builds locally.
 > Use `paper/ieee-paper/paper-access.tex`, `docs/benchmark-provenance.md` and
-> `docs/research/experiments/detector/README.md` for current claims.
+> `docs/research/experiments/detector/README.md` for current claims. Also withdrawn since this
+> snapshot: the "statistically indistinguishable from a frontier VLM" framing (the VLM is better per
+> image), "detection is not the bottleneck" (end to end is 0.627), the SPICE-netlist title, and the
+> N=31-only benchmark framing (a 164-image held-out benchmark now exists). Current numbers:
+> `docs/research/experiments/SUMMARY.md` (Revision 2).
 
 ## UPDATE 2026-06-28 (paper finalization): reframing, TikZ figures, full re-verification
 

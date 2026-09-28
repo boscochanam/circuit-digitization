@@ -1,96 +1,86 @@
 # IEEE Paper — Agent Instructions
 
-> Revision state, Sept 2026. Supersedes the 2026-06-29 orientation below in every
-> place they conflict. Numbers still trace to `docs/research/experiments/`
-> (`SUMMARY.md`, `ieee-access-session-handoff.md`); prose framing follows the
-> resubmission — scope discipline, no overclaims.
+> Current state, 2026-09-29: revised manuscript for IEEE Access **Access-2026-33821**, ready for
+> upload. Numbers trace to `docs/research/experiments/SUMMARY.md` (section "Revision 2") and the
+> JSONs under `docs/research/experiments/revision2/`. Open items:
+> `review_artifacts/OPEN_POINTS.md`.
 
-## Active work (do this first)
+## Current state
 
-- **Work line:** `main` — all remaining edits land here. Old `revision/*` lines are deleted.
-- **Plan (read before touching the manuscript):** `IMPLEMENTATION_PLAN.md` in tag `audit/evidence-20260908` (D1–D4 verdicts, per-comment specs). Full evidence in that tag's scratch JSONs.
-- **Fork source:** `tkprnv/review/ieee-access-revision-2026-09` (`10c1b92`) — already hand-ported (see `REVIEW_CHANGES.md` ledger); do not re-port.
-- **Issues #83–88** track the remaining tasks (#81 T1 and #82 T2 closed). Close an issue only when its acceptance check passes.
-- **Banned until human sign-off:** author names/affiliations/funding/bios edits, email, PDF judgments beyond mechanical checks, pushes altering the v1.0.x tags.
+- **Work line:** `main`. Records are frozen as tags (`audit/evidence-20260908`, `v1.0.0`,
+  `v1.0.1`); see `BRANCHES.md`.
+- **Sources (keep bodies in sync):** `paper-access.tex` (IEEE Access kit, the submission source)
+  and `paper-build.tex` (IEEEtran, local `pdflatex`). Any body edit goes into both.
+  `paper.tex` is a superseded draft; do not edit.
+- **Title:** "From Hand-Drawn Schematics to Structural Circuit Netlists: A Deterministic Pipeline
+  with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark". The output is a
+  structural netlist; the pipeline reads no component values or device models, and simulation of
+  real scans is not evaluated.
+- **Submission package:** `review_artifacts/submission/` (manuscript-clean.pdf,
+  manuscript-highlighted.pdf, highlight-change-index.pdf, response-to-reviewers.pdf,
+  paper-access-overleaf.zip). Rebuild everything with `bash rebuild_submission.sh` (needs
+  pdflatex, git, uv).
+- **Highlight baseline:** the portal-submitted source,
+  `review_artifacts/baseline/submitted_manuscript_portal.zip`. Not commit `33f5e3d`.
+- **Response letter:** `review_artifacts/RESPONSE_TO_REVIEWERS.md` → PDF via
+  `build-response-pdf.py`.
 
-## Live sources (keep the two in sync)
+## Conventions
 
-- **`paper-access.tex`** — IEEE Access template (Overleaf). Submission source.
-- **`paper-build.tex`** — IEEEtran, for local `pdflatex` builds. Same body as
-  `paper-access.tex`; only the preamble/front-matter differs. **Any body edit
-  must be applied to BOTH.**
-- `paper.tex` — superseded single-file draft (old framing/title). Not built; kept
-  only as history. Do not edit; prefer archiving it.
+- Primary metric: component-pair **micro-F1** (pairs of electrical components R/C/L/D/Q/V/IC
+  sharing a net, pooled over images); macro-F1 alongside.
+- Connectivity is read from drawn wires only: terminals and supply symbols are wire ends;
+  identically labeled supplies are not merged by label.
+- Every join receives annotated component boxes and its own detected wires unless stated
+  (end to end is the exception).
+- Strategy names are descriptive in the paper, identifiers in code: `scale_completion` → "scale-
+  relative graph + completion" (ours), `degree_budget` → "rescue graph + completion",
+  `graph_scale` / `graph_rescue` → "... graph (base)", `production` → "radius union-find
+  (legacy)".
+- A CI that includes zero means "not significant", not "equivalent". Do not call ours and the VLM
+  "statistically indistinguishable": the VLM is better per image (Wilcoxon Holm p = 0.030).
 
-## Title
+## Verified key numbers
 
-**LOCKED (D2, 2026-09-08).** Title: "From Hand-Drawn
-Schematics to **Structural Circuit Netlists** …" — applied in both sources including running heads. Do NOT ship "SPICE netlists" /
-"simulation-ready" product claims anywhere — the pipeline reads no
-component values.
+- Human-verified benchmark (31 images): ours **0.890** (P 0.919 / R 0.864, macro 0.901,
+  418/37/66). Rescue + completion 0.829, scale-relative base 0.816, rescue base 0.787, radius
+  union-find 0.667, Hough 0.805, CCL 0.624. All margins significant after Holm. VLM (Claude Opus
+  4.8) 0.923; ours − VLM −0.033 [−0.078, +0.008], not significant on micro-F1.
+- Held-out benchmark (164 CGHD photographs, 24 of 25 drafters, reference nets from CGHD v12
+  stroke maps + symbol polygons): ours **0.711** [0.671, 0.748]; beats every baseline (Holm
+  p = 0.0006). Without the 25 wire-benchmark overlaps (139): 0.709. Reference vs human nets on
+  17 overlaps: 0.939.
+- Audit of 40 random held-out draws: 37 scored (23 human, 11 blind-model-matched, 3
+  model-adjudicated; 3 densest excluded); reference micro-F1 0.988, no false pairs; median 85 s
+  per human check.
+- Extended scoring (164): extended components 0.709, switches closed 0.712, grounds merged
+  0.679, all three 0.676; ours first in each.
+- End to end with the trained detector (conf 0.5): **0.627**. The old 0.247 was a class-index
+  mapping bug.
+- Rescaling 0.35–3×: join with annotated wires within ±0.005 of native from 0.5× to 3×; −0.035
+  at 0.35×.
+- Wire extraction (134 images): F1 0.976 best variant, 0.973 deployed setting. Detector mAP@0.5
+  89.0% (released `best.pt`; 88.5% is the non-distributed final epoch); crossover recall 70.7%.
+- Synthetic L4: ours 0.95, radius union-find 0.36.
+- Image provenance: 704×704 benchmark copies are non-aspect-preserving Roboflow resizes; 14/31
+  re-oriented; 16/31 and 45/134 are CGHD stroke maps.
 
-**Authors (matches committed manuscript; changes need written consent of all):**
-Bosco Chanam, Chris Dcosta, Pranavesh Kumar Talupuri, Shwetambari A. Chiwhane,
-Ashay Kumar Singh, Arghadeep Das.
+## Licences (see `ground_truth/LICENSE`)
 
-## Framing (resubmission discipline — violations fail the one-shot review)
-
-- Structural component-pair connectivity on one hand-drawn corpus (CGHD-1152, N=31
-  human-verified). Micro-F1 primary, macro alongside.
-- The VLM run is an **oracle-component-box diagnostic**, not an end-to-end comparison.
-  Never write "fair," "statistically indistinguishable" as equivalence, cost multiples
-  (100–1000x), or geometric-superiority claims.
-- A CI that includes zero establishes **nonsignificance, not equivalence**.
-- No global short-free / structurally-valid-by-construction guarantees.
-- GT-box wire results do not transfer to autonomous end-to-end claims (provisional
-  detected-box join micro-F1 0.247, no CIs).
-
-## Key numbers (values verified; interpretations per resubmission)
-
-- **Wire detection F1 = 0.976** (134 CGHD-1152 images; see ledger: 0.9755 = dedup
-  10°/18px config, 12°/8px gives 0.9726 — label each table; Otsu stays 0.789).
-- **Real net-level GT: N=31 human-verified** (`ground_truth/real_nets_verified.json`).
-  Join micro-F1 (detected wires, GT component boxes):
-  - **scale_completion (default) = 0.890** (P 0.919, R 0.864, macro 0.901)
-  - degree_budget 0.829 · graph_scale 0.816 · graph_rescue 0.787 · radius/production 0.667
-  - classical baselines: Hough+proximity 0.805 · connected-components 0.624
-  - **perfect wires = 0.8898** (rounds to 0.890; conditional on annotated boxes —
-    NOT proof about the autonomous bottleneck).
-- **Synthetic L4 leaderboard:** scale_completion 0.95 ≥ degree_budget 0.94 ≥
-  graph_rescue 0.90 ≥ graph_scale 0.85; radius union-find 0.36.
-- **VLM (Claude Opus 4.8)** on the same 31: micro-F1 **0.923** (P 0.97, R 0.88,
-  macro 0.949), exact on 21/31. Paired diff +0.033, 95% CI [−0.009, +0.078].
-- **Component detection:** 88.5% mAP@0.5 (16 classes; crossover recall 70.7%).
-- **Reach sweep is macro** 0.895–0.903 (not 0.898–0.903).
-
-## Default join strategy
-
-`DEFAULT_STRATEGY = "scale_completion"` (`wire_detection/core/join_strategies.py`):
-high-precision scale-relative endpoint-graph base (no end-extension / dead-end
-rescue) + degree-budget floating-pin completion at reach 4×scale. `degree_budget`
-and `graph_rescue` remain registered as fallbacks/ablations.
-
-**Strategy names are descriptive in the paper** (code keeps the identifiers):
-`scale_completion` → "scale-relative graph + completion"; `degree_budget` →
-"rescue graph + completion"; `graph_scale`/`graph_rescue` → "...graph (base)";
-`production` → "radius union-find (legacy)".
+Code and own annotations MIT; CGHD-1152-derived overlays and component labels CC BY 4.0; CGHD
+v12-derived reference and audit nets CC BY-SA 4.0.
 
 ## Figures
 
-- Concept diagrams are **native TikZ**: `figures/{pipeline_overview,endpoint_graph,completion}_tikz.tex` (`\input` from both `.tex`).
-- Data bar charts (matplotlib): `figures/{wire_benchmark,join_comparison,real_join_comparison}.pdf`.
-- Pipeline examples (Fig 2): C37 + C111 panels — counts must be tied to the generator's
-  exact image/config, never copied from the benchmark.
-- Ablation table: fixed-pixel base 0.820 beats scale-relative 0.816 here; full-pipeline
-  ties at 0.890 are a negative result, not proof mechanisms are dispensable.
+- Concept diagrams: native TikZ `figures/{pipeline_overview,endpoint_graph,completion}_tikz.tex`.
+- Data charts (matplotlib): `figures/{wire_benchmark,join_comparison,real_join_comparison,rescale_robustness}.pdf`.
+- Graphical abstract: `generate_graphical_abstract.py` (660×295, under 45 KB).
+- Pipeline examples (Fig. 2): C37 + C111 via `generate_pipeline_examples.py`; counts come from
+  the generator's exact config, never from the benchmark tables.
 
-## Component detection model
+## Remaining (author-only)
 
-- `models/component_detection/yolo26m_obb_16class_aug.pt`
-- HuggingFace: <https://huggingface.co/boscochanam/circuit-component-detector>
-
-## Still author-owed (before submission — humans only, T8)
-
-ORCIDs, author biographies, funding/acknowledgment line, publication dates, byline
-consent, and the exact `ieeeaccess.cls` render on Overleaf (local cls incompatible
-with TeX Live 2023).
+- Portal upload.
+- Signatory of the response letter (currently Bosco Chanam on behalf of all authors) and
+  coauthor consent to the revised manuscript.
+- Author names, affiliations, funding and bios change only with written consent of all authors.

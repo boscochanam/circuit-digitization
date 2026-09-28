@@ -13,6 +13,10 @@ Numbers: `REWRITE_SPEC_R2.md` → `docs/research/experiments/revision2/`.
 - [x] **Overleaf**: not needed; local build uses the official IEEE Access kit.
 - [ ] Portal upload.
 
+## Known gaps (optional)
+- Mechanism ablations (Table 9: occlusion off, guard off, witness required) were run in Sept 2026 scratch worktrees; the numbers are consistent across manuscript, response and REVIEW_CHANGES.md, but the per-image raw outputs and the ablation driver are not committed. Re-create if a reviewer asks for them.
+- Zenodo archive v1.0.1 predates the revision; mint a new release after acceptance if desired.
+
 ## Resolved in this round
 - Provisional end-to-end 0.247 was a class-index mapping bug; real end-to-end 0.627 (Sec. V-G).
 - Benchmark image provenance (stretch, re-orientation, 16/31 and 45/134 stroke maps) disclosed (Sec. IV-A).

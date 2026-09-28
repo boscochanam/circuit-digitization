@@ -29,7 +29,7 @@ Dataset: 134 CGHD-1152 images that have both ground-truth wire labels and compon
 
     | Eval | Best F1 | Ground-truth matching | Status |
     |---|---|---|---|
-    | **a16** (this page) | **0.9755** | Exact-match labels on the original images | **Current. Paper Table I.** |
+    | **a16** (this page) | **0.9755** | Exact-match labels on the 704×704 benchmark copies | **Current. Paper Table IV (best variant; deployed 0.973).** |
     | `best_candidate_v4` | 0.8334 | Filename prefix matching (looser GT alignment) | Superseded; kept for history |
 
     The older prefix-match evaluation, with its full 36-config ranking, per-image breakdown and
@@ -43,7 +43,15 @@ Dataset: 134 CGHD-1152 images that have both ground-truth wire labels and compon
     ground-truth matching: prefix matching could attach labels from a Roboflow-augmented copy of an
     image (a different coordinate space) to the original image.
 
-### Top configs (Jun 2026, corrected eval — exact-match labels on original images)
+### Top configs (Jun 2026, corrected eval — exact-match labels on the benchmark copies)
+
+The "original images" here are the 704×704 Roboflow identity copies the labels were drawn on,
+not full-resolution CGHD originals: the export resized each original without preserving aspect
+ratio, and 45 of the 134 copies are CGHD binary stroke maps rather than photographs
+(`docs/research/experiments/revision2/image_modality.json`). a16 uses 10°/18 px overlap dedup;
+the **deployed** 12°/8 px setting, used in every other experiment, scores **0.973**
+(`revision2/wire_rerun_deployed.json`). The manuscript reports both (0.976 best variant, 0.973
+deployed); by modality the deployed extractor scores 0.967 on photographs and 0.986 on stroke maps.
 
 Primary artifacts, recovered from the machine that produced them and committed 2026-07-08:
 
@@ -127,10 +135,34 @@ alongside.
 | Connected-component net tracing (identical detected wires) | 0.624 |
 | Hough + proximity | 0.805 |
 
-Measured on the 31-image human-verified net-GT. The result is validated on independent synthetic
-ground truth as well, which rules out bootstrap bias. Detection is **not** the bottleneck: on
-perfect ground-truth wires the **micro-F1 is unchanged at 0.890** (macro +0.015 to 0.916).
+Measured on the 31-image human-verified net-GT with annotated component boxes; every margin over a
+deterministic baseline is significant after Holm correction
+(`research/experiments/revision2/stats_strata_n31.md`). With annotated wires instead of detected
+ones the micro-F1 is the same 0.890 (macro 0.916). That holds only with annotated boxes on these
+clean benchmark copies; it does not mean detection is free end to end (see below).
 `degree_budget` and `graph_rescue` remain registered as fallbacks.
+
+> **Historical wording, withdrawn.** Earlier revisions said "detection is not the bottleneck" and
+> called the VLM comparison "statistically indistinguishable". Both are superseded: end to end with
+> the trained detector the join scores 0.627, and the VLM (0.923) is better per image (Wilcoxon
+> Holm p = 0.030) although the pooled micro-F1 difference is not significant.
+
+### Held-out benchmark, audit and end to end (revision 2, Sept 2026)
+
+- **Held-out benchmark:** 164 clean CGHD photographs from 24 of 25 drafters, not used to develop
+  the join, with reference nets derived from CGHD v12 (Zenodo 10056817) stroke maps and symbol
+  polygons (`ground_truth/cghd_ref/cghd_ref_nets.json`, CC BY-SA 4.0). Ours 0.711 [0.671, 0.748];
+  every baseline lower (Holm p = 0.0006). 139 images without wire-benchmark overlap: 0.709.
+  Extended scoring conventions: 0.676–0.712. Artifacts: `revision2/cghd_ref_benchmark.{md,json}`,
+  `revision2/cghd_ref_extended_scoring.{md,json}`.
+- **Reference audit:** 40 random draws; 37 scored (23 human-checked, 11 blind-model-matched, 3
+  model-adjudicated; 3 densest excluded). Reference micro-F1 0.988 against the final nets, no
+  false pairs. `revision2/cghd_audit_results.json`, `ground_truth/cghd_ref_audit/`.
+- **End to end:** trained detector on the CGHD original, conf 0.5: 0.627. The earlier 0.247 in
+  `revision_evidence/detected_boxes_results.md` came from a hardcoded class-index table in the old
+  script and is withdrawn. `revision2/e2e_detected_n31.{md,json}`.
+- **Rescaling:** 0.35–3×; with annotated wires the join stays within ±0.005 of native from 0.5× to
+  3×. `revision2/rescale_n31.{md,json}`.
 
 ### Evaluation tooling
 

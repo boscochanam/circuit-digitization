@@ -1,5 +1,10 @@
 # Detected-box join eval (N=31)
 
+> **Historical, withdrawn (Sept 2026).** Produced by `detected_boxes_eval.py` before the class-name
+> fix (b2e245f); the hardcoded class-index table makes these numbers a bug. Current end-to-end
+> results (detector on the CGHD original): 0.613 at conf 0.25, 0.627 at conf 0.5. See
+> `../revision2/e2e_detected_n31.md`.
+
 Model: `models/component_detection/yolo26m_obb_16class_aug.pt` conf=0.25, IoU match thresh=0.3
 
 Runtime: 36.2s total, 1.17s/image
