@@ -244,15 +244,16 @@ The netlist pipeline lives in `wire_detection/api/routes/netlist.py` (`/api/netl
 human-verified net-level GT. **`scale_completion`** (high-precision scale-relative
 endpoint-graph base + degree-budget floating-pin completion at reach 4×scale) is the
 promoted default since Jun 2026. Primary metric is **micro-F1** (pair-level, pooled across
-images; macro reported alongside): **connectivity micro-F1 0.890** (P 0.919 / R 0.864,
-macro 0.901) on the 31-image human-verified net-GT, vs micro 0.829 for the prior
-`degree_budget` default (completion on the graph_rescue base), 0.816 graph_scale, 0.787
-graph_rescue, 0.667 production, and 0.624 for connected-component net tracing on identical
-detected wires (Hough+proximity 0.805).
+images; macro reported alongside): **connectivity micro-F1 0.884** (P 0.895 / R 0.873,
+macro 0.896) on the 31-image human-verified net-GT, vs micro 0.814 for the prior
+`degree_budget` default (completion on the graph_rescue base), 0.812 graph_scale, 0.777
+graph_rescue, 0.645 production, and 0.597 for connected-component net tracing on identical
+detected wires (Hough+proximity 0.782). (Numbers after the 2026-10-05 label correction:
+plain crossings are not connections; C112, C242, C66, C15 corrected.)
 On the independent 164-image held-out benchmark (CGHD photographs, reference nets derived from
 CGHD v12 annotations) it scores **0.711** and again beats every baseline; end to end with the
-trained detector on the 31 images it scores **0.627** (missed components cost most). With
-annotated boxes, annotated wires give the same micro-F1 as detected wires (0.890; macro 0.916) on
+trained detector on the 31 images it scores **0.602** (missed components cost most). With
+annotated boxes, annotated wires give the same micro-F1 as detected wires (0.883; macro 0.912) on
 the 31 clean benchmark copies. That is conditional on annotated boxes and clean copies: on the
 held-out photographs wire extraction is the main error source.
 `degree_budget`/`graph_rescue` remain as fallbacks.
@@ -313,12 +314,15 @@ Read `paper/ieee-paper/AGENTS.md` before touching the manuscript.
   `bash paper/ieee-paper/rebuild_submission.sh`. The highlighted PDF diffs against the
   portal-submitted source `paper/ieee-paper/review_artifacts/baseline/submitted_manuscript_portal.zip`.
 - **Conventions:** component-pair micro-F1 is primary (macro alongside); connectivity is read from
-  drawn wires only (terminals and supply symbols are wire ends).
-- **Verified key numbers:** join micro-F1 0.890 on 31 human-verified images (Holm-significant vs
-  every deterministic baseline); 0.711 on 164 held-out CGHD photographs from 24 drafters (0.709 on
-  the 139 without wire-benchmark overlap); reference audit 37/40 draws scored, reference micro-F1
-  0.988, no false pairs; end to end 0.627 (old 0.247 was a class-index bug); rescaling 0.35–3×;
-  VLM 0.923, pooled difference not significant, VLM better per image; wire F1 0.976 best / 0.973
+  drawn wires only (terminals and supply symbols are wire ends). A plain crossing (no dot, or a
+  hop) is **not** a connection; a wire ending on another wire **is**, dot or not.
+- **Verified key numbers (after the 2026-10-05 label correction of C112, C242, C66, C15):** join
+  micro-F1 0.884 on 31 human-verified images (Holm-significant vs every deterministic baseline);
+  0.711 on 164 held-out CGHD photographs from 24 drafters (0.709 on the 139 without wire-benchmark
+  overlap); reference vs human nets on 17 overlaps 0.971, no false pairs; audit 37/40 draws, all
+  37 human-checked, reference micro-F1 0.999, no false pairs; end to end 0.602 (old 0.247 was a
+  class-index bug); rescaling 0.35–3×; VLM 0.946, significantly better than ours pooled and per
+  image; wire F1 0.976 best / 0.973
   deployed; detector mAP@0.5 89.0%. Details: `docs/research/experiments/SUMMARY.md` (Revision 2).
 - **Licences:** code + own annotations MIT; CGHD-1152-derived CC BY 4.0; CGHD v12-derived
   reference/audit nets CC BY-SA 4.0 (`ground_truth/LICENSE`).

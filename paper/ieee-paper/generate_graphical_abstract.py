@@ -27,7 +27,7 @@ stages = [("Input image", "hand-drawn scan", "#e6e6e6"),
           ("Structural\nnetlist", "pin-to-node map", "#dcefe0")]
 
 methods = ["Ours", "Rescue + compl.", "Hough + prox.", "Conn. comp.", "Radius u-f"]
-human31 = [0.890, 0.829, 0.805, 0.624, 0.667]
+human31 = [0.884, 0.814, 0.782, 0.597, 0.645]
 held164 = [0.711, 0.659, 0.480, 0.594, 0.518]
 
 fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI)

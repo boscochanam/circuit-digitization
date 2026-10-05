@@ -1,5 +1,7 @@
 # Drafter Mapping for 31-Image Benchmark (IEEE Access R1-1 / R1-5)
 
+> **Label correction, 2026-10-05.** Four images of the 31-image human-verified benchmark were corrected (plain crossings are not connections; C112, C242, C66, C15). Numbers in this file that depend on the 31-image nets predate the correction; the current values (e.g. ours 0.884, VLM 0.946, end to end 0.602, reference vs human 0.971) are in `docs/research/experiments/SUMMARY.md` (Revision 2) and the paper. Regenerated JSON next to this file is current.
+
 ## Source of truth (updated 2026-09-26)
 
 **Current:** the published Kaggle CGHD-1152 v14 file index (8,139 paths, fetched with

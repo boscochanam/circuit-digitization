@@ -8,12 +8,12 @@ that returns segments with explicit endpoints, a typed endpoint-graph join with 
 tolerances, and degree-budget completion of floating pins. No learned connectivity model is in
 the loop.
 
-With annotated component boxes, the join reaches component-pair micro-F1 **0.890** on 31
+With annotated component boxes, the join reaches component-pair micro-F1 **0.884** on 31
 CGHD-1152 images with human-verified nets (where its configuration was selected) and **0.711** on
 164 held-out CGHD photographs from 24 of the corpus's 25 drafters, whose reference nets are
 derived from the dataset's own stroke maps and symbol polygons. On both benchmarks it beats every
 deterministic baseline in paired tests with Holm correction. End to end with the trained
-component detector it scores **0.627**, and the largest share of that loss comes from missed components.
+component detector it scores **0.602**, and the largest share of that loss comes from missed components.
 
 ![Pipeline and results overview](paper/ieee-paper/figures/graphical_abstract.jpg)
 
@@ -37,28 +37,30 @@ detected wires unless noted. Provenance for every number:
 
 | Measurement | Human-verified (31) | Held-out (164) |
 |---|---|---|
-| **Ours** (scale-relative graph + completion) | **0.890** (P 0.919 / R 0.864) | **0.711** (P 0.766 / R 0.664) |
-| Rescue graph + completion (prior default) | 0.829 | 0.659 |
-| Scale-relative graph (base) | 0.816 | 0.595 |
-| Hough + proximity | 0.805 | 0.480 |
-| Radius union-find (legacy) | 0.667 | 0.518 |
-| Connected components on detected wires | 0.624 | 0.594 |
-| VLM reference (Claude Opus 4.8, same electrical boxes) | 0.923 | not run |
+| **Ours** (scale-relative graph + completion) | **0.884** (P 0.895 / R 0.873) | **0.711** (P 0.766 / R 0.664) |
+| Rescue graph + completion (prior default) | 0.814 | 0.659 |
+| Scale-relative graph (base) | 0.812 | 0.595 |
+| Hough + proximity | 0.782 | 0.480 |
+| Radius union-find (legacy) | 0.645 | 0.518 |
+| Connected components on detected wires | 0.597 | 0.594 |
+| VLM reference (Claude Opus 4.8, same electrical boxes) | 0.946 | not run |
 
 - **Significance.** Every margin over a deterministic baseline is significant after Holm
-  correction on both benchmarks. Against the VLM the pooled difference (−0.033, 95% CI
-  [−0.078, +0.008]) is not significant; per image the VLM is better (13 wins vs 7, Wilcoxon
-  Holm p = 0.030).
+  correction on both benchmarks. The VLM is significantly better than ours: pooled −0.062, 95% CI
+  [−0.110, −0.013] (Holm p = 0.015), and per image (16 wins vs 4, Wilcoxon Holm p = 0.006).
+- **Labels.** In the 31-image nets a plain crossing (no dot) is not a connection and a wire ending
+  on another wire is. Four images were corrected on 2026-10-05 (C112, C242, C66, C15); all numbers
+  here use the corrected nets.
 - **Held-out robustness.** Dropping the 25 images that overlap the wire benchmark gives 0.709
   (139 images). Under extended scoring conventions (more device types scored, switches closed,
   grounds merged) ours stays first (0.676–0.712).
-- **Reference audit.** 40 held-out images drawn at random: 37 scored (23 checked by a human, 11
-  matched by a blind model pre-screen, 3 model-adjudicated; the 3 densest excluded). The derived
-  reference scores micro-F1 0.988 against the audited nets, with no false pairs.
-- **End to end** with the trained detector (conf 0.5): 0.627. An earlier figure of 0.247 came
+- **Reference audit.** 40 held-out images drawn at random: the 3 densest excluded, the other 37
+  all checked by a human. The derived reference scores micro-F1 0.999 against the audited nets,
+  with no false pairs.
+- **End to end** with the trained detector (conf 0.5): 0.602. An earlier figure of 0.247 came
   from a class-index mapping bug in an old script.
-- **Rescaling.** With annotated wires the join stays within 0.005 of native from 0.5× to 3×; it
-  drops 0.035 at 0.35×. With re-extracted wires, downscaling costs more because the extractor's
+- **Rescaling.** With annotated wires the join stays within 0.010 of native from 0.5× to 3×; it
+  drops 0.048 at 0.35×. With re-extracted wires, downscaling costs more because the extractor's
   parameters are in pixels.
 - **Wire extraction.** F1 0.976 (best of 36 variants) and 0.973 (deployed setting) on 134
   images. **Component detector:** mAP@0.5 89.0% on its validation split (crossover recall 70.7%).
@@ -67,7 +69,7 @@ detected wires unless noted. Provenance for every number:
 **Image provenance.** The 134- and 31-image benchmark copies are 704×704 Roboflow resizes that
 do not preserve aspect ratio; 14 of the 31 are also flipped or rotated, and 16 of 31 (45 of 134)
 are CGHD binary stroke maps, not photographs. The held-out benchmark uses the original CGHD
-photographs, and most of the 0.890 → 0.711 drop comes from that change of input.
+photographs, and most of the 0.884 → 0.711 drop comes from that change of input.
 
 ## Quickstart
 

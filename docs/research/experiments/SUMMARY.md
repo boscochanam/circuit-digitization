@@ -10,7 +10,19 @@ Connectivity is read from drawn wires only (terminals and supply symbols are wir
 reading). Joins receive annotated component boxes and the pipeline's own detected wires unless
 noted.
 
-## Revision 2 (Sept 2026)
+## Revision 2 (Sept 2026; 31-image numbers recomputed 2026-10-05)
+
+**Label correction, 2026-10-05.** The 31-image human-verified nets now follow one rule: a plain
+crossing (no dot, or a hop) is not a connection; a wire ending on another wire is, dot or not.
+C112_D1_P1, C242_D1_P1 and C66_D2_P4 had joined plain crossings (C66 also missed the LED49 to
+pin-7 link) and C15_D2_P2 missed the 555 GND/CV pins; all four are corrected in
+`ground_truth/real_nets_verified.json` (previous nets kept as `_nets_crossings_joined` /
+`_nets_before_label_fix`). Every 31-image number below was recomputed: rerunnable experiments
+were rerun locally and reproduce the pre-correction values exactly on the old nets; stored
+results that need claw-only data (VLM answers, e2e detector runs, the 17-overlap validation) were
+rescored from their stored pairs by `revision2/rescore_labels.py`. The edge/mechanism ablations,
+annotated wires, crossover deletion and reach sweep come from `revision2/n31_arms.py`
+(`revision2/n31_arms.json`, per-image pairs stored).
 
 Scripts: `wire_detection/benchmark/revision2/`. Results: `docs/research/experiments/revision2/`.
 Seeds: bootstrap 20260928, permutation 20260929; B = 10,000 image-level resamples; Holm
@@ -19,43 +31,44 @@ correction within each test type.
 ### Paired tests, strata, size dispersion (31 human-verified images)
 `revision2/stats_strata_n31.md` / `.json` (`stats_strata.py`; per-image Hough counts from
 `collect_per_image.py`, `per_image_inputs_n31.json`).
-- All paper numbers reproduce from per-image counts: ours 0.890 (P 0.919 / R 0.864, macro 0.901).
+- All paper numbers reproduce from per-image counts: ours 0.884 (P 0.895 / R 0.873, macro 0.896;
+  407/48/59).
 - Ours beats every deterministic comparator on every test after Holm: rescue graph + completion
-  +0.061 [+0.025, +0.100], scale-relative base +0.075, rescue base +0.103, radius union-find
-  +0.224, Hough (oracle-tuned) +0.086, CCL on detected wires (oracle-tuned) +0.267.
-- VLM (Claude Opus 4.8): ours −0.033 [−0.078, +0.008] on micro-F1, not significant (Holm p 0.12
-  bootstrap / 0.15 permutation). Per image the VLM is better (W/T/L 7/11/13, Wilcoxon Holm
-  p = 0.030). Do not call the two "statistically indistinguishable".
-- Leave-one-image-out: ours 0.885–0.900; no deletion flips the sign of any comparison.
+  +0.069 [+0.032, +0.107], scale-relative base +0.072, rescue base +0.107, radius union-find
+  +0.239, Hough (oracle-tuned) +0.102, CCL on detected wires (oracle-tuned) +0.287.
+- VLM (Claude Opus 4.8): 0.946; ours −0.062 [−0.110, −0.013], significant (Holm p 0.015
+  bootstrap / 0.020 permutation). Per image the VLM is better (ours W/T/L 4/11/16, Wilcoxon Holm
+  p = 0.006). Before the label correction the pooled gap (−0.033) was not significant.
+- Leave-one-image-out: ours 0.878–0.892; no deletion flips the sign of any comparison.
 - Complexity: F1 falls with electrical-component count for every method (ours Spearman
-  ρ = −0.53); the ≤5 vs ≥10 recall drop (−0.068) is not significant. On ≥10 components ours
-  beats the deterministic comparators by +0.078 to +0.106.
-- Size dispersion: max/min electrical diagonal vs F1, partial on count, ρ = −0.41 (p = 0.024);
-  similar for the VLM. Size relative to the scale anchor is uncorrelated with F1.
+  ρ = −0.52); the ≤5 vs ≥10 recall drop (−0.052) is not significant. On ≥10 components ours
+  beats the deterministic comparators by +0.084 to +0.127.
+- Size dispersion: max/min electrical diagonal vs F1, partial on count, ρ = −0.39 (p = 0.034);
+  weaker for the VLM (−0.28, p = 0.13). Size relative to the scale anchor is uncorrelated with F1.
 
 ### Controlled rescaling (31 images)
 `revision2/rescale_n31.md` / `.json` (`rescale_eval.py`, `methods.py`, `plot_rescale.py` →
 `paper/ieee-paper/figures/rescale_robustness.pdf`); `size_dispersion_n31.json`
 (`size_dispersion.py`); `synth_mixed_size.json` (`synth_mixed_size.py`).
-- Factors 0.35–3×. Join only (annotated wires): within ±0.005 of native from 0.5× to 3×;
-  −0.035 [−0.061, −0.005] at 0.35×. Radius union-find: 0.690 → 0.153 at 3×.
-- Full pipeline (wires re-extracted): 0.580 / 0.690 / 0.811 / 0.890 / 0.877 / 0.866 / 0.866.
+- Factors 0.35–3×. Join only (annotated wires): within ±0.010 of native from 0.5× to 3×;
+  −0.048 [−0.081, −0.010] at 0.35×. Radius union-find: 0.666 → 0.142 at 3×.
+- Full pipeline (wires re-extracted): 0.589 / 0.706 / 0.805 / 0.884 / 0.857 / 0.868 / 0.851.
   Downscaling loss comes from the pixel-valued extractor (241 of 675 segments found at 0.35×).
-- Fixed-pixel tolerances in the same algorithm stay within 0.016 between 0.5× and 2×; most of
+- Fixed-pixel tolerances in the same algorithm stay within 0.021 between 0.5× and 2×; most of
   the scale robustness comes from component-relative assignment plus completion.
 - Synthetic mixed-size: enlarging one component costs ~0.005; shrinking one costs 0.012.
 
 ### End to end with the trained detector (31 images)
 `revision2/e2e_detected_n31.md` / `.json` (`e2e_detected.py`, `stretch_check.py` →
 `stretch_check_n31.json`, `make_e2e_md.py`).
-- Detector on the EXIF-corrected CGHD original at 1024 px, conf 0.5: micro-F1 **0.627**
-  [0.519, 0.731] (P 0.603 / R 0.653). Electrical detection P/R/F1 0.886 / 0.858 / 0.872.
-- Sequential decomposition of the −0.263 gap: missed components −0.131, spurious detections
-  −0.072, localization −0.043, classification −0.017.
+- Detector on the EXIF-corrected CGHD original at 1024 px, conf 0.5: micro-F1 **0.602**
+  [0.497, 0.709] (P 0.569 / R 0.639). Electrical detection P/R/F1 0.886 / 0.858 / 0.872.
+- Sequential decomposition of the −0.282 gap: missed components −0.142, spurious detections
+  −0.070, localization −0.052, classification −0.018.
 - **The old 0.247 was a bug**: `detected_boxes_eval.py` at fe109ec relabelled classes with a
   hardcoded index table that matched the checkpoint on 1 of 16 indices. The fixed script gives
   0.504 on the 704×704 copies (`e2e_old_script_*.json`).
-- Orientation: 0.491 on the 14 re-oriented benchmark copies vs 0.739 on the other 17.
+- Orientation: 0.481 on the 14 re-oriented benchmark copies vs 0.704 on the other 17.
 - All 13 annotated crossovers detected as crossovers; the e2e numbers are not held-out detector
   estimates (the training split manifest was not retained).
 
@@ -77,15 +90,18 @@ per-image raw outputs in `revision2/cghd_ref/`.
 - Reference nets derived from CGHD v12 (Zenodo 10056817) stroke maps + symbol polygons; 179 of
   257 images pass the quality checks; 164 clean images outside the 31 form the primary set
   (3874 reference pairs). Input: photo, long side 1024 (fixed on wire-level labels first).
-- Reference vs human nets on the 17 overlaps: micro-F1 0.939 (P 0.993 / R 0.891); 0.964 on the
-  15 clean ones.
+- Reference vs human nets on the 17 overlaps: micro-F1 0.971 (P 1.000 / R 0.944), exact on 12;
+  0.974 on the 15 clean ones. (0.939 before the label correction; the five pairs where the
+  reference was right are now fixed in the human nets.)
 - Ours **0.711** [0.671, 0.748] (P 0.766 / R 0.664, macro 0.724). Rescue graph + completion
   0.659, scale-relative base 0.595, rescue base 0.592, CCL 0.594, radius union-find 0.518, Hough
   0.480. Every difference Holm p = 0.0006 (test floor).
 - Robustness: strict held-out (155) 0.707; all 257 incl. unclean 0.626; stroke-map input 0.775.
   Per drafter 0.465–0.917 (median 0.709).
-- Gap 0.890 → 0.711 is mostly input modality (photo vs stroke map): on the 17 overlaps ours
-  scores 0.896 on the benchmark copies and 0.728 on photographs at long side 1024.
+- Gap 0.884 → 0.711 is mostly input modality (photo vs stroke map): on the 17 overlaps ours
+  scores 0.892 against the human nets on the benchmark copies, and the stored held-out
+  predictions on the photographs (CGHD boxes) score 0.720 (Hough 0.757). The input-ablation
+  photo arm with our boxes (0.728 on the old nets) needs the CGHD originals and was not rescored.
 
 ### Extended scoring conventions (164 / 139 images)
 `revision2/cghd_ref_extended_scoring.md` / `.json` (`cghd_eval_ext.py` →
@@ -101,19 +117,19 @@ per-image raw outputs in `revision2/cghd_ref/`.
 `revision2/cghd_audit_results.json` (`cghd_audit_score.py`); audited nets, timing log and model
 pre-screen in `ground_truth/cghd_ref_audit/` (`cghd_audit_export.py`, `cghd_audit_ui.py`,
 `cghd_audit_overlays.py`).
-- 37 scored: 23 human-verified, 11 blind-model-matched, 3 model-adjudicated; 3 densest (21–30
-  electrical components) excluded.
-- Reference vs final nets: micro-F1 **0.988** (P 1.000 / R 0.975; 853 pairs), exact on 32/37.
-  Human-checked 23 alone: 0.988, exact on 21.
-- Ours vs final nets 0.764; +0.055 [+0.026, +0.084] over rescue + completion.
-- Median human check 85 s per image (22 timed saves).
+- 37 scored, all human-verified; the 3 densest (136–173 annotated symbols, 21–30 electrical
+  components) excluded. The blind model pre-screen (18 images) matched 11 and differed on 4; the
+  human changed the reference on one of the four (C64_D1_P3).
+- Reference vs human nets: micro-F1 **0.999** (P 1.000 / R 0.998; 834 pairs), exact on 36/37.
+- Ours vs human nets 0.761; +0.058 [+0.030, +0.088] over rescue + completion.
+- Median check 77 s per image (32 timed first verified saves; re-saves excluded).
 
 ---
 
 # June 2026 join method study (historical)
 
 > Superseded where revision 2 disagrees. In particular: the "detection is not the bottleneck"
-> claim below is conditional on annotated component boxes and does not hold end to end (0.627 with
+> claim below is conditional on annotated component boxes and does not hold end to end (0.602 with
 > the trained detector); "statistically indistinguishable" and cost claims about the VLM are
 > withdrawn (see revision 2).
 

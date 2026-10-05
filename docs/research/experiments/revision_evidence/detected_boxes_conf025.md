@@ -1,5 +1,7 @@
 # Detected-box join eval (N=31)
 
+> **Label correction, 2026-10-05.** Four images of the 31-image human-verified benchmark were corrected (plain crossings are not connections; C112, C242, C66, C15). Numbers in this file that depend on the 31-image nets predate the correction; the current values (e.g. ours 0.884, VLM 0.946, end to end 0.602, reference vs human 0.971) are in `docs/research/experiments/SUMMARY.md` (Revision 2) and the paper. Regenerated JSON next to this file is current.
+
 > **Historical, withdrawn (Sept 2026).** Produced by `detected_boxes_eval.py` before the class-name
 > fix (b2e245f); the hardcoded class-index table makes these numbers a bug. Current end-to-end
 > results (detector on the CGHD original): 0.613 at conf 0.25, 0.627 at conf 0.5. See

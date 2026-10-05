@@ -1,5 +1,7 @@
 # Source change index and execution record — 8 September 2026
 
+> **Label correction, 2026-10-05.** Four images of the 31-image human-verified benchmark were corrected (plain crossings are not connections; C112, C242, C66, C15). Numbers in this file that depend on the 31-image nets predate the correction; the current values (e.g. ours 0.884, VLM 0.946, end to end 0.602, reference vs human 0.971) are in `docs/research/experiments/SUMMARY.md` (Revision 2) and the paper. Regenerated JSON next to this file is current.
+
 **Record boundaries:** The material through “Source hashes” is the inherited revision record already present at `cefe77b`; its checks and hashes describe that earlier pass. The T1/T3/T4 session records appended below govern the current worktree. Earlier source hashes are historical, not current freeze hashes.
 
 This records the authorized prose revision on `revision/access-2026-33821-merge-20260907`, starting at `212e872`. It is **not** a final reviewed-baseline diff, pagination index, rendered-page approval or submission-ready manifest. No algorithms, parameters, author/funding/bio fields, reruns, builds, pushes or email were changed/performed. The sole figure-content exception is the explicitly authorized text of `figures/pipeline_overview_tikz.tex:22`; all binary figures and other figure sources are unchanged.

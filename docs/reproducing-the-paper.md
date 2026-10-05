@@ -94,9 +94,12 @@ uv run python -m wire_detection.benchmark.vlm_connectivity_eval \
 **Honest caveat on N.** The committed raw responses
 (`wire_detection/benchmark/data/vlm_responses_real_e2e.json`) are the original
 **N=9** set (mean F1 ≈ 0.90). The paper's headline **N=31** VLM number
-(micro-F1 0.923) was produced by a later clean re-run whose *scored* per-image
-counts are committed as `docs/research/experiments/vlm_clean_rerun_n31.json`; the
-31 raw response bodies for that run are not all committed. The bootstrap step
+(micro-F1 0.946 on the corrected nets; 0.923 before the 2026-10-05 label correction) was
+produced by a later clean re-run whose *scored* per-image counts are committed as
+`docs/research/experiments/vlm_clean_rerun_n31.json`. The 31 raw response bodies are local
+session transcripts, not committed, but the nets each response returned are committed in
+`docs/research/experiments/vlm_clean_rerun_n31_nets.json`; every one reproduces its stored row.
+Nine of the 31 come from the earlier run's prompt wording, 22 from the later one. The bootstrap step
 below consumes the N=31 scored artifact directly.
 
 ### Bootstrap confidence intervals (committed artifacts only)
@@ -325,9 +328,9 @@ uv run python -m wire_detection.benchmark.revision2.stats_strata
 # -> revision2/stats_strata_n31.json
 ```
 
-Reads committed JSONs only. Expected: ours 0.890 (macro 0.901); ours − rescue
-graph + completion +0.061 [+0.025, +0.100]; ours − VLM −0.033 [−0.078, +0.008]
-(Holm p 0.12 bootstrap, 0.15 permutation, 0.030 Wilcoxon, W/T/L 7/11/13).
+Reads committed JSONs only. Expected: ours 0.884 (macro 0.896); ours − rescue
+graph + completion +0.069 [+0.032, +0.107]; ours − VLM −0.062 [−0.110, −0.013]
+(Holm p 0.015 bootstrap, 0.020 permutation, 0.006 Wilcoxon, W/T/L 4/11/16).
 The per-image Hough counts it consumes (`per_image_inputs_n31.json`) come from
 `collect_per_image.py`, which must run where the Roboflow labels match the
 committed identity labels (31/31 on claw; a local `roboflow_test2/` may not):
@@ -351,10 +354,10 @@ uv run python wire_detection/benchmark/revision2/synth_mixed_size.py \
 uv run python wire_detection/benchmark/revision2/plot_rescale.py      # figure
 ```
 
-Expected (`scale_completion`): arm A (annotated wires) 0.855 / 0.895 / 0.886 /
-0.890 / 0.888 / 0.887 / 0.887 at f = 0.35 / 0.5 / 0.75 / 1 / 1.5 / 2 / 3; arm B
-(re-extracted wires) 0.580 / 0.690 / 0.811 / 0.890 / 0.877 / 0.866 / 0.866. At
-f = 1, arm B reproduces 418/37/66. Runs are deterministic.
+Expected (`scale_completion`): arm A (annotated wires) 0.836 / 0.880 / 0.879 /
+0.883 / 0.886 / 0.894 / 0.891 at f = 0.35 / 0.5 / 0.75 / 1 / 1.5 / 2 / 3; arm B
+(re-extracted wires) 0.589 / 0.706 / 0.805 / 0.884 / 0.857 / 0.868 / 0.851. At
+f = 1, arm B reproduces 407/48/59. Runs are deterministic.
 
 ### 5.3 End to end with the trained detector (31 images, Table X)
 
@@ -376,7 +379,8 @@ python wire_detection/benchmark/revision2/make_e2e_md.py \
 ```
 
 Expected: detector on the original at conf 0.5 gives micro-F1 0.627
-(316/208/168); the annotated-box oracle through the same path gives 418/37/66
+(316/208/168) on the pre-correction nets, 0.602 (298/226/168) after
+`rescore_labels.py` (section 5.8); the annotated-box oracle through the same path gives 418/37/66 (407/48/59)
 (~95 s on claw CPU). The stretch check confirms the benchmark copies are
 non-aspect-preserving resizes (median correlation 0.998; 16/31 stroke maps,
 14/31 re-oriented). The earlier 0.247 is reproducible only with
@@ -412,7 +416,7 @@ uv run python -m wire_detection.benchmark.revision2.cghd_stats
 ```
 
 Expected: 179 of 257 images clean; reference vs human nets on the 17 overlaps
-micro-F1 0.939; held-out clean set 164 images / 3874 pairs; ours 0.711
+micro-F1 0.939 on the pre-correction nets (0.971 after `rescore_labels.py`); held-out clean set 164 images / 3874 pairs; ours 0.711
 [0.671, 0.748] (P 0.766 / R 0.664); rescue graph + completion 0.659, CCL 0.594,
 Hough 0.480; every Holm p = 0.0006. Strict held-out (155) 0.707; stroke-map
 input 0.775. `cghd_viz.py` draws debug overlays for chosen stems (do not commit
@@ -445,10 +449,34 @@ uv run python -m wire_detection.benchmark.revision2.cghd_audit_score            
 The committed audit lives in `ground_truth/cghd_ref_audit/`
 (`real_nets_working.json`, `timing_log.jsonl`, `model_check.json`,
 `sample.json`); overlays are local only. Scoring needs no images. Expected
-(`revision2/cghd_audit_results.json`): 37 of 40 scored (23 human-verified, 11
-blind-model-matched, 3 model-adjudicated; 3 densest excluded); reference vs
-final nets micro-F1 0.988 (P 1.000 / R 0.975), exact on 32; ours 0.764; median
-human check 85 s.
+(`revision2/cghd_audit_results.json`): 37 of 40 scored, all human-verified (3 densest
+excluded); reference vs human nets micro-F1 0.999 (P 1.000 / R 0.998), exact on 36; ours
+0.761; median check 77 s (first verified save per image). The UI colours each group's drawn
+wires from wire maps built by `revision2/net_ui_wiremap.py --set audit` (`--set n31` for the
+31-image UI); `--recheck` lists every unverified image and hides the model notes.
+
+### 5.8 Label correction of 2026-10-05 (31 images)
+
+Four human-verified images were corrected under the plain-crossing rule (C112, C242, C66) or
+after the overlap check (C15); previous nets stay in each entry. The rerunnable 31-image
+experiments were rerun locally (`ground_truth/local_eval/images`, the identity labels in
+`ground_truth/component_labels/` staged as a Roboflow label directory, `ground_truth/wire_labels`);
+each reproduces its pre-correction numbers exactly on the old nets. The arms beside the main
+table come from one driver that stores per-image pairs:
+
+```bash
+WIRE_GT_IMAGES=ground_truth/local_eval/images uv run python -m wire_detection.benchmark.revision2.n31_arms
+uv run python -m wire_detection.benchmark.revision2.n31_arms --rescore      # score stored pairs only
+```
+
+Results that need claw-only data (VLM answers, e2e detector runs, the 17-overlap validation) are
+rescored from their stored pairs, with a check that each reproduces its stored row under the old
+nets:
+
+```bash
+git show <commit-before-correction>:ground_truth/real_nets_verified.json > old_nets.json
+uv run python -m wire_detection.benchmark.revision2.rescore_labels --old-gt old_nets.json
+```
 
 ### 5.7 Script index
 

@@ -1,5 +1,7 @@
 # Manuscript rewrite spec — final resubmission (Access-2026-33821)
 
+> **Label correction, 2026-10-05.** Four images of the 31-image human-verified benchmark were corrected (plain crossings are not connections; C112, C242, C66, C15). Numbers in this file that depend on the 31-image nets predate the correction; the current values (e.g. ours 0.884, VLM 0.946, end to end 0.602, reference vs human 0.971) are in `docs/research/experiments/SUMMARY.md` (Revision 2) and the paper. Regenerated JSON next to this file is current.
+
 Status: 2026-09-28. Source of truth for every number added in this revision. All values
 trace to `docs/research/experiments/revision2/*` (committed). Supersedes the defensive
 framing doctrine in `paper/ieee-paper/AGENTS.md` (author decision 2026-09-28): keep every

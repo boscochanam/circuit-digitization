@@ -1,7 +1,8 @@
 # IEEE Paper — Agent Instructions
 
-> Current state, 2026-09-29: revised manuscript for IEEE Access **Access-2026-33821**, ready for
-> upload. Numbers trace to `docs/research/experiments/SUMMARY.md` (section "Revision 2") and the
+> Current state, 2026-10-05: revised manuscript for IEEE Access **Access-2026-33821**, ready for
+> upload after the 2026-10-05 label correction (four 31-image GT images corrected, every 31-image
+> number recomputed). Numbers trace to `docs/research/experiments/SUMMARY.md` (section "Revision 2") and the
 > JSONs under `docs/research/experiments/revision2/`. Open items:
 > `review_artifacts/OPEN_POINTS.md`.
 
@@ -37,27 +38,30 @@
   relative graph + completion" (ours), `degree_budget` → "rescue graph + completion",
   `graph_scale` / `graph_rescue` → "... graph (base)", `production` → "radius union-find
   (legacy)".
-- A CI that includes zero means "not significant", not "equivalent". Do not call ours and the VLM
-  "statistically indistinguishable": the VLM is better per image (Wilcoxon Holm p = 0.030).
+- A CI that includes zero means "not significant", not "equivalent". The VLM is significantly
+  better than ours, pooled (Holm p = 0.015) and per image (Wilcoxon Holm p = 0.006).
+- Labels: a plain crossing (no dot, or a hop) is not a connection; a wire ending on another wire is,
+  dot or not. Applies to the 31-image GT, the audit and the CGHD-derived reference alike.
 
 ## Verified key numbers
 
-- Human-verified benchmark (31 images): ours **0.890** (P 0.919 / R 0.864, macro 0.901,
-  418/37/66). Rescue + completion 0.829, scale-relative base 0.816, rescue base 0.787, radius
-  union-find 0.667, Hough 0.805, CCL 0.624. All margins significant after Holm. VLM (Claude Opus
-  4.8) 0.923; ours − VLM −0.033 [−0.078, +0.008], not significant on micro-F1.
+- Human-verified benchmark (31 images, corrected 2026-10-05: C112, C242, C66, C15): ours **0.884**
+  (P 0.895 / R 0.873, macro 0.896, 407/48/59). Rescue + completion 0.814, scale-relative base
+  0.812, rescue base 0.777, radius union-find 0.645, Hough 0.782, CCL 0.597. All margins
+  significant after Holm. VLM (Claude Opus 4.8) 0.946; ours − VLM −0.062 [−0.110, −0.013],
+  significant.
 - Held-out benchmark (164 CGHD photographs, 24 of 25 drafters, reference nets from CGHD v12
   stroke maps + symbol polygons): ours **0.711** [0.671, 0.748]; beats every baseline (Holm
   p = 0.0006). Without the 25 wire-benchmark overlaps (139): 0.709. Reference vs human nets on
-  17 overlaps: 0.939.
-- Audit of 40 random held-out draws: 37 scored (23 human, 11 blind-model-matched, 3
-  model-adjudicated; 3 densest excluded); reference micro-F1 0.988, no false pairs; median 85 s
-  per human check.
+  17 overlaps: 0.971 (P 1.000).
+- Audit of 40 random held-out draws: 3 densest excluded, all 37 others human-checked; reference
+  micro-F1 0.999 (832/0/2), exact on 36; ours 0.761; median 77 s per check (first verified save
+  per image).
 - Extended scoring (164): extended components 0.709, switches closed 0.712, grounds merged
   0.679, all three 0.676; ours first in each.
-- End to end with the trained detector (conf 0.5): **0.627**. The old 0.247 was a class-index
+- End to end with the trained detector (conf 0.5): **0.602**. The old 0.247 was a class-index
   mapping bug.
-- Rescaling 0.35–3×: join with annotated wires within ±0.005 of native from 0.5× to 3×; −0.035
+- Rescaling 0.35–3×: join with annotated wires within ±0.010 of native from 0.5× to 3×; −0.048
   at 0.35×.
 - Wire extraction (134 images): F1 0.976 best variant, 0.973 deployed setting. Detector mAP@0.5
   89.0% (released `best.pt`; 88.5% is the non-distributed final epoch); crossover recall 70.7%.
