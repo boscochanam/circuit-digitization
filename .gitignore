@@ -62,3 +62,6 @@ paper/ieee-paper/paper-access-LOCAL-verified.pdf
 # Original (pre-processing) author headshots
 paper/ieee-paper/figures/authors/.orig/
 paper-access-upload.zip
+
+# net-GT UI wire maps (regenerate: python -m wire_detection.benchmark.revision2.net_ui_wiremap --set n31)
+ground_truth/net_gt_ui_wiremap/

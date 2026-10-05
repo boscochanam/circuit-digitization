@@ -70,9 +70,17 @@ def main():
         out["paired_vs_ours_human"][n] = {"diff": out["methods"]["ours"]["vs_human"]["f1"] - out["methods"][n]["vs_human"]["f1"],
                                            "ci95": [d[250], d[9750]]}
     t = [json.loads(l) for l in open(AUD / "timing_log.jsonl")]
-    gaps = [b["t"] - a["t"] for a, b in zip(t, t[1:]) if b["t"] - a["t"] < 900]
+    # time per image = gap before its FIRST verified save; later re-saves of an image are not
+    # checks of a new image and would shorten the median
+    seen, gaps = set(), []
+    for a, b in zip(t, t[1:]):
+        if b["verified"] and b["id"] not in seen and b["t"] - a["t"] < 900:
+            gaps.append(b["t"] - a["t"])
+        if b["verified"]:
+            seen.add(b["id"])
     out["timing"] = {"n_intervals": len(gaps), "median_s": statistics.median(gaps), "mean_s": statistics.mean(gaps),
-                     "note": "save-to-save gaps; >15 min excluded as breaks; the first image has no start time"}
+                     "note": "gap before each image's first verified save; >15 min excluded as breaks; "
+                             "re-saves excluded; the first image of a session has no start time"}
     # All audited draws: human-verified labels, model-agreed images (labels = reference, confirmed by a
     # blind model trace) and model-adjudicated images (labels corrected by the model, not human-checked).
     allk = ver + model_agree + model_adj

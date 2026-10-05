@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GT = ROOT / "ground_truth" / "real_nets_working.json"   # working file the UI edits (34 imgs)
 CLEAN = ROOT / "ground_truth" / "net_gt_ui_overlays"     # wires-only overlays per image
 META = json.loads((ROOT / "ground_truth" / "net_gt_ui_meta.json").read_text())  # bboxes
+WIREMAP = ROOT / "ground_truth" / "net_gt_ui_wiremap"  # drawn-wire maps (revision2/net_ui_wiremap.py)
 TYPE_ABBR = {
     "resistor": "R", "capacitor-unpolarized": "C", "capacitor-polarized": "C",
     "capacitor-adjustable": "C", "inductor": "L", "voltage-DC": "V", "voltage-AC": "V",
@@ -138,7 +139,7 @@ small{color:#9aa0ab}
 <div id=list></div>
 <div id=mid>
   <div id=bar>
-    <button id=grp>hide net lines</button>
+    <button id=grp>hide wires</button>
     <button id=fit>reset view</button>
     <span id=zl style="color:#8fb"></span>
     <span style="color:#888">scroll=zoom · drag=pan · click box=select · ←/→ images · v=save+verify</span>
@@ -149,7 +150,7 @@ small{color:#9aa0ab}
 <script>
 let S=null,cur=0,showLines=true,sel=null,hotNet=-1,view={x:0,y:0,s:1};
 const im=document.getElementById('im'),cv=document.getElementById('cv'),stage=document.getElementById('stage'),ctx=cv.getContext('2d');
-const PAL=['#4c9bff','#36d399','#f59e42','#e879f9','#fbbf24','#22d3ee','#fb7185','#a3e635','#c084fc','#2dd4bf','#f87171','#94a3b8'];
+const PAL=['#4c9bff','#36d399','#f59e42','#e879f9','#fbbf24','#22d3ee','#fde68a','#a3e635','#c084fc','#2dd4bf','#86efac','#94a3b8'];  // no reds: red marks unexplained wires
 async function boot(){S=(await (await fetch('/api/state')).json()).images;drawList();load(0);}
 function drawList(){
   const todo=S.filter(x=>!x.verified&&!x.excluded).length;
@@ -161,8 +162,44 @@ function drawList(){
     return `<div class="it ${i==cur?'sel':''} ${x.excluded?'exc':''}" onclick="load(${i})"><span class="b ${c}"></span>${x.name}<br><small>${x.components.length} parts ${tag}</small></div>`;}).join('');}
 function D(){return S[cur];}
 function load(i){cur=i;sel=null;hotNet=-1;drawList();im.src='/clean/'+D().name+'.png';
-  im.onload=()=>{cv.width=im.naturalWidth;cv.height=im.naturalHeight;fit();redraw();};drawSide();}
-document.getElementById('grp').onclick=()=>{showLines=!showLines;document.getElementById('grp').textContent=showLines?'hide net lines':'show net lines';redraw();};
+  im.onload=()=>{cv.width=im.naturalWidth;cv.height=im.naturalHeight;fit();redraw();};drawSide();
+  loadWM(D().name).then(()=>{redraw();drawSide();});}
+// Wire map: the drawn ink split at every scored box into conductors, each with the parts it
+// touches (revision2/net_ui_wiremap.py). Groups are shown by colouring their actual wires.
+let WM=null,wmTok=0;const wcv=document.createElement('canvas'),wctx=wcv.getContext('2d');
+async function loadWM(name){const tok=++wmTok;WM=null;
+  try{const j=await (await fetch('/wiremap/'+name+'.json')).json();
+    const img=new Image();await new Promise((ok,er)=>{img.onload=ok;img.onerror=er;img.src='/wiremap/'+name+'.png';});
+    const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d');x.drawImage(img,0,0);
+    const px=x.getImageData(0,0,c.width,c.height).data,lists={};
+    for(let i=0,p=0;p<px.length;i++,p+=4){const id=px[p]+256*px[p+1];if(id&&j.conductors[id])(lists[id]=lists[id]||[]).push(i);}
+    if(tok!==wmTok||!Object.keys(lists).length)return;
+    const pix={};for(const k in lists)pix[k]=Int32Array.from(lists[k]);
+    wcv.width=c.width;wcv.height=c.height;
+    WM={pix,T:j.conductors,dropped:j.dropped,buf:new ImageData(c.width,c.height)};
+  }catch(e){if(tok===wmTok)WM=null;}}
+// each conductor belongs to the group(s) sharing the most of its parts (>=2); 'x' = it links
+// parts that no group connects (a possible missing connection, or a plain crossing)
+function owners(){const d=D(),o={};
+  for(const id in WM.T){const T=WM.T[id];let best=0,who=[];
+    d.nets.forEach((n,ni)=>{if(n.length<2)return;let s=0;for(const i of T)if(n.includes(i))s++;
+      if(s>best){best=s;who=[ni];}else if(s==best&&s>0)who.push(ni);});
+    if(best>=2)o[id]=who;else if(new Set(T).size>=2)o[id]='x';}
+  return o;}
+function hexc(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+function drawWires(){const o=owners(),b=WM.buf.data,d=D();b.fill(0);
+  const hotMembers=hotNet>=0&&d.nets[hotNet]?d.nets[hotNet]:[];
+  for(const id in WM.pix){const ow=o[id],T=WM.T[id];let col=null,a=0;
+    if(hotNet>=0){
+      if(Array.isArray(ow)&&ow.includes(hotNet)){col=PAL[hotNet%PAL.length];a=255;}
+      else if(ow==='x'&&T.some(i=>hotMembers.includes(i))){col='#ff3b3b';a=255;}}
+    else if(sel!=null){if(T.includes(sel)){col='#ffffff';a=255;}}
+    else if(ow==='x'){col='#ff3b3b';a=230;}
+    else if(Array.isArray(ow)){col=PAL[ow[0]%PAL.length];a=isChecked(ow[0])?235:140;}
+    if(!col)continue;const[r,g,bb]=hexc(col);
+    for(const i of WM.pix[id]){const p=i*4;b[p]=r;b[p+1]=g;b[p+2]=bb;b[p+3]=a;}}
+  wctx.putImageData(WM.buf,0,0);ctx.drawImage(wcv,0,0,cv.width,cv.height);}
+document.getElementById('grp').onclick=()=>{showLines=!showLines;document.getElementById('grp').textContent=showLines?'hide wires':'show wires';redraw();};
 document.getElementById('fit').onclick=fit;
 function fit(){const m=document.getElementById('mid');const s=Math.min(m.clientWidth/im.naturalWidth,m.clientHeight/im.naturalHeight)*0.97||1;
   view={s,x:(m.clientWidth-im.naturalWidth*s)/2,y:(m.clientHeight-im.naturalHeight*s)/2};av();}
@@ -180,7 +217,8 @@ function netOf(idx){const ns=[];D().nets.forEach((n,i)=>{if(n.length>=2&&n.inclu
 function chk(){const d=D();if(!d._checked)d._checked=[];return d._checked;}
 function isChecked(ni){return chk().includes(ni);}
 function redraw(){const W=cv.width,H=cv.height;ctx.clearRect(0,0,W,H);const d=D();
-  if(showLines) d.nets.forEach((net,ni)=>{if(net.length<2)return;
+  if(showLines&&WM)drawWires();
+  else if(showLines) d.nets.forEach((net,ni)=>{if(net.length<2)return;
     const col=PAL[ni%PAL.length],done=isChecked(ni),hotn=ni==hotNet;
     const ms=net.map(i=>d.components.find(c=>c.idx==i)).filter(Boolean);
     ctx.globalAlpha=hotn?1:(done?0.92:0.28);ctx.strokeStyle=col;
@@ -203,6 +241,8 @@ function drawSide(){const d=D();const mn=d.nets.filter(n=>n.length>1).length;
   let h=`<div class=head>${d.name}</div><small>${d.components.length} parts · ${mn} groups · <b style="color:${mn&&done==mn?'#36d399':'#f5c451'}">${done}/${mn} reviewed</b></small>`;
   if(d.flag)h+=`<div class=flag>⚑ ${d.flag}</div>`;
   h+=`<div class=help><b>Per group:</b> hover it, confirm those parts really share a wire (and nothing's missing), then hit <b>✓</b> — its line turns solid. Red box = grouped with nothing. When all are solid, Save (or press <b>v</b>).</div>`;
+  if(WM)h+=`<div class=help><b>Wires:</b> each group's colour is painted on the drawn ink that touches its parts (found from the photo). Hover a group to see only its wires; click a part to see every wire touching it (white). <b style="color:#ff6b6b">Red</b> = ink that touches parts no group connects: a missed connection, or a plain + crossing (not connected). Faint or broken ink may be missing, so judge by the drawing.${WM.dropped?' <b>Note:</b> some ink merged with paper lines and is not shown.':''}</div>`;
+  else h+=`<div class=help>No wire map for this image: lines join part centres and do not follow the wires.</div>`;
   h+=`<div class=vrow><input type=checkbox id=ver ${d.verified?'checked':''}><label for=ver>mark <b>verified</b></label></div>`;
   h+=`<button class=save onclick=doSave()>SAVE &amp; next ▸</button>`;
   h+=`<button class=addbtn style="width:100%;margin-top:5px;border-color:#b04a4a;color:#f4b" onclick=doExclude()>✗ exclude (bad / unlabeled parts)</button>`;
@@ -263,6 +303,11 @@ class H(BaseHTTPRequestHandler):
             if f.exists():
                 return self._send(200, f.read_bytes(), "image/png")
             return self._send(404, b"no img", "text/plain")
+        if p.startswith("/wiremap/"):
+            f = WIREMAP / Path(p[len("/wiremap/"):]).name
+            if f.exists():
+                return self._send(200, f.read_bytes(), "image/png" if f.suffix == ".png" else "application/json")
+            return self._send(404, b"no wiremap", "text/plain")
         self._send(404, b"404", "text/plain")
 
     def do_POST(self):

@@ -97,13 +97,16 @@ def _scale_tau(components, wires):
 
 
 def degree_budget_completion(wires, components, std_pins, relax_witness=True,
-                             base="rescue", reach_factor=REACH_FACTOR, slot_cap=3):
+                             base="rescue", reach_factor=REACH_FACTOR, slot_cap=3,
+                             guard=True, stats=None):
     """Endpoint-graph base + degree-budget completion of floating pins.
 
     Returns a Netlist. Defaults reproduce the original production strategy exactly
     (base="rescue", reach_factor=2.5). `base="scale"` with a larger `reach_factor`
     is the higher-accuracy variant validated on the net-GT. `relax_witness=True`
     also allows pure-distance completion edges when no wire-witness exists.
+    `guard=False` disables the shared-component guard (ablation only); a `stats` dict, if
+    given, receives the number of merges the guard rejected under "guard_rejects".
     """
     if not std_pins:
         return netlist_from_uf(std_pins, {})
@@ -226,7 +229,9 @@ def degree_budget_completion(wires, components, std_pins, relax_witness=True,
         rf, rt = find(fp), find(tg)
         if rf == rt:
             continue
-        if net_comps[rf] & net_comps[rt]:   # shared component -> would self-loop
+        if guard and net_comps[rf] & net_comps[rt]:   # shared component -> would self-loop
+            if stats is not None:
+                stats["guard_rejects"] = stats.get("guard_rejects", 0) + 1
             continue
         merged = net_comps[rf] | net_comps[rt]
         union(fp, tg)

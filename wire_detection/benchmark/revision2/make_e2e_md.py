@@ -147,11 +147,17 @@ def main() -> int:
             tp, fp, fn = grp[t][arm]
             cells.append(f"{2 * tp / (2 * tp + fp + fn):.3f} ({tp}/{fp}/{fn})")
         w(f"| {t} | {n[t]} | " + " | ".join(cells) + " |")
+    keys = ["re-oriented benchmark image", "same orientation as CGHD file"]
+
+    def f1g(t, arm="orig@0.5"):
+        tp, fp, fn = grp[t][arm]
+        return f"{2 * tp / (2 * tp + fp + fn):.3f}"
     w("\nThe detector is orientation-sensitive (trained with ±10° rotation only): e.g. C9_D2_P3 yields 15 boxes in its "
       "file orientation and 0–1 under any 90° rotation, and on C19_D1_P2 two-terminal boxes come out perpendicular to "
       "the annotation in the file orientation. `benchorient` is therefore a diagnostic, not a deployment condition; "
       "on the 17 identity-orientation images `orig` and `benchorient` coincide. The end-to-end loss concentrates in the "
-      "14 images whose benchmark copy is re-oriented (orig 0.491 there vs 0.739 on the other 17), and re-orienting the "
+      f"{n[keys[0]]} images whose benchmark copy is re-oriented (orig {f1g(keys[0])} there vs {f1g(keys[1])} on the "
+      f"other {n[keys[1]]}), and re-orienting the "
       "input to the benchmark frame recovers part of it. One possible reading, not testable here, is that the detector "
       "saw these circuits in the benchmark orientation during training (see section 6).\n")
 
@@ -161,8 +167,12 @@ def main() -> int:
     w(row("gt_oracle_matching_identity_order", "oracle: GT boxes through the detection relabel/IoU-match path"))
     w(row("gt_oracle_matching", "oracle, GT boxes shuffled (seeded) through the same path"))
     w("")
-    w("The identity-order oracle reproduces 418/37/66 exactly, so the relabel/matching code is sound. Shuffling the "
-      "component list alone moves the result to 419/35/65 (+0.003): the downstream pipeline is mildly "
+    sm = d["summary"]
+    cnt = lambda a: f"{sm[a]['tp']}/{sm[a]['fp']}/{sm[a]['fn']}"  # noqa: E731
+    w(f"The identity-order oracle reproduces {cnt('gt_oracle_matching_identity_order')} exactly (annotated boxes: "
+      f"{cnt('gt_direct')}), so the relabel/matching code is sound. Shuffling the "
+      f"component list alone moves the result to {cnt('gt_oracle_matching')} "
+      f"({sm['gt_oracle_matching']['f1'] - sm['gt_direct']['f1']:+.3f}): the downstream pipeline is mildly "
       "order-dependent, so differences of a few pairs between arms are within this noise floor.\n")
     w("Decomposition at each conf (A -> B -> C -> D -> E; each step changes one thing):\n")
     L.extend(hdr)

@@ -5,7 +5,7 @@ Reuses wire_detection/benchmark/gt_verify_ui.py unchanged; only its module-level
 redirected to ground_truth/cghd_ref_audit/ (so ground_truth/real_nets_working.json is never
 edited) and the part-label table is extended to every electrical type in the batch.
 
-  python -m wire_detection.benchmark.revision2.cghd_audit_ui [port]      # default 8766
+  python -m wire_detection.benchmark.revision2.cghd_audit_ui [port] [--recheck]   # default 8766
 Verified entries get source "human-verified (UI)" in ground_truth/cghd_ref_audit/real_nets_working.json;
 the original reference nets are kept under "_nets_original" by the UI's save().
 """
@@ -23,6 +23,7 @@ AUDIT = ui.ROOT / "ground_truth" / "cghd_ref_audit"
 ui.GT = AUDIT / "real_nets_working.json"
 ui.CLEAN = AUDIT / "overlays"
 ui.META = json.loads((AUDIT / "net_gt_ui_meta.json").read_text())
+ui.WIREMAP = AUDIT / "wiremap"   # built by revision2/net_ui_wiremap.py --set audit
 ui.FLAGS = {}
 ui.TYPE_ABBR = {**ui.TYPE_ABBR, "inductor-ferrite": "L", "diode-zener": "D", "diode-thyrector": "D",
                 "transistor-FET": "Q", "IC": "U", "IC-voltage-reg": "U", "opamp": "U",
@@ -68,8 +69,11 @@ ui.HTML = ui.HTML.replace("</body>", _TOGGLE_JS + "</body>", 1) if "</body>" in 
 # Blind model pre-screen: images where the model's trace agrees with the proposal are hidden
 # from the to-do list (they stay in the JSON, unverified); disagreements and untraced images
 # show the model's note in the side panel.
+# --recheck: human check of the images the model pre-screen settled. Every unverified,
+# non-excluded image is listed and model notes are hidden, so the check stays blind.
+RECHECK = "--recheck" in sys.argv
 MODEL = AUDIT / "model_check.json"
-if MODEL.exists():
+if MODEL.exists() and not RECHECK:
     _mc = json.loads(MODEL.read_text())["images"]
     ui.FLAGS = {k: ("MODEL CHECK: " + v["note"]) for k, v in _mc.items() if v["status"] != "agree"}
     _orig_state = ui.state
@@ -94,7 +98,8 @@ class H(ui.H):
         return super().do_GET()
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8766
+    args = [a for a in sys.argv[1:] if a != "--recheck"]
+    port = int(args[0]) if args else 8766
     if not ui.CLEAN.is_dir():
         raise SystemExit(f"missing {ui.CLEAN}: stage it with cghd_audit_export.py (images are not in git)")
     print(f"CGHD-reference audit UI -> http://127.0.0.1:{port}/   (editing {ui.GT})")
