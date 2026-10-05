@@ -17,9 +17,9 @@
   with Endpoint-Graph Wire Joining and a Human-Verified Connectivity Benchmark". The output is a
   structural netlist; the pipeline reads no component values or device models, and simulation of
   real scans is not evaluated.
-- **Submission package:** `review_artifacts/submission/` (manuscript-clean.pdf,
-  manuscript-highlighted.pdf, highlight-change-index.pdf, response-to-reviewers.pdf,
-  paper-access-overleaf.zip). Rebuild everything with `bash rebuild_submission.sh` (needs
+- **Submission package:** `review_artifacts/submission/` (Access-2026-33821_revised_manuscript_clean.pdf,
+  ..._manuscript_highlighted.pdf, ..._highlight_change_index.pdf, ..._response_to_reviewers.pdf,
+  ..._latex_source.zip). Rebuild everything with `bash rebuild_submission.sh` (needs
   pdflatex, git, uv).
 - **Highlight baseline:** the portal-submitted source,
   `review_artifacts/baseline/submitted_manuscript_portal.zip`. Not commit `33f5e3d`.

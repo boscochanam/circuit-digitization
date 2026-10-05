@@ -12,7 +12,7 @@ Numbers: `REWRITE_SPEC_R2.md` → `docs/research/experiments/revision2/`.
 - [ ] **Signatory** of the response letter (currently Bosco Chanam on behalf of all authors) and coauthor
       consent to the revised manuscript.
 - [x] **Overleaf**: not needed; local build uses the official IEEE Access kit.
-- [ ] Re-run the similarity check on the rebuilt `manuscript-clean.pdf`.
+- [ ] Re-run the similarity check on the rebuilt `Access-2026-33821_revised_manuscript_clean.pdf`.
 - [ ] Portal upload.
 
 ## Known gaps (optional)

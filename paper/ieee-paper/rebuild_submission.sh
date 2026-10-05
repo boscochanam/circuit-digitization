@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Rebuild the full resubmission package into review_artifacts/submission/:
-#   manuscript-clean.pdf        (paper-access.tex, IEEE Access kit)
-#   manuscript-highlighted.pdf  (word-level highlights vs the portal-submitted manuscript)
-#   highlight-change-index.pdf
-#   response-to-reviewers.pdf
-#   paper-access-overleaf.zip
+#   Access-2026-33821_revised_manuscript_clean.pdf        (paper-access.tex, IEEE Access kit)
+#   Access-2026-33821_revised_manuscript_highlighted.pdf  (word-level highlights vs the portal-submitted manuscript)
+#   Access-2026-33821_revised_highlight_change_index.pdf
+#   Access-2026-33821_revised_response_to_reviewers.pdf
+#   Access-2026-33821_revised_latex_source.zip
 # Also rebuilds paper-build.pdf (IEEEtran). Needs pdflatex, git, uv.
 set -euo pipefail
 PAPER="$(cd "$(dirname "$0")" && pwd)"
@@ -42,10 +42,10 @@ cp "$B/paper-access.pdf" "$ROOT/output/baseline/snapshot/paper/ieee-paper/paper-
 
 # 6. Package
 mkdir -p "$SUB"
-cp "$PAPER/output/pdf/paper-access.pdf" "$SUB/manuscript-clean.pdf"
-cp "$PAPER/output/pdf/paper-access-highlighted.pdf" "$SUB/manuscript-highlighted.pdf"
-cp "$PAPER/output/pdf/highlight-change-index.pdf" "$SUB/highlight-change-index.pdf"
-cp "$PAPER/review_artifacts/RESPONSE_TO_REVIEWERS.pdf" "$SUB/response-to-reviewers.pdf"
-cp "$ROOT/paper-access-overleaf.zip" "$SUB/paper-access-overleaf.zip"
-echo "pages: access $(pdfinfo "$SUB/manuscript-clean.pdf" | awk '/Pages/{print $2}'), build $(pdfinfo "$PAPER/paper-build.pdf" | awk '/Pages/{print $2}'), response $(pdfinfo "$SUB/response-to-reviewers.pdf" | awk '/Pages/{print $2}')"
+cp "$PAPER/output/pdf/paper-access.pdf" "$SUB/Access-2026-33821_revised_manuscript_clean.pdf"
+cp "$PAPER/output/pdf/paper-access-highlighted.pdf" "$SUB/Access-2026-33821_revised_manuscript_highlighted.pdf"
+cp "$PAPER/output/pdf/highlight-change-index.pdf" "$SUB/Access-2026-33821_revised_highlight_change_index.pdf"
+cp "$PAPER/review_artifacts/RESPONSE_TO_REVIEWERS.pdf" "$SUB/Access-2026-33821_revised_response_to_reviewers.pdf"
+cp "$ROOT/paper-access-overleaf.zip" "$SUB/Access-2026-33821_revised_latex_source.zip"
+echo "pages: access $(pdfinfo "$SUB/Access-2026-33821_revised_manuscript_clean.pdf" | awk '/Pages/{print $2}'), build $(pdfinfo "$PAPER/paper-build.pdf" | awk '/Pages/{print $2}'), response $(pdfinfo "$SUB/Access-2026-33821_revised_response_to_reviewers.pdf" | awk '/Pages/{print $2}')"
 grep -c "PENDING" "$PAPER/paper-access.tex" "$PAPER/review_artifacts/RESPONSE_TO_REVIEWERS.md" || true
