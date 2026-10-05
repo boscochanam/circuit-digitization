@@ -365,37 +365,37 @@
     "link10_reach22": [
      0,
      0,
-     18
+     19
     ],
     "link14_reach26": [
      0,
      0,
-     18
+     19
     ],
     "link20_reach30": [
      0,
      0,
-     18
+     19
     ],
     "link28_reach36": [
      6,
      0,
-     12
+     13
     ],
     "link36_reach42": [
      11,
      0,
-     7
+     8
     ],
     "link44_reach48": [
      14,
      0,
-     4
+     5
     ],
     "link56_reach56": [
      14,
      0,
-     4
+     5
     ]
    },
    "label_matches_committed": true,
@@ -406,8 +406,8 @@
    "hdc_label": "C15_D2_P2_jpg.rf.0f9b24d06f5f6523be31377f1af23703.txt",
    "n_components_all": 39,
    "n_electrical": 7,
-   "n_gt_pairs": 18,
-   "n_nets": 4,
+   "n_gt_pairs": 19,
+   "n_nets": 5,
    "n_crossover": 1,
    "class_counts": {
     "3": 1,
@@ -2182,36 +2182,36 @@
     "link10_reach22": [
      0,
      0,
-     20
+     17
     ],
     "link14_reach26": [
      2,
      0,
-     18
+     15
     ],
     "link20_reach30": [
      3,
      0,
-     17
+     14
     ],
     "link28_reach36": [
      6,
      0,
-     14
+     11
     ],
     "link36_reach42": [
      6,
      0,
-     14
+     11
     ],
     "link44_reach48": [
-     20,
-     1,
+     17,
+     4,
      0
     ],
     "link56_reach56": [
-     20,
-     1,
+     17,
+     4,
      0
     ]
    },
@@ -2223,8 +2223,8 @@
    "hdc_label": "C112_D1_P1_jpg.rf.2f039644658806535378cfb5faf44a61.txt",
    "n_components_all": 28,
    "n_electrical": 7,
-   "n_gt_pairs": 20,
-   "n_nets": 3,
+   "n_gt_pairs": 17,
+   "n_nets": 4,
    "n_crossover": 1,
    "class_counts": {
     "4": 1,
@@ -2424,36 +2424,36 @@
     "link10_reach22": [
      2,
      0,
-     25
+     21
     ],
     "link14_reach26": [
      6,
      0,
-     21
-    ],
-    "link20_reach30": [
-     10,
-     0,
      17
     ],
+    "link20_reach30": [
+     8,
+     2,
+     15
+    ],
     "link28_reach36": [
-     25,
-     5,
+     21,
+     9,
      2
     ],
     "link36_reach42": [
-     26,
-     11,
+     22,
+     15,
      1
     ],
     "link44_reach48": [
-     26,
-     11,
+     22,
+     15,
      1
     ],
     "link56_reach56": [
-     27,
-     18,
+     23,
+     22,
      0
     ]
    },
@@ -2465,8 +2465,8 @@
    "hdc_label": "C242_D1_P1_jpg.rf.00891a3071dc5dbda3e2ca8514551649.txt",
    "n_components_all": 95,
    "n_electrical": 10,
-   "n_gt_pairs": 27,
-   "n_nets": 6,
+   "n_gt_pairs": 23,
+   "n_nets": 7,
    "n_crossover": 1,
    "class_counts": {
     "3": 2,
@@ -2960,38 +2960,38 @@
   "C66_D2_P4_jpg": {
    "hough": {
     "link10_reach22": [
-     4,
-     0,
-     37
+     2,
+     2,
+     27
     ],
     "link14_reach26": [
-     10,
-     3,
-     31
+     6,
+     7,
+     23
     ],
     "link20_reach30": [
-     12,
-     3,
-     29
+     7,
+     8,
+     22
     ],
     "link28_reach36": [
-     35,
-     9,
+     23,
+     21,
      6
     ],
     "link36_reach42": [
-     37,
-     9,
+     25,
+     21,
      4
     ],
     "link44_reach48": [
-     41,
-     25,
+     29,
+     37,
      0
     ],
     "link56_reach56": [
-     41,
-     25,
+     29,
+     37,
      0
     ]
    },
@@ -3003,8 +3003,8 @@
    "hdc_label": "C66_D2_P4_jpg.rf.78bfa303ac53530f0ad696498dffa17b.txt",
    "n_components_all": 76,
    "n_electrical": 12,
-   "n_gt_pairs": 41,
-   "n_nets": 7,
+   "n_gt_pairs": 29,
+   "n_nets": 10,
    "n_crossover": 6,
    "class_counts": {
     "3": 2,
@@ -3394,92 +3394,92 @@
  "hough_reproduction": {
   "link10_reach22": {
    "pooled": [
-    30,
-    3,
-    454
+    28,
+    5,
+    438
    ],
    "committed": [
-    30,
-    3,
-    454
+    28,
+    5,
+    438
    ],
    "match": true
   },
   "link14_reach26": {
    "pooled": [
-    88,
-    7,
-    396
+    84,
+    11,
+    382
    ],
    "committed": [
-    88,
-    7,
-    396
+    84,
+    11,
+    382
    ],
    "match": true
   },
   "link20_reach30": {
    "pooled": [
-    185,
-    8,
-    299
+    178,
+    15,
+    288
    ],
    "committed": [
-    185,
-    8,
-    299
+    178,
+    15,
+    288
    ],
    "match": true
   },
   "link28_reach36": {
    "pooled": [
-    328,
-    28,
-    156
+    312,
+    44,
+    154
    ],
    "committed": [
-    328,
-    28,
-    156
+    312,
+    44,
+    154
    ],
    "match": true
   },
   "link36_reach42": {
    "pooled": [
-    377,
-    82,
-    107
+    361,
+    98,
+    105
    ],
    "committed": [
-    377,
-    82,
-    107
+    361,
+    98,
+    105
    ],
    "match": true
   },
   "link44_reach48": {
    "pooled": [
-    420,
-    140,
-    64
+    401,
+    159,
+    65
    ],
    "committed": [
-    420,
-    140,
-    64
+    401,
+    159,
+    65
    ],
    "match": true
   },
   "link56_reach56": {
    "pooled": [
-    448,
-    253,
-    36
+    429,
+    272,
+    37
    ],
    "committed": [
-    448,
-    253,
-    36
+    429,
+    272,
+    37
    ],
    "match": true
   }

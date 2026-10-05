@@ -3,19 +3,20 @@
   "metric_note": "All rows: component-pair F1 restricted to SPICE-active components, same metric for join and VLM. Top-level f1/p/r are MICRO (pair-pooled across the 31 images); macro_f1/macro_p/macro_r are the mean of per-image scores.",
   "fair_comparison_note": "Join rows use GT HDC component labels + Sauvola-detected wires (det) or human-traced GT wire segments (oracle/ceiling). The VLM row uses the same GT component boxes (numbered on the scan) + raw pixels, NO wire overlay, via clean blind subagents. Both produce nets over the same component indices and are scored identically.",
   "strategies": [
-    "scale_completion"
+    "scale_completion",
+    "scale_completion_w"
   ],
   "detected_wires_gt_components": {
     "scale_completion": {
-      "f1": 0.8903088391906283,
-      "p": 0.9186813186813186,
-      "r": 0.8636363636363636,
-      "tp": 418,
-      "fp": 37,
-      "fn": 66,
-      "macro_f1": 0.9010706849335028,
-      "macro_p": 0.9363076881412257,
-      "macro_r": 0.8883375266075443,
+      "f1": 0.8838219326818675,
+      "p": 0.8945054945054945,
+      "r": 0.8733905579399142,
+      "tp": 407,
+      "fp": 48,
+      "fn": 59,
+      "macro_f1": 0.8964631560095533,
+      "macro_p": 0.923767441738982,
+      "macro_r": 0.8917546897528892,
       "counts": [
         [
           25,
@@ -33,8 +34,8 @@
           4
         ],
         [
-          16,
-          2,
+          17,
+          1,
           2
         ],
         [
@@ -128,8 +129,8 @@
           8
         ],
         [
-          20,
-          1,
+          17,
+          4,
           0
         ],
         [
@@ -138,8 +139,8 @@
           3
         ],
         [
-          27,
-          4,
+          23,
+          8,
           0
         ],
         [
@@ -158,9 +159,9 @@
           0
         ],
         [
-          27,
-          2,
-          14
+          22,
+          7,
+          7
         ],
         [
           21,
@@ -174,19 +175,188 @@
         ]
       ],
       "n": 31
+    },
+    "scale_completion_w": {
+      "f1": 0.8777292576419213,
+      "p": 0.8933333333333333,
+      "r": 0.8626609442060086,
+      "tp": 402,
+      "fp": 48,
+      "fn": 64,
+      "macro_f1": 0.9022095109331942,
+      "macro_p": 0.9235181626272242,
+      "macro_r": 0.9015984062252446,
+      "counts": [
+        [
+          25,
+          0,
+          8
+        ],
+        [
+          19,
+          2,
+          3
+        ],
+        [
+          13,
+          2,
+          4
+        ],
+        [
+          17,
+          1,
+          2
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          4
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          14,
+          4,
+          8
+        ],
+        [
+          24,
+          7,
+          2
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          8,
+          1,
+          0
+        ],
+        [
+          8,
+          1,
+          0
+        ],
+        [
+          8,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          7
+        ],
+        [
+          17,
+          4,
+          0
+        ],
+        [
+          25,
+          5,
+          7
+        ],
+        [
+          23,
+          8,
+          0
+        ],
+        [
+          21,
+          2,
+          0
+        ],
+        [
+          21,
+          0,
+          2
+        ],
+        [
+          23,
+          0,
+          0
+        ],
+        [
+          22,
+          7,
+          7
+        ],
+        [
+          19,
+          0,
+          3
+        ],
+        [
+          34,
+          1,
+          7
+        ]
+      ],
+      "n": 31
     }
   },
   "perfect_gt_wires_gt_components": {
     "scale_completion": {
-      "f1": 0.8898305084745762,
-      "p": 0.9130434782608695,
-      "r": 0.8677685950413223,
-      "tp": 420,
-      "fp": 40,
-      "fn": 64,
-      "macro_f1": 0.9160804450475922,
-      "macro_p": 0.9355072949702892,
-      "macro_r": 0.9093211063637441,
+      "f1": 0.8833693304535637,
+      "p": 0.8891304347826087,
+      "r": 0.8776824034334764,
+      "tp": 409,
+      "fp": 51,
+      "fn": 57,
+      "macro_f1": 0.9114729161236428,
+      "macro_p": 0.9229670485680456,
+      "macro_r": 0.9127382695090889,
       "counts": [
         [
           25,
@@ -204,8 +374,8 @@
           4
         ],
         [
-          16,
-          2,
+          17,
+          1,
           2
         ],
         [
@@ -299,8 +469,8 @@
           8
         ],
         [
-          20,
-          1,
+          17,
+          4,
           0
         ],
         [
@@ -309,8 +479,8 @@
           3
         ],
         [
-          27,
-          4,
+          23,
+          8,
           0
         ],
         [
@@ -329,9 +499,9 @@
           0
         ],
         [
-          27,
-          2,
-          14
+          22,
+          7,
+          7
         ],
         [
           22,
@@ -342,6 +512,175 @@
           31,
           1,
           10
+        ]
+      ],
+      "n": 31
+    },
+    "scale_completion_w": {
+      "f1": 0.8770402611534277,
+      "p": 0.8896247240618101,
+      "r": 0.8648068669527897,
+      "tp": 403,
+      "fp": 50,
+      "fn": 63,
+      "macro_f1": 0.9122440393631525,
+      "macro_p": 0.9243614848408295,
+      "macro_r": 0.9110612486542554,
+      "counts": [
+        [
+          25,
+          2,
+          8
+        ],
+        [
+          19,
+          3,
+          3
+        ],
+        [
+          13,
+          2,
+          4
+        ],
+        [
+          17,
+          1,
+          2
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          15,
+          4,
+          7
+        ],
+        [
+          24,
+          7,
+          2
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          8,
+          1,
+          0
+        ],
+        [
+          8,
+          1,
+          0
+        ],
+        [
+          8,
+          1,
+          0
+        ],
+        [
+          4,
+          1,
+          7
+        ],
+        [
+          17,
+          4,
+          0
+        ],
+        [
+          25,
+          5,
+          7
+        ],
+        [
+          23,
+          8,
+          0
+        ],
+        [
+          21,
+          2,
+          0
+        ],
+        [
+          21,
+          0,
+          2
+        ],
+        [
+          23,
+          0,
+          0
+        ],
+        [
+          22,
+          7,
+          7
+        ],
+        [
+          20,
+          0,
+          2
+        ],
+        [
+          30,
+          1,
+          11
         ]
       ],
       "n": 31
@@ -356,7 +695,7 @@
     "note": "Claude Opus 4.8, clean blind subagents (one per image), given the scan with numbered GT component boxes and raw pixels (NO wire overlay); not an end-to-end run. micro=pair-pooled, macro=mean per-image F1."
   },
   "paths": {
-    "gt_images": "/home/claw/workspace/ground_truth/labels_few_annot/images",
-    "gt_wire_labels": "/home/claw/workspace/ground_truth/labels_few_annot/labels/train/manually_verified_no_background_data/images"
+    "gt_images": "/home/bosco/Projects/Misc-Projects/circuit-digitization/ground_truth/local_eval/images",
+    "gt_wire_labels": "/home/bosco/Projects/Misc-Projects/circuit-digitization/ground_truth/wire_labels"
   }
 }

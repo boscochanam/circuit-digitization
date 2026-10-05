@@ -31,16 +31,16 @@ Headline, pre-specified: detector on the original at its deployment threshold 0.
 
 | arm | micro-F1 | P | R | TP/FP/FN | macro-F1 | micro 95% CI | Δ vs GT boxes | Δ 95% CI |
 |---|---|---|---|---|---|---|---|---|
-| annotated boxes (paper condition) | 0.890 | 0.919 | 0.864 | 418/37/66 | 0.901 | [0.854, 0.925] | +0.000 | [+0.000, +0.000] |
-| detector on original, conf 0.25 | 0.613 | 0.575 | 0.655 | 317/234/167 | 0.651 | [0.494, 0.723] | -0.278 | [-0.388, -0.175] |
-| detector on original, conf 0.35 | 0.616 | 0.582 | 0.655 | 317/228/167 | 0.657 | [0.498, 0.727] | -0.274 | [-0.385, -0.172] |
-| **detector on original, conf 0.5** | 0.627 | 0.603 | 0.653 | 316/208/168 | 0.656 | [0.519, 0.731] | -0.263 | [-0.366, -0.170] |
-| detector on 704 benchmark image, conf 0.25 | 0.501 | 0.480 | 0.525 | 254/275/230 | 0.556 | [0.401, 0.611] | -0.389 | [-0.497, -0.275] |
-| detector on 704 benchmark image, conf 0.35 | 0.512 | 0.500 | 0.525 | 254/254/230 | 0.560 | [0.411, 0.623] | -0.378 | [-0.487, -0.263] |
-| detector on 704 benchmark image, conf 0.5 | 0.504 | 0.526 | 0.483 | 234/211/250 | 0.523 | [0.394, 0.619] | -0.387 | [-0.506, -0.264] |
-| diagnostic: original re-oriented to benchmark frame, conf 0.25 | 0.675 | 0.648 | 0.705 | 341/185/143 | 0.656 | [0.590, 0.754] | -0.215 | [-0.298, -0.144] |
-| diagnostic: original re-oriented to benchmark frame, conf 0.35 | 0.674 | 0.653 | 0.696 | 337/179/147 | 0.655 | [0.581, 0.759] | -0.216 | [-0.306, -0.141] |
-| diagnostic: original re-oriented to benchmark frame, conf 0.5 | 0.682 | 0.671 | 0.694 | 336/165/148 | 0.653 | [0.597, 0.761] | -0.208 | [-0.291, -0.138] |
+| annotated boxes (paper condition) | 0.884 | 0.895 | 0.873 | 407/48/59 | 0.896 | [0.849, 0.918] | +0.000 | [+0.000, +0.000] |
+| detector on original, conf 0.25 | 0.588 | 0.543 | 0.642 | 299/252/167 | 0.641 | [0.475, 0.703] | -0.296 | [-0.398, -0.193] |
+| detector on original, conf 0.35 | 0.591 | 0.549 | 0.642 | 299/246/167 | 0.647 | [0.478, 0.707] | -0.292 | [-0.395, -0.190] |
+| **detector on original, conf 0.5** | 0.602 | 0.569 | 0.639 | 298/226/168 | 0.646 | [0.497, 0.709] | -0.282 | [-0.378, -0.187] |
+| detector on 704 benchmark image, conf 0.25 | 0.501 | 0.471 | 0.534 | 249/280/217 | 0.555 | [0.401, 0.610] | -0.383 | [-0.493, -0.267] |
+| detector on 704 benchmark image, conf 0.35 | 0.509 | 0.488 | 0.532 | 248/260/218 | 0.559 | [0.409, 0.621] | -0.375 | [-0.484, -0.257] |
+| detector on 704 benchmark image, conf 0.5 | 0.501 | 0.512 | 0.489 | 228/217/238 | 0.522 | [0.390, 0.618] | -0.383 | [-0.505, -0.259] |
+| diagnostic: original re-oriented to benchmark frame, conf 0.25 | 0.651 | 0.614 | 0.693 | 323/203/143 | 0.646 | [0.565, 0.736] | -0.233 | [-0.313, -0.156] |
+| diagnostic: original re-oriented to benchmark frame, conf 0.35 | 0.650 | 0.618 | 0.685 | 319/197/147 | 0.645 | [0.555, 0.740] | -0.234 | [-0.322, -0.153] |
+| diagnostic: original re-oriented to benchmark frame, conf 0.5 | 0.658 | 0.635 | 0.682 | 318/183/148 | 0.643 | [0.570, 0.742] | -0.226 | [-0.307, -0.150] |
 
 Electrical-subset component detection (IoU >= 0.3; class-agnostic = any electrical class, class-aware = same SPICE prefix R/C/L/D/Q/V/U):
 
@@ -60,47 +60,47 @@ Split by benchmark orientation (micro-F1, TP/FP/FN):
 
 | subset | n | GT boxes | orig@0.5 | benchorient@0.5 | det704@0.5 |
 |---|---|---|---|---|---|
-| re-oriented benchmark image | 14 | 0.881 (203/22/33) | 0.491 (112/108/124) | 0.610 (132/65/104) | 0.547 (117/75/119) |
-| same orientation as CGHD file | 17 | 0.900 (215/15/33) | 0.739 (204/100/44) | 0.739 (204/100/44) | 0.467 (117/136/131) |
+| re-oriented benchmark image | 14 | 0.873 (200/25/33) | 0.481 (109/111/124) | 0.600 (129/68/104) | 0.551 (117/75/116) |
+| same orientation as CGHD file | 17 | 0.894 (207/23/26) | 0.704 (189/115/44) | 0.704 (189/115/44) | 0.457 (111/142/122) |
 
-The detector is orientation-sensitive (trained with ±10° rotation only): e.g. C9_D2_P3 yields 15 boxes in its file orientation and 0–1 under any 90° rotation, and on C19_D1_P2 two-terminal boxes come out perpendicular to the annotation in the file orientation. `benchorient` is therefore a diagnostic, not a deployment condition; on the 17 identity-orientation images `orig` and `benchorient` coincide. The end-to-end loss concentrates in the 14 images whose benchmark copy is re-oriented (orig 0.491 there vs 0.739 on the other 17), and re-orienting the input to the benchmark frame recovers part of it. One possible reading, not testable here, is that the detector saw these circuits in the benchmark orientation during training (see section 6).
+The detector is orientation-sensitive (trained with ±10° rotation only): e.g. C9_D2_P3 yields 15 boxes in its file orientation and 0–1 under any 90° rotation, and on C19_D1_P2 two-terminal boxes come out perpendicular to the annotation in the file orientation. `benchorient` is therefore a diagnostic, not a deployment condition; on the 17 identity-orientation images `orig` and `benchorient` coincide. The end-to-end loss concentrates in the 14 images whose benchmark copy is re-oriented (orig 0.481 there vs 0.704 on the other 17), and re-orienting the input to the benchmark frame recovers part of it. One possible reading, not testable here, is that the detector saw these circuits in the benchmark orientation during training (see section 6).
 
 ## 4. Scoring soundness and loss decomposition (detections from `orig`)
 
 | arm | micro-F1 | P | R | TP/FP/FN | macro-F1 | micro 95% CI | Δ vs GT boxes | Δ 95% CI |
 |---|---|---|---|---|---|---|---|---|
-| oracle: GT boxes through the detection relabel/IoU-match path | 0.890 | 0.919 | 0.864 | 418/37/66 | 0.901 | [0.854, 0.925] | +0.000 | [+0.000, +0.000] |
-| oracle, GT boxes shuffled (seeded) through the same path | 0.893 | 0.923 | 0.866 | 419/35/65 | 0.903 | [0.857, 0.928] | +0.003 | [-0.002, +0.010] |
+| oracle: GT boxes through the detection relabel/IoU-match path | 0.884 | 0.895 | 0.873 | 407/48/59 | 0.896 | [0.849, 0.918] | +0.000 | [+0.000, +0.000] |
+| oracle, GT boxes shuffled (seeded) through the same path | 0.887 | 0.899 | 0.876 | 408/46/58 | 0.898 | [0.851, 0.922] | +0.003 | [-0.002, +0.010] |
 
-The identity-order oracle reproduces 418/37/66 exactly, so the relabel/matching code is sound. Shuffling the component list alone moves the result to 419/35/65 (+0.003): the downstream pipeline is mildly order-dependent, so differences of a few pairs between arms are within this noise floor.
+The identity-order oracle reproduces 407/48/59 exactly (annotated boxes: 407/48/59), so the relabel/matching code is sound. Shuffling the component list alone moves the result to 408/46/58 (+0.003): the downstream pipeline is mildly order-dependent, so differences of a few pairs between arms are within this noise floor.
 
 Decomposition at each conf (A -> B -> C -> D -> E; each step changes one thing):
 
 | arm | micro-F1 | P | R | TP/FP/FN | macro-F1 | micro 95% CI | Δ vs GT boxes | Δ 95% CI |
 |---|---|---|---|---|---|---|---|---|
-| A annotated boxes | 0.890 | 0.919 | 0.864 | 418/37/66 | 0.901 | [0.854, 0.925] | +0.000 | [+0.000, +0.000] |
-| B' drop only undetected NON-electrical GT boxes @0.25 | 0.892 | 0.908 | 0.876 | 424/43/60 | 0.905 | [0.857, 0.925] | +0.001 | [+0.000, +0.005] |
-| B'' drop only undetected electrical GT boxes @0.25 | 0.758 | 0.869 | 0.671 | 325/49/159 | 0.754 | [0.654, 0.846] | -0.133 | [-0.222, -0.061] |
-| B drop all undetected GT boxes @0.25 | 0.760 | 0.859 | 0.682 | 330/54/154 | 0.755 | [0.659, 0.847] | -0.130 | [-0.219, -0.059] |
-| C B + unmatched detections @0.25 | 0.677 | 0.685 | 0.669 | 324/149/160 | 0.698 | [0.543, 0.801] | -0.213 | [-0.337, -0.100] |
-| D detected geometry, GT class @0.25 | 0.630 | 0.585 | 0.682 | 330/234/154 | 0.659 | [0.506, 0.743] | -0.261 | [-0.376, -0.158] |
-| E detected geometry + class @0.25 | 0.613 | 0.575 | 0.655 | 317/234/167 | 0.651 | [0.494, 0.723] | -0.278 | [-0.388, -0.175] |
-| A annotated boxes | 0.890 | 0.919 | 0.864 | 418/37/66 | 0.901 | [0.854, 0.925] | +0.000 | [+0.000, +0.000] |
-| B' drop only undetected NON-electrical GT boxes @0.35 | 0.892 | 0.912 | 0.874 | 423/41/61 | 0.905 | [0.858, 0.926] | +0.002 | [+0.000, +0.005] |
-| B'' drop only undetected electrical GT boxes @0.35 | 0.758 | 0.869 | 0.671 | 325/49/159 | 0.754 | [0.654, 0.846] | -0.133 | [-0.222, -0.061] |
-| B drop all undetected GT boxes @0.35 | 0.760 | 0.859 | 0.682 | 330/54/154 | 0.755 | [0.659, 0.847] | -0.130 | [-0.219, -0.059] |
-| C B + unmatched detections @0.35 | 0.678 | 0.689 | 0.667 | 323/146/161 | 0.702 | [0.542, 0.803] | -0.212 | [-0.337, -0.099] |
-| D detected geometry, GT class @0.35 | 0.633 | 0.591 | 0.682 | 330/228/154 | 0.665 | [0.510, 0.746] | -0.257 | [-0.372, -0.154] |
-| E detected geometry + class @0.35 | 0.616 | 0.582 | 0.655 | 317/228/167 | 0.657 | [0.498, 0.727] | -0.274 | [-0.385, -0.172] |
-| A annotated boxes | 0.890 | 0.919 | 0.864 | 418/37/66 | 0.901 | [0.854, 0.925] | +0.000 | [+0.000, +0.000] |
-| B' drop only undetected NON-electrical GT boxes @0.5 | 0.892 | 0.906 | 0.878 | 425/44/59 | 0.905 | [0.861, 0.923] | +0.002 | [-0.007, +0.009] |
-| B'' drop only undetected electrical GT boxes @0.5 | 0.759 | 0.876 | 0.669 | 324/46/160 | 0.753 | [0.656, 0.847] | -0.132 | [-0.220, -0.061] |
-| B drop all undetected GT boxes @0.5 | 0.759 | 0.859 | 0.680 | 329/54/155 | 0.752 | [0.659, 0.843] | -0.131 | [-0.219, -0.062] |
-| C B + unmatched detections @0.5 | 0.687 | 0.711 | 0.665 | 322/131/162 | 0.700 | [0.561, 0.802] | -0.203 | [-0.321, -0.099] |
-| D detected geometry, GT class @0.5 | 0.644 | 0.613 | 0.680 | 329/208/155 | 0.664 | [0.530, 0.748] | -0.246 | [-0.353, -0.151] |
-| E detected geometry + class @0.5 | 0.627 | 0.603 | 0.653 | 316/208/168 | 0.656 | [0.519, 0.731] | -0.263 | [-0.366, -0.170] |
+| A annotated boxes | 0.884 | 0.895 | 0.873 | 407/48/59 | 0.896 | [0.849, 0.918] | +0.000 | [+0.000, +0.000] |
+| B' drop only undetected NON-electrical GT boxes @0.25 | 0.881 | 0.880 | 0.882 | 411/56/55 | 0.899 | [0.843, 0.918] | -0.003 | [-0.009, +0.001] |
+| B'' drop only undetected electrical GT boxes @0.25 | 0.745 | 0.837 | 0.672 | 313/61/153 | 0.748 | [0.643, 0.836] | -0.139 | [-0.229, -0.065] |
+| B drop all undetected GT boxes @0.25 | 0.744 | 0.823 | 0.678 | 316/68/150 | 0.748 | [0.642, 0.834] | -0.140 | [-0.230, -0.067] |
+| C B + unmatched detections @0.25 | 0.662 | 0.658 | 0.667 | 311/162/155 | 0.691 | [0.531, 0.789] | -0.221 | [-0.345, -0.108] |
+| D detected geometry, GT class @0.25 | 0.606 | 0.553 | 0.670 | 312/252/154 | 0.649 | [0.486, 0.724] | -0.278 | [-0.389, -0.172] |
+| E detected geometry + class @0.25 | 0.588 | 0.543 | 0.642 | 299/252/167 | 0.641 | [0.475, 0.703] | -0.296 | [-0.398, -0.193] |
+| A annotated boxes | 0.884 | 0.895 | 0.873 | 407/48/59 | 0.896 | [0.849, 0.918] | +0.000 | [+0.000, +0.000] |
+| B' drop only undetected NON-electrical GT boxes @0.35 | 0.882 | 0.884 | 0.880 | 410/54/56 | 0.899 | [0.844, 0.918] | -0.002 | [-0.008, +0.002] |
+| B'' drop only undetected electrical GT boxes @0.35 | 0.745 | 0.837 | 0.672 | 313/61/153 | 0.748 | [0.643, 0.836] | -0.139 | [-0.229, -0.065] |
+| B drop all undetected GT boxes @0.35 | 0.744 | 0.823 | 0.678 | 316/68/150 | 0.748 | [0.642, 0.834] | -0.140 | [-0.230, -0.067] |
+| C B + unmatched detections @0.35 | 0.663 | 0.661 | 0.665 | 310/159/156 | 0.695 | [0.530, 0.790] | -0.221 | [-0.345, -0.107] |
+| D detected geometry, GT class @0.35 | 0.609 | 0.559 | 0.670 | 312/246/154 | 0.655 | [0.489, 0.727] | -0.274 | [-0.386, -0.168] |
+| E detected geometry + class @0.35 | 0.591 | 0.549 | 0.642 | 299/246/167 | 0.647 | [0.478, 0.707] | -0.292 | [-0.395, -0.190] |
+| A annotated boxes | 0.884 | 0.895 | 0.873 | 407/48/59 | 0.896 | [0.849, 0.918] | +0.000 | [+0.000, +0.000] |
+| B' drop only undetected NON-electrical GT boxes @0.5 | 0.881 | 0.878 | 0.884 | 412/57/54 | 0.899 | [0.847, 0.915] | -0.003 | [-0.012, +0.007] |
+| B'' drop only undetected electrical GT boxes @0.5 | 0.746 | 0.843 | 0.670 | 312/58/154 | 0.746 | [0.645, 0.836] | -0.137 | [-0.228, -0.065] |
+| B drop all undetected GT boxes @0.5 | 0.742 | 0.822 | 0.676 | 315/68/151 | 0.744 | [0.642, 0.830] | -0.142 | [-0.229, -0.071] |
+| C B + unmatched detections @0.5 | 0.672 | 0.682 | 0.663 | 309/144/157 | 0.693 | [0.549, 0.790] | -0.211 | [-0.327, -0.107] |
+| D detected geometry, GT class @0.5 | 0.620 | 0.579 | 0.667 | 311/226/155 | 0.654 | [0.508, 0.730] | -0.264 | [-0.367, -0.165] |
+| E detected geometry + class @0.5 | 0.602 | 0.569 | 0.639 | 298/226/168 | 0.646 | [0.497, 0.709] | -0.282 | [-0.378, -0.187] |
 
-At conf 0.5 the 0.263 micro-F1 gap splits into: missed components -0.131 (almost entirely electrical: dropping only missed non-electrical boxes gives 0.892), spurious detections -0.072, localization of matched boxes -0.043, classification -0.017. Steps are sequential, so shares depend on order.
+At conf 0.5 the 0.282 micro-F1 gap splits into: missed components -0.142 (almost entirely electrical: dropping only missed non-electrical boxes gives 0.881), spurious detections -0.070, localization of matched boxes -0.052, classification -0.018. Steps are sequential, so shares depend on order.
 
 ## 5. Crossovers (R2-4)
 
@@ -115,17 +115,17 @@ At conf 0.5 the 0.263 micro-F1 gap splits into: missed components -0.131 (almost
 
 | arm | micro-F1 | P | R | TP/FP/FN | macro-F1 | micro 95% CI | Δ vs GT boxes | Δ 95% CI |
 |---|---|---|---|---|---|---|---|---|
-| E @0.25 | 0.613 | 0.575 | 0.655 | 317/234/167 | 0.651 | [0.494, 0.723] | -0.278 | [-0.388, -0.175] |
-| F: E with every not-detected-as-crossover GT crossover restored @0.25 | 0.613 | 0.575 | 0.655 | 317/234/167 | 0.651 | [0.494, 0.723] | -0.278 | [-0.388, -0.175] |
-| G: E minus the correctly detected crossovers @0.25 | 0.592 | 0.583 | 0.601 | 291/208/193 | 0.641 | [0.477, 0.703] | -0.298 | [-0.404, -0.198] |
-| E @0.35 | 0.616 | 0.582 | 0.655 | 317/228/167 | 0.657 | [0.498, 0.727] | -0.274 | [-0.385, -0.172] |
-| F: E with every not-detected-as-crossover GT crossover restored @0.35 | 0.616 | 0.582 | 0.655 | 317/228/167 | 0.657 | [0.498, 0.727] | -0.274 | [-0.385, -0.172] |
-| G: E minus the correctly detected crossovers @0.35 | 0.596 | 0.590 | 0.601 | 291/202/193 | 0.646 | [0.481, 0.707] | -0.295 | [-0.401, -0.194] |
-| E @0.5 | 0.627 | 0.603 | 0.653 | 316/208/168 | 0.656 | [0.519, 0.731] | -0.263 | [-0.366, -0.170] |
-| F: E with every not-detected-as-crossover GT crossover restored @0.5 | 0.627 | 0.603 | 0.653 | 316/208/168 | 0.656 | [0.519, 0.731] | -0.263 | [-0.366, -0.170] |
-| G: E minus the correctly detected crossovers @0.5 | 0.608 | 0.613 | 0.603 | 292/184/192 | 0.647 | [0.502, 0.711] | -0.282 | [-0.380, -0.191] |
+| E @0.25 | 0.588 | 0.543 | 0.642 | 299/252/167 | 0.641 | [0.475, 0.703] | -0.296 | [-0.398, -0.193] |
+| F: E with every not-detected-as-crossover GT crossover restored @0.25 | 0.588 | 0.543 | 0.642 | 299/252/167 | 0.641 | [0.475, 0.703] | -0.296 | [-0.398, -0.193] |
+| G: E minus the correctly detected crossovers @0.25 | 0.593 | 0.573 | 0.614 | 286/213/180 | 0.643 | [0.476, 0.706] | -0.291 | [-0.399, -0.187] |
+| E @0.35 | 0.591 | 0.549 | 0.642 | 299/246/167 | 0.647 | [0.478, 0.707] | -0.292 | [-0.395, -0.190] |
+| F: E with every not-detected-as-crossover GT crossover restored @0.35 | 0.591 | 0.549 | 0.642 | 299/246/167 | 0.647 | [0.478, 0.707] | -0.292 | [-0.395, -0.190] |
+| G: E minus the correctly detected crossovers @0.35 | 0.596 | 0.580 | 0.614 | 286/207/180 | 0.649 | [0.480, 0.710] | -0.287 | [-0.396, -0.183] |
+| E @0.5 | 0.602 | 0.569 | 0.639 | 298/226/168 | 0.646 | [0.497, 0.709] | -0.282 | [-0.378, -0.187] |
+| F: E with every not-detected-as-crossover GT crossover restored @0.5 | 0.602 | 0.569 | 0.639 | 298/226/168 | 0.646 | [0.497, 0.709] | -0.282 | [-0.378, -0.187] |
+| G: E minus the correctly detected crossovers @0.5 | 0.609 | 0.603 | 0.616 | 287/189/179 | 0.650 | [0.503, 0.713] | -0.274 | [-0.375, -0.179] |
 
-In the `orig` arm every one of the 13 annotated crossovers (8 images) is detected as a crossover at every tested threshold, so F = E: **zero** false-positive pairs on this set are attributable to missed or misclassified crossovers. Deleting the correctly detected crossovers (G) changes micro-F1 by -0.019 at 0.5 (TP 316->292, FP 208->184). The 70.7% validation recall is therefore not exercised here; 13 instances cannot estimate it.
+In the `orig` arm every one of the 13 annotated crossovers (8 images) is detected as a crossover at every tested threshold, so F = E: **zero** false-positive pairs on this set are attributable to missed or misclassified crossovers. Deleting the correctly detected crossovers (G) changes micro-F1 by +0.007 at 0.5 (TP 298->287, FP 226->189). The 70.7% validation recall is therefore not exercised here; 13 instances cannot estimate it.
 
 ## 6. Detector train/val overlap
 
@@ -140,7 +140,7 @@ In the `orig` arm every one of the 13 annotated crossovers (8 images) is detecte
 | C84_D2_P1_jpg | image/transpose | 12 | 12 | 25/0/8 | 21/6/12 | 0.700 | 24/10/9 | 16/4/17 |
 | C22_D2_P3_jpg | seg/flipud | 10 | 7 | 19/2/3 | 8/25/14 | 0.291 | 9/23/13 | 13/32/9 |
 | C29_D2_P4_jpg | seg/id | 7 | 7 | 13/2/4 | 17/4/0 | 0.895 | 9/2/8 | 17/4/0 |
-| C15_D2_P2_jpg | seg/id | 7 | 5 | 16/2/2 | 9/12/9 | 0.462 | 5/16/13 | 9/12/9 |
+| C15_D2_P2_jpg | seg/id | 7 | 5 | 17/1/2 | 10/11/9 | 0.500 | 6/15/13 | 10/11/9 |
 | C20_D2_P2_jpg | seg/fliplr | 4 | 3 | 6/0/0 | 3/3/3 | 0.500 | 3/3/3 | 3/3/3 |
 | C138_D1_P3_jpg | image/transpose | 5 | 4 | 6/0/4 | 4/2/6 | 0.500 | 2/1/8 | 1/0/9 |
 | C109_D2_P3_jpg | image/transpose | 3 | 3 | 3/0/0 | 3/0/0 | 1.000 | 3/0/0 | 3/0/0 |
@@ -159,12 +159,12 @@ In the `orig` arm every one of the 13 annotated crossovers (8 images) is detecte
 | C9_D1_P3_jpg | image/id | 5 | 5 | 8/1/0 | 6/1/2 | 0.800 | 7/1/1 | 6/1/2 |
 | C9_D2_P3_jpg | seg/antitranspose | 5 | 4 | 8/1/0 | 5/3/3 | 0.625 | 8/1/0 | 0/0/8 |
 | C103_D2_P1_jpg | image/id | 7 | 7 | 3/0/8 | 3/0/8 | 0.429 | 2/2/9 | 3/0/8 |
-| C112_D1_P1_jpg | image/transpose | 7 | 7 | 20/1/0 | 20/1/0 | 0.976 | 14/12/6 | 20/0/0 |
+| C112_D1_P1_jpg | image/transpose | 7 | 7 | 17/4/0 | 17/4/0 | 0.895 | 14/12/3 | 17/3/0 |
 | C19_D1_P2_jpg | seg/rot90ccw | 10 | 5 | 29/6/3 | 8/30/24 | 0.229 | 29/0/3 | 22/6/10 |
-| C242_D1_P1_jpg | seg/id | 10 | 9 | 27/4/0 | 21/10/6 | 0.724 | 19/10/8 | 21/10/6 |
+| C242_D1_P1_jpg | seg/id | 10 | 9 | 23/8/0 | 17/14/6 | 0.630 | 15/14/8 | 17/14/6 |
 | C2_D2_P1_jpg | seg/id | 10 | 10 | 21/2/0 | 21/12/0 | 0.778 | 14/14/7 | 21/12/0 |
 | C33_D2_P2_jpg | seg/id | 10 | 10 | 21/0/2 | 21/0/2 | 0.955 | 2/3/21 | 21/0/2 |
 | C37_D2_P4_jpg | seg/id | 11 | 10 | 23/0/0 | 17/16/6 | 0.607 | 5/31/18 | 17/16/6 |
-| C66_D2_P4_jpg | seg/id | 12 | 11 | 27/2/14 | 36/30/5 | 0.673 | 17/30/24 | 36/30/5 |
+| C66_D2_P4_jpg | seg/id | 12 | 11 | 22/7/7 | 24/42/5 | 0.505 | 14/33/15 | 24/42/5 |
 | C83_D2_P4_jpg | seg/id | 12 | 12 | 21/0/1 | 22/8/0 | 0.846 | 16/9/6 | 22/8/0 |
 | C77_D2_P2_jpg | image/transpose | 14 | 14 | 35/1/6 | 22/3/19 | 0.667 | 6/11/35 | 31/2/10 |

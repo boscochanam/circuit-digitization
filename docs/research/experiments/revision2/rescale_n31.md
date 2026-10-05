@@ -1,5 +1,7 @@
 # Controlled image rescaling: 31-image human-verified net-GT (R1-3, R2-6)
 
+> **Label correction, 2026-10-05.** Four images of the 31-image human-verified benchmark were corrected (plain crossings are not connections; C112, C242, C66, C15). Numbers in this file that depend on the 31-image nets predate the correction; the current values (e.g. ours 0.884, VLM 0.946, end to end 0.602, reference vs human 0.971) are in `docs/research/experiments/SUMMARY.md` (Revision 2) and the paper. Regenerated JSON next to this file is current.
+
 Scripts: `wire_detection/benchmark/revision2/{rescale_eval,methods,size_dispersion,synth_mixed_size,plot_rescale}.py`.
 Data: `rescale_n31.json` (all per-image counts, bootstrap CIs, config, seed), `size_dispersion_n31.json`,
 `synth_mixed_size.json`. Figure: `paper/ieee-paper/figures/rescale_robustness.pdf`.

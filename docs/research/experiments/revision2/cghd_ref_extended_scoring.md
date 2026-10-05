@@ -1,5 +1,7 @@
 # CGHD held-out benchmark: extended scoring variants (revision 2)
 
+> **Label correction, 2026-10-05.** Four images of the 31-image human-verified benchmark were corrected (plain crossings are not connections; C112, C242, C66, C15). Numbers in this file that depend on the 31-image nets predate the correction; the current values (e.g. ours 0.884, VLM 0.946, end to end 0.602, reference vs human 0.971) are in `docs/research/experiments/SUMMARY.md` (Revision 2) and the paper. Regenerated JSON next to this file is current.
+
 Numbers are in `cghd_ref_extended_scoring.json`. Scripts: `wire_detection/benchmark/revision2/cghd_eval_ext.py`
 (run on claw) and `cghd_extended_scoring.py` (local, numpy only). Nothing was re-tuned. The reference is the
 frozen v2 (`ground_truth/cghd_ref/cghd_ref_nets.json`). The input is the §5 primary condition (photo, long side 1024), and the

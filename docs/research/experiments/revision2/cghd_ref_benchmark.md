@@ -1,5 +1,7 @@
 # CGHD-annotation connectivity benchmark (revision 2, Access-2026-33821)
 
+> **Label correction, 2026-10-05.** Four images of the 31-image human-verified benchmark were corrected (plain crossings are not connections; C112, C242, C66, C15). Numbers in this file that depend on the 31-image nets predate the correction; the current values (e.g. ours 0.884, VLM 0.946, end to end 0.602, reference vs human 0.971) are in `docs/research/experiments/SUMMARY.md` (Revision 2) and the paper. Regenerated JSON next to this file is current.
+
 Every number below is in `cghd_ref_benchmark.json`. Raw per-image files are in `cghd_ref/`, and the
 reference nets are in `ground_truth/cghd_ref/cghd_ref_nets.json`. Scripts live in
 `wire_detection/benchmark/revision2/cghd_*.py`. They ran on claw from a scratch copy; no pipeline
