@@ -94,7 +94,7 @@ For crossings, Section V-H analyzes the 13 annotated crossovers, including the e
 
 ### Comment 1.6: Suggested references
 
-> It is suggested that the authors cite two papers in the sections related to SPICE simulation of memristive analog circuits: "A Memristor-Based Neural Network Circuit with Classical Conditioning and Fear Generalization" and "Biologically Plausible Memristive Decision-Making Circuit for Adaptive Control in Industrial Autonomous Navigation". [...]
+> It is suggested that the authors cite two papers in the sections related to SPICE simulation of memristive analog circuits: "A Memristor-Based Neural Network Circuit with Classical Conditioning and Fear Generalization" and "Biologically Plausible Memristive Decision-Making Circuit for Adaptive Control in Industrial Autonomous Navigation". Both papers complete full SPICE netlist modeling and simulation verification for memristive circuits, which complement the EDA technical route of converting hand-drawn schematics to SPICE netlists proposed in this paper in application scenarios, and can enrich relevant literature support for digital parsing and simulation deployment of analog memristive circuits.
 
 **Response.** We thank the reviewer. Both works are now cited in Related Work, as examples of SPICE-level modeling in neighboring hardware domains.
 
