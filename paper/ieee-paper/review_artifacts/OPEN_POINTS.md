@@ -18,7 +18,7 @@ Numbers: `REWRITE_SPEC_R2.md` → `docs/research/experiments/revision2/`.
 ## Known gaps (optional)
 - Mechanism and edge ablations (Tables 8, 9), annotated wires, crossover deletion and the reach sweep now come from the committed driver `wire_detection/benchmark/revision2/n31_arms.py`, which stores per-image predicted pairs (`docs/research/experiments/revision2/n31_arms.json`) and reproduces the earlier numbers exactly on the pre-correction nets.
 - The photograph arm of the input ablation on the 17 overlaps (`cghd_input_ablation.json`, ours with annotated boxes at long side 1024) needs the CGHD originals and was not rescored; the paper's gap paragraph now uses the stored held-out predictions instead.
-- Zenodo: release v1.1.0 (2026-10-07) matches the revised manuscript; the paper cites the concept DOI 10.5281/zenodo.21274158 (all versions). Confirm Zenodo minted the v1.1.0 version.
+- Zenodo: release v1.1.0 (2026-10-07) matches the revised manuscript; the paper cites the concept DOI 10.5281/zenodo.21274158 (all versions). Zenodo archived it on 2026-10-07 as doi:10.5281/zenodo.23203084.
 
 ## Resolved in this round
 - Provisional end-to-end 0.247 was a class-index mapping bug; real end-to-end 0.627 (Sec. V-G).
