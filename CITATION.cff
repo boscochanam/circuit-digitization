@@ -32,6 +32,9 @@ authors:
     family-names: Das
     orcid: 'https://orcid.org/0009-0000-9207-7694'
     affiliation: Symbiosis Institute of Technology, Pune, India
+version: 1.1.0
+date-released: '2026-10-07'
+doi: 10.5281/zenodo.21274158
 repository-code: 'https://github.com/boscochanam/circuit-digitization'
 url: 'https://github.com/boscochanam/circuit-digitization'
 license: MIT

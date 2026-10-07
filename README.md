@@ -124,8 +124,8 @@ detector weights.
   `ground_truth/cghd_ref_audit/*.json`): CC BY-SA 4.0.
 - The raw CGHD images are not redistributed; obtain them from the dataset authors. Full terms and
   statements of modification: [`ground_truth/LICENSE`](ground_truth/LICENSE).
-- The v1.0.1 release (before the revision experiments) is archived at Zenodo,
-  doi:10.5281/zenodo.21274159. Detector weights:
+- Releases are archived at Zenodo (all versions: doi:10.5281/zenodo.21274158); v1.1.0 matches the
+  revised manuscript, v1.0.1 (doi:10.5281/zenodo.21274159) predates the revision experiments. Detector weights:
   [huggingface.co/boscochanam/circuit-component-detector](https://huggingface.co/boscochanam/circuit-component-detector).
 
 ## Command-line tools
