@@ -47,5 +47,6 @@ cp "$PAPER/output/pdf/paper-access-highlighted.pdf" "$SUB/Access-2026-33821_revi
 cp "$PAPER/output/pdf/highlight-change-index.pdf" "$SUB/Access-2026-33821_revised_highlight_change_index.pdf"
 cp "$PAPER/review_artifacts/RESPONSE_TO_REVIEWERS.pdf" "$SUB/Access-2026-33821_revised_response_to_reviewers.pdf"
 cp "$ROOT/paper-access-overleaf.zip" "$SUB/Access-2026-33821_revised_latex_source.zip"
+cp "$PAPER/figures/graphical_abstract.jpg" "$SUB/Access-2026-33821_revised_graphical_abstract.jpg"
 echo "pages: access $(pdfinfo "$SUB/Access-2026-33821_revised_manuscript_clean.pdf" | awk '/Pages/{print $2}'), build $(pdfinfo "$PAPER/paper-build.pdf" | awk '/Pages/{print $2}'), response $(pdfinfo "$SUB/Access-2026-33821_revised_response_to_reviewers.pdf" | awk '/Pages/{print $2}')"
 grep -c "PENDING" "$PAPER/paper-access.tex" "$PAPER/review_artifacts/RESPONSE_TO_REVIEWERS.md" || true
