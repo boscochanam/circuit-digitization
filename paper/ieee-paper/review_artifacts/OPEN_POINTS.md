@@ -12,8 +12,8 @@ Numbers: `REWRITE_SPEC_R2.md` → `docs/research/experiments/revision2/`.
 - [ ] **Signatory** of the response letter (currently Bosco Chanam on behalf of all authors) and coauthor
       consent to the revised manuscript.
 - [x] **Overleaf**: not needed; local build uses the official IEEE Access kit.
-- [ ] Re-run the similarity check on the rebuilt `Access-2026-33821_revised_manuscript_clean.pdf`.
-- [ ] Portal upload.
+- [x] Similarity check re-run on the rebuilt manuscript (passed).
+- [x] Portal upload: resubmitted 2026-10-07 (LaTeX zip + clean PDF, response, highlighted manuscript; data DOI 10.5281/zenodo.23203084).
 
 ## Known gaps (optional)
 - Mechanism and edge ablations (Tables 8, 9), annotated wires, crossover deletion and the reach sweep now come from the committed driver `wire_detection/benchmark/revision2/n31_arms.py`, which stores per-image predicted pairs (`docs/research/experiments/revision2/n31_arms.json`) and reproduces the earlier numbers exactly on the pre-correction nets.
